@@ -1,0 +1,966 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+package kubernetesengine
+
+import (
+	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"net/http"
+	"strings"
+	"time"
+
+	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/utils"
+
+	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+)
+
+var (
+	_ resource.ResourceWithConfigure      = &nodePoolResource{}
+	_ resource.ResourceWithImportState    = &nodePoolResource{}
+	_ resource.ResourceWithValidateConfig = &nodePoolResource{}
+	_ resource.ResourceWithModifyPlan     = &nodePoolResource{}
+)
+
+func NewNodePoolResource() resource.Resource { return &nodePoolResource{} }
+
+type nodePoolResource struct {
+	kc *common.KakaoCloudClient
+}
+
+func (r *nodePoolResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_kubernetes_engine_node_pool"
+}
+
+func (r *nodePoolResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Represents a Kubernetes Engine Node Pool resource.",
+		Attributes: utils.MergeResourceSchemaAttributes(
+			nodePoolResourceAttributes,
+			map[string]schema.Attribute{
+				"timeouts": timeouts.AttributesAll(ctx),
+			},
+		),
+	}
+}
+
+func (r *nodePoolResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+	client, ok := req.ProviderData.(*common.KakaoCloudClient)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *kakaocloud.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+		return
+	}
+	r.kc = client
+}
+
+func (r *nodePoolResource) ImportState(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
+	// Import format: cluster_name/node_pool_name
+	id := req.ID
+	parts := strings.SplitN(id, "/", 2)
+	if len(parts) != 2 {
+		resp.Diagnostics.AddError(
+			"Invalid import ID",
+			fmt.Sprintf("Expected format 'cluster_name/node_pool_name', got: %q", id),
+		)
+		return
+	}
+
+	clusterName, nodePoolName := parts[0], parts[1]
+
+	// Set attributes in state, collecting diagnostics
+	var diags diag.Diagnostics
+	diags = append(diags, resp.State.SetAttribute(ctx, path.Root("cluster_name"), clusterName)...)
+	diags = append(diags, resp.State.SetAttribute(ctx, path.Root("name"), nodePoolName)...)
+	diags = append(diags, resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+
+	resp.Diagnostics.Append(diags...)
+}
+
+func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan NodePoolResourceModel
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	// Determine initial node count for create
+	// Requirement: When autoscaling is enabled at create, send node_count equal to autoscaler_desired_node_count if provided
+	var initialNodeCount int32
+	var autoscalingProvided bool
+	var autoscalingEnabled bool
+	var autoscalingModel NodePoolAutoscalingModel
+	if !plan.Autoscaling.IsNull() && !plan.Autoscaling.IsUnknown() {
+		autoscalingProvided = true
+		_ = plan.Autoscaling.As(ctx, &autoscalingModel, basetypes.ObjectAsOptions{})
+		if !autoscalingModel.IsAutoscalerEnable.IsNull() && !autoscalingModel.IsAutoscalerEnable.IsUnknown() {
+			autoscalingEnabled = autoscalingModel.IsAutoscalerEnable.ValueBool()
+		}
+	}
+
+	if autoscalingProvided && autoscalingEnabled {
+		// When autoscaling is enabled, user must not set node_count; initial size must come from autoscaler_desired_node_count
+		if !autoscalingModel.AutoscalerDesiredNodeCount.IsNull() && !autoscalingModel.AutoscalerDesiredNodeCount.IsUnknown() {
+			initialNodeCount = autoscalingModel.AutoscalerDesiredNodeCount.ValueInt32()
+		} else {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("autoscaling").AtName("autoscaler_desired_node_count"),
+				"Missing required autoscaling.desired value",
+				"When enabling autoscaling during create, 'autoscaling.autoscaler_desired_node_count' is required and is used as the initial node count. Remove 'node_count' from configuration.",
+			)
+			return
+		}
+	} else {
+		// Autoscaling not enabled: node_count must be provided
+		if plan.NodeCount.IsNull() || plan.NodeCount.IsUnknown() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("node_count"),
+				"Missing required attribute on create",
+				"'node_count' must be specified when creating a node pool (or enable autoscaling with a desired/min/max node count).",
+			)
+			return
+		}
+		initialNodeCount = plan.NodeCount.ValueInt32()
+	}
+
+	var vpcInfo NodePoolVpcInfoModelSet
+	diags = plan.VpcInfo.As(ctx, &vpcInfo, basetypes.ObjectAsOptions{})
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var subnetIds []string
+	if !vpcInfo.Subnets.IsNull() && !vpcInfo.Subnets.IsUnknown() {
+		var subnetObjs []SubnetModel
+		_ = vpcInfo.Subnets.ElementsAs(ctx, &subnetObjs, false)
+		for _, s := range subnetObjs {
+			subnetIds = append(subnetIds, s.Id.ValueString())
+		}
+	}
+
+	reqVpcInfo := kubernetesengine.VpcInfoRequestModel{
+		Id:      vpcInfo.Id.ValueString(),
+		Subnets: subnetIds,
+	}
+
+	// --- Labels ---
+	var labels []kubernetesengine.LabelRequestModel
+	if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
+		var tmp []NodePoolLabelModel
+		_ = plan.Labels.ElementsAs(ctx, &tmp, false)
+		for _, l := range tmp {
+			labels = append(labels, kubernetesengine.LabelRequestModel{
+				Key:   l.Key.ValueString(),
+				Value: l.Value.ValueString(),
+			})
+		}
+	}
+
+	// --- Taints ---
+	var taints []kubernetesengine.TaintRequestModel
+	if !plan.Taints.IsNull() && !plan.Taints.IsUnknown() {
+		var tmp []NodePoolTaintModel
+		_ = plan.Taints.ElementsAs(ctx, &tmp, false)
+		for _, t := range tmp {
+			taints = append(taints, kubernetesengine.TaintRequestModel{
+				Key:    t.Key.ValueString(),
+				Value:  t.Value.ValueString(),
+				Effect: kubernetesengine.NodePoolTaintEffect(t.Effect.ValueString()),
+			})
+		}
+	}
+
+	// --- Security Groups ---
+	var userSGs []string
+	if !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown() {
+		_ = plan.SecurityGroups.ElementsAs(ctx, &userSGs, false)
+	}
+
+	// --- Build Create Request ---
+	createModel := kubernetesengine.NewKubernetesEngineV1ApiCreateNodePoolModelNodePoolRequestModel(
+		plan.Name.ValueString(),
+		plan.FlavorId.ValueString(),
+		plan.VolumeSize.ValueInt32(),
+		initialNodeCount,
+		plan.SshKeyName.ValueString(),
+		reqVpcInfo,
+		plan.ImageId.ValueString(),
+	)
+
+	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
+		createModel.SetDescription(plan.Description.ValueString())
+	}
+	if !plan.UserData.IsNull() && !plan.UserData.IsUnknown() && plan.UserData.ValueString() != "" {
+		createModel.SetUserData(plan.UserData.ValueString())
+	}
+	if !plan.IsHyperThreading.IsNull() && !plan.IsHyperThreading.IsUnknown() {
+		createModel.SetIsHyperThreading(plan.IsHyperThreading.ValueBool())
+	}
+	if labels != nil {
+		createModel.SetLabels(labels)
+	}
+	if taints != nil {
+		createModel.SetTaints(taints)
+	}
+	// pass user security groups only on create to avoid mixing with defaults
+	if userSGs != nil {
+		createModel.SetSecurityGroups(userSGs)
+	}
+
+	reqBody := kubernetesengine.CreateK8sClusterNodePoolRequestModel{NodePool: *createModel}
+
+	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
+		return r.kc.ApiClient.NodePoolsAPI.
+			CreateNodePool(ctx, plan.ClusterName.ValueString()).
+			XAuthToken(r.kc.XAuthToken).
+			CreateK8sClusterNodePoolRequestModel(reqBody).
+			Execute()
+	})
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "CreateNodePool", err, &resp.Diagnostics)
+		return
+	}
+
+	// --- Polling for status ---
+	plan.Id = types.StringValue(plan.ClusterName.ValueString() + "/" + plan.Name.ValueString())
+	result, ok := r.waitNodePoolReadyOrFailed(
+		ctx,
+		plan.ClusterName.ValueString(),
+		plan.Name.ValueString(),
+		&resp.Diagnostics,
+	)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	// --- If autoscaling provided, apply it now via Scaling API and wait again ---
+	if autoscalingProvided {
+		// Validate at least is_autoscaler_enable presence
+		if autoscalingModel.IsAutoscalerEnable.IsUnknown() || autoscalingModel.IsAutoscalerEnable.IsNull() {
+			resp.Diagnostics.AddError("Invalid autoscaling configuration on create", "'autoscaling.is_autoscaler_enable' must be set when configuring autoscaling during create.")
+			return
+		}
+		scaling := kubernetesengine.NewNodePoolScalingResourceRequestModel(autoscalingModel.IsAutoscalerEnable.ValueBool())
+		if !autoscalingModel.AutoscalerDesiredNodeCount.IsUnknown() {
+			if autoscalingModel.AutoscalerDesiredNodeCount.IsNull() {
+				scaling.SetAutoscalerDesiredNodeCountNil()
+			} else {
+				scaling.SetAutoscalerDesiredNodeCount(autoscalingModel.AutoscalerDesiredNodeCount.ValueInt32())
+			}
+		}
+		if !autoscalingModel.AutoscalerMaxNodeCount.IsUnknown() {
+			if autoscalingModel.AutoscalerMaxNodeCount.IsNull() {
+				scaling.SetAutoscalerMaxNodeCountNil()
+			} else {
+				scaling.SetAutoscalerMaxNodeCount(autoscalingModel.AutoscalerMaxNodeCount.ValueInt32())
+			}
+		}
+		if !autoscalingModel.AutoscalerMinNodeCount.IsUnknown() {
+			if autoscalingModel.AutoscalerMinNodeCount.IsNull() {
+				scaling.SetAutoscalerMinNodeCountNil()
+			} else {
+				scaling.SetAutoscalerMinNodeCount(autoscalingModel.AutoscalerMinNodeCount.ValueInt32())
+			}
+		}
+		if !autoscalingModel.AutoscalerScaleDownThreshold.IsUnknown() {
+			if autoscalingModel.AutoscalerScaleDownThreshold.IsNull() {
+				scaling.SetAutoscalerScaleDownThresholdNil()
+			} else {
+				scaling.SetAutoscalerScaleDownThreshold(autoscalingModel.AutoscalerScaleDownThreshold.ValueFloat32())
+			}
+		}
+		if !autoscalingModel.AutoscalerScaleDownUnneededTime.IsUnknown() {
+			if autoscalingModel.AutoscalerScaleDownUnneededTime.IsNull() {
+				scaling.SetAutoscalerScaleDownUnneededTimeNil()
+			} else {
+				scaling.SetAutoscalerScaleDownUnneededTime(autoscalingModel.AutoscalerScaleDownUnneededTime.ValueInt32())
+			}
+		}
+		if !autoscalingModel.AutoscalerScaleDownUnreadyTime.IsUnknown() {
+			if autoscalingModel.AutoscalerScaleDownUnreadyTime.IsNull() {
+				scaling.SetAutoscalerScaleDownUnreadyTimeNil()
+			} else {
+				scaling.SetAutoscalerScaleDownUnreadyTime(autoscalingModel.AutoscalerScaleDownUnreadyTime.ValueInt32())
+			}
+		}
+		updBody := kubernetesengine.NewUpdateKubernetesEngineClusterNodePoolScalingResourceRequestModel(*scaling)
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
+			return r.kc.ApiClient.ScalingAPI.
+				SetNodePoolResourceBasedAutoScaling(ctx, plan.ClusterName.ValueString(), plan.Name.ValueString()).
+				XAuthToken(r.kc.XAuthToken).
+				UpdateKubernetesEngineClusterNodePoolScalingResourceRequestModel(*updBody).
+				Execute()
+		})
+		if err != nil {
+			common.AddApiActionError(ctx, r, httpResp, "SetNodePoolResourceBasedAutoScaling", err, &resp.Diagnostics)
+			return
+		}
+		_, ok2 := r.waitNodePoolReadyOrFailed(ctx, plan.ClusterName.ValueString(), plan.Name.ValueString(), &resp.Diagnostics)
+		if !ok2 || resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
+	// Refresh latest node pool after potential autoscaling update (mandatory when autoscaling provided)
+	finalDetail, httpResp2, err2 := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		func() (struct {
+			NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+		}, *http.Response, error) {
+			apiResp, hr, err := r.kc.ApiClient.NodePoolsAPI.
+				GetNodePool(ctx, plan.ClusterName.ValueString(), plan.Name.ValueString()).
+				XAuthToken(r.kc.XAuthToken).
+				Execute()
+			if err != nil {
+				return struct {
+					NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+				}{}, hr, err
+			}
+			return struct {
+				NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+			}{NodePool: apiResp.NodePool}, hr, nil
+		},
+	)
+	if err2 != nil {
+		common.AddApiActionError(ctx, r, httpResp2, "GetNodePool", err2, &resp.Diagnostics)
+		return
+	}
+	res := finalDetail.NodePool
+	result = &res
+
+	// --- Map API response to plan ---
+	var planUserSGs []string
+	if !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown() {
+		_ = plan.SecurityGroups.ElementsAs(ctx, &planUserSGs, false)
+	}
+	_ = mapNodePoolFromResponse(ctx, &plan.NodePoolBaseModel, result, &resp.Diagnostics, planUserSGs)
+
+	if result.VpcInfo.Subnets != nil {
+		subnetObjs := make([]attr.Value, 0, len(result.VpcInfo.Subnets))
+		for _, s := range result.VpcInfo.Subnets {
+			obj, _ := types.ObjectValue(
+				subnetAttrTypes,
+				map[string]attr.Value{
+					"id":                types.StringValue(s.Id),
+					"availability_zone": types.StringValue(string(s.AvailabilityZone)),
+					"cidr_block":        types.StringValue(s.CidrBlock),
+				},
+			)
+			subnetObjs = append(subnetObjs, obj)
+		}
+
+		subnetSet, _ := types.SetValue(types.ObjectType{AttrTypes: subnetAttrTypes}, subnetObjs)
+
+		plan.VpcInfo, _ = types.ObjectValue(
+			map[string]attr.Type{
+				"id":      types.StringType,
+				"subnets": types.SetType{ElemType: types.ObjectType{AttrTypes: subnetAttrTypes}},
+			},
+			map[string]attr.Value{
+				"id":      types.StringValue(result.VpcInfo.Id),
+				"subnets": subnetSet,
+			},
+		)
+	}
+
+	// --- Save state ---
+	diags = resp.State.Set(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+}
+
+func (r *nodePoolResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state NodePoolResourceModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	timeout, diags := state.Timeouts.Read(ctx, common.DefaultReadTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	detail, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		func() (struct {
+			NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+		}, *http.Response, error) {
+			apiResp, httpResp, err := r.kc.ApiClient.NodePoolsAPI.
+				GetNodePool(ctx, state.ClusterName.ValueString(), state.Name.ValueString()).
+				XAuthToken(r.kc.XAuthToken).
+				Execute()
+			if err != nil {
+				return struct {
+					NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+				}{}, httpResp, err
+			}
+			return struct {
+				NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+			}{NodePool: apiResp.NodePool}, httpResp, nil
+		},
+	)
+	if httpResp != nil && httpResp.StatusCode == 404 {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "GetNodePool", err, &resp.Diagnostics)
+		return
+	}
+
+	result := detail.NodePool
+	var stateUserSGs []string
+	if !state.SecurityGroups.IsNull() && !state.SecurityGroups.IsUnknown() {
+		_ = state.SecurityGroups.ElementsAs(ctx, &stateUserSGs, false)
+	}
+	_ = mapNodePoolFromResponse(ctx, &state.NodePoolBaseModel, &result, &resp.Diagnostics, stateUserSGs)
+
+	diags = resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+}
+
+func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state NodePoolResourceModel
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// --- Timeout setup ---
+	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	// --- Immutable fields check ---
+	var immutableChanges []string
+	if !plan.ClusterName.Equal(state.ClusterName) {
+		immutableChanges = append(immutableChanges, "cluster_name")
+	}
+	if !plan.Name.Equal(state.Name) {
+		immutableChanges = append(immutableChanges, "name")
+	}
+	if !plan.FlavorId.Equal(state.FlavorId) {
+		immutableChanges = append(immutableChanges, "flavor_id")
+	}
+	if !plan.VolumeSize.Equal(state.VolumeSize) {
+		immutableChanges = append(immutableChanges, "volume_size")
+	}
+	if !plan.SshKeyName.Equal(state.SshKeyName) {
+		immutableChanges = append(immutableChanges, "ssh_key_name")
+	}
+	if !plan.ImageId.Equal(state.ImageId) {
+		immutableChanges = append(immutableChanges, "image_id")
+	}
+	if !plan.IsHyperThreading.Equal(state.IsHyperThreading) {
+		immutableChanges = append(immutableChanges, "is_hyper_threading")
+	}
+	if !plan.Taints.Equal(state.Taints) {
+		immutableChanges = append(immutableChanges, "taints")
+	}
+	if !plan.VpcInfo.Equal(state.VpcInfo) {
+		immutableChanges = append(immutableChanges, "vpc_info")
+	}
+
+	if len(immutableChanges) > 0 {
+		resp.Diagnostics.AddError(
+			"Immutable field update attempted",
+			fmt.Sprintf(
+				"The following fields cannot be updated in-place and require resource replacement: %v",
+				immutableChanges,
+			),
+		)
+		return
+	}
+
+	// --- Build update model for mutable fields ---
+	upd := kubernetesengine.NewKubernetesEngineV1ApiUpdateNodePoolModelNodePoolRequestModel()
+
+	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
+		upd.SetDescription(plan.Description.ValueString())
+	}
+
+	// node_count is only mutable when autoscaling is disabled
+	// We'll set this below after we determine effective autoscaling state.
+
+	var userSGs []string
+	if !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown() {
+		_ = plan.SecurityGroups.ElementsAs(ctx, &userSGs, false)
+		if userSGs != nil {
+			upd.SetSecurityGroups(userSGs)
+		}
+	}
+
+	// --- Compute label changes and call labels API if needed ---
+	// Build maps from state and plan
+	planLabels := map[string]string{}
+	stateLabels := map[string]string{}
+
+	if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
+		var pl []NodePoolLabelModel
+		if err := plan.Labels.ElementsAs(ctx, &pl, false); err != nil {
+			resp.Diagnostics.AddError(
+				"Invalid Plan Labels",
+				fmt.Sprintf("Failed to parse labels from plan: %s", err),
+			)
+			return
+		}
+		for _, l := range pl {
+			planLabels[l.Key.ValueString()] = l.Value.ValueString()
+		}
+	}
+
+	if !state.Labels.IsNull() && !state.Labels.IsUnknown() {
+		var sl []NodePoolLabelModel
+		if err := state.Labels.ElementsAs(ctx, &sl, false); err != nil {
+			resp.Diagnostics.AddError(
+				"Invalid State Labels",
+				fmt.Sprintf("Failed to parse labels from state: %s", err),
+			)
+			return
+		}
+		for _, l := range sl {
+			stateLabels[l.Key.ValueString()] = l.Value.ValueString()
+		}
+	}
+
+	addOrUpdate := make([]kubernetesengine.LabelRequestModel, 0)
+	removeKeys := make([]string, 0)
+	// additions/updates
+	for k, v := range planLabels {
+		if sv, ok := stateLabels[k]; !ok || sv != v {
+			addOrUpdate = append(addOrUpdate, *kubernetesengine.NewLabelRequestModel(k, v))
+		}
+	}
+	// removals
+	for k := range stateLabels {
+		if _, ok := planLabels[k]; !ok {
+			removeKeys = append(removeKeys, k)
+		}
+	}
+	if len(addOrUpdate) > 0 || len(removeKeys) > 0 {
+		labelsReq := kubernetesengine.NewNodeLabelsRequestModel()
+		if len(addOrUpdate) > 0 {
+			labelsReq.SetAddOrUpdateLabels(addOrUpdate)
+		}
+		if len(removeKeys) > 0 {
+			labelsReq.SetRemoveLabelKeys(removeKeys)
+		}
+		body := kubernetesengine.NewUpdateK8sClusterNodePoolNodeLabelsRequestModel(*labelsReq)
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
+			return r.kc.ApiClient.NodePoolsAPI.
+				SetNodePoolNodeLabel(ctx, plan.ClusterName.ValueString(), state.Name.ValueString()).
+				XAuthToken(r.kc.XAuthToken).
+				UpdateK8sClusterNodePoolNodeLabelsRequestModel(*body).
+				Execute()
+		})
+		if err != nil {
+			common.AddApiActionError(ctx, r, httpResp, "SetNodePoolNodeLabel", err, &resp.Diagnostics)
+			return
+		}
+
+		_, _ = r.waitNodePoolReadyOrFailed(
+			ctx,
+			plan.ClusterName.ValueString(),
+			state.Name.ValueString(),
+			&resp.Diagnostics,
+		)
+	}
+
+	// Determine effective autoscaling enabled status after this update
+	effectiveAutoscalingEnabled := false
+	// read from state first
+	if !state.Autoscaling.IsNull() && !state.Autoscaling.IsUnknown() {
+		var stAuto NodePoolAutoscalingModel
+		_ = state.Autoscaling.As(ctx, &stAuto, basetypes.ObjectAsOptions{})
+		if !stAuto.IsAutoscalerEnable.IsNull() && !stAuto.IsAutoscalerEnable.IsUnknown() {
+			effectiveAutoscalingEnabled = stAuto.IsAutoscalerEnable.ValueBool()
+		}
+	}
+	// override with plan if provided
+	if !plan.Autoscaling.IsNull() && !plan.Autoscaling.IsUnknown() {
+		var plAuto NodePoolAutoscalingModel
+		_ = plan.Autoscaling.As(ctx, &plAuto, basetypes.ObjectAsOptions{})
+		if !plAuto.IsAutoscalerEnable.IsNull() && !plAuto.IsAutoscalerEnable.IsUnknown() {
+			effectiveAutoscalingEnabled = plAuto.IsAutoscalerEnable.ValueBool()
+		}
+	}
+
+	// node_count handling based on autoscaling
+	didSetCount := false
+	if effectiveAutoscalingEnabled {
+		// In update (non-create), node_count is read-only; but allow during create
+		if !req.State.Raw.IsNull() { // non-create
+			if !plan.NodeCount.IsNull() && !plan.NodeCount.IsUnknown() {
+				// if different from state or state unknown, reject
+				if state.NodeCount.IsNull() || state.NodeCount.IsUnknown() || plan.NodeCount.ValueInt32() != state.NodeCount.ValueInt32() {
+					resp.Diagnostics.AddAttributeError(
+						path.Root("node_count"),
+						"node_count is read-only when autoscaling is enabled",
+						"Disable autoscaling to modify node_count.",
+					)
+					return
+				}
+			}
+		}
+	} else {
+		if !plan.NodeCount.IsNull() && !plan.NodeCount.IsUnknown() {
+			upd.SetNodeCount(plan.NodeCount.ValueInt32())
+			didSetCount = true
+		}
+	}
+
+	// --- Send UpdateNodePool for basic mutable fields if any were set ---
+	didSetDesc := !plan.Description.IsNull() && !plan.Description.IsUnknown()
+	didSetSG := !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown()
+	if didSetDesc || didSetCount || didSetSG {
+		reqBody := kubernetesengine.UpdateK8sClusterNodePoolRequestModel{NodePool: *upd}
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
+			return r.kc.ApiClient.NodePoolsAPI.
+				UpdateNodePool(ctx, plan.ClusterName.ValueString(), state.Name.ValueString()).
+				XAuthToken(r.kc.XAuthToken).
+				UpdateK8sClusterNodePoolRequestModel(reqBody).
+				Execute()
+		})
+		if err != nil {
+			common.AddApiActionError(ctx, r, httpResp, "UpdateNodePool", err, &resp.Diagnostics)
+			return
+		}
+
+		_, _ = r.waitNodePoolReadyOrFailed(
+			ctx,
+			plan.ClusterName.ValueString(),
+			state.Name.ValueString(),
+			&resp.Diagnostics,
+		)
+	}
+
+	// --- Autoscaling update (separate ScalingAPI) ---
+	if !plan.Autoscaling.IsNull() && !plan.Autoscaling.IsUnknown() {
+		var auto NodePoolAutoscalingModel
+		_ = plan.Autoscaling.As(ctx, &auto, basetypes.ObjectAsOptions{})
+
+		// Require is_autoscaler_enable when autoscaling block is provided
+		if auto.IsAutoscalerEnable.IsUnknown() || auto.IsAutoscalerEnable.IsNull() {
+			resp.Diagnostics.AddError("Invalid autoscaling configuration", "'autoscaling.is_autoscaler_enable' must be set when configuring autoscaling.")
+			return
+		}
+
+		scaling := kubernetesengine.NewNodePoolScalingResourceRequestModel(auto.IsAutoscalerEnable.ValueBool())
+		// Optional numeric fields: set if known; set Nil if explicitly null
+		if !auto.AutoscalerDesiredNodeCount.IsUnknown() {
+			if auto.AutoscalerDesiredNodeCount.IsNull() {
+				scaling.SetAutoscalerDesiredNodeCountNil()
+			} else {
+				scaling.SetAutoscalerDesiredNodeCount(auto.AutoscalerDesiredNodeCount.ValueInt32())
+			}
+		}
+		if !auto.AutoscalerMaxNodeCount.IsUnknown() {
+			if auto.AutoscalerMaxNodeCount.IsNull() {
+				scaling.SetAutoscalerMaxNodeCountNil()
+			} else {
+				scaling.SetAutoscalerMaxNodeCount(auto.AutoscalerMaxNodeCount.ValueInt32())
+			}
+		}
+		if !auto.AutoscalerMinNodeCount.IsUnknown() {
+			if auto.AutoscalerMinNodeCount.IsNull() {
+				scaling.SetAutoscalerMinNodeCountNil()
+			} else {
+				scaling.SetAutoscalerMinNodeCount(auto.AutoscalerMinNodeCount.ValueInt32())
+			}
+		}
+		if !auto.AutoscalerScaleDownThreshold.IsUnknown() {
+			if auto.AutoscalerScaleDownThreshold.IsNull() {
+				scaling.SetAutoscalerScaleDownThresholdNil()
+			} else {
+				scaling.SetAutoscalerScaleDownThreshold(auto.AutoscalerScaleDownThreshold.ValueFloat32())
+			}
+		}
+		if !auto.AutoscalerScaleDownUnneededTime.IsUnknown() {
+			if auto.AutoscalerScaleDownUnneededTime.IsNull() {
+				scaling.SetAutoscalerScaleDownUnneededTimeNil()
+			} else {
+				scaling.SetAutoscalerScaleDownUnneededTime(auto.AutoscalerScaleDownUnneededTime.ValueInt32())
+			}
+		}
+		if !auto.AutoscalerScaleDownUnreadyTime.IsUnknown() {
+			if auto.AutoscalerScaleDownUnreadyTime.IsNull() {
+				scaling.SetAutoscalerScaleDownUnreadyTimeNil()
+			} else {
+				scaling.SetAutoscalerScaleDownUnreadyTime(auto.AutoscalerScaleDownUnreadyTime.ValueInt32())
+			}
+		}
+
+		updBody := kubernetesengine.NewUpdateKubernetesEngineClusterNodePoolScalingResourceRequestModel(*scaling)
+
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
+			return r.kc.ApiClient.ScalingAPI.
+				SetNodePoolResourceBasedAutoScaling(ctx, plan.ClusterName.ValueString(), state.Name.ValueString()).
+				XAuthToken(r.kc.XAuthToken).
+				UpdateKubernetesEngineClusterNodePoolScalingResourceRequestModel(*updBody).
+				Execute()
+		})
+		if err != nil {
+			common.AddApiActionError(ctx, r, httpResp, "SetNodePoolResourceBasedAutoScaling", err, &resp.Diagnostics)
+			return
+		}
+
+		_, _ = r.waitNodePoolReadyOrFailed(
+			ctx,
+			plan.ClusterName.ValueString(),
+			state.Name.ValueString(),
+			&resp.Diagnostics,
+		)
+	}
+
+	// --- Refresh state ---
+	finalResp, httpResp2, err2 := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		func() (struct {
+			NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+		}, *http.Response, error) {
+			apiResp, httpResp, err := r.kc.ApiClient.NodePoolsAPI.
+				GetNodePool(ctx, plan.ClusterName.ValueString(), state.Name.ValueString()).
+				XAuthToken(r.kc.XAuthToken).
+				Execute()
+			if err != nil {
+				return struct {
+					NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+				}{}, httpResp, err
+			}
+			return struct {
+				NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+			}{NodePool: apiResp.NodePool}, httpResp, nil
+		},
+	)
+	if err2 != nil {
+		common.AddApiActionError(ctx, r, httpResp2, "GetNodePool", err2, &resp.Diagnostics)
+		return
+	}
+
+	latest := finalResp.NodePool
+
+	// Map latest API response to state
+	newState := state
+	_ = mapNodePoolFromResponse(ctx, &newState.NodePoolBaseModel, &latest, &resp.Diagnostics, userSGs)
+
+	// Ensure ID remains cluster/name format
+	if newState.Id.IsNull() || newState.Id.ValueString() == "" {
+		newState.Id = types.StringValue(plan.ClusterName.ValueString() + "/" + state.Name.ValueString())
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
+}
+
+func (r *nodePoolResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state NodePoolResourceModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		func() (interface{}, *http.Response, error) {
+			httpResp, err := r.kc.ApiClient.NodePoolsAPI.DeleteNodePool(ctx, state.ClusterName.ValueString(), state.Name.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
+			return nil, httpResp, err
+		},
+	)
+	if err != nil {
+		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+			return
+		}
+		common.AddApiActionError(ctx, r, httpResp, "DeleteNodePool", err, &resp.Diagnostics)
+		return
+	}
+
+	// Poll until 404
+	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+			func() (interface{}, *http.Response, error) {
+				_, hr, err := r.kc.ApiClient.NodePoolsAPI.
+					GetNodePool(ctx, state.ClusterName.ValueString(), state.Name.ValueString()).
+					XAuthToken(r.kc.XAuthToken).
+					Execute()
+				return nil, hr, err
+			},
+		)
+		if httpResp != nil && httpResp.StatusCode == 404 {
+			return true, httpResp, nil
+		}
+		return false, httpResp, err
+	})
+}
+
+func (r *nodePoolResource) ValidateConfig(
+	ctx context.Context,
+	req resource.ValidateConfigRequest,
+	resp *resource.ValidateConfigResponse,
+) {
+	var config NodePoolResourceModel
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+}
+
+func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// When destroying (resource removed from configuration), plan is null. Do not attempt to read or modify it.
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	isCreate := req.State.Raw.IsNull()
+
+	var config NodePoolResourceModel
+	d := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(d...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var state NodePoolResourceModel
+	if !isCreate {
+		_ = req.State.Get(ctx, &state)
+	}
+	effectiveAutoscaling := false
+
+	if !config.Autoscaling.IsNull() && !config.Autoscaling.IsUnknown() {
+		var cfAuto NodePoolAutoscalingModel
+		_ = config.Autoscaling.As(ctx, &cfAuto, basetypes.ObjectAsOptions{})
+		if !cfAuto.IsAutoscalerEnable.IsNull() && !cfAuto.IsAutoscalerEnable.IsUnknown() {
+			effectiveAutoscaling = cfAuto.IsAutoscalerEnable.ValueBool()
+		}
+	} else if !isCreate && !state.Autoscaling.IsNull() && !state.Autoscaling.IsUnknown() {
+		var stAuto NodePoolAutoscalingModel
+		_ = state.Autoscaling.As(ctx, &stAuto, basetypes.ObjectAsOptions{})
+		if !stAuto.IsAutoscalerEnable.IsNull() && !stAuto.IsAutoscalerEnable.IsUnknown() {
+			effectiveAutoscaling = stAuto.IsAutoscalerEnable.ValueBool()
+		}
+	}
+
+	if effectiveAutoscaling {
+		// Enforce node_count omission for both create and update when autoscaling is enabled
+		if !config.NodeCount.IsNull() && !config.NodeCount.IsUnknown() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("node_count"),
+				"node_count must be omitted when autoscaling is enabled",
+				"Autoscaling is enabled (either in current state or this plan). The autoscaler manages the actual node count. Remove 'node_count' from configuration or disable autoscaling to manage a fixed node count.",
+			)
+			return
+		}
+		// Mark as unknown so Terraform expects the provider to compute it during create/apply
+		resp.Plan.SetAttribute(ctx, path.Root("node_count"), types.Int32Unknown())
+	} else {
+		prevAutoEnabled := false
+		if !isCreate && !state.Autoscaling.IsNull() && !state.Autoscaling.IsUnknown() {
+			var stAuto NodePoolAutoscalingModel
+			_ = state.Autoscaling.As(ctx, &stAuto, basetypes.ObjectAsOptions{})
+			if !stAuto.IsAutoscalerEnable.IsNull() && !stAuto.IsAutoscalerEnable.IsUnknown() {
+				prevAutoEnabled = stAuto.IsAutoscalerEnable.ValueBool()
+			}
+		}
+
+		if prevAutoEnabled && (config.NodeCount.IsNull() || config.NodeCount.IsUnknown()) {
+			resp.Plan.SetAttribute(ctx, path.Root("node_count"), types.Int32Unknown())
+		}
+	}
+}
+
+// --- Poll until node pool is in a stable state ---
+func (r *nodePoolResource) waitNodePoolReadyOrFailed(
+	ctx context.Context,
+	clusterName string,
+	nodePoolName string,
+	diagnostics *diag.Diagnostics,
+) (*kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel, bool) {
+	result, ok := common.PollUntilResult(
+		ctx,
+		r,
+		2*time.Second,
+		[]string{
+			string(kubernetesengine.NODEPOOLSTATUS_RUNNING),
+			string(kubernetesengine.NODEPOOLSTATUS_FAILED),
+		},
+		diagnostics,
+		func(ctx context.Context) (*kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel, *http.Response, error) {
+			model, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diagnostics,
+				func() (struct {
+					NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+				}, *http.Response, error) {
+					apiResp, hr, err := r.kc.ApiClient.NodePoolsAPI.
+						GetNodePool(ctx, clusterName, nodePoolName).
+						XAuthToken(r.kc.XAuthToken).
+						Execute()
+					if err != nil {
+						return struct {
+							NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+						}{}, hr, err
+					}
+					return struct {
+						NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+					}{NodePool: apiResp.NodePool}, hr, nil
+				},
+			)
+			if err != nil {
+				return nil, httpResp, err
+			}
+			return &model.NodePool, httpResp, nil
+		},
+		func(v *kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel) string {
+			return string(v.Status.Phase)
+		},
+	)
+	return result, ok
+}
