@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package network
 
 const (
@@ -9,7 +8,6 @@ const (
 	PublicIpAttaching = "attaching"
 )
 
-// Security group status constants
 const (
 	SecurityGroupAvailable = "ACTIVE"
 	SecurityGroupCreating  = "CREATING"

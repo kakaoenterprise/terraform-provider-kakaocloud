@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -64,8 +63,6 @@ func getLoadBalancerSecretBaseSchema() map[string]dschema.Attribute {
 	}
 }
 
-// loadBalancerSecretContentTypeSchemaAttributes defines the attributes for a single content type.
 var loadBalancerSecretContentTypeSchemaAttributes = getLoadBalancerSecretContentTypeSchema()
 
-// loadBalancerSecretBaseSchemaAttributes defines the attributes for a single load balancer secret.
 var loadBalancerSecretBaseSchemaAttributes = getLoadBalancerSecretBaseSchema()

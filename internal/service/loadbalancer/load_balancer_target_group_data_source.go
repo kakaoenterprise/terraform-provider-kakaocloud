@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -16,7 +15,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &loadBalancerTargetGroupDataSource{}
 	_ datasource.DataSourceWithConfigure = &loadBalancerTargetGroupDataSource{}
@@ -78,8 +76,6 @@ func (d *loadBalancerTargetGroupDataSource) Read(ctx context.Context, req dataso
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Get target group
-
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (*loadbalancer.TargetGroupResponseModel, *http.Response, error) {
 			return d.kc.ApiClient.LoadBalancerTargetGroupAPI.GetTargetGroup(ctx, data.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
@@ -99,13 +95,11 @@ func (d *loadBalancerTargetGroupDataSource) Read(ctx context.Context, req dataso
 		return
 	}
 
-	// Map API response to data source model - now using single object response
 	ok := mapLoadBalancerTargetGroupSingleFromGetResponse(ctx, &data.loadBalancerTargetGroupBaseModel, &respModel.TargetGroup, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Set the data
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }

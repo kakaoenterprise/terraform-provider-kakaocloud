@@ -3,12 +3,18 @@
 page_title: "kakaocloud_vpc Resource - kakaocloud"
 subcategory: ""
 description: |-
-  Represents a vpc resource.
+  The kakaocloud_vpc resource allows you to create and manage Virtual Private Clouds (VPCs) in KakaoCloud.
+  A VPC defines an isolated network environment with its own IPv4 CIDR block, subnets, route tables, and internet gateway (IGW).
+  You can specify the CIDR block and name, attach subnets, and manage lifecycle operations such as creation and deletion.
+  This resource also provides metadata about default route tables, DNS support, and provisioning status.
 ---
 
 # kakaocloud_vpc (Resource)
 
-Represents a vpc resource.
+The `kakaocloud_vpc` resource allows you to create and manage Virtual Private Clouds (VPCs) in KakaoCloud.
+A VPC defines an isolated network environment with its own IPv4 CIDR block, subnets, route tables, and internet gateway (IGW).
+You can specify the CIDR block and name, attach subnets, and manage lifecycle operations such as creation and deletion.
+This resource also provides metadata about default route tables, DNS support, and provisioning status.
 
 
 

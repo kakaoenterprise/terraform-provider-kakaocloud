@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package kubernetesengine
 
 import (
@@ -411,7 +410,7 @@ func getNodePoolResourceSchema() map[string]rschema.Attribute {
 			PlanModifiers: []planmodifier.Object{objectplanmodifier.RequiresReplace()},
 			Attributes:    getNodePoolVpcInfoResourceSchemaAttributes(),
 		},
-		// Computed fields (read-only)
+
 		"created_at": rschema.StringAttribute{
 			Computed:      true,
 			Description:   desc.String("created_at"),

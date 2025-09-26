@@ -3,12 +3,20 @@
 page_title: "kakaocloud_load_balancer_l7_policy_rule Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Use this data source to get information about a specific KakaoCloud Load Balancer L7 Policy Rule.
+  The kakaocloud_load_balancer_l7_policy_rule data source retrieves details about a specific rule within a KakaoCloud Load Balancer L7 Policy.
+  It returns attributes such as the rule type, comparison method, key/value conditions, inversion flag, and current provisioning/operating status.
+  Use this data source when you need to:- Reference an existing L7 policy rule in your Terraform configuration by its ID.
+  Dynamically obtain rule attributes (e.g., type, key/value, compare type) without hardcoding them.Validate that an L7 policy rule is correctly configured before applying or updating listener policies.
 ---
 
 # kakaocloud_load_balancer_l7_policy_rule (Data Source)
 
-Use this data source to get information about a specific KakaoCloud Load Balancer L7 Policy Rule.
+The `kakaocloud_load_balancer_l7_policy_rule` data source retrieves details about a specific rule within a KakaoCloud Load Balancer L7 Policy.
+It returns attributes such as the rule type, comparison method, key/value conditions, inversion flag, and current provisioning/operating status.
+
+Use this data source when you need to:- Reference an existing L7 policy rule in your Terraform configuration by its ID.
+- Dynamically obtain rule attributes (e.g., type, key/value, compare type) without hardcoding them.
+- Validate that an L7 policy rule is correctly configured before applying or updating listener policies.
 
 ## Example Usage
 
@@ -16,27 +24,15 @@ Use this data source to get information about a specific KakaoCloud Load Balance
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-# Example: Read a specific L7 policy rule
+# Get a specific L7 policy rule by ID
 data "kakaocloud_load_balancer_l7_policy_rule" "example" {
-  id           = "8a7a1ca5-c687-4a9a-999b-a169ee248ade" # Replace with your L7 policy rule ID
-  l7_policy_id = "2415269a-7142-455a-a7c8-9082dd146c57" # Replace with your L7 policy ID
+  id           = "your-l7-policy-rule-id-here" # Replace with your L7 policy rule ID
+  l7_policy_id = "your-l7-policy-id-here"      # Replace with your L7 policy ID
 }
 
-# Output the L7 policy rule details
-output "l7_policy_rule_details" {
-  description = "Details of the L7 policy rule"
-  value = {
-    id                  = data.kakaocloud_load_balancer_l7_policy_rule.example.id
-    l7_policy_id        = data.kakaocloud_load_balancer_l7_policy_rule.example.l7_policy_id
-    type                = data.kakaocloud_load_balancer_l7_policy_rule.example.type
-    compare_type        = data.kakaocloud_load_balancer_l7_policy_rule.example.compare_type
-    key                 = data.kakaocloud_load_balancer_l7_policy_rule.example.key
-    value               = data.kakaocloud_load_balancer_l7_policy_rule.example.value
-    is_inverted         = data.kakaocloud_load_balancer_l7_policy_rule.example.is_inverted
-    provisioning_status = data.kakaocloud_load_balancer_l7_policy_rule.example.provisioning_status
-    operating_status    = data.kakaocloud_load_balancer_l7_policy_rule.example.operating_status
-    project_id          = data.kakaocloud_load_balancer_l7_policy_rule.example.project_id
-  }
+# Output the L7 policy rule
+output "l7_policy_rule" {
+  value = data.kakaocloud_load_balancer_l7_policy_rule.example
 }
 ```
 

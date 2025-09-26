@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package kubernetesengine
 
 import (
@@ -118,7 +117,6 @@ func mapKubeconfigYAMLToModel(
 	out.Kind = types.StringValue(kc.Kind)
 	out.CurrentContext = types.StringValue(kc.CurrentContext)
 
-	// preferences: map[string]string → types.Map(string)
 	if len(kc.Preferences) == 0 {
 		out.Preferences = types.MapNull(types.StringType)
 	} else {
@@ -130,7 +128,6 @@ func mapKubeconfigYAMLToModel(
 		out.Preferences = mv
 	}
 
-	// clusters
 	out.Clusters = make([]kcfgClusterEntry, 0, len(kc.Clusters))
 	for _, c := range kc.Clusters {
 		out.Clusters = append(out.Clusters, kcfgClusterEntry{
@@ -142,7 +139,6 @@ func mapKubeconfigYAMLToModel(
 		})
 	}
 
-	// contexts
 	out.Contexts = make([]kcfgContextEntry, 0, len(kc.Contexts))
 	for _, cx := range kc.Contexts {
 		out.Contexts = append(out.Contexts, kcfgContextEntry{
@@ -154,7 +150,6 @@ func mapKubeconfigYAMLToModel(
 		})
 	}
 
-	// users
 	out.Users = make([]kcfgUserEntry, 0, len(kc.Users))
 	for _, u := range kc.Users {
 		var exec *kcfgExec

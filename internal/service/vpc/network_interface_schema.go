@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package vpc
 
 import (
@@ -98,9 +97,7 @@ var networkInterfaceResourceSchema = map[string]rschema.Attribute{
 	"allowed_address_pairs": rschema.SetNestedAttribute{
 		Optional: true,
 		Computed: true,
-		//PlanModifiers: []planmodifier.Set{
-		//	setplanmodifier.UseStateForUnknown(),
-		//},
+
 		NestedObject: rschema.NestedAttributeObject{
 			Attributes: map[string]rschema.Attribute{
 				"mac_address": rschema.StringAttribute{

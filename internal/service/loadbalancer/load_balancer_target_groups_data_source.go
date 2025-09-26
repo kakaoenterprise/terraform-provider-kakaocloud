@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -15,7 +14,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &loadBalancerTargetGroupsDataSource{}
 	_ datasource.DataSourceWithConfigure = &loadBalancerTargetGroupsDataSource{}
@@ -94,10 +92,8 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Initialize the API call
 	targetGroupApi := d.kc.ApiClient.LoadBalancerTargetGroupAPI.ListTargetGroups(ctx)
 
-	// Apply filters
 	for _, f := range data.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
 			continue
@@ -170,8 +166,6 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 		return
 	}
 
-	// List target groups
-	// Execute the API call with filters applied
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (*loadbalancer.TargetGroupListModel, *http.Response, error) {
 			return targetGroupApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
@@ -183,7 +177,6 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 		return
 	}
 
-	// Map API response to data source model directly from List API response
 	for _, v := range respModel.TargetGroups {
 		var tmpTargetGroup loadBalancerTargetGroupBaseModel
 		ok := mapLoadBalancerTargetGroupSingleFromListResponse(ctx, &tmpTargetGroup, &v, &resp.Diagnostics)
@@ -194,7 +187,6 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 		data.TargetGroups = append(data.TargetGroups, tmpTargetGroup)
 	}
 
-	// Set the data
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }

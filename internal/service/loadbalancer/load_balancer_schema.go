@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -79,7 +78,6 @@ func getLoadBalancerResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 
-		// Computed Attributes
 		"type": rschema.StringAttribute{
 			Computed:    true,
 			Description: getDesc.String("type"),
@@ -261,8 +259,6 @@ func getLoadBalancerDataSourceSchema() map[string]dschema.Attribute {
 	}
 }
 
-// loadBalancerResourceSchemaAttributes defines the resource schema for the load balancer.
 var loadBalancerResourceSchemaAttributes = getLoadBalancerResourceSchema()
 
-// loadBalancerDataSourceSchemaAttributes defines the computed attributes for the load balancer data source.
 var loadBalancerDataSourceSchemaAttributes = getLoadBalancerDataSourceSchema()

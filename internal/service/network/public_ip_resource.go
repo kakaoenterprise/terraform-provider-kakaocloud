@@ -1,20 +1,18 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package network
 
 import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -61,6 +59,7 @@ func (r *publicIpResource) Metadata(ctx context.Context, req resource.MetadataRe
 
 func (r *publicIpResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: docs.GetResourceDescription("PublicIp"),
 		Attributes: utils.MergeAttributes[schema.Attribute](
 			publicIpResourceSchema,
 			map[string]schema.Attribute{
@@ -248,7 +247,7 @@ func (r *publicIpResource) Update(ctx context.Context, req resource.UpdateReques
 		editReq.SetDescription(plan.Description.ValueString())
 
 		body := *network.NewBodyUpdatePublicIp(editReq)
-		respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (*network.BnsNetworkV1ApiUpdatePublicIpModelResponsePublicIpModel, *http.Response, error) {
 				return r.kc.ApiClient.PublicIPAPI.
 					UpdatePublicIp(ctx, plan.Id.ValueString()).
@@ -261,11 +260,16 @@ func (r *publicIpResource) Update(ctx context.Context, req resource.UpdateReques
 			common.AddApiActionError(ctx, r, httpResp, "UpdatePublicIp", err, &resp.Diagnostics)
 			return
 		}
-		state.Description = types.StringValue(respModel.PublicIp.Description)
 	}
 
-	if !plan.RelatedResource.Equal(state.RelatedResource) {
-		if !state.RelatedResource.IsNull() {
+	needReattach, d := shouldReattachRelatedResource(ctx, plan.RelatedResource, state.RelatedResource)
+	resp.Diagnostics.Append(d...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if needReattach {
+		if !(state.RelatedResource.IsNull() || state.RelatedResource.IsUnknown()) {
 			var stateRelatedResource resourceModel
 			diags := state.RelatedResource.As(ctx, &stateRelatedResource, basetypes.ObjectAsOptions{})
 			resp.Diagnostics.Append(diags...)
@@ -329,8 +333,6 @@ func (r *publicIpResource) Update(ctx context.Context, req resource.UpdateReques
 		}
 	}
 
-	state.Id = plan.Id
-
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*network.BnsNetworkV1ApiGetPublicIpModelResponsePublicIpModel, *http.Response, error) {
 			return r.kc.ApiClient.PublicIPAPI.
@@ -344,12 +346,16 @@ func (r *publicIpResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	ok := mapPublicIpBaseModel(ctx, &plan.publicIpBaseModel, &respModel.PublicIp, &resp.Diagnostics)
+	ok := mapPublicIpBaseModel(ctx, &state.publicIpBaseModel, &respModel.PublicIp, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	state = plan
+	if !(plan.Description.IsNull() || plan.Description.IsUnknown()) &&
+		!plan.Description.Equal(state.Description) {
+		state.Description = plan.Description
+	}
+	state.Id = plan.Id
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -570,73 +576,54 @@ func (r *publicIpResource) validateRelatedResourceConfig(
 	}
 }
 
-func extractPrevDeviceType(
-	ctx context.Context,
-	relatedResource types.Object,
-	diags *diag.Diagnostics,
-) types.String {
-	if relatedResource.IsNull() || relatedResource.IsUnknown() {
-		return types.StringNull()
-	}
-	var rr resourceModel
-	d := relatedResource.As(ctx, &rr, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
-	if diags.HasError() {
-		return types.StringNull()
-	}
-	return rr.DeviceType
-}
+func shouldReattachRelatedResource(ctx context.Context, planObj, stateObj types.Object) (bool, diag.Diagnostics) {
+	var diags diag.Diagnostics
 
-func backfillDeviceType(
-	ctx context.Context,
-	state *publicIpResourceModel,
-	prevDeviceType types.String,
-	diags *diag.Diagnostics,
-) {
-	if state.RelatedResource.IsNull() || state.RelatedResource.IsUnknown() {
-		return
-	}
-
-	var curRR resourceModel
-	d := state.RelatedResource.As(ctx, &curRR, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
-	if diags.HasError() {
-		return
-	}
-
-	if !(prevDeviceType.IsNull() || prevDeviceType.IsUnknown() || prevDeviceType.ValueString() == "") {
-		curRR.DeviceType = prevDeviceType
-	} else {
-		owner := curRR.DeviceOwner.ValueString()
-		switch {
-		case strings.HasPrefix(owner, "compute:"):
-			curRR.DeviceType = types.StringValue("instance")
-		case owner == "network:f5listener":
-			curRR.DeviceType = types.StringValue("load-balancer")
-		default:
-			if !(curRR.Id.IsNull() || curRR.Id.IsUnknown()) {
-				curRR.DeviceType = types.StringValue("network-interface")
-			}
+	extract := func(obj types.Object) (resourceModel, bool) {
+		var rr resourceModel
+		if obj.IsNull() || obj.IsUnknown() {
+			return rr, false
 		}
+		if d := obj.As(ctx, &rr, basetypes.ObjectAsOptions{}); d.HasError() {
+			diags.Append(d...)
+			return rr, false
+		}
+		return rr, true
 	}
 
-	newObj, d2 := types.ObjectValue(relatedResourceAttrType, map[string]attr.Value{
-		"id":           curRR.Id,
-		"name":         curRR.Name,
-		"status":       curRR.Status,
-		"type":         curRR.Type,
-		"device_id":    curRR.DeviceId,
-		"device_owner": curRR.DeviceOwner,
-		"device_type":  curRR.DeviceType,
-		"subnet_id":    curRR.SubnetId,
-		"subnet_name":  curRR.SubnetName,
-		"subnet_cidr":  curRR.SubnetCIDR,
-		"vpc_id":       curRR.VpcId,
-		"vpc_name":     curRR.VpcName,
-	})
-	diags.Append(d2...)
-	if diags.HasError() {
-		return
+	planRelatedResource, hasPlan := extract(planObj)
+	stateRelatedResource, hasState := extract(stateObj)
+
+	if hasPlan != hasState {
+		return true, diags
 	}
-	state.RelatedResource = newObj
+	if !hasPlan && !hasState {
+		return false, diags
+	}
+
+	switch planRelatedResource.DeviceType.ValueString() {
+	case "instance":
+		if !planRelatedResource.DeviceType.Equal(stateRelatedResource.DeviceType) {
+			return true, diags
+		}
+		if !planRelatedResource.DeviceId.Equal(stateRelatedResource.DeviceId) {
+			return true, diags
+		}
+		if !planRelatedResource.Id.Equal(stateRelatedResource.Id) {
+			return true, diags
+		}
+		return false, diags
+
+	case "load-balancer":
+		if !planRelatedResource.DeviceType.Equal(stateRelatedResource.DeviceType) {
+			return true, diags
+		}
+		if !planRelatedResource.DeviceId.Equal(stateRelatedResource.DeviceId) {
+			return true, diags
+		}
+		return false, diags
+
+	default:
+		return false, diags
+	}
 }

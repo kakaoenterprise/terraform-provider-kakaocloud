@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package network
 
 import (
@@ -8,12 +7,11 @@ import (
 	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-
-	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 )
 
 func getRelatedResourceSchema() map[string]rschema.Attribute {
@@ -26,7 +24,7 @@ func getRelatedResourceSchema() map[string]rschema.Attribute {
 			Description: desc.String("id"),
 			Validators:  common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
+				common.NullToUnknownString(),
 			},
 		},
 		"name": rschema.StringAttribute{
@@ -98,8 +96,12 @@ func getPublicIpResourceSchema() map[string]rschema.Attribute {
 		},
 		"description": rschema.StringAttribute{
 			Optional:    true,
+			Computed:    true,
 			Description: desc.String("description"),
 			Validators:  common.DescriptionValidator(),
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"project_id": rschema.StringAttribute{
 			Computed:    true,
@@ -132,6 +134,7 @@ func getPublicIpResourceSchema() map[string]rschema.Attribute {
 		},
 		"related_resource": rschema.SingleNestedAttribute{
 			Optional:    true,
+			Computed:    true,
 			Description: desc.String("related_resource"),
 			Attributes:  relatedResourceSchemaAttributes,
 		},

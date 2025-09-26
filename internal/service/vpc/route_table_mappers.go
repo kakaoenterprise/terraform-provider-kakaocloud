@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package vpc
 
 import (
@@ -17,7 +16,6 @@ func mapRouteTableBaseModel(
 	base *routeTableBaseModel,
 	result *vpc.BnsVpcV1ApiGetRouteTableModelRouteTableModel,
 	diags *diag.Diagnostics,
-
 ) bool {
 
 	associations, assocDiags := ConvertListFromModel(ctx, result.Associations, routeTableAssociationAttrType, func(item vpc.BnsVpcV1ApiGetRouteTableModelAssociationModel) any {

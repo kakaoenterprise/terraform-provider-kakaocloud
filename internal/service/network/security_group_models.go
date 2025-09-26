@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package network
 
 import (
@@ -12,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Base model for security group
 type securityGroupBaseModel struct {
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
@@ -25,7 +23,6 @@ type securityGroupBaseModel struct {
 	UpdatedAt   types.String `tfsdk:"updated_at"`
 }
 
-// Security group rule model
 type securityGroupRuleModel struct {
 	Id              types.String `tfsdk:"id"`
 	Direction       types.String `tfsdk:"direction"`
@@ -40,7 +37,6 @@ type securityGroupRuleModel struct {
 	UpdatedAt       types.String `tfsdk:"updated_at"`
 }
 
-// Attribute type for security group rules
 var securityGroupRuleAttrType = map[string]attr.Type{
 	"id":                types.StringType,
 	"direction":         types.StringType,
@@ -55,19 +51,16 @@ var securityGroupRuleAttrType = map[string]attr.Type{
 	"updated_at":        types.StringType,
 }
 
-// Resource model for security group
 type securityGroupResourceModel struct {
 	securityGroupBaseModel
 	Timeouts resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
-// Data source model for security group
 type securityGroupDataSourceModel struct {
 	securityGroupBaseModel
 	Timeouts datasourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
-// Data source model for security groups
 type securityGroupsDataSourceModel struct {
 	Filter         []common.FilterModel     `tfsdk:"filter"`
 	SecurityGroups []securityGroupBaseModel `tfsdk:"security_groups"`

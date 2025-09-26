@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -17,7 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
-// Common description variables
 var (
 	targetGroupDesc        = docs.Loadbalancer("bns_load_balancer__v1__api__create_target_group__model__TargetGroupModel")
 	listTargetGroupDesc    = docs.Loadbalancer("bns_load_balancer__v1__api__list_target_groups__model__TargetGroupModel")
@@ -25,7 +23,6 @@ var (
 	sessionPersistenceDesc = docs.Loadbalancer("bns_load_balancer__v1__api__create_target_group__model__SessionPersistenceModel")
 )
 
-// Resource schema attributes
 var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 	"id": rschema.StringAttribute{
 		Computed:    true,
@@ -311,7 +308,6 @@ var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 	},
 }
 
-// Data source schema attributes (single target group)
 var loadBalancerTargetGroupDataSourceSchemaAttributes = map[string]dschema.Attribute{
 	"id": dschema.StringAttribute{
 		Required:    true,

@@ -3,12 +3,22 @@
 page_title: "kakaocloud_load_balancer_l7_policy_rules Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Use this data source to get information about KakaoCloud Load Balancer L7 Policy Rules lists.
+  The kakaocloud_load_balancer_l7_policy_rules data source retrieves a list of Layer 7 (L7) policy rules associated with a specific KakaoCloud Load Balancer L7 Policy.
+  It returns attributes such as rule type, comparison method, key/value conditions, inversion flag, and provisioning/operating status.
+  Use this data source when you need to:- Query all rules for an L7 policy dynamically instead of hardcoding them.
+  Filter rules by attributes such as type, compare type, or value to configure routing behavior.Validate that an L7 policy has the expected set of rules before applying changes to your Terraform configuration.
 ---
 
 # kakaocloud_load_balancer_l7_policy_rules (Data Source)
 
-Use this data source to get information about KakaoCloud Load Balancer L7 Policy Rules lists.
+The `kakaocloud_load_balancer_l7_policy_rules` data source retrieves a list of Layer 7 (L7) policy rules associated with a specific KakaoCloud Load Balancer L7 Policy.
+It returns attributes such as rule type, comparison method, key/value conditions, inversion flag, and provisioning/operating status.
+
+Use this data source when you need to:- Query all rules for an L7 policy dynamically instead of hardcoding them.
+- Filter rules by attributes such as type, compare type, or value to configure routing behavior.
+- Validate that an L7 policy has the expected set of rules before applying changes to your Terraform configuration.
+
+<!-- ## Available filters 없음 -->
 
 ## Example Usage
 
@@ -16,46 +26,26 @@ Use this data source to get information about KakaoCloud Load Balancer L7 Policy
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-# Example: List all L7 policy rules for a specific policy
-data "kakaocloud_load_balancer_l7_policy_rules" "example" {
-  id = "2415269a-7142-455a-a7c8-9082dd146c57" # Replace with your L7 policy ID
+# List all L7 policy rules for a specific policy
+data "kakaocloud_load_balancer_l7_policy_rules" "all" {
+  id = "your-l7-policy-id-here" # Replace with your L7 policy ID
+}
+
+# List L7 policy rules with filters
+data "kakaocloud_load_balancer_l7_policy_rules" "filtered" {
+  id = "your-l7-policy-id-here" # Replace with your L7 policy ID
 }
 
 # Output the L7 policy rules list
-output "l7_policy_rules_list" {
+output "all_l7_policy_rules" {
   description = "List of L7 policy rules"
-  value = {
-    policy_id   = data.kakaocloud_load_balancer_l7_policy_rules.example.id
-    rules_count = data.kakaocloud_load_balancer_l7_policy_rules.example.rules_count
-    rules       = data.kakaocloud_load_balancer_l7_policy_rules.example.l7_rules
-  }
+  value       = data.kakaocloud_load_balancer_l7_policy_rules.all
 }
 
-# Example: Filter rules by type
-output "path_rules_only" {
-  description = "Only PATH type rules"
-  value = [
-    for rule in data.kakaocloud_load_balancer_l7_policy_rules.example.l7_rules : rule
-    if rule.type == "PATH"
-  ]
-}
-
-# Example: Filter rules by compare type
-output "starts_with_rules" {
-  description = "Only STARTS_WITH compare type rules"
-  value = [
-    for rule in data.kakaocloud_load_balancer_l7_policy_rules.example.l7_rules : rule
-    if rule.compare_type == "STARTS_WITH"
-  ]
-}
-
-# Example: Get rules with specific values
-output "api_path_rules" {
-  description = "Rules that match /api/ paths"
-  value = [
-    for rule in data.kakaocloud_load_balancer_l7_policy_rules.example.l7_rules : rule
-    if rule.type == "PATH" && rule.value == "/api/"
-  ]
+# Output the filtered L7 policy rules list
+output "filtered_l7_policy_rules" {
+  description = "Filtered list of L7 policy rules"
+  value       = data.kakaocloud_load_balancer_l7_policy_rules.filtered
 }
 ```
 

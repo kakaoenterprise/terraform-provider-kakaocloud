@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/jinzhu/copier"
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
@@ -17,18 +17,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 )
 
-// Ensure the implementation satisfies the expected interfaces
 var (
 	_ datasource.DataSource              = &loadBalancerFlavorsDataSource{}
 	_ datasource.DataSourceWithConfigure = &loadBalancerFlavorsDataSource{}
 )
 
-// NewLoadBalancerFlavorsDataSource returns a new load balancer flavors data source
 func NewLoadBalancerFlavorsDataSource() datasource.DataSource {
 	return &loadBalancerFlavorsDataSource{}
 }
 
-// loadBalancerFlavorsDataSource implements the data source for load balancer flavors
 type loadBalancerFlavorsDataSource struct {
 	kc *common.KakaoCloudClient
 }
@@ -48,15 +45,13 @@ func (d *loadBalancerFlavorsDataSource) Configure(_ context.Context, req datasou
 	d.kc = client
 }
 
-// Metadata returns the data source type name
 func (d *loadBalancerFlavorsDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_load_balancer_flavors"
 }
 
-// Schema defines the schema for the data source
 func (d *loadBalancerFlavorsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Provides a list of available load balancer flavors.",
+		Description: docs.GetDataSourceDescription("LoadBalancerFlavors"),
 		Attributes: map[string]schema.Attribute{
 			"flavors": schema.ListNestedAttribute{
 				Computed: true,
@@ -69,7 +64,6 @@ func (d *loadBalancerFlavorsDataSource) Schema(ctx context.Context, _ datasource
 	}
 }
 
-// Read gets all load balancer flavors
 func (d *loadBalancerFlavorsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data loadBalancerFlavorsDataSourceModel
 
@@ -88,7 +82,6 @@ func (d *loadBalancerFlavorsDataSource) Read(ctx context.Context, req datasource
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// The result, response, and error must be captured in variables.
 	lbfs, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			resp, httpResp, err := d.kc.ApiClient.LoadBalancerEtcAPI.ListLoadBalancerTypes(ctx).XAuthToken(d.kc.XAuthToken).Execute()
@@ -101,8 +94,6 @@ func (d *loadBalancerFlavorsDataSource) Read(ctx context.Context, req datasource
 		return
 	}
 
-	// Use type assertion to get the Types field
-	// The API response should have a Types field containing the list
 	lbfsTyped, ok := lbfs.(*loadbalancer.FlavorListModel)
 	if !ok {
 		resp.Diagnostics.AddError("Type assertion failed", "Failed to cast API response to expected type")
@@ -115,7 +106,7 @@ func (d *loadBalancerFlavorsDataSource) Read(ctx context.Context, req datasource
 		resp.Diagnostics.AddError("List 변환 실패", fmt.Sprintf("lbfsResult 변환 실패: %v", err))
 		return
 	}
-	// Convert API response directly to our model
+
 	for _, flavor := range lbfsResult {
 		var lbfModel loadBalancerFlavorBaseModel
 		ok := mapLoadBalancerFlavor(ctx, &lbfModel, &flavor, &resp.Diagnostics)
@@ -125,7 +116,6 @@ func (d *loadBalancerFlavorsDataSource) Read(ctx context.Context, req datasource
 		data.LoadBalancerFlavors = append(data.LoadBalancerFlavors, lbfModel)
 	}
 
-	// Set state
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }

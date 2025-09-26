@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package network
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -53,7 +53,7 @@ func (d *publicIpDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *publicIpDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud 특정 퍼블릭 IP를 조회하는 데이터 소스",
+		Description: docs.GetDataSourceDescription("PublicIp"),
 		Attributes: MergeAttributes[schema.Attribute](
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{

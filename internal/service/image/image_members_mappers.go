@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package image
 
 import (
@@ -14,7 +13,7 @@ import (
 )
 
 func mapImageMemberModel(
-	ctx context.Context,
+	_ context.Context,
 	base *imageMemberBaseModel,
 	imageMemberResult *image.BcsImageV1ApiListImageSharedProjectsModelImageMemberModel,
 	respDiags *diag.Diagnostics,

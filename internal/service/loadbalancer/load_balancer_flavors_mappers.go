@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -19,16 +18,14 @@ func mapLoadBalancerFlavor(
 	lbf *loadbalancer.FlavorModel,
 	diags *diag.Diagnostics,
 ) bool {
-	// Check for nil source
+
 	if lbf == nil {
 		diags.AddError("Mapping Error", "Load balancer flavor source is nil")
 		return false
 	}
 
-	// ID is a required field, use StringValue
 	base.Id = types.StringValue(lbf.Id)
 
-	// Other fields might be nullable, use ConvertNullableXXX functions
 	base.Name = utils.ConvertNullableString(lbf.Name)
 	base.Description = utils.ConvertNullableString(lbf.Description)
 	base.IsEnabled = utils.ConvertNullableBool(lbf.IsEnabled)

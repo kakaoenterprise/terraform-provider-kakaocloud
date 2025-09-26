@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 
 	"terraform-provider-kakaocloud/internal/utils"
 
@@ -52,7 +52,7 @@ func (d *loadBalancersDataSource) Metadata(_ context.Context, req datasource.Met
 
 func (d *loadBalancersDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetches a list of KakaoCloud Load Balancers.",
+		Description: docs.GetDataSourceDescription("LoadBalancers"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -199,7 +199,6 @@ func (d *loadBalancersDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	// Cast the result back to the correct type
 	lbsTyped, ok := lbs.(*loadbalancer.LoadBalancerListModel)
 	if !ok {
 		resp.Diagnostics.AddError("Type assertion failed", "Failed to cast API response to expected type")
@@ -222,7 +221,6 @@ func (d *loadBalancersDataSource) Read(ctx context.Context, req datasource.ReadR
 		data.LoadBalancers = append(data.LoadBalancers, lbModel)
 	}
 
-	// Save data into Terraform state
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }

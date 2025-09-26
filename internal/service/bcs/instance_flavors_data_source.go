@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package bcs
 
 import (
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -18,7 +18,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &instanceFlavorsDataSource{}
 	_ datasource.DataSourceWithConfigure = &instanceFlavorsDataSource{}
@@ -38,7 +37,7 @@ func (d *instanceFlavorsDataSource) Metadata(_ context.Context, req datasource.M
 
 func (d *instanceFlavorsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud Flavor 목록을 조회하는 데이터 소스",
+		Description: docs.GetDataSourceDescription("InstanceFlavors"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -203,8 +202,7 @@ func (d *instanceFlavorsDataSource) Read(ctx context.Context, req datasource.Rea
 }
 
 func (d *instanceFlavorsDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}

@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package vpc
 
 import (
@@ -10,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -24,7 +24,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure   = &routeTableResource{}
 	_ resource.ResourceWithImportState = &routeTableResource{}
@@ -38,15 +37,13 @@ type routeTableResource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (r *routeTableResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_route_table"
 }
 
-// Schema defines the schema for the resource.
 func (r *routeTableResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents a route table resource.",
+		Description: docs.GetResourceDescription("RouteTable"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			routeTableResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -56,7 +53,6 @@ func (r *routeTableResource) Schema(ctx context.Context, _ resource.SchemaReques
 	}
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *routeTableResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan routeTableResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -74,6 +70,11 @@ func (r *routeTableResource) Create(ctx context.Context, req resource.CreateRequ
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	ok := checkVpcStatus(ctx, r, r.kc, plan.VpcId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
 	createReq := vpc.CreateRouteTableModel{
 		Name:  plan.Name.ValueString(),
@@ -107,7 +108,6 @@ func (r *routeTableResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	// Set Main Route Table
 	if !plan.IsMain.IsNull() || !plan.IsMain.IsUnknown() {
 		if plan.IsMain.ValueBool() {
 			r.setMainRouteTable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
@@ -126,7 +126,6 @@ func (r *routeTableResource) Create(ctx context.Context, req resource.CreateRequ
 		}
 	}
 
-	// Add routes
 	if !plan.RequestRoutes.IsNull() {
 		planList, planDiags := r.convertListToRouteTableRequestRouteModel(ctx, plan.RequestRoutes)
 		resp.Diagnostics.Append(planDiags...)
@@ -153,7 +152,7 @@ func (r *routeTableResource) Create(ctx context.Context, req resource.CreateRequ
 		}
 	}
 
-	ok = mapRouteTableBaseModel(ctx, &plan.routeTableBaseModel, result, &resp.Diagnostics)
+	ok = r.mapRouteTableResourceModel(ctx, &plan, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -165,7 +164,6 @@ func (r *routeTableResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *routeTableResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state routeTableResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -191,7 +189,6 @@ func (r *routeTableResource) Read(ctx context.Context, req resource.ReadRequest,
 		},
 	)
 
-	// 404 → Remove Terraform state
 	if httpResp != nil && httpResp.StatusCode == 404 {
 		resp.State.RemoveResource(ctx)
 		return
@@ -202,48 +199,9 @@ func (r *routeTableResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	routeTableResult := respModel.VpcRouteTable
-	ok := mapRouteTableBaseModel(ctx, &state.routeTableBaseModel, &routeTableResult, &resp.Diagnostics)
+	ok := r.mapRouteTableResourceModel(ctx, &state, &routeTableResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
-	}
-
-	if state.RequestRoutes.IsNull() {
-		var routes []routeTableRouteModel
-		diags := state.Routes.ElementsAs(ctx, &routes, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		var filteredRoutes []routeTableRouteModel
-		for _, route := range routes {
-			if !route.IsLocalRoute.ValueBool() {
-				filteredRoutes = append(filteredRoutes, route)
-			}
-		}
-		routes = filteredRoutes
-
-		sort.Slice(routes, func(i, j int) bool {
-			return utils.CompareCIDRs(routes[i].Destination.ValueString(), routes[j].Destination.ValueString()) < 0
-		})
-
-		var requestRouteList []routeTableRequestRouteModel
-		for _, route := range routes {
-			requestRouteList = append(requestRouteList,
-				routeTableRequestRouteModel{
-					Id:          route.Id,
-					Destination: cidrtypes.NewIPPrefixValue(route.Destination.ValueString()),
-					TargetType:  types.StringValue(strings.ToLower(route.TargetType.ValueString())),
-					TargetId:    route.TargetId,
-				})
-		}
-
-		elemType := types.ObjectType{AttrTypes: routeTableRequestRouteAttrType}
-		state.RequestRoutes, diags = types.ListValueFrom(ctx, elemType, requestRouteList)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
 	}
 
 	diags = resp.State.Set(ctx, &state)
@@ -253,7 +211,6 @@ func (r *routeTableResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state routeTableResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -278,7 +235,11 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Set Main Route Table
+	ok := checkVpcStatus(ctx, r, r.kc, plan.VpcId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
 	if !plan.IsMain.IsNull() || !plan.IsMain.IsUnknown() {
 		if plan.IsMain.ValueBool() && !state.IsMain.ValueBool() {
 			r.setMainRouteTable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
@@ -297,7 +258,6 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 		}
 	}
 
-	// Change Routes
 	if !plan.RequestRoutes.Equal(state.RequestRoutes) {
 		planList, planDiags := r.convertListToRouteTableRequestRouteModel(ctx, plan.RequestRoutes)
 		stateList, stateDiags := r.convertListToRouteTableRequestRouteModel(ctx, state.RequestRoutes)
@@ -332,7 +292,7 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
-	ok = mapRouteTableBaseModel(ctx, &plan.routeTableBaseModel, result, &resp.Diagnostics)
+	ok = r.mapRouteTableResourceModel(ctx, &plan, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -344,7 +304,6 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *routeTableResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state routeTableResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -376,6 +335,11 @@ func (r *routeTableResource) Delete(ctx context.Context, req resource.DeleteRequ
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	ok := checkVpcStatus(ctx, r, r.kc, state.VpcId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			httpResp, err := r.kc.ApiClient.VPCRouteTableAPI.DeleteRouteTable(ctx, state.Id.ValueString()).
@@ -392,7 +356,6 @@ func (r *routeTableResource) Delete(ctx context.Context, req resource.DeleteRequ
 		return
 	}
 
-	// Poll until resource disappears
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (*vpc.BnsVpcV1ApiGetRouteTableModelResponseRouteTableModel, *http.Response, error) {
@@ -408,8 +371,7 @@ func (r *routeTableResource) Delete(ctx context.Context, req resource.DeleteRequ
 }
 
 func (r *routeTableResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}
@@ -428,7 +390,7 @@ func (r *routeTableResource) Configure(_ context.Context, req resource.Configure
 }
 
 func (r *routeTableResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
@@ -444,6 +406,77 @@ func (r *routeTableResource) setMainRouteTable(ctx context.Context, routeTableId
 		common.AddApiActionError(ctx, r, httpResp, "SetMainRouteTable", err, diag)
 		return
 	}
+}
+
+func (r *routeTableResource) mapRouteTableResourceModel(
+	ctx context.Context,
+	model *routeTableResourceModel,
+	result *vpc.BnsVpcV1ApiGetRouteTableModelRouteTableModel,
+	diags *diag.Diagnostics,
+) bool {
+	ok := mapRouteTableBaseModel(ctx, &model.routeTableBaseModel, result, diags)
+	if !ok || diags.HasError() {
+		return false
+	}
+
+	var routes []routeTableRouteModel
+	mapDiags := model.Routes.ElementsAs(ctx, &routes, false)
+	diags.Append(mapDiags...)
+	if diags.HasError() {
+		return false
+	}
+
+	var filteredRoutes []routeTableRouteModel
+	for _, route := range routes {
+		if !route.IsLocalRoute.ValueBool() {
+			filteredRoutes = append(filteredRoutes, route)
+		}
+	}
+	routes = filteredRoutes
+
+	if len(routes) > 0 {
+		var requestRouteList []routeTableRequestRouteModel
+
+		if model.RequestRoutes.IsNull() {
+			sort.Slice(routes, func(i, j int) bool {
+				return utils.CompareCIDRs(routes[i].Destination.ValueString(), routes[j].Destination.ValueString()) < 0
+			})
+
+			for _, route := range routes {
+				requestRouteList = append(requestRouteList,
+					routeTableRequestRouteModel{
+						Id:          route.Id,
+						Destination: cidrtypes.NewIPPrefixValue(route.Destination.ValueString()),
+						TargetType:  types.StringValue(strings.ToLower(route.TargetType.ValueString())),
+						TargetId:    route.TargetId,
+					})
+			}
+		} else {
+			mapDiags = model.RequestRoutes.ElementsAs(ctx, &requestRouteList, false)
+			diags.Append(mapDiags...)
+			if diags.HasError() {
+				return false
+			}
+
+			for _, route := range routes {
+				for i, rr := range requestRouteList {
+					if route.TargetId.Equal(rr.TargetId) &&
+						cidrtypes.NewIPPrefixValue(route.Destination.ValueString()) == rr.Destination &&
+						strings.ToLower(route.TargetType.ValueString()) == rr.TargetType.ValueString() {
+						requestRouteList[i].Id = route.Id
+						break
+					}
+				}
+			}
+		}
+		elemType := types.ObjectType{AttrTypes: routeTableRequestRouteAttrType}
+		model.RequestRoutes, mapDiags = types.ListValueFrom(ctx, elemType, requestRouteList)
+		diags.Append(mapDiags...)
+		if diags.HasError() {
+			return false
+		}
+	}
+	return true
 }
 
 func (r *routeTableResource) convertListToRouteTableRequestRouteModel(
@@ -523,7 +556,7 @@ func (r *routeTableResource) validateRouteConfig(ctx context.Context, config rou
 		seen := make(map[string]bool)
 
 		for _, route := range routes {
-			// Destination Dup check
+
 			destStr := strings.TrimSpace(route.Destination.ValueString())
 			if _, exists := seen[destStr]; exists {
 				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,

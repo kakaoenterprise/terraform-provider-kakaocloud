@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package vpc
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -17,7 +17,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &networkInterfacesDataSource{}
 	_ datasource.DataSourceWithConfigure = &networkInterfacesDataSource{}
@@ -37,7 +36,7 @@ func (d *networkInterfacesDataSource) Metadata(_ context.Context, req datasource
 
 func (d *networkInterfacesDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud Network Interface 목록 조회하는 데이터 소스",
+		Description: docs.GetDataSourceDescription("NetworkInterfaces"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -202,8 +201,7 @@ func (d *networkInterfacesDataSource) Read(ctx context.Context, req datasource.R
 }
 
 func (d *networkInterfacesDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}

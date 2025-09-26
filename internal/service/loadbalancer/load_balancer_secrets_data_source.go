@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/jinzhu/copier"
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
@@ -17,18 +17,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 )
 
-// Ensure the implementation satisfies the expected interfaces
 var (
 	_ datasource.DataSource              = &loadBalancerSecretsDataSource{}
 	_ datasource.DataSourceWithConfigure = &loadBalancerSecretsDataSource{}
 )
 
-// NewLoadBalancerSecretsDataSource returns a new load balancer secrets data source
 func NewLoadBalancerSecretsDataSource() datasource.DataSource {
 	return &loadBalancerSecretsDataSource{}
 }
 
-// loadBalancerSecretsDataSource implements the data source for load balancer secrets
 type loadBalancerSecretsDataSource struct {
 	kc *common.KakaoCloudClient
 }
@@ -48,15 +45,13 @@ func (d *loadBalancerSecretsDataSource) Configure(_ context.Context, req datasou
 	d.kc = client
 }
 
-// Metadata returns the data source type name
 func (d *loadBalancerSecretsDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_load_balancer_secrets"
 }
 
-// Schema defines the schema for the data source
 func (d *loadBalancerSecretsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Provides a list of available load balancer secrets.",
+		Description: docs.GetDataSourceDescription("LoadBalancerSecrets"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -82,7 +77,6 @@ func (d *loadBalancerSecretsDataSource) Schema(ctx context.Context, _ datasource
 	}
 }
 
-// Read gets all load balancer secrets
 func (d *loadBalancerSecretsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data loadBalancerSecretsDataSourceModel
 
@@ -101,7 +95,6 @@ func (d *loadBalancerSecretsDataSource) Read(ctx context.Context, req datasource
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// The SDK function and response object will need to be verified against the actual Go SDK.
 	lbsApi := d.kc.ApiClient.LoadBalancerEtcAPI.ListTlsCertificates(ctx)
 
 	for _, f := range data.Filter {
@@ -135,7 +128,7 @@ func (d *loadBalancerSecretsDataSource) Read(ctx context.Context, req datasource
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	// The result, response, and error must be captured in variables.
+
 	lbsResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (*loadbalancer.SecretListModel, *http.Response, error) {
 			return lbsApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
@@ -153,7 +146,7 @@ func (d *loadBalancerSecretsDataSource) Read(ctx context.Context, req datasource
 		resp.Diagnostics.AddError("List 변환 실패", fmt.Sprintf("lbssResult 변환 실패: %v", err))
 		return
 	}
-	// Convert API response directly to our model
+
 	for _, secret := range lbssResult {
 		var lbsModel loadBalancerSecretBaseModel
 		ok := mapLoadBalancerSecretsBaseModel(ctx, &lbsModel, &secret, &resp.Diagnostics)
@@ -163,7 +156,6 @@ func (d *loadBalancerSecretsDataSource) Read(ctx context.Context, req datasource
 		data.LoadBalancerSecrets = append(data.LoadBalancerSecrets, lbsModel)
 	}
 
-	// Set state
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }

@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package common
 
 import (
@@ -18,9 +17,8 @@ import (
 	vpc "github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 )
 
-// buildEndpoints creates service endpoints from SDK defaults and user overrides
 func (c *KakaoCloudClient) buildEndpoints() kakaocloud.Endpoints {
-	// Initialize SDK defaults
+
 	endpoints := kakaocloud.Endpoints{
 		IAM:              getSDKDefaultEndpoint(iam.NewConfiguration()),
 		VPC:              getSDKDefaultEndpoint(vpc.NewConfiguration()),
@@ -32,7 +30,6 @@ func (c *KakaoCloudClient) buildEndpoints() kakaocloud.Endpoints {
 		KubernetesEngine: getSDKDefaultEndpoint(kubernetesEngine.NewConfiguration()),
 	}
 
-	// Apply overrides if specified
 	for service, endpoint := range c.Config.EndpointOverrides {
 		switch service {
 		case "iam":
@@ -59,7 +56,6 @@ func (c *KakaoCloudClient) buildEndpoints() kakaocloud.Endpoints {
 	return endpoints
 }
 
-// getSDKDefaultEndpoint extracts default endpoint from SDK configuration using reflection
 func getSDKDefaultEndpoint(cfg interface{}) string {
 	v := reflect.ValueOf(cfg)
 	if v.Kind() == reflect.Ptr {

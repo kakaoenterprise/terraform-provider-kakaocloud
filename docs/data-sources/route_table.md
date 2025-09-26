@@ -3,12 +3,19 @@
 page_title: "kakaocloud_route_table Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud 특정 Route Table 조회하는 데이터 소스
+  The kakaocloud_route_table data source retrieves detailed information about a specific Route Table in KakaoCloud.
+  It provides attributes such as the associated VPC, route entries, subnet associations, provisioning status, and whether the Route Table is the main table in the VPC.
+  Use this data source when you need to:- Reference an existing Route Table in your Terraform configuration.
+  Query routing details dynamically instead of hardcoding route information.
 ---
 
 # kakaocloud_route_table (Data Source)
 
-kakaocloud 특정 Route Table 조회하는 데이터 소스
+The `kakaocloud_route_table` data source retrieves detailed information about a specific Route Table in KakaoCloud.
+It provides attributes such as the associated VPC, route entries, subnet associations, provisioning status, and whether the Route Table is the main table in the VPC.
+
+Use this data source when you need to:- Reference an existing Route Table in your Terraform configuration.
+- Query routing details dynamically instead of hardcoding route information.
 
 
 

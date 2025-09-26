@@ -3,12 +3,41 @@
 page_title: "kakaocloud_public_ips Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Kakao Cloud Public IP Schema
+  The kakaocloud_public_ips data source retrieves a list of Public IPs in KakaoCloud.
+  It supports filtering by attributes such as name, and provides details including the IP address, associated private IP, project, status, and related resource information (e.g., device, subnet, and VPC).
+  Use this data source when you need to:- Reference multiple existing Public IPs in your Terraform configuration.
+  Query networking information of Public IPs dynamically without hardcoding their attributes.
+  Available filters
+  | Filter             | Type           | Description |
+  |------------------------|----------------|-------------|
+  | id                     | string        | Unique ID of the public IP |
+  | status                 | string         | Status of the public IP <br>Possible values: <br>- `available`: Available <br>- `in_use`: In use <br>- `attaching`: Attaching |
+  | public_ip              | string        | Public IP address |
+  | related_resource_id    | string        | ID of the resource associated with the public IP (e.g., network interface ID) |
+  | related_resource_name  | string        | Name of the resource associated with the public IP (e.g., network interface name) |
+  | created_at             | string        | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+  | updated_at             | string        | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 ---
 
 # kakaocloud_public_ips (Data Source)
 
-Kakao Cloud Public IP Schema
+The `kakaocloud_public_ips` data source retrieves a list of Public IPs in KakaoCloud.
+It supports filtering by attributes such as name, and provides details including the IP address, associated private IP, project, status, and related resource information (e.g., device, subnet, and VPC).
+
+Use this data source when you need to:- Reference multiple existing Public IPs in your Terraform configuration.
+- Query networking information of Public IPs dynamically without hardcoding their attributes.
+
+## Available filters
+
+| Filter             | Type           | Description |
+|------------------------|----------------|-------------|
+| id                     | string        | Unique ID of the public IP |
+| status                 | string         | Status of the public IP <br>Possible values: <br>- `available`: Available <br>- `in_use`: In use <br>- `attaching`: Attaching |
+| public_ip              | string        | Public IP address |
+| related_resource_id    | string        | ID of the resource associated with the public IP (e.g., network interface ID) |
+| related_resource_name  | string        | Name of the resource associated with the public IP (e.g., network interface name) |
+| created_at             | string        | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+| updated_at             | string        | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 
 
 

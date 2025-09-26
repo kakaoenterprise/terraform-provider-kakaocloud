@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -12,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Subnet model for target group member
 type loadBalancerTargetGroupMemberSubnetModel struct {
 	Id               types.String `tfsdk:"id"`
 	Name             types.String `tfsdk:"name"`
@@ -21,13 +19,11 @@ type loadBalancerTargetGroupMemberSubnetModel struct {
 	HealthCheckIps   types.List   `tfsdk:"health_check_ips"`
 }
 
-// Security group model for target group member
 type loadBalancerTargetGroupMemberSecurityGroupModel struct {
 	Id   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 }
 
-// Base model for target group member - contains all common fields
 type loadBalancerTargetGroupMemberBaseModel struct {
 	Id                 types.String `tfsdk:"id"`
 	Name               types.String `tfsdk:"name"`
@@ -52,13 +48,11 @@ type loadBalancerTargetGroupMemberBaseModel struct {
 	SecurityGroups     types.List   `tfsdk:"security_groups"`
 }
 
-// Resource model extends base model with resource-specific fields
 type loadBalancerTargetGroupMemberResourceModel struct {
 	loadBalancerTargetGroupMemberBaseModel
 	Timeouts resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
-// List data source model
 type loadBalancerTargetGroupMemberListDataSourceModel struct {
 	TargetGroupId types.String                                   `tfsdk:"target_group_id"`
 	Filter        []common.FilterModel                           `tfsdk:"filter"`
@@ -66,12 +60,10 @@ type loadBalancerTargetGroupMemberListDataSourceModel struct {
 	Timeouts      datasourceTimeouts.Value                       `tfsdk:"timeouts"`
 }
 
-// List member model - simplified version without timeouts for nested objects
 type loadBalancerTargetGroupMemberListMemberModel struct {
 	loadBalancerTargetGroupMemberBaseModel
 }
 
-// Attribute type definitions for complex objects
 var loadBalancerTargetGroupMemberSubnetAttrType = map[string]attr.Type{
 	"id":                types.StringType,
 	"name":              types.StringType,

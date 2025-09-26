@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package volume
 
 import (
@@ -327,6 +326,7 @@ func getVolumeResourceSchema() map[string]rschema.Attribute {
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
+
 		"source_volume_id": rschema.StringAttribute{
 			Optional:    true,
 			Description: createDesc.String("source_volume_id"),

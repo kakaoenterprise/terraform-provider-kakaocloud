@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package bcs
 
 import (
@@ -50,7 +49,6 @@ type instanceBaseModel struct {
 	UpdatedAt    types.String `tfsdk:"updated_at"`
 }
 
-// Terraform attr.Type variables for Terraform schema mapping
 var instanceFlavorAttrType = map[string]attr.Type{
 	"id":                           types.StringType,
 	"name":                         types.StringType,
@@ -70,7 +68,6 @@ var instanceFlavorAttrType = map[string]attr.Type{
 	"real_vcpus":                   types.Int32Type,
 }
 
-// instanceFlavorModel represents the Flavor field for Terraform
 type instanceFlavorModel struct {
 	Id                        types.String `tfsdk:"id"`
 	Name                      types.String `tfsdk:"name"`
@@ -112,7 +109,6 @@ var instanceImageAttrType = map[string]attr.Type{
 	"updated_at":      types.StringType,
 }
 
-// instanceImageModel represents the Image field for Terraform
 type instanceImageModel struct {
 	Id             types.String `tfsdk:"id"`
 	Name           types.String `tfsdk:"name"`
@@ -141,7 +137,6 @@ var instanceAddressesAttrType = map[string]attr.Type{
 	"network_interface_id": types.StringType,
 }
 
-// instanceAddressModel represents an Address for Terraform
 type instanceAddressModel struct {
 	PrivateIp          types.String `tfsdk:"private_ip"`
 	PublicIp           types.String `tfsdk:"public_ip"`
@@ -160,7 +155,6 @@ var instanceAttachedVolumesAttrType = map[string]attr.Type{
 	"is_root":                  types.BoolType,
 }
 
-// instanceAttachedVolumeModel represents an AttachedVolume for Terraform
 type instanceAttachedVolumeModel struct {
 	Id                    types.String `tfsdk:"id"`
 	Name                  types.String `tfsdk:"name"`
@@ -178,7 +172,6 @@ var instanceSecurityGroupsAttrType = map[string]attr.Type{
 	"name": types.StringType,
 }
 
-// instanceSecurityGroupModel represents a SecurityGroup for Terraform
 type instanceSecurityGroupModel struct {
 	Id   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`

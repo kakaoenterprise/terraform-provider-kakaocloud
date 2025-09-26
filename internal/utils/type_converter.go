@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package utils
 
 import (
@@ -189,7 +188,6 @@ func ConvertNullableStringList(input interface{}) types.List {
 	return list
 }
 
-// StringsFromSet : types.Set(string) -> []string
 func StringsFromSet(ctx context.Context, s types.Set, diags *diag.Diagnostics) []string {
 	if s.IsNull() || s.IsUnknown() {
 		return nil
@@ -206,7 +204,6 @@ func StringsFromSet(ctx context.Context, s types.Set, diags *diag.Diagnostics) [
 	return out
 }
 
-// SetFromStrings : []string -> types.Set(string)
 func SetFromStrings(ctx context.Context, vals []string) (types.Set, diag.Diagnostics) {
 	if vals == nil {
 		return types.SetNull(types.StringType), nil
@@ -244,7 +241,6 @@ func ConvertNullableInt32ToInt64(n Nullable[int32]) types.Int64 {
 	return types.Int64Value(int64(*n.Get()))
 }
 
-// ConvertNullableStringWithEmptyToNull converts nullable string, treating empty strings as null
 func ConvertNullableStringWithEmptyToNull[T ~string](n Nullable[T]) types.String {
 	if !n.IsSet() || n.Get() == nil {
 		return types.StringNull()
@@ -256,19 +252,15 @@ func ConvertNullableStringWithEmptyToNull[T ~string](n Nullable[T]) types.String
 	return types.StringValue(value)
 }
 
-// HandleApiResponseStructure handles cases where API returns single object but SDK expects array
-// This is a workaround for API/SDK response structure mismatches
 func HandleApiResponseStructure[T any](response interface{}) []T {
-	// If response is already a slice, return it
+
 	if slice, ok := response.([]T); ok {
 		return slice
 	}
 
-	// If response is a single object, wrap it in a slice
 	if obj, ok := response.(T); ok {
 		return []T{obj}
 	}
 
-	// If response is nil or empty, return empty slice
 	return []T{}
 }

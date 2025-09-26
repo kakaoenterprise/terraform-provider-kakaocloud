@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package image
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -53,7 +53,7 @@ func (d *imageDataSource) Metadata(_ context.Context, req datasource.MetadataReq
 
 func (d *imageDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud 특정 이미지를 조회하는 데이터 소스",
+		Description: docs.GetDataSourceDescription("Image"),
 		Attributes: MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{

@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -55,7 +55,7 @@ func (r *loadBalancerL7PolicyResource) Metadata(_ context.Context, req resource.
 
 func (r *loadBalancerL7PolicyResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a KakaoCloud Load Balancer L7 Policy.",
+		Description: docs.GetResourceDescription("LoadBalancerL7Policy"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			loadBalancerL7PolicyResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -115,14 +115,12 @@ func (r *loadBalancerL7PolicyResource) Create(ctx context.Context, req resource.
 		L7Policy: createReq,
 	}
 
-	// First try with normal auth retry, then with conflict retry if needed
 	createResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiCreateL7PolicyModelResponseL7PolicyModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.CreateL7Policy(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateL7Policy(body).Execute()
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		createResp, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiCreateL7PolicyModelResponseL7PolicyModel, *http.Response, error) {
@@ -136,10 +134,8 @@ func (r *loadBalancerL7PolicyResource) Create(ctx context.Context, req resource.
 		return
 	}
 
-	// Set the ID from create response
 	plan.Id = types.StringValue(createResp.L7Policy.Id)
 
-	// Wait for the L7 policy to become active
 	result, ok := r.pollL7PolicyUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
@@ -153,13 +149,12 @@ func (r *loadBalancerL7PolicyResource) Create(ctx context.Context, req resource.
 
 	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
 
-	// Map the final GET response, preserving ListenerId from plan
 	listenerIdFromPlan := plan.ListenerId
 	ok = mapLoadBalancerL7PolicyFromGetResponse(ctx, &plan.loadBalancerL7PolicyBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
-	plan.ListenerId = listenerIdFromPlan // Preserve ListenerId since GET API doesn't return it
+	plan.ListenerId = listenerIdFromPlan
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
@@ -188,7 +183,6 @@ func (r *loadBalancerL7PolicyResource) Read(ctx context.Context, req resource.Re
 		},
 	)
 
-	// 404 → Remove from Terraform state
 	if httpResp != nil && httpResp.StatusCode == 404 {
 		resp.State.RemoveResource(ctx)
 		return
@@ -200,7 +194,7 @@ func (r *loadBalancerL7PolicyResource) Read(ctx context.Context, req resource.Re
 	}
 
 	l7PolicyResult := respModel.L7Policy
-	// Preserve ListenerId from state since GET API doesn't return it
+
 	listenerIdFromState := state.ListenerId
 	ok := mapLoadBalancerL7PolicyFromGetResponse(ctx, &state.loadBalancerL7PolicyBaseModel, &l7PolicyResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
@@ -234,7 +228,6 @@ func (r *loadBalancerL7PolicyResource) Update(ctx context.Context, req resource.
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Action is required for update, so always set it
 	editReq := loadbalancer.NewEditL7PolicyModel(loadbalancer.L7PolicyAction(plan.Action.ValueString()))
 
 	if !plan.Name.Equal(state.Name) {
@@ -245,36 +238,33 @@ func (r *loadBalancerL7PolicyResource) Update(ctx context.Context, req resource.
 		editReq.SetDescription(plan.Description.ValueString())
 	}
 
-	// Handle position: if explicitly set in plan, use new position; otherwise preserve original
 	if !plan.Position.IsNull() && !plan.Position.IsUnknown() {
-		// Position is explicitly set in plan, use the new position
+
 		editReq.SetPosition(int32(plan.Position.ValueInt64()))
 	} else {
-		// Position is not set in plan, preserve the original position from state
+
 		if !state.Position.IsNull() && !state.Position.IsUnknown() {
 			editReq.SetPosition(int32(state.Position.ValueInt64()))
 		}
 	}
 
-	// Handle redirect fields with business logic validation
 	action := plan.Action.ValueString()
 
-	// Always set the redirect fields based on action type to comply with API validation
 	switch action {
 	case "REDIRECT_TO_URL":
-		// For REDIRECT_TO_URL, only redirect_url should be set, others must be null
+
 		editReq.SetRedirectUrl(plan.RedirectUrl.ValueString())
 		editReq.SetRedirectTargetGroupIdNil()
 		editReq.SetRedirectPrefixNil()
 
 	case "REDIRECT_TO_POOL":
-		// For REDIRECT_TO_POOL, only redirect_target_group_id should be set
+
 		editReq.SetRedirectTargetGroupId(plan.RedirectTargetGroupId.ValueString())
 		editReq.SetRedirectUrlNil()
 		editReq.SetRedirectPrefixNil()
 
 	case "REDIRECT_PREFIX":
-		// For REDIRECT_PREFIX, only redirect_prefix should be set
+
 		editReq.SetRedirectPrefix(plan.RedirectPrefix.ValueString())
 		editReq.SetRedirectUrlNil()
 		editReq.SetRedirectTargetGroupIdNil()
@@ -282,14 +272,12 @@ func (r *loadBalancerL7PolicyResource) Update(ctx context.Context, req resource.
 
 	body := *loadbalancer.NewBodyUpdateL7Policy(*editReq)
 
-	// First try with normal auth retry, then with conflict retry if needed
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateL7PolicyModelResponseL7PolicyModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.UpdateL7Policy(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateL7Policy(body).Execute()
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateL7PolicyModelResponseL7PolicyModel, *http.Response, error) {
@@ -303,7 +291,6 @@ func (r *loadBalancerL7PolicyResource) Update(ctx context.Context, req resource.
 		return
 	}
 
-	// Wait for the L7 policy to become active again
 	result, ok := r.pollL7PolicyUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
@@ -319,15 +306,14 @@ func (r *loadBalancerL7PolicyResource) Update(ctx context.Context, req resource.
 		return
 	}
 
-	// Map the final GET response, preserving ListenerId and Rules from state
 	listenerIdFromPlan := plan.ListenerId
 	rulesFromState := state.Rules
 	ok = mapLoadBalancerL7PolicyFromGetResponse(ctx, &plan.loadBalancerL7PolicyBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
-	plan.ListenerId = listenerIdFromPlan // Preserve ListenerId since GET API doesn't return it
-	plan.Rules = rulesFromState          // Preserve Rules since they're managed separately via L7 policy rule resource
+	plan.ListenerId = listenerIdFromPlan
+	plan.Rules = rulesFromState
 
 	plan.Timeouts = state.Timeouts
 	diags = resp.State.Set(ctx, &plan)
@@ -342,7 +328,6 @@ func (r *loadBalancerL7PolicyResource) Delete(ctx context.Context, req resource.
 		return
 	}
 
-	// First try with normal auth retry, then with conflict retry if needed
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			httpResp, err := r.kc.ApiClient.LoadBalancerL7PoliciesAPI.DeleteL7Policy(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
@@ -350,7 +335,6 @@ func (r *loadBalancerL7PolicyResource) Delete(ctx context.Context, req resource.
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {

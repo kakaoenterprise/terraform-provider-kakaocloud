@@ -3,12 +3,14 @@
 page_title: "kakaocloud_vpc Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud 특정 VPC 조회하는 데이터 소스
+  The kakaocloud_vpc data source retrieves details of a specific VPC in KakaoCloud.
+  It provides information such as the CIDR block, DNS settings, default route table, and associated internet gateway (IGW).
 ---
 
 # kakaocloud_vpc (Data Source)
 
-kakaocloud 특정 VPC 조회하는 데이터 소스
+The `kakaocloud_vpc` data source retrieves details of a specific VPC in KakaoCloud.
+It provides information such as the CIDR block, DNS settings, default route table, and associated internet gateway (IGW).
 
 
 

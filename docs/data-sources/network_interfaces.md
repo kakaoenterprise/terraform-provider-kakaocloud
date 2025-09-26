@@ -3,12 +3,54 @@
 page_title: "kakaocloud_network_interfaces Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud Network Interface 목록 조회하는 데이터 소스
+  The kakaocloud_network_interfaces data source retrieves a list of Network Interfaces in KakaoCloud.
+  You can optionally filter results by attributes such as name, and the output includes details like private and public IP addresses, MAC address, associated security groups, allowed address pairs, and VPC/subnet information.
+  Use this data source when you need to:- Look up multiple existing network interfaces in your project.
+  Retrieve networking details for dependency resolution in Terraform configurations.Filter specific interfaces by attributes (e.g., name, project) instead of hardcoding IDs.
+  Available filters
+  | Filter          | Type                   | Description |
+  |--------------------|------------------------|-------------|
+  | id                 | string                 | ID of the network interface |
+  | name               | string                 | Name of the network interface |
+  | status             | string                 | Status of the network interface <br>Possible values: <br>- `available`: Available <br>- `in_use`: In use |
+  | private_ip         | string                 | Private IP address (IPv4 format) |
+  | public_ip          | string                 | Public IP address |
+  | device_id          | string                 | ID of the connected device (e.g., instance ID) |
+  | device_owner       | string                 | Type of the resource that owns the interface (e.g., instance, router) |
+  | subnet_id          | string                 | ID of the associated subnet |
+  | mac_address        | string                 | MAC address of the network interface |
+  | security_group_id  | string                 | Unique ID of the associated security group |
+  | security_group_name| string                 | Name of the associated security group |
+  | created_at         | string                 | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+  | updated_at         | string                 | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 ---
 
 # kakaocloud_network_interfaces (Data Source)
 
-kakaocloud Network Interface 목록 조회하는 데이터 소스
+The `kakaocloud_network_interfaces` data source retrieves a list of Network Interfaces in KakaoCloud.
+You can optionally filter results by attributes such as name, and the output includes details like private and public IP addresses, MAC address, associated security groups, allowed address pairs, and VPC/subnet information.
+
+Use this data source when you need to:- Look up multiple existing network interfaces in your project.
+- Retrieve networking details for dependency resolution in Terraform configurations.
+- Filter specific interfaces by attributes (e.g., name, project) instead of hardcoding IDs.
+
+## Available filters
+
+| Filter          | Type                   | Description |
+|--------------------|------------------------|-------------|
+| id                 | string                 | ID of the network interface |
+| name               | string                 | Name of the network interface |
+| status             | string                 | Status of the network interface <br>Possible values: <br>- `available`: Available <br>- `in_use`: In use |
+| private_ip         | string                 | Private IP address (IPv4 format) |
+| public_ip          | string                 | Public IP address |
+| device_id          | string                 | ID of the connected device (e.g., instance ID) |
+| device_owner       | string                 | Type of the resource that owns the interface (e.g., instance, router) |
+| subnet_id          | string                 | ID of the associated subnet |
+| mac_address        | string                 | MAC address of the network interface |
+| security_group_id  | string                 | Unique ID of the associated security group |
+| security_group_name| string                 | Name of the associated security group |
+| created_at         | string                 | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+| updated_at         | string                 | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 
 
 

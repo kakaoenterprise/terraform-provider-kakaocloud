@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package bcs
 
 import (
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"sort"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -22,7 +22,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure      = &instanceResource{}
 	_ resource.ResourceWithImportState    = &instanceResource{}
@@ -38,15 +37,13 @@ type instanceResource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (r *instanceResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_instance"
 }
 
-// Schema defines the schema for the resource.
 func (r *instanceResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents a instance resource.",
+		Description: docs.GetResourceDescription("Instance"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			instanceResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -56,7 +53,6 @@ func (r *instanceResource) Schema(ctx context.Context, _ resource.SchemaRequest,
 	}
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *instanceResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan, config instanceResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -111,7 +107,6 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		createReq.SetIsBonding(plan.IsBonding.ValueBool())
 	}
 
-	// Subnets -> 1st only
 	if !plan.Subnets.IsNull() && !plan.Subnets.IsUnknown() {
 		planList, planDiags := r.convertListToInstanceSubnetModel(ctx, plan.Subnets)
 		resp.Diagnostics.Append(planDiags...)
@@ -120,18 +115,18 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		}
 
 		var subnets []bcs.CreateInstanceSubnetModel
-		subnet := planList[0]
-		v := bcs.CreateInstanceSubnetModel{
-			Id: subnet.Id.ValueString(),
+		for _, subnet := range planList {
+			v := bcs.CreateInstanceSubnetModel{
+				Id: subnet.Id.ValueString(),
+			}
+			if !subnet.NetworkInterfaceId.IsNull() && !subnet.NetworkInterfaceId.IsUnknown() {
+				v.SetNetworkInterfaceId(subnet.NetworkInterfaceId.ValueString())
+			}
+			if !subnet.PrivateIp.IsNull() && !subnet.PrivateIp.IsUnknown() {
+				v.SetPrivateIp(subnet.PrivateIp.ValueString())
+			}
+			subnets = append(subnets, v)
 		}
-		if !subnet.NetworkInterfaceId.IsNull() && !subnet.NetworkInterfaceId.IsUnknown() {
-			v.SetNetworkInterfaceId(subnet.NetworkInterfaceId.ValueString())
-		}
-		if !subnet.PrivateIp.IsNull() && !subnet.PrivateIp.IsUnknown() {
-			v.SetPrivateIp(subnet.PrivateIp.ValueString())
-		}
-		subnets = append(subnets, v)
-
 		createReq.SetSubnets(subnets)
 	}
 
@@ -143,7 +138,7 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 
 	var volumes []bcs.CreateInstanceVolumeModel
 	for _, volume := range planList {
-		// Create: IsDeleteOnTermination default true
+
 		var val bool
 		if volume.IsDeleteOnTermination.IsNull() || volume.IsDeleteOnTermination.IsUnknown() {
 			if !volume.Id.IsNull() && !volume.Id.IsUnknown() {
@@ -236,39 +231,6 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	// case: add nic (from 2nd subnet)
-	if !plan.Subnets.IsNull() && !plan.Subnets.IsUnknown() && len(plan.Subnets.Elements()) > 1 {
-		planList, planDiags := r.convertListToInstanceSubnetModel(ctx, plan.Subnets)
-		resp.Diagnostics.Append(planDiags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		for i := 1; i < len(planList); i++ {
-			s := planList[i]
-			ok := r.attacheNetworkInterface(ctx, plan.Id.ValueString(), s.NetworkInterfaceId.ValueString(), &resp.Diagnostics)
-			if !ok {
-				return
-			}
-		}
-		result, ok = r.pollInstanceUntilStatus(
-			ctx,
-			plan.Id.ValueString(),
-			[]string{common.InstanceStatusActive, common.InstanceStatusError},
-			&resp.Diagnostics,
-		)
-		if !ok || resp.Diagnostics.HasError() {
-			return
-		}
-
-		common.CheckResourceAvailableStatus(ctx, r, result.Status.Get(), []string{common.InstanceStatusActive}, &resp.Diagnostics)
-
-		ok = r.mapInstance(ctx, &plan, result, &resp.Diagnostics)
-		if !ok || resp.Diagnostics.HasError() {
-			return
-		}
-	}
-
-	// case: Status
 	if !config.Status.IsNull() && !config.Status.IsUnknown() && config.Status.ValueString() != common.InstanceStatusActive {
 		r.updateStatus(ctx, plan.Id.ValueString(), config.Status.ValueString(), plan.Status.ValueString(), &resp.Diagnostics)
 		plan.Status = config.Status
@@ -281,7 +243,6 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 	}
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state instanceResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -308,7 +269,6 @@ func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, r
 		},
 	)
 
-	// 404 → remove Terraform state
 	if httpResp != nil && httpResp.StatusCode == 404 {
 		resp.State.RemoveResource(ctx)
 		return
@@ -324,7 +284,6 @@ func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	// input only fields
 	if state.ImageId.IsNull() {
 		if idAttr, ok := state.Image.Attributes()["id"].(types.String); ok {
 			state.ImageId = idAttr
@@ -428,7 +387,6 @@ func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *instanceResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state instanceResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -460,7 +418,6 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 		desiredState = state.Status.ValueString()
 	}
 
-	// case: status change
 	if desiredState != state.Status.ValueString() {
 		r.updateStatus(ctx, plan.Id.ValueString(), desiredState, state.Status.ValueString(), &resp.Diagnostics)
 	}
@@ -469,7 +426,7 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	var newName, newDescription types.String
-	// case: Name, Description
+
 	if plan.Name != state.Name || (!plan.Description.IsUnknown() && plan.Description != state.Description) {
 		newName = plan.Name
 		newDescription = plan.Description
@@ -500,9 +457,8 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 		}
 	}
 
-	// case: Flavor Resize
 	if !plan.FlavorId.Equal(state.FlavorId) {
-		// stop status change
+
 		if desiredState != common.InstanceStatusStopped {
 			r.updateStatus(ctx, plan.Id.ValueString(), common.InstanceStatusStopped, desiredState, &resp.Diagnostics)
 			if resp.Diagnostics.HasError() {
@@ -542,13 +498,11 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 			return
 		}
 
-		// stop status change
 		if desiredState != common.InstanceStatusStopped {
 			r.updateStatus(ctx, plan.Id.ValueString(), desiredState, common.InstanceStatusStopped, &resp.Diagnostics)
 		}
 	}
 
-	// case: Volume
 	if !plan.Volumes.Equal(state.Volumes) {
 		planList, planDiags := r.convertListToInstanceVolumeModel(ctx, plan.Volumes)
 		stateList, stateDiags := r.convertListToInstanceVolumeModel(ctx, state.Volumes)
@@ -579,7 +533,6 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 		}
 	}
 
-	// case: Network Interface
 	if !plan.Subnets.Equal(state.Subnets) {
 		planList, planDiags := r.convertListToInstanceSubnetModel(ctx, plan.Subnets)
 		stateList, stateDiags := r.convertListToInstanceSubnetModel(ctx, state.Subnets)
@@ -641,7 +594,6 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *instanceResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state instanceResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -676,7 +628,6 @@ func (r *instanceResource) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	// Poll until resource disappears
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
@@ -693,8 +644,7 @@ func (r *instanceResource) Delete(ctx context.Context, req resource.DeleteReques
 }
 
 func (r *instanceResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}
@@ -713,7 +663,7 @@ func (r *instanceResource) Configure(_ context.Context, req resource.ConfigureRe
 }
 
 func (r *instanceResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
@@ -727,11 +677,10 @@ func (r *instanceResource) mapInstance(
 	if !ok || respDiags.HasError() {
 		return false
 	}
-	// create: set volume ID
+
 	r.setRequestVolumeId(ctx, plan, respDiags)
 
-	// create: set request Network ID (1st only)
-	r.setOneNetworkInterfaceId(ctx, plan, respDiags)
+	r.setNetworkInterfaceId(ctx, plan, respDiags)
 
 	if respDiags.HasError() {
 		return false

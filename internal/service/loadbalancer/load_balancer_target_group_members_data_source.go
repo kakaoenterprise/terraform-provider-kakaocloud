@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -15,25 +14,20 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var _ datasource.DataSourceWithConfigure = &loadBalancerTargetGroupMembersDataSource{}
 
-// NewLoadBalancerTargetGroupMembersDataSource is a helper function to simplify the provider implementation.
 func NewLoadBalancerTargetGroupMembersDataSource() datasource.DataSource {
 	return &loadBalancerTargetGroupMembersDataSource{}
 }
 
-// loadBalancerTargetGroupMembersDataSource is the data source implementation.
 type loadBalancerTargetGroupMembersDataSource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the data source type name.
 func (d *loadBalancerTargetGroupMembersDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_load_balancer_target_group_members"
 }
 
-// Schema defines the schema for the data source.
 func (d *loadBalancerTargetGroupMembersDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Get a list of Load Balancer Target Group Members in KakaoCloud.",
@@ -67,7 +61,6 @@ func (d *loadBalancerTargetGroupMembersDataSource) Schema(ctx context.Context, _
 	}
 }
 
-// Configure adds the provider configured client to the data source.
 func (d *loadBalancerTargetGroupMembersDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -85,7 +78,6 @@ func (d *loadBalancerTargetGroupMembersDataSource) Configure(_ context.Context, 
 	d.kc = kc
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (d *loadBalancerTargetGroupMembersDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data loadBalancerTargetGroupMemberListDataSourceModel
 	diags := req.Config.Get(ctx, &data)
@@ -103,10 +95,8 @@ func (d *loadBalancerTargetGroupMembersDataSource) Read(ctx context.Context, req
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Build API call with filters
 	memberApi := d.kc.ApiClient.LoadBalancerTargetGroupAPI.ListTargetsInTargetGroup(ctx, data.TargetGroupId.ValueString())
 
-	// Apply filters
 	for _, f := range data.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
 			continue
@@ -185,7 +175,6 @@ func (d *loadBalancerTargetGroupMembersDataSource) Read(ctx context.Context, req
 		return
 	}
 
-	// List targets in target group
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (*loadbalancer.TargetGroupMemberListModel, *http.Response, error) {
 			return memberApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
@@ -202,13 +191,11 @@ func (d *loadBalancerTargetGroupMembersDataSource) Read(ctx context.Context, req
 		return
 	}
 
-	// Map API response to data source model
 	ok := mapLoadBalancerTargetGroupMemberListFromGetResponse(ctx, &data, respModel, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Set state
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }

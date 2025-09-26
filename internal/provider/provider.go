@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package provider
 
 import (
@@ -22,12 +21,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ provider.Provider = &kakaocloudProvider{}
 )
 
-// New is a helper function to simplify provider server and testing implementation.
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
 		return &kakaocloudProvider{
@@ -44,15 +41,10 @@ type kakaocloudProviderModel struct {
 	ApplicationCredentialSecret types.String `tfsdk:"application_credential_secret"`
 }
 
-// kakaocloudProvider is the provider implementation.
 type kakaocloudProvider struct {
-	// version is set to the provider version on release, "dev" when the
-	// provider is built and ran locally, and "test" when running acceptance
-	// testing.
 	version string
 }
 
-// Metadata returns the provider type name.
 func (p *kakaocloudProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "kakaocloud"
 	resp.Version = p.version
@@ -100,7 +92,6 @@ func (p *kakaocloudProvider) Configure(ctx context.Context, req provider.Configu
 		return
 	}
 
-	// Process endpoint overrides
 	var endpointOverrides map[string]string
 	if !config.EndpointOverrides.IsNull() && !config.EndpointOverrides.IsUnknown() {
 		endpointOverrides = make(map[string]string)
@@ -120,7 +111,6 @@ func (p *kakaocloudProvider) Configure(ctx context.Context, req provider.Configu
 		EndpointOverrides:           endpointOverrides,
 	}
 
-	// Create authenticated client
 	userAgent := "terraform-provider-kakaocloud/" + p.version
 	authClient, err := common.NewClient(authConfig, userAgent)
 	if err != nil {
@@ -132,7 +122,6 @@ func (p *kakaocloudProvider) Configure(ctx context.Context, req provider.Configu
 	resp.ResourceData = authClient
 }
 
-// DataSources defines the data sources implemented in the provider.
 func (p *kakaocloudProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		bcs.NewInstanceDataSource,
@@ -196,7 +185,6 @@ func (p *kakaocloudProvider) DataSources(_ context.Context) []func() datasource.
 	}
 }
 
-// Resources defines the resources implemented in the provider.
 func (p *kakaocloudProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		bcs.NewInstanceResource,

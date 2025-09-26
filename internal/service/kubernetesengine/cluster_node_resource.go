@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package kubernetesengine
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -68,6 +68,7 @@ func (r *clusterNodeResource) Metadata(ctx context.Context, req resource.Metadat
 
 func (r *clusterNodeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: docs.GetResourceDescription("KubernetesEngineClusterNode"),
 		Attributes: MergeResourceSchemaAttributes(
 			nodeResourceSchemaAttributes,
 			map[string]schema.Attribute{

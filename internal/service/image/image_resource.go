@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package image
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -51,7 +51,7 @@ func (r *imageResource) ImportState(ctx context.Context, req resource.ImportStat
 
 func (r *imageResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "KakaoCloud 이미지 관리",
+		Description: docs.GetResourceDescription("Image"),
 		Attributes: MergeResourceSchemaAttributes(
 			imageResourceSchemaAttributes,
 			map[string]schema.Attribute{

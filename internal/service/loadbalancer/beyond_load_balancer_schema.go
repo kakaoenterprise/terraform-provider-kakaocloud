@@ -1,12 +1,12 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
 	"terraform-provider-kakaocloud/internal/docs"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -114,7 +114,7 @@ func getBeyondLoadBalancerResourceSchema() map[string]rschema.Attribute {
 			Description: desc.String("availability_zones"),
 		},
 		"load_balancers": rschema.ListNestedAttribute{
-			Required:    true,
+			Computed:    true,
 			Description: desc.String("load_balancers"),
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: getBeyondLoadBalancerLoadBalancerResourceSchemaAttributes(),
@@ -123,6 +123,9 @@ func getBeyondLoadBalancerResourceSchema() map[string]rschema.Attribute {
 		"attached_load_balancers": rschema.SetNestedAttribute{
 			Required:    true,
 			Description: "Request List of load balancers belonging to the HA group",
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+			},
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: map[string]rschema.Attribute{
 					"id": rschema.StringAttribute{

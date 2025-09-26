@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package common
 
 import (
@@ -21,7 +20,6 @@ type apiError struct {
 	} `json:"error"`
 }
 
-// AddApiActionError is a utility function to add a formatted error for an api action.
 func AddApiActionError(ctx context.Context, obj interface{}, resp *http.Response, apiName string, err error, diags *diag.Diagnostics) {
 	typeName, tfObjectType := ExtractTypeMetadata(ctx, obj)
 	action := GetCallerMethodName()

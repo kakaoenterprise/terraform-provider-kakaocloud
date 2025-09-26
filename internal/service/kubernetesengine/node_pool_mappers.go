@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package kubernetesengine
 
 import (
@@ -22,7 +21,7 @@ func mapNodePoolFromResponse(
 	diags *diag.Diagnostics,
 	userSGsHint ...[]string,
 ) bool {
-	// basics
+
 	dst.Id = types.StringValue(src.Id)
 	dst.Name = types.StringValue(src.Name)
 	dst.ClusterName = types.StringValue(src.ClusterName)
@@ -42,7 +41,6 @@ func mapNodePoolFromResponse(
 	dst.IsCordon = types.BoolValue(src.IsCordon)
 	dst.IsHyperThreading = types.BoolValue(src.IsHyperThreading)
 
-	// status
 	statusVal, statusDiag := types.ObjectValueFrom(ctx, nodePoolStatusAttrTypes, nodePoolStatusModel{
 		Phase:            types.StringValue(string(src.Status.Phase)),
 		AvailableNodes:   types.Int32Value(src.Status.AvailableNodes),
@@ -54,7 +52,6 @@ func mapNodePoolFromResponse(
 		return false
 	}
 
-	// image
 	imageVal, imageDiag := types.ObjectValueFrom(ctx, imageInfoAttrTypes, imageInfoModel{
 		Id:   types.StringValue(src.Image.Id),
 		Name: types.StringValue(src.Image.Name),
@@ -65,7 +62,6 @@ func mapNodePoolFromResponse(
 		return false
 	}
 
-	// labels set(object) to avoid ordering diffs
 	lbls := make([]attr.Value, 0, len(src.Labels))
 	for _, l := range src.Labels {
 		obj, _ := types.ObjectValue(nodePoolLabelAttrTypes, map[string]attr.Value{
@@ -81,7 +77,6 @@ func mapNodePoolFromResponse(
 		return false
 	}
 
-	// taints set(object) to avoid ordering diffs
 	tnts := make([]attr.Value, 0, len(src.Taints))
 	for _, t := range src.Taints {
 		obj, _ := types.ObjectValue(nodePoolTaintAttrTypes, map[string]attr.Value{
@@ -122,6 +117,7 @@ func mapNodePoolFromResponse(
 		diags.Append(d1...)
 		dst.SecurityGroups = userSet
 	} else {
+
 		emptySet, d1 := types.SetValueFrom(ctx, types.StringType, []string{})
 		diags.Append(d1...)
 		dst.SecurityGroups = emptySet
@@ -164,7 +160,6 @@ func mapNodePoolFromResponse(
 		return false
 	}
 
-	// autoscaling
 	a := src.Autoscaling
 	autoscalingVal, autoDiag := types.ObjectValueFrom(ctx, nodePoolAutoscalingAttrTypes, NodePoolAutoscalingModel{
 		IsAutoscalerEnable:              types.BoolValue(a.IsAutoscalerEnable),

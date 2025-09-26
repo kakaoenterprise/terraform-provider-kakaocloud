@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -32,5 +31,4 @@ func getLoadBalancerFlavorSchema() map[string]dschema.Attribute {
 	}
 }
 
-// loadBalancerFlavorBaseSchemaAttributes defines the attributes for a single load balancer flavor.
 var loadBalancerFlavorBaseSchemaAttributes = getLoadBalancerFlavorSchema()

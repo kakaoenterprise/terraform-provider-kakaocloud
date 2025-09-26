@@ -3,12 +3,17 @@
 page_title: "kakaocloud_volume_type Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud volume type list datasource
+  The kakaocloud_volume_type data source retrieves a list of available Volume Types in KakaoCloud.
+  It provides details such as ID, name, and description for each Volume Type.
+  Use this data source when you need to reference existing Volume Types in your Terraform configuration.
 ---
 
 # kakaocloud_volume_type (Data Source)
 
-kakaocloud volume type list datasource
+The `kakaocloud_volume_type` data source retrieves a list of available Volume Types in KakaoCloud.
+It provides details such as ID, name, and description for each Volume Type.
+
+Use this data source when you need to reference existing Volume Types in your Terraform configuration.
 
 
 

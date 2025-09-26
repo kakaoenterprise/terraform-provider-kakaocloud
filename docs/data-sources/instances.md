@@ -3,12 +3,55 @@
 page_title: "kakaocloud_instances Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud 인스턴스 목록을 조회하는 데이터 소스
+  The kakaocloud_instances data source retrieves a list of compute instances in KakaoCloud.
+  It supports filtering by attributes such as name and returns detailed information about each instance, including flavor, image, network interfaces, attached volumes, availability zone, security groups, and current status.
+  Use this data source when you need to: - Query multiple existing instances dynamically instead of hardcoding instance IDs. - Filter instances by attributes (e.g., name, flavor, or availability zone) to use in other resources. - Validate instance configurations or states before applying changes in your Terraform environment.
+  Available filters
+  | Filter         | Type            | Description |
+  |-------------------|-----------------|-------------|
+  | id                | string          | ID of the instance to query |
+  | name              | string          | Name of the instance <br>- Used when searching for instances containing a specific name |
+  | vm_state          | string          | State code of the instance  |
+  | flavor_name       | string          | Name of the instance flavor (type) |
+  | image_name        | string          | Name of the image used when creating the instance |
+  | private_ip        | string          | Private IP address assigned to the instance (IPv4 format) |
+  | public_ip         | string          | Public IP address associated with the instance |
+  | availability_zone | string | Availability zone of the instance <br>Possible values: <br>- `kr-central-2-a`: Availability zone `kr-central-2-a` <br>- `kr-central-2-b`: Availability zone `kr-central-2-b` <br>- `kr-central-2-c`: Availability zone `kr-central-2-c` |
+  | instance_type     | string    | Type of the instance <br>Possible values: <br>- `vm`: Virtual Machine type <br>- `bm`: Bare Metal Server type <br>- `gpu`: GPU type |
+  | status            | string          | Detailed status information of the instance <br>- Internally defined status values |
+  | user_id           | string          | ID of the user who created the instance |
+  | hostname          | string          | Hostname of the instance (e.g., internal DNS name) |
+  | os_type           | string          | Operating system type |
+  | is_hadoop         | boolean         | Whether the instance was created for a Hadoop environment |
+  | is_k8se           | boolean         | Whether the instance was created for a Kubernetes Engine environment |
 ---
 
 # kakaocloud_instances (Data Source)
 
-kakaocloud 인스턴스 목록을 조회하는 데이터 소스
+The `kakaocloud_instances` data source retrieves a list of compute instances in KakaoCloud.
+It supports filtering by attributes such as `name` and returns detailed information about each instance, including flavor, image, network interfaces, attached volumes, availability zone, security groups, and current status.
+
+Use this data source when you need to: - Query multiple existing instances dynamically instead of hardcoding instance IDs. - Filter instances by attributes (e.g., name, flavor, or availability zone) to use in other resources. - Validate instance configurations or states before applying changes in your Terraform environment.
+
+## Available filters
+
+| Filter         | Type            | Description |
+|-------------------|-----------------|-------------|
+| id                | string          | ID of the instance to query |
+| name              | string          | Name of the instance <br>- Used when searching for instances containing a specific name |
+| vm_state          | string          | State code of the instance  |
+| flavor_name       | string          | Name of the instance flavor (type) |
+| image_name        | string          | Name of the image used when creating the instance |
+| private_ip        | string          | Private IP address assigned to the instance (IPv4 format) |
+| public_ip         | string          | Public IP address associated with the instance |
+| availability_zone | string | Availability zone of the instance <br>Possible values: <br>- `kr-central-2-a`: Availability zone `kr-central-2-a` <br>- `kr-central-2-b`: Availability zone `kr-central-2-b` <br>- `kr-central-2-c`: Availability zone `kr-central-2-c` |
+| instance_type     | string    | Type of the instance <br>Possible values: <br>- `vm`: Virtual Machine type <br>- `bm`: Bare Metal Server type <br>- `gpu`: GPU type |
+| status            | string          | Detailed status information of the instance <br>- Internally defined status values |
+| user_id           | string          | ID of the user who created the instance |
+| hostname          | string          | Hostname of the instance (e.g., internal DNS name) |
+| os_type           | string          | Operating system type |
+| is_hadoop         | boolean         | Whether the instance was created for a Hadoop environment |
+| is_k8se           | boolean         | Whether the instance was created for a Kubernetes Engine environment |
 
 ## Example Usage
 

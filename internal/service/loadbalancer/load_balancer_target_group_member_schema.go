@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -19,7 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Inline validators following the established pattern
 var (
 	ipv4Validator = stringvalidator.RegexMatches(
 		regexp.MustCompile(`^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$`),
@@ -28,7 +26,6 @@ var (
 	weightValidator = int64validator.Between(0, 256)
 )
 
-// Base member attributes for reuse
 func getBaseMemberAttributes() map[string]rschema.Attribute {
 	desc := docs.Loadbalancer("bns_load_balancer__v1__api__add_target__model__TargetGroupMemberModel")
 	listDesc := docs.Loadbalancer("bns_load_balancer__v1__api__list_targets_in_target_group__model__TargetGroupMemberModel")
@@ -166,7 +163,6 @@ func getBaseMemberAttributes() map[string]rschema.Attribute {
 	}
 }
 
-// Resource schema attributes
 func getLoadBalancerTargetGroupMemberResourceSchema() map[string]rschema.Attribute {
 	baseAttrs := getBaseMemberAttributes()
 	desc := docs.Loadbalancer("bns_load_balancer__v1__api__list_targets_in_target_group__model__TargetGroupMemberModel")
@@ -202,7 +198,6 @@ func getLoadBalancerTargetGroupMemberResourceSchema() map[string]rschema.Attribu
 	}
 }
 
-// Data source schema attributes
 func getLoadBalancerTargetGroupMemberDataSourceSchema() map[string]dschema.Attribute {
 	desc := docs.Loadbalancer("bns_load_balancer__v1__api__list_targets_in_target_group__model__TargetGroupMemberModel")
 
@@ -327,7 +322,6 @@ func getLoadBalancerTargetGroupMemberDataSourceSchema() map[string]dschema.Attri
 	}
 }
 
-// List data source schema attributes
 func getLoadBalancerTargetGroupMemberListDataSourceSchema() map[string]dschema.Attribute {
 	desc := docs.Loadbalancer("bns_load_balancer__v1__api__list_targets_in_target_group__model__TargetGroupMemberModel")
 
@@ -463,11 +457,8 @@ func getLoadBalancerTargetGroupMemberListDataSourceSchema() map[string]dschema.A
 	}
 }
 
-// loadBalancerTargetGroupMemberResourceSchema defines the resource schema for the target group member.
 var loadBalancerTargetGroupMemberResourceSchema = getLoadBalancerTargetGroupMemberResourceSchema()
 
-// loadBalancerTargetGroupMemberDataSourceSchema defines the computed attributes for the target group member data source.
 var loadBalancerTargetGroupMemberDataSourceSchema = getLoadBalancerTargetGroupMemberDataSourceSchema()
 
-// loadBalancerTargetGroupMemberListDataSourceSchema defines the computed attributes for the target group member list data source.
 var loadBalancerTargetGroupMemberListDataSourceSchema = getLoadBalancerTargetGroupMemberListDataSourceSchema()

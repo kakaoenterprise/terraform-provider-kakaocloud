@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package vpc
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -17,7 +17,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &subnetShareDataSource{}
 	_ datasource.DataSourceWithConfigure = &subnetShareDataSource{}
@@ -37,7 +36,7 @@ func (d *subnetShareDataSource) Metadata(_ context.Context, req datasource.Metad
 
 func (d *subnetShareDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud 특정 Subnet 을 공유받은 프로젝트 목록 조회하는 데이터 소스",
+		Description: docs.GetDataSourceDescription("SubnetShare"),
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Required:   true,
@@ -98,8 +97,7 @@ func (d *subnetShareDataSource) Read(ctx context.Context, req datasource.ReadReq
 }
 
 func (d *subnetShareDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}

@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package kubernetesengine
 
 import (
@@ -9,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -53,7 +53,7 @@ func (d *clustersDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *clustersDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud 쿠버네티스 클러스터 목록을 조회하는 데이터 소스",
+		Description: docs.GetDataSourceDescription("KubernetesEngineClusters"),
 		Attributes: map[string]schema.Attribute{
 			"clusters": schema.ListNestedAttribute{
 				Computed: true,

@@ -1,12 +1,12 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
 	"context"
 	"fmt"
 	"net/http"
+	"terraform-provider-kakaocloud/internal/docs"
 
 	"terraform-provider-kakaocloud/internal/common"
 
@@ -16,13 +16,11 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &loadBalancerL7PolicyRulesDataSource{}
 	_ datasource.DataSourceWithConfigure = &loadBalancerL7PolicyRulesDataSource{}
 )
 
-// NewLoadBalancerL7PolicyRulesDataSource is a helper function to simplify the provider implementation.
 func NewLoadBalancerL7PolicyRulesDataSource() datasource.DataSource {
 	return &loadBalancerL7PolicyRulesDataSource{}
 }
@@ -31,15 +29,13 @@ type loadBalancerL7PolicyRulesDataSource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the data source type name.
 func (d *loadBalancerL7PolicyRulesDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_load_balancer_l7_policy_rules"
 }
 
-// Schema defines the schema for the data source.
 func (d *loadBalancerL7PolicyRulesDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Use this data source to get information about KakaoCloud Load Balancer L7 Policy Rules lists.",
+		Description: docs.GetDataSourceDescription("LoadBalancerL7PolicyRules"),
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Required:    true,
@@ -57,7 +53,6 @@ func (d *loadBalancerL7PolicyRulesDataSource) Schema(ctx context.Context, _ data
 	}
 }
 
-// Configure adds the provider configured client to the data source.
 func (d *loadBalancerL7PolicyRulesDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -75,7 +70,6 @@ func (d *loadBalancerL7PolicyRulesDataSource) Configure(_ context.Context, req d
 	d.kc = client
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (d *loadBalancerL7PolicyRulesDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config loadBalancerL7PolicyRuleListDataSourceModel
 
@@ -94,7 +88,6 @@ func (d *loadBalancerL7PolicyRulesDataSource) Read(ctx context.Context, req data
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Get the L7 policy to retrieve its rules
 	l7policyApi := d.kc.ApiClient.LoadBalancerL7PoliciesAPI.GetL7Policy(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken)
 
 	l7policyResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
@@ -108,9 +101,7 @@ func (d *loadBalancerL7PolicyRulesDataSource) Read(ctx context.Context, req data
 		return
 	}
 
-	// Map the response to the Terraform model
 	config = mapLoadBalancerL7PolicyRuleListFromGetPolicyResponse(*l7policyResp, config.Id.ValueString(), config.Timeouts)
 
-	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }

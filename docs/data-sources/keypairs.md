@@ -3,12 +3,38 @@
 page_title: "kakaocloud_keypairs Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud의 모든 키페어 정보를 필터링하여 조회하는 데이터 소스
+  The kakaocloud_keypairs data source retrieves a list of key pairs in KakaoCloud.
+  It supports filtering by attributes such as name and returns details including key pair ID, name, fingerprint, type, public key, creation time, and owner information.
+  Use this data source when you need to:- Query all existing key pairs dynamically without hardcoding their names or IDs.
+  Filter key pairs to select the correct one for attaching to compute instances.Validate key pair properties (e.g., fingerprint, type) before using them in other Terraform resources.
+  Available filters
+  | Filter    | Type     | Description |
+  |--------------|----------|-------------|
+  | id           | string   | Unique ID of the key pair |
+  | name         | string   | Name of the key pair |
+  | type         | string   | Type of the key pair <br>Examples: `ssh`, `x509` |
+  | fingerprint  | string   | Fingerprint of the public key |
+  | created_at   | string   | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
 ---
 
 # kakaocloud_keypairs (Data Source)
 
-kakaocloud의 모든 키페어 정보를 필터링하여 조회하는 데이터 소스
+The `kakaocloud_keypairs` data source retrieves a list of key pairs in KakaoCloud.
+It supports filtering by attributes such as `name` and returns details including key pair ID, name, fingerprint, type, public key, creation time, and owner information.
+
+Use this data source when you need to:- Query all existing key pairs dynamically without hardcoding their names or IDs.
+- Filter key pairs to select the correct one for attaching to compute instances.
+- Validate key pair properties (e.g., fingerprint, type) before using them in other Terraform resources.
+
+## Available filters
+
+| Filter    | Type     | Description |
+|--------------|----------|-------------|
+| id           | string   | Unique ID of the key pair |
+| name         | string   | Name of the key pair |
+| type         | string   | Type of the key pair <br>Examples: `ssh`, `x509` |
+| fingerprint  | string   | Fingerprint of the public key |
+| created_at   | string   | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
 
 
 

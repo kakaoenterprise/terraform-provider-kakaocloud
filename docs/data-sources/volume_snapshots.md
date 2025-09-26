@@ -3,12 +3,45 @@
 page_title: "kakaocloud_volume_snapshots Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Represents volume snapshot list datasource.
+  The kakaocloud_volume_snapshots data source retrieves a list of Volume Snapshots in KakaoCloud.
+  It supports filtering by attributes such as name and provides details including snapshot size, status, project information, and the source volume.
+  Use this data source when you need to reference multiple existing Volume Snapshots in your Terraform configuration.
+  Available filters
+  | Filter             | Type    | Description |
+  |------------------------|---------|-------------|
+  | id                     | string  | ID of the snapshot |
+  | name                   | string  | Name of the snapshot |
+  | status                 | string  | Current status of the snapshot |
+  | volume_id              | string  | Unique ID of the source volume |
+  | is_incremental         | boolean | Whether the snapshot is incremental <br>- `true`: Contains only changes since the previous snapshot <br>- `false`: Full snapshot including all data |
+  | is_dependent_snapshot  | boolean | Whether the snapshot depends on another snapshot <br>- `true`: Cannot be restored independently without the parent snapshot <br>- `false`: Can be restored independently |
+  | schedule_id            | string  | ID of the schedule used to create the snapshot |
+  | parent_id              | string  | ID of the parent snapshot <br>- Used to track parent snapshots in incremental chains |
+  | created_at             | string  | Time when the snapshot was created <br>- ISO_8601 format <br>- UTC |
+  | updated_at             | string  | Time when the snapshot was last updated <br>- ISO_8601 format <br>- UTC |
 ---
 
 # kakaocloud_volume_snapshots (Data Source)
 
-Represents volume snapshot list datasource.
+The `kakaocloud_volume_snapshots` data source retrieves a list of Volume Snapshots in KakaoCloud.
+It supports filtering by attributes such as name and provides details including snapshot size, status, project information, and the source volume.
+
+Use this data source when you need to reference multiple existing Volume Snapshots in your Terraform configuration.
+
+## Available filters
+
+| Filter             | Type    | Description |
+|------------------------|---------|-------------|
+| id                     | string  | ID of the snapshot |
+| name                   | string  | Name of the snapshot |
+| status                 | string  | Current status of the snapshot |
+| volume_id              | string  | Unique ID of the source volume |
+| is_incremental         | boolean | Whether the snapshot is incremental <br>- `true`: Contains only changes since the previous snapshot <br>- `false`: Full snapshot including all data |
+| is_dependent_snapshot  | boolean | Whether the snapshot depends on another snapshot <br>- `true`: Cannot be restored independently without the parent snapshot <br>- `false`: Can be restored independently |
+| schedule_id            | string  | ID of the schedule used to create the snapshot |
+| parent_id              | string  | ID of the parent snapshot <br>- Used to track parent snapshots in incremental chains |
+| created_at             | string  | Time when the snapshot was created <br>- ISO_8601 format <br>- UTC |
+| updated_at             | string  | Time when the snapshot was last updated <br>- ISO_8601 format <br>- UTC |
 
 ## Example Usage
 

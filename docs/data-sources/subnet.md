@@ -3,12 +3,17 @@
 page_title: "kakaocloud_subnet Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud 특정 Subnet 조회하는 데이터 소스
+  The kakaocloud_subnet data source retrieves information about a specific Subnet in KakaoCloud.
+  It provides details such as availability zone, CIDR block, associated VPC and route table, project ownership, and the provisioning/operating status of the subnet.
+  Use this data source when you need to reference an existing Subnet in your Terraform configuration without manually specifying all of its attributes.
 ---
 
 # kakaocloud_subnet (Data Source)
 
-kakaocloud 특정 Subnet 조회하는 데이터 소스
+The `kakaocloud_subnet` data source retrieves information about a specific Subnet in KakaoCloud.
+It provides details such as availability zone, CIDR block, associated VPC and route table, project ownership, and the provisioning/operating status of the subnet.
+
+Use this data source when you need to reference an existing Subnet in your Terraform configuration without manually specifying all of its attributes.
 
 
 

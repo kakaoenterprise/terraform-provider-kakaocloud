@@ -3,12 +3,17 @@
 page_title: "kakaocloud_volume Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud 특정 볼륨을 조회하는 데이터 소스
+  The kakaocloud_volume data source retrieves information about a specific Volume in KakaoCloud.
+  It provides details such as size, type, availability zone, attachment status, encryption settings, and associated instance information.
+  Use this data source when you need to reference an existing Volume in your Terraform configuration without hardcoding all of its attributes.
 ---
 
 # kakaocloud_volume (Data Source)
 
-kakaocloud 특정 볼륨을 조회하는 데이터 소스
+The `kakaocloud_volume` data source retrieves information about a specific Volume in KakaoCloud.
+It provides details such as size, type, availability zone, attachment status, encryption settings, and associated instance information.
+
+Use this data source when you need to reference an existing Volume in your Terraform configuration without hardcoding all of its attributes.
 
 ## Example Usage
 

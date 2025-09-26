@@ -3,12 +3,51 @@
 page_title: "kakaocloud_route_tables Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud Route Table 목록 조회하는 데이터 소스
+  The kakaocloud_route_tables data source retrieves a list of Route Tables in KakaoCloud.
+  It supports filtering by attributes such as name or ID, and provides details about associated VPCs, subnets, route entries, provisioning status, and whether each Route Table is the main table in its VPC.
+  Use this data source when you need to:- Query and reference multiple Route Tables dynamically in your Terraform configuration.
+  Retrieve routing information for multiple VPCs or subnets without hardcoding.
+  Available filters
+  | Filter               | Type              | Description |
+  |--------------------------|-------------------|-------------|
+  | id                       | string            | ID of the routing table |
+  | name                     | string            | Name of the associated VPC |
+  | provisioning_status      | string           | Provisioning status of the routing table <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+  | vpc_id                   | string            | ID of the associated VPC |
+  | vpc_name                 | string            | Name of the associated VPC |
+  | vpc_provisioning_status  | string     | Provisioning status of the VPC <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+  | subnet_name              | string            | Name of the associated subnet |
+  | subnet_id                | string            | ID of the associated subnet |
+  | association_count        | string            | Number of associated subnets |
+  | destination              | string            | Routing destination |
+  | created_at               | string            | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+  | updated_at               | string            | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 ---
 
 # kakaocloud_route_tables (Data Source)
 
-kakaocloud Route Table 목록 조회하는 데이터 소스
+The `kakaocloud_route_tables` data source retrieves a list of Route Tables in KakaoCloud.
+It supports filtering by attributes such as name or ID, and provides details about associated VPCs, subnets, route entries, provisioning status, and whether each Route Table is the main table in its VPC.
+
+Use this data source when you need to:- Query and reference multiple Route Tables dynamically in your Terraform configuration.
+- Retrieve routing information for multiple VPCs or subnets without hardcoding.
+
+## Available filters
+
+| Filter               | Type              | Description |
+|--------------------------|-------------------|-------------|
+| id                       | string            | ID of the routing table |
+| name                     | string            | Name of the associated VPC |
+| provisioning_status      | string           | Provisioning status of the routing table <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+| vpc_id                   | string            | ID of the associated VPC |
+| vpc_name                 | string            | Name of the associated VPC |
+| vpc_provisioning_status  | string     | Provisioning status of the VPC <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+| subnet_name              | string            | Name of the associated subnet |
+| subnet_id                | string            | ID of the associated subnet |
+| association_count        | string            | Number of associated subnets |
+| destination              | string            | Routing destination |
+| created_at               | string            | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+| updated_at               | string            | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 
 
 

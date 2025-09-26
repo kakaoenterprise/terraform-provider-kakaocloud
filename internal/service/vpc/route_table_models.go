@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package vpc
 
 import (
@@ -80,7 +79,7 @@ type routeTableRequestRouteModel struct {
 
 var routeTableRequestRouteAttrType = map[string]attr.Type{
 	"id":          types.StringType,
-	"destination": types.StringType,
+	"destination": cidrtypes.IPPrefixType{},
 	"target_type": types.StringType,
 	"target_id":   types.StringType,
 }

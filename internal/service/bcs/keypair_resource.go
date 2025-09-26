@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package bcs
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -19,7 +19,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.Resource                = &keypairResource{}
 	_ resource.ResourceWithConfigure   = &keypairResource{}
@@ -32,15 +31,13 @@ type keypairResource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (r *keypairResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_keypair"
 }
 
-// Schema defines the schema for the resource.
 func (r *keypairResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents a keypair resource.",
+		Description: docs.GetResourceDescription("Keypair"),
 		Attributes: MergeResourceSchemaAttributes(
 			keypairResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -50,7 +47,6 @@ func (r *keypairResource) Schema(ctx context.Context, _ resource.SchemaRequest, 
 	}
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *keypairResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan keypairResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -121,7 +117,6 @@ func (r *keypairResource) Create(ctx context.Context, req resource.CreateRequest
 	resp.Diagnostics.Append(diags...)
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *keypairResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state keypairResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -160,12 +155,10 @@ func (r *keypairResource) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 }
 
-// Update updates the resource in place. Keypairs are immutable, so this is a no-op.
 func (r *keypairResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Keypairs are immutable and cannot be updated.
+
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *keypairResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state keypairResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -197,7 +190,6 @@ func (r *keypairResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	// Poll until resource disappears
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (*bcs.BcsInstanceV1ApiGetKeypairModelResponseKeypairModel, *http.Response, error) {
@@ -228,6 +220,7 @@ func (r *keypairResource) Configure(_ context.Context, req resource.ConfigureReq
 }
 
 func (r *keypairResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
 }
 

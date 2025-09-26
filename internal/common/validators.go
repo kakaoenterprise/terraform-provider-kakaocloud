@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package common
 
 import (
@@ -117,7 +116,6 @@ func UuidNoHyphenValidator() []validator.String {
 	}
 }
 
-// NameValidator returns a string validator for resource name length.
 func NameValidator(maxLength int) []validator.String {
 	return []validator.String{
 		stringvalidator.LengthBetween(4, maxLength),
@@ -153,7 +151,6 @@ func (v nameNoDoubleSymbolValidator) ValidateString(ctx context.Context, req val
 	}
 }
 
-// DescriptionValidator returns a string validator for resource description length.
 func DescriptionValidator() []validator.String {
 	return []validator.String{
 		stringvalidator.LengthAtMost(100),
@@ -164,7 +161,6 @@ func DescriptionValidator() []validator.String {
 	}
 }
 
-// VolumeSizeValidator returns a string validator for volume size.
 func VolumeSizeValidator() []validator.Int32 {
 	return []validator.Int32{
 		int32validator.Between(1, 16384),
@@ -228,7 +224,6 @@ func (v CIDRPrefixLengthValidator) ValidateString(_ context.Context, req validat
 	}
 }
 
-// NewCIDRPrefixLengthValidator returns validator instance
 func NewCIDRPrefixLengthValidator(min, max int) validator.String {
 	return CIDRPrefixLengthValidator{Min: min, Max: max}
 }
@@ -259,14 +254,12 @@ func (v IpOrCIDRValidator) ValidateString(ctx context.Context, req validator.Str
 	}
 }
 
-// Validator for port numbers
 func PortValidator() []validator.Int64 {
 	return []validator.Int64{
 		int64validator.Between(1, 65535),
 	}
 }
 
-// Protocol Type validator
 func ProtocolValidator() []validator.String {
 	return []validator.String{
 		stringvalidator.OneOf("HTTP", "TCP", "UDP", "TERMINATED_HTTPS"),
@@ -321,8 +314,6 @@ func ValidateAvailabilityZone(
 	}
 }
 
-// ConnectionLimitValidator validates connection limit values
-// Connection limit can be -1 (unlimited) or between 1 and 2147483647
 func ConnectionLimitValidator() []validator.Int64 {
 	return []validator.Int64{
 		int64validator.Any(
@@ -332,7 +323,6 @@ func ConnectionLimitValidator() []validator.Int64 {
 	}
 }
 
-// IPv4OrIPv6Validator validates that a string is either a valid IPv4 or IPv6 address
 type IPv4OrIPv6Validator struct{}
 
 func (v IPv4OrIPv6Validator) Description(_ context.Context) string {
@@ -353,7 +343,6 @@ func (v IPv4OrIPv6Validator) ValidateString(ctx context.Context, req validator.S
 		return
 	}
 
-	// Try to parse as IP address (both IPv4 and IPv6)
 	if net.ParseIP(val) == nil {
 		resp.Diagnostics.AddAttributeError(
 			req.Path,
@@ -363,12 +352,10 @@ func (v IPv4OrIPv6Validator) ValidateString(ctx context.Context, req validator.S
 	}
 }
 
-// NewIPv4OrIPv6Validator returns a validator for IPv4 or IPv6 addresses
 func NewIPv4OrIPv6Validator() validator.String {
 	return IPv4OrIPv6Validator{}
 }
 
-// PreserveStateWhenNotSet is a plan modifier that preserves the state value when the field is not set in the configuration
 type PreserveStateWhenNotSet struct{}
 
 func (p PreserveStateWhenNotSet) Description(ctx context.Context) string {
@@ -380,7 +367,7 @@ func (p PreserveStateWhenNotSet) MarkdownDescription(ctx context.Context) string
 }
 
 func (p PreserveStateWhenNotSet) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	// If the config value is null or unknown, use the state value
+
 	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
 		if !req.StateValue.IsNull() && !req.StateValue.IsUnknown() {
 			resp.PlanValue = req.StateValue
@@ -388,7 +375,6 @@ func (p PreserveStateWhenNotSet) PlanModifyString(ctx context.Context, req planm
 	}
 }
 
-// NewPreserveStateWhenNotSet returns a plan modifier that preserves the state value when the field is not set
 func NewPreserveStateWhenNotSet() planmodifier.String {
 	return PreserveStateWhenNotSet{}
 }

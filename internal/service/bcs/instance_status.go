@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package bcs
 
 import (
@@ -24,7 +23,6 @@ func (r *instanceResource) updateStatus(
 		return true
 	}
 
-	// wait to fixed status
 	if !common.IsInstanceValidStatus(state) {
 		result, ok := r.pollInstanceUntilStatus(
 			ctx,

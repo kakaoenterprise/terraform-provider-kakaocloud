@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package common
 
 import (
@@ -12,7 +11,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-// ExtractTypeMetadata determines the Terraform component type and type name.
 func ExtractTypeMetadata(ctx context.Context, obj interface{}) (string, string) {
 	var typeName string
 	var tfObjectType string

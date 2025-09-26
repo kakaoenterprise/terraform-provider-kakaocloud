@@ -3,12 +3,16 @@
 page_title: "kakaocloud_kubernetes_engine_scheduled_scaling Resource - kakaocloud"
 subcategory: ""
 description: |-
-  
+  The kakaocloud_kubernetes_engine_scheduled_scaling resource allows you to configure scheduled autoscaling rules for node pools in a KakaoCloud Kubernetes Engine cluster.
+  You can define scaling targets, schedules, and execution times to optimize resource usage and cost efficiency.
+  This resource also provides status tracking and execution history for better visibility and operational control.
 ---
 
 # kakaocloud_kubernetes_engine_scheduled_scaling (Resource)
 
-
+The `kakaocloud_kubernetes_engine_scheduled_scaling` resource allows you to configure scheduled autoscaling rules for node pools in a KakaoCloud Kubernetes Engine cluster.
+You can define scaling targets, schedules, and execution times to optimize resource usage and cost efficiency.
+This resource also provides status tracking and execution history for better visibility and operational control.
 
 
 

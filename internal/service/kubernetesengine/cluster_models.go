@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package kubernetesengine
 
 import (
@@ -66,21 +65,18 @@ type SubnetModel struct {
 	Id               types.String `tfsdk:"id"`
 }
 
-// cluster_network
 var clusterNetworkAttrTypes = map[string]attr.Type{
 	"cni":          types.StringType,
 	"pod_cidr":     types.StringType,
 	"service_cidr": types.StringType,
 }
 
-// subnet (leaf object)
 var subnetAttrTypes = map[string]attr.Type{
 	"availability_zone": types.StringType,
 	"cidr_block":        types.StringType,
 	"id":                types.StringType,
 }
 
-// vpc_info (subnets = list of object)
 var vpcInfoAttrTypes = map[string]attr.Type{
 	"id": types.StringType,
 	"subnets": types.SetType{
@@ -88,19 +84,16 @@ var vpcInfoAttrTypes = map[string]attr.Type{
 	},
 }
 
-// control_plane_endpoint
 var controlPlaneEndpointAttrTypes = map[string]attr.Type{
 	"host": types.StringType,
 	"port": types.Int32Type,
 }
 
-// creator_info
 var creatorInfoAttrTypes = map[string]attr.Type{
 	"id":   types.StringType,
 	"name": types.StringType,
 }
 
-// version (OMT)
 var omtInfoAttrTypes = map[string]attr.Type{
 	"is_deprecated": types.BoolType,
 	"eol":           types.StringType,
@@ -109,7 +102,6 @@ var omtInfoAttrTypes = map[string]attr.Type{
 	"patch_version": types.StringType,
 }
 
-// status
 var statusAttrTypes = map[string]attr.Type{
 	"phase": types.StringType,
 }
@@ -124,7 +116,6 @@ type clustersDataSourceModel struct {
 	Timeouts datasourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
-// resource
 type clusterResourceModel struct {
 	ClusterBaseModel
 	Timeouts resourceTimeouts.Value `tfsdk:"timeouts"`

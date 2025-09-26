@@ -1,15 +1,16 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package kubernetesengine
 
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"net/http"
 	"strings"
+	"terraform-provider-kakaocloud/internal/docs"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 
 	"terraform-provider-kakaocloud/internal/common"
 	"terraform-provider-kakaocloud/internal/utils"
@@ -43,7 +44,7 @@ func (r *nodePoolResource) Metadata(_ context.Context, req resource.MetadataRequ
 
 func (r *nodePoolResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents a Kubernetes Engine Node Pool resource.",
+		Description: docs.GetResourceDescription("KubernetesEngineNodePool"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			nodePoolResourceAttributes,
 			map[string]schema.Attribute{
@@ -73,7 +74,7 @@ func (r *nodePoolResource) ImportState(
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
 ) {
-	// Import format: cluster_name/node_pool_name
+
 	id := req.ID
 	parts := strings.SplitN(id, "/", 2)
 	if len(parts) != 2 {
@@ -86,7 +87,6 @@ func (r *nodePoolResource) ImportState(
 
 	clusterName, nodePoolName := parts[0], parts[1]
 
-	// Set attributes in state, collecting diagnostics
 	var diags diag.Diagnostics
 	diags = append(diags, resp.State.SetAttribute(ctx, path.Root("cluster_name"), clusterName)...)
 	diags = append(diags, resp.State.SetAttribute(ctx, path.Root("name"), nodePoolName)...)
@@ -103,6 +103,13 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
+	var config NodePoolResourceModel
+	diags = req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -111,8 +118,6 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Determine initial node count for create
-	// Requirement: When autoscaling is enabled at create, send node_count equal to autoscaler_desired_node_count if provided
 	var initialNodeCount int32
 	var autoscalingProvided bool
 	var autoscalingEnabled bool
@@ -126,7 +131,7 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	if autoscalingProvided && autoscalingEnabled {
-		// When autoscaling is enabled, user must not set node_count; initial size must come from autoscaler_desired_node_count
+
 		if !autoscalingModel.AutoscalerDesiredNodeCount.IsNull() && !autoscalingModel.AutoscalerDesiredNodeCount.IsUnknown() {
 			initialNodeCount = autoscalingModel.AutoscalerDesiredNodeCount.ValueInt32()
 		} else {
@@ -138,7 +143,7 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 			return
 		}
 	} else {
-		// Autoscaling not enabled: node_count must be provided
+
 		if plan.NodeCount.IsNull() || plan.NodeCount.IsUnknown() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("node_count"),
@@ -171,7 +176,6 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		Subnets: subnetIds,
 	}
 
-	// --- Labels ---
 	var labels []kubernetesengine.LabelRequestModel
 	if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
 		var tmp []NodePoolLabelModel
@@ -184,7 +188,6 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		}
 	}
 
-	// --- Taints ---
 	var taints []kubernetesengine.TaintRequestModel
 	if !plan.Taints.IsNull() && !plan.Taints.IsUnknown() {
 		var tmp []NodePoolTaintModel
@@ -198,13 +201,11 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		}
 	}
 
-	// --- Security Groups ---
 	var userSGs []string
 	if !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown() {
 		_ = plan.SecurityGroups.ElementsAs(ctx, &userSGs, false)
 	}
 
-	// --- Build Create Request ---
 	createModel := kubernetesengine.NewKubernetesEngineV1ApiCreateNodePoolModelNodePoolRequestModel(
 		plan.Name.ValueString(),
 		plan.FlavorId.ValueString(),
@@ -218,8 +219,9 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		createModel.SetDescription(plan.Description.ValueString())
 	}
-	if !plan.UserData.IsNull() && !plan.UserData.IsUnknown() && plan.UserData.ValueString() != "" {
-		createModel.SetUserData(plan.UserData.ValueString())
+
+	if !config.UserData.IsNull() && !config.UserData.IsUnknown() && config.UserData.ValueString() != "" {
+		createModel.SetUserData(config.UserData.ValueString())
 	}
 	if !plan.IsHyperThreading.IsNull() && !plan.IsHyperThreading.IsUnknown() {
 		createModel.SetIsHyperThreading(plan.IsHyperThreading.ValueBool())
@@ -230,7 +232,7 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	if taints != nil {
 		createModel.SetTaints(taints)
 	}
-	// pass user security groups only on create to avoid mixing with defaults
+
 	if userSGs != nil {
 		createModel.SetSecurityGroups(userSGs)
 	}
@@ -249,7 +251,6 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	// --- Polling for status ---
 	plan.Id = types.StringValue(plan.ClusterName.ValueString() + "/" + plan.Name.ValueString())
 	result, ok := r.waitNodePoolReadyOrFailed(
 		ctx,
@@ -261,9 +262,8 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	// --- If autoscaling provided, apply it now via Scaling API and wait again ---
 	if autoscalingProvided {
-		// Validate at least is_autoscaler_enable presence
+
 		if autoscalingModel.IsAutoscalerEnable.IsUnknown() || autoscalingModel.IsAutoscalerEnable.IsNull() {
 			resp.Diagnostics.AddError("Invalid autoscaling configuration on create", "'autoscaling.is_autoscaler_enable' must be set when configuring autoscaling during create.")
 			return
@@ -329,7 +329,6 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		}
 	}
 
-	// Refresh latest node pool after potential autoscaling update (mandatory when autoscaling provided)
 	finalDetail, httpResp2, err2 := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (struct {
 			NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
@@ -355,7 +354,6 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	res := finalDetail.NodePool
 	result = &res
 
-	// --- Map API response to plan ---
 	var planUserSGs []string
 	if !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown() {
 		_ = plan.SecurityGroups.ElementsAs(ctx, &planUserSGs, false)
@@ -390,7 +388,6 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		)
 	}
 
-	// --- Save state ---
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 }
@@ -439,6 +436,7 @@ func (r *nodePoolResource) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	result := detail.NodePool
+
 	var stateUserSGs []string
 	if !state.SecurityGroups.IsNull() && !state.SecurityGroups.IsUnknown() {
 		_ = state.SecurityGroups.ElementsAs(ctx, &stateUserSGs, false)
@@ -462,7 +460,6 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	// --- Timeout setup ---
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -471,7 +468,6 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// --- Immutable fields check ---
 	var immutableChanges []string
 	if !plan.ClusterName.Equal(state.ClusterName) {
 		immutableChanges = append(immutableChanges, "cluster_name")
@@ -512,15 +508,11 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	// --- Build update model for mutable fields ---
 	upd := kubernetesengine.NewKubernetesEngineV1ApiUpdateNodePoolModelNodePoolRequestModel()
 
 	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		upd.SetDescription(plan.Description.ValueString())
 	}
-
-	// node_count is only mutable when autoscaling is disabled
-	// We'll set this below after we determine effective autoscaling state.
 
 	var userSGs []string
 	if !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown() {
@@ -530,8 +522,6 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		}
 	}
 
-	// --- Compute label changes and call labels API if needed ---
-	// Build maps from state and plan
 	planLabels := map[string]string{}
 	stateLabels := map[string]string{}
 
@@ -565,13 +555,13 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 
 	addOrUpdate := make([]kubernetesengine.LabelRequestModel, 0)
 	removeKeys := make([]string, 0)
-	// additions/updates
+
 	for k, v := range planLabels {
 		if sv, ok := stateLabels[k]; !ok || sv != v {
 			addOrUpdate = append(addOrUpdate, *kubernetesengine.NewLabelRequestModel(k, v))
 		}
 	}
-	// removals
+
 	for k := range stateLabels {
 		if _, ok := planLabels[k]; !ok {
 			removeKeys = append(removeKeys, k)
@@ -606,9 +596,8 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		)
 	}
 
-	// Determine effective autoscaling enabled status after this update
 	effectiveAutoscalingEnabled := false
-	// read from state first
+
 	if !state.Autoscaling.IsNull() && !state.Autoscaling.IsUnknown() {
 		var stAuto NodePoolAutoscalingModel
 		_ = state.Autoscaling.As(ctx, &stAuto, basetypes.ObjectAsOptions{})
@@ -616,7 +605,7 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 			effectiveAutoscalingEnabled = stAuto.IsAutoscalerEnable.ValueBool()
 		}
 	}
-	// override with plan if provided
+
 	if !plan.Autoscaling.IsNull() && !plan.Autoscaling.IsUnknown() {
 		var plAuto NodePoolAutoscalingModel
 		_ = plan.Autoscaling.As(ctx, &plAuto, basetypes.ObjectAsOptions{})
@@ -625,13 +614,12 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		}
 	}
 
-	// node_count handling based on autoscaling
 	didSetCount := false
 	if effectiveAutoscalingEnabled {
-		// In update (non-create), node_count is read-only; but allow during create
-		if !req.State.Raw.IsNull() { // non-create
+
+		if !req.State.Raw.IsNull() {
 			if !plan.NodeCount.IsNull() && !plan.NodeCount.IsUnknown() {
-				// if different from state or state unknown, reject
+
 				if state.NodeCount.IsNull() || state.NodeCount.IsUnknown() || plan.NodeCount.ValueInt32() != state.NodeCount.ValueInt32() {
 					resp.Diagnostics.AddAttributeError(
 						path.Root("node_count"),
@@ -649,7 +637,6 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		}
 	}
 
-	// --- Send UpdateNodePool for basic mutable fields if any were set ---
 	didSetDesc := !plan.Description.IsNull() && !plan.Description.IsUnknown()
 	didSetSG := !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown()
 	if didSetDesc || didSetCount || didSetSG {
@@ -674,19 +661,17 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		)
 	}
 
-	// --- Autoscaling update (separate ScalingAPI) ---
 	if !plan.Autoscaling.IsNull() && !plan.Autoscaling.IsUnknown() {
 		var auto NodePoolAutoscalingModel
 		_ = plan.Autoscaling.As(ctx, &auto, basetypes.ObjectAsOptions{})
 
-		// Require is_autoscaler_enable when autoscaling block is provided
 		if auto.IsAutoscalerEnable.IsUnknown() || auto.IsAutoscalerEnable.IsNull() {
 			resp.Diagnostics.AddError("Invalid autoscaling configuration", "'autoscaling.is_autoscaler_enable' must be set when configuring autoscaling.")
 			return
 		}
 
 		scaling := kubernetesengine.NewNodePoolScalingResourceRequestModel(auto.IsAutoscalerEnable.ValueBool())
-		// Optional numeric fields: set if known; set Nil if explicitly null
+
 		if !auto.AutoscalerDesiredNodeCount.IsUnknown() {
 			if auto.AutoscalerDesiredNodeCount.IsNull() {
 				scaling.SetAutoscalerDesiredNodeCountNil()
@@ -752,7 +737,6 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		)
 	}
 
-	// --- Refresh state ---
 	finalResp, httpResp2, err2 := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (struct {
 			NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
@@ -778,11 +762,9 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 
 	latest := finalResp.NodePool
 
-	// Map latest API response to state
 	newState := state
 	_ = mapNodePoolFromResponse(ctx, &newState.NodePoolBaseModel, &latest, &resp.Diagnostics, userSGs)
 
-	// Ensure ID remains cluster/name format
 	if newState.Id.IsNull() || newState.Id.ValueString() == "" {
 		newState.Id = types.StringValue(plan.ClusterName.ValueString() + "/" + state.Name.ValueString())
 	}
@@ -820,7 +802,6 @@ func (r *nodePoolResource) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	// Poll until 404
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
@@ -856,7 +837,6 @@ func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPl
 		return
 	}
 
-	// When destroying (resource removed from configuration), plan is null. Do not attempt to read or modify it.
 	if req.Plan.Raw.IsNull() {
 		return
 	}
@@ -883,6 +863,7 @@ func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPl
 			effectiveAutoscaling = cfAuto.IsAutoscalerEnable.ValueBool()
 		}
 	} else if !isCreate && !state.Autoscaling.IsNull() && !state.Autoscaling.IsUnknown() {
+
 		var stAuto NodePoolAutoscalingModel
 		_ = state.Autoscaling.As(ctx, &stAuto, basetypes.ObjectAsOptions{})
 		if !stAuto.IsAutoscalerEnable.IsNull() && !stAuto.IsAutoscalerEnable.IsUnknown() {
@@ -891,7 +872,7 @@ func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPl
 	}
 
 	if effectiveAutoscaling {
-		// Enforce node_count omission for both create and update when autoscaling is enabled
+
 		if !config.NodeCount.IsNull() && !config.NodeCount.IsUnknown() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("node_count"),
@@ -900,7 +881,7 @@ func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPl
 			)
 			return
 		}
-		// Mark as unknown so Terraform expects the provider to compute it during create/apply
+
 		resp.Plan.SetAttribute(ctx, path.Root("node_count"), types.Int32Unknown())
 	} else {
 		prevAutoEnabled := false
@@ -918,7 +899,6 @@ func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPl
 	}
 }
 
-// --- Poll until node pool is in a stable state ---
 func (r *nodePoolResource) waitNodePoolReadyOrFailed(
 	ctx context.Context,
 	clusterName string,
@@ -931,6 +911,7 @@ func (r *nodePoolResource) waitNodePoolReadyOrFailed(
 		2*time.Second,
 		[]string{
 			string(kubernetesengine.NODEPOOLSTATUS_RUNNING),
+			string(kubernetesengine.NODEPOOLSTATUS_RUNNING__SCHEDULING_DISABLE),
 			string(kubernetesengine.NODEPOOLSTATUS_FAILED),
 		},
 		diagnostics,

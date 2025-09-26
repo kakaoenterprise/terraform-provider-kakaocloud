@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package vpc
 
 import (
@@ -18,8 +17,8 @@ type vpcBaseModel struct {
 	Name               types.String       `tfsdk:"name"`
 	Description        types.String       `tfsdk:"description"`
 	Region             types.String       `tfsdk:"region"`
-	Igw                types.Object       `tfsdk:"igw"`                 // Nested object
-	DefaultRouteTable  types.Object       `tfsdk:"default_route_table"` // Nested object
+	Igw                types.Object       `tfsdk:"igw"`
+	DefaultRouteTable  types.Object       `tfsdk:"default_route_table"`
 	ProjectId          types.String       `tfsdk:"project_id"`
 	ProjectName        types.String       `tfsdk:"project_name"`
 	CidrBlock          cidrtypes.IPPrefix `tfsdk:"cidr_block"`

@@ -3,12 +3,20 @@
 page_title: "kakaocloud_image_members Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  KakaoCloud Image Member Schema
+  The kakaocloud_image_members data source allows you to retrieve the list of projects that have been granted access to a specific image in KakaoCloud.
+  This data source is useful when you need to: - Check whether an image is shared with other projects. - Retrieve member details such as id, is_shared, status, and timestamps for auditing. - Validate that image sharing settings are properly configured in your Terraform environment.
+  By using this data source, you can dynamically reference image sharing information without hardcoding project IDs or member states.
 ---
 
 # kakaocloud_image_members (Data Source)
 
-KakaoCloud Image Member Schema
+The `kakaocloud_image_members` data source allows you to retrieve the list of projects that have been granted access to a specific image in KakaoCloud.
+
+This data source is useful when you need to: - Check whether an image is shared with other projects. - Retrieve member details such as `id`, `is_shared`, `status`, and timestamps for auditing. - Validate that image sharing settings are properly configured in your Terraform environment.
+
+By using this data source, you can dynamically reference image sharing information without hardcoding project IDs or member states.
+
+<!-- ## Available filters 없음  Limit offSet은 제외 -->
 
 
 

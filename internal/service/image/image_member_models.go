@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package image
 
 import (
@@ -27,6 +26,7 @@ type imageMemberResourceModel struct {
 	Status    types.String           `tfsdk:"status"`
 	Timeouts  resourceTimeouts.Value `tfsdk:"timeouts"`
 }
+
 type imageMemberDataSourceModel struct {
 	ImageId  types.String             `tfsdk:"image_id"`
 	Members  []imageMemberBaseModel   `tfsdk:"members"`

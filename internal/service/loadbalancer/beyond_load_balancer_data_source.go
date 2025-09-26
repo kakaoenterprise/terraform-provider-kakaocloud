@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -16,13 +16,11 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &beyondLoadBalancerDataSource{}
 	_ datasource.DataSourceWithConfigure = &beyondLoadBalancerDataSource{}
 )
 
-// NewBeyondLoadBalancerDataSource is a helper function to simplify the provider implementation.
 func NewBeyondLoadBalancerDataSource() datasource.DataSource {
 	return &beyondLoadBalancerDataSource{}
 }
@@ -31,15 +29,13 @@ type beyondLoadBalancerDataSource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the data source type name.
 func (d *beyondLoadBalancerDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_beyond_load_balancer"
 }
 
-// Schema defines the schema for the data source.
 func (d *beyondLoadBalancerDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Use this data source to get information about a specific KakaoCloud Beyond Load Balancer.",
+		Description: docs.GetDataSourceDescription("BeyondLoadBalancer"),
 		Attributes: utils.MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
@@ -53,7 +49,6 @@ func (d *beyondLoadBalancerDataSource) Schema(ctx context.Context, _ datasource.
 	}
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (d *beyondLoadBalancerDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data beyondLoadBalancerDataSourceModel
 
@@ -73,7 +68,6 @@ func (d *beyondLoadBalancerDataSource) Read(ctx context.Context, req datasource.
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// The SDK function and response object will need to be verified against the actual Go SDK.
 	blbResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiGetHaGroupModelResponseBeyondLoadBalancerModel, *http.Response, error) {
 			return d.kc.ApiClient.BeyondLoadBalancerAPI.GetHaGroup(ctx, data.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
@@ -84,18 +78,15 @@ func (d *beyondLoadBalancerDataSource) Read(ctx context.Context, req datasource.
 		return
 	}
 
-	// Map the API response to the Terraform model
 	ok := mapBeyondLoadBalancerBaseModel(ctx, &data.beyondLoadBalancerBaseModel, &blbResp.BeyondLoadBalancer, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Save data into Terraform state
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }
 
-// Configure adds the provider configured client to the data source.
 func (d *beyondLoadBalancerDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return

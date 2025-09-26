@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package common
 
 import (
@@ -122,7 +121,6 @@ func PollUntilDeletion(
 		case <-ticker.C:
 			deleted, httpResp, err := check(ctx)
 
-			// 404 → delete complete
 			if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
 				return
 			}

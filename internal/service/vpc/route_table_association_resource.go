@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package vpc
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -25,7 +25,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure   = &routeTableAssociationResource{}
 	_ resource.ResourceWithImportState = &routeTableAssociationResource{}
@@ -45,7 +44,7 @@ func (r *routeTableAssociationResource) Metadata(_ context.Context, req resource
 
 func (r *routeTableAssociationResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud 특정 Route Table에 연결된 서브넷 목록 관리",
+		Description: docs.GetResourceDescription("RouteTableAssociation"),
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Required:    true,
@@ -100,7 +99,6 @@ func (r *routeTableAssociationResource) Schema(ctx context.Context, _ resource.S
 	}
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *routeTableAssociationResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan routeTableAssociationResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -175,6 +173,7 @@ func (r *routeTableAssociationResource) Read(ctx context.Context, req resource.R
 				XAuthToken(r.kc.XAuthToken).Limit(1000).Execute()
 		},
 	)
+
 	if httpResp != nil && httpResp.StatusCode == 404 {
 		resp.State.RemoveResource(ctx)
 		return
@@ -207,7 +206,6 @@ func (r *routeTableAssociationResource) Read(ctx context.Context, req resource.R
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *routeTableAssociationResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state routeTableAssociationResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -250,7 +248,6 @@ func (r *routeTableAssociationResource) Update(ctx context.Context, req resource
 		stateSet[id] = struct{}{}
 	}
 
-	// Add Association
 	for _, subnetId := range planSubnetIds {
 		if _, exists := stateSet[subnetId]; !exists {
 			ok := r.setAssociation(ctx, plan.Id.ValueString(), subnetId, &resp.Diagnostics)
@@ -277,7 +274,6 @@ func (r *routeTableAssociationResource) Update(ctx context.Context, req resource
 	}
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *routeTableAssociationResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state routeTableAssociationResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -350,8 +346,7 @@ func (r *routeTableAssociationResource) Delete(ctx context.Context, req resource
 }
 
 func (r *routeTableAssociationResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}
@@ -370,7 +365,7 @@ func (r *routeTableAssociationResource) Configure(_ context.Context, req resourc
 }
 
 func (r *routeTableAssociationResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
@@ -410,6 +405,7 @@ func (r *routeTableAssociationResource) setAssociation(
 	subnetId string,
 	respDiags *diag.Diagnostics,
 ) bool {
+
 	routeTableResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
 		func() (*vpc.RouteTableListModel, *http.Response, error) {
 			return r.kc.ApiClient.VPCRouteTableAPI.ListRouteTables(ctx).XAuthToken(r.kc.XAuthToken).SubnetId(subnetId).Limit(1000).Execute()
@@ -417,6 +413,11 @@ func (r *routeTableAssociationResource) setAssociation(
 	)
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "ListRouteTables", err, respDiags)
+		return false
+	}
+	if len(routeTableResp.VpcRouteTables) == 0 {
+		common.AddGeneralError(ctx, r, respDiags,
+			fmt.Sprintf("Subnet does not exist. subnet_id: '%s'", subnetId))
 		return false
 	}
 

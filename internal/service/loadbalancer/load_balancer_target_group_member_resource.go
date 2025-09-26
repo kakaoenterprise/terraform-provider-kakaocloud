@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -20,31 +20,26 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure   = &loadBalancerTargetGroupMemberResource{}
 	_ resource.ResourceWithImportState = &loadBalancerTargetGroupMemberResource{}
 )
 
-// NewLoadBalancerTargetGroupMemberResource is a helper function to simplify the provider implementation.
 func NewLoadBalancerTargetGroupMemberResource() resource.Resource {
 	return &loadBalancerTargetGroupMemberResource{}
 }
 
-// loadBalancerTargetGroupMemberResource is the resource implementation.
 type loadBalancerTargetGroupMemberResource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (r *loadBalancerTargetGroupMemberResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_load_balancer_target_group_member"
 }
 
-// Schema defines the schema for the resource.
 func (r *loadBalancerTargetGroupMemberResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a Load Balancer Target Group Member (target instance) in KakaoCloud.",
+		Description: docs.GetResourceDescription("LoadBalancerTargetGroupMember"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			loadBalancerTargetGroupMemberResourceSchema,
 			map[string]schema.Attribute{
@@ -54,7 +49,6 @@ func (r *loadBalancerTargetGroupMemberResource) Schema(ctx context.Context, _ re
 	}
 }
 
-// Configure adds the provider configured client to the resource.
 func (r *loadBalancerTargetGroupMemberResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -72,7 +66,6 @@ func (r *loadBalancerTargetGroupMemberResource) Configure(_ context.Context, req
 	r.kc = kc
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *loadBalancerTargetGroupMemberResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan loadBalancerTargetGroupMemberResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -90,15 +83,13 @@ func (r *loadBalancerTargetGroupMemberResource) Create(ctx context.Context, req 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Map plan to create request
 	createReq := mapLoadBalancerTargetGroupMemberToCreateRequest(ctx, &plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Create target group member
 	body := loadbalancer.NewBodyAddTarget(*createReq)
-	// First try with normal auth retry, then with conflict retry if needed
+
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiAddTargetModelResponseTargetGroupMemberModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -109,7 +100,6 @@ func (r *loadBalancerTargetGroupMemberResource) Create(ctx context.Context, req 
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		respModel, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiAddTargetModelResponseTargetGroupMemberModel, *http.Response, error) {
@@ -127,8 +117,6 @@ func (r *loadBalancerTargetGroupMemberResource) Create(ctx context.Context, req 
 		return
 	}
 
-	// After create, we need to poll until the creation is complete
-	// This follows the same pattern as other load balancer resources
 	result, ok := r.pollTargetGroupMemberUntilStatus(
 		ctx,
 		plan.TargetGroupId.ValueString(),
@@ -140,7 +128,6 @@ func (r *loadBalancerTargetGroupMemberResource) Create(ctx context.Context, req 
 		return
 	}
 
-	// Check if target group member is in error state
 	if result.ProvisioningStatus.IsSet() && result.ProvisioningStatus.Get() != nil && string(*result.ProvisioningStatus.Get()) == "ERROR" {
 		resp.Diagnostics.AddError(
 			"Target Group Member Creation Failed",
@@ -154,18 +141,15 @@ func (r *loadBalancerTargetGroupMemberResource) Create(ctx context.Context, req 
 		return
 	}
 
-	// Map the current state from the API response
 	ok = mapLoadBalancerTargetGroupMemberFromGetResponse(ctx, &plan, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Set state with the current values from the API
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *loadBalancerTargetGroupMemberResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state loadBalancerTargetGroupMemberResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -183,7 +167,6 @@ func (r *loadBalancerTargetGroupMemberResource) Read(ctx context.Context, req re
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// List targets in target group to find the specific member
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.TargetGroupMemberListModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -203,7 +186,6 @@ func (r *loadBalancerTargetGroupMemberResource) Read(ctx context.Context, req re
 		return
 	}
 
-	// Find the specific member by ID
 	var foundMember *loadbalancer.BnsLoadBalancerV1ApiListTargetsInTargetGroupModelTargetGroupMemberModel
 	for _, member := range respModel.Members {
 		if member.Id == state.Id.ValueString() {
@@ -217,18 +199,15 @@ func (r *loadBalancerTargetGroupMemberResource) Read(ctx context.Context, req re
 		return
 	}
 
-	// Map response to state
 	ok := mapLoadBalancerTargetGroupMemberFromGetResponse(ctx, &state, foundMember, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Set state
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *loadBalancerTargetGroupMemberResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state loadBalancerTargetGroupMemberResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -252,15 +231,13 @@ func (r *loadBalancerTargetGroupMemberResource) Update(ctx context.Context, req 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Map plan to update request
 	updateReq := mapLoadBalancerTargetGroupMemberToUpdateRequest(ctx, &plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Update target group member
 	body := loadbalancer.NewBodyUpdateTarget(*updateReq)
-	// First try with normal auth retry, then with conflict retry if needed
+
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateTargetModelResponseTargetGroupMemberModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -271,7 +248,6 @@ func (r *loadBalancerTargetGroupMemberResource) Update(ctx context.Context, req 
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateTargetModelResponseTargetGroupMemberModel, *http.Response, error) {
@@ -289,8 +265,6 @@ func (r *loadBalancerTargetGroupMemberResource) Update(ctx context.Context, req 
 		return
 	}
 
-	// After update, we need to poll until the update is complete
-	// This follows the same pattern as other load balancer resources
 	result, ok := r.pollTargetGroupMemberUntilStatus(
 		ctx,
 		state.TargetGroupId.ValueString(),
@@ -302,7 +276,6 @@ func (r *loadBalancerTargetGroupMemberResource) Update(ctx context.Context, req 
 		return
 	}
 
-	// Check if target group member is in error state
 	if result.ProvisioningStatus.IsSet() && result.ProvisioningStatus.Get() != nil && string(*result.ProvisioningStatus.Get()) == "ERROR" {
 		resp.Diagnostics.AddError(
 			"Target Group Member Update Failed",
@@ -316,18 +289,15 @@ func (r *loadBalancerTargetGroupMemberResource) Update(ctx context.Context, req 
 		return
 	}
 
-	// Map the current state from the API response
 	ok = mapLoadBalancerTargetGroupMemberFromGetResponse(ctx, &plan, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Set state with the current values from the API
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *loadBalancerTargetGroupMemberResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state loadBalancerTargetGroupMemberResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -345,8 +315,6 @@ func (r *loadBalancerTargetGroupMemberResource) Delete(ctx context.Context, req 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Delete target group member
-	// First try with normal auth retry, then with conflict retry if needed
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			httpResp, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -357,7 +325,6 @@ func (r *loadBalancerTargetGroupMemberResource) Delete(ctx context.Context, req 
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
@@ -371,7 +338,7 @@ func (r *loadBalancerTargetGroupMemberResource) Delete(ctx context.Context, req 
 	}
 
 	if httpResp != nil && httpResp.StatusCode == 404 {
-		// Target group member already deleted, nothing to do
+
 		return
 	}
 
@@ -380,7 +347,6 @@ func (r *loadBalancerTargetGroupMemberResource) Delete(ctx context.Context, req 
 		return
 	}
 
-	// Poll until deletion is confirmed
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics,
 		func(ctx context.Context) (bool, *http.Response, error) {
 			respModel, httpResp, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -389,24 +355,23 @@ func (r *loadBalancerTargetGroupMemberResource) Delete(ctx context.Context, req 
 				Execute()
 			if err != nil {
 				if httpResp != nil && httpResp.StatusCode == 404 {
-					return true, httpResp, nil // Target group or member deleted
+					return true, httpResp, nil
 				}
 				return false, httpResp, err
 			}
-			// Check if the specific member still exists
+
 			for _, member := range respModel.Members {
 				if member.Id == state.Id.ValueString() {
-					return false, httpResp, nil // Member still exists
+					return false, httpResp, nil
 				}
 			}
-			return true, httpResp, nil // Member deleted
+			return true, httpResp, nil
 		},
 	)
 }
 
-// ImportState imports the resource.
 func (r *loadBalancerTargetGroupMemberResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Parse import ID format: target_group_id:member_id
+
 	parts := strings.Split(req.ID, ":")
 	if len(parts) != 2 {
 		resp.Diagnostics.AddError(
@@ -419,12 +384,10 @@ func (r *loadBalancerTargetGroupMemberResource) ImportState(ctx context.Context,
 	targetGroupId := parts[0]
 	memberId := parts[1]
 
-	// Set the resource attributes
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_group_id"), targetGroupId)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), memberId)...)
 }
 
-// pollTargetGroupMemberUntilStatus polls until the target group member reaches one of the target statuses
 func (r *loadBalancerTargetGroupMemberResource) pollTargetGroupMemberUntilStatus(
 	ctx context.Context,
 	targetGroupId string,
@@ -447,7 +410,6 @@ func (r *loadBalancerTargetGroupMemberResource) pollTargetGroupMemberUntilStatus
 				return nil, httpResp, err
 			}
 
-			// Find the specific member by ID
 			for _, member := range respModel.Members {
 				if member.Id == memberId {
 					return &member, httpResp, nil

@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -12,7 +11,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// mapLoadBalancerL7PolicyFromGetResponse maps GET API response to resource/data source model
 func mapLoadBalancerL7PolicyFromGetResponse(
 	ctx context.Context,
 	model *loadBalancerL7PolicyBaseModel,
@@ -22,8 +20,6 @@ func mapLoadBalancerL7PolicyFromGetResponse(
 	model.Id = types.StringValue(src.Id)
 	model.Action = utils.ConvertNullableString(src.Action)
 
-	// For GET responses, only update fields that are actually present in the response
-	// This prevents overwriting existing values with null when fields weren't changed
 	if src.Name.IsSet() {
 		model.Name = utils.ConvertNullableString(src.Name)
 	}
@@ -46,12 +42,10 @@ func mapLoadBalancerL7PolicyFromGetResponse(
 		model.RedirectHttpCode = utils.ConvertNullableInt32ToInt64(src.RedirectHttpCode)
 	}
 
-	// Status fields are always present in the response
 	model.ProvisioningStatus = utils.ConvertNullableString(src.ProvisioningStatus)
 	model.OperatingStatus = utils.ConvertNullableString(src.OperatingStatus)
 	model.ProjectId = utils.ConvertNullableString(src.ProjectId)
 
-	// Map rules
 	rules, ruleDiags := utils.ConvertListFromModel(ctx, src.Rules, loadBalancerL7PolicyRuleAttrType, func(rule loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyModelRuleModel) any {
 		return loadBalancerL7PolicyRuleModel{
 			Id:                 types.StringValue(rule.Id),
@@ -71,7 +65,6 @@ func mapLoadBalancerL7PolicyFromGetResponse(
 	return !diags.HasError()
 }
 
-// mapLoadBalancerL7PolicyDataSourceFromGetResponse maps GET API response to data source model
 func mapLoadBalancerL7PolicyDataSourceFromGetResponse(
 	ctx context.Context,
 	model *loadBalancerL7PolicyBaseModel,
@@ -91,7 +84,6 @@ func mapLoadBalancerL7PolicyDataSourceFromGetResponse(
 	model.OperatingStatus = utils.ConvertNullableString(src.OperatingStatus)
 	model.ProjectId = utils.ConvertNullableString(src.ProjectId)
 
-	// Map rules
 	rules, ruleDiags := utils.ConvertListFromModel(ctx, src.Rules, loadBalancerL7PolicyRuleAttrType, func(rule loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyModelRuleModel) any {
 		return loadBalancerL7PolicyRuleModel{
 			Id:                 types.StringValue(rule.Id),

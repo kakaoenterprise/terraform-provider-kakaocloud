@@ -3,12 +3,53 @@
 page_title: "kakaocloud_instance_flavors Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud Flavor 목록을 조회하는 데이터 소스
+  The kakaocloud_instance_flavors data source retrieves a list of available instance flavors in KakaoCloud.
+  It supports filtering by attributes such as name and returns detailed specifications for each flavor, including CPU, memory, disk type, availability zones, and hardware information.
+  Use this data source when you need to: - Query available flavors dynamically instead of hardcoding flavor IDs. - Filter instance flavors to select the right type for your workload (e.g., family, size, architecture). - Validate hardware requirements such as vCPUs, memory, or disk type before creating compute instances.
+  Available filters
+  | Filter                  | Type         | Description |
+  |-----------------------------|--------------|-------------|
+  | id                          | string       | Instance type (Flavor) ID to query |
+  | name                        | string       | Name of the instance type |
+  | is_burstable                | boolean      | Whether the instance type is burstable |
+  | vcpus                       | integer      | Number of virtual CPUs |
+  | architecture                | string       | Architecture of the instance type (CPU structure) |
+  | memory_mb                   | integer      | Memory size (in MB) |
+  | instance_type               | string | Instance type <br>Possible values: <br>- `vm`: Virtual Machine type <br>- `bm`: Bare Metal Server type <br>- `gpu`: GPU type |
+  | instance_family             | string       | [Instance family](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-instance-overview#instance-family) <br>- Example: `r2a`, `c2a` |
+  | instance_size               | string       | Instance size |
+  | manufacturer                | string       | Manufacturer information |
+  | maximum_network_interfaces  | integer      | Maximum number of network interfaces |
+  | processor                   | string       | Processor name |
+  | created_at                  | string       | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+  | updated_at                  | string       | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 ---
 
 # kakaocloud_instance_flavors (Data Source)
 
-kakaocloud Flavor 목록을 조회하는 데이터 소스
+The `kakaocloud_instance_flavors` data source retrieves a list of available instance flavors in KakaoCloud.
+It supports filtering by attributes such as `name` and returns detailed specifications for each flavor, including CPU, memory, disk type, availability zones, and hardware information.
+
+Use this data source when you need to: - Query available flavors dynamically instead of hardcoding flavor IDs. - Filter instance flavors to select the right type for your workload (e.g., family, size, architecture). - Validate hardware requirements such as vCPUs, memory, or disk type before creating compute instances.
+
+## Available filters
+
+| Filter                  | Type         | Description |
+|-----------------------------|--------------|-------------|
+| id                          | string       | Instance type (Flavor) ID to query |
+| name                        | string       | Name of the instance type |
+| is_burstable                | boolean      | Whether the instance type is burstable |
+| vcpus                       | integer      | Number of virtual CPUs |
+| architecture                | string       | Architecture of the instance type (CPU structure) |
+| memory_mb                   | integer      | Memory size (in MB) |
+| instance_type               | string | Instance type <br>Possible values: <br>- `vm`: Virtual Machine type <br>- `bm`: Bare Metal Server type <br>- `gpu`: GPU type |
+| instance_family             | string       | [Instance family](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-instance-overview#instance-family) <br>- Example: `r2a`, `c2a` |
+| instance_size               | string       | Instance size |
+| manufacturer                | string       | Manufacturer information |
+| maximum_network_interfaces  | integer      | Maximum number of network interfaces |
+| processor                   | string       | Processor name |
+| created_at                  | string       | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+| updated_at                  | string       | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 
 
 

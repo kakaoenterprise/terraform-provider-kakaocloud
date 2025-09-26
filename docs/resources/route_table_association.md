@@ -3,12 +3,16 @@
 page_title: "kakaocloud_route_table_association Resource - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud 특정 Route Table에 연결된 서브넷 목록 관리
+  The kakaocloud_route_table_association resource allows you to manage the association between route tables and subnets in KakaoCloud.
+  You can specify which subnets are linked to a given route table, ensuring proper routing configuration within a VPC.
+  This resource also provides detailed information about associated subnets, availability zones, and provisioning status.
 ---
 
 # kakaocloud_route_table_association (Resource)
 
-kakaocloud 특정 Route Table에 연결된 서브넷 목록 관리
+The `kakaocloud_route_table_association` resource allows you to manage the association between route tables and subnets in KakaoCloud.
+You can specify which subnets are linked to a given route table, ensuring proper routing configuration within a VPC.
+This resource also provides detailed information about associated subnets, availability zones, and provisioning status.
 
 
 

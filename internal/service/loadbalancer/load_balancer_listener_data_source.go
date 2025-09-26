@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -16,13 +16,11 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &loadBalancerListenerDataSource{}
 	_ datasource.DataSourceWithConfigure = &loadBalancerListenerDataSource{}
 )
 
-// NewLoadBalancerListenersDataSource is a helper function to simplify the provider implementation.
 func NewLoadBalancerListenerDataSource() datasource.DataSource {
 	return &loadBalancerListenerDataSource{}
 }
@@ -31,12 +29,10 @@ type loadBalancerListenerDataSource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the data source type name.
 func (d *loadBalancerListenerDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_load_balancer_listener"
 }
 
-// Configure adds the provider configured client to the data source.
 func (d *loadBalancerListenerDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -53,10 +49,9 @@ func (d *loadBalancerListenerDataSource) Configure(_ context.Context, req dataso
 	d.kc = client
 }
 
-// Schema defines the schema for the data source.
 func (d *loadBalancerListenerDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Use this data source to get information about KakaoCloud Load Balancer Listener lists.",
+		Description: docs.GetDataSourceDescription("LoadBalancerListener"),
 		Attributes: utils.MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
@@ -70,7 +65,6 @@ func (d *loadBalancerListenerDataSource) Schema(ctx context.Context, _ datasourc
 	}
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (d *loadBalancerListenerDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config loadBalancerListenerDataSourceModel
 
@@ -106,7 +100,6 @@ func (d *loadBalancerListenerDataSource) Read(ctx context.Context, req datasourc
 		return
 	}
 
-	// Save data into Terraform state
 	diags = resp.State.Set(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 }

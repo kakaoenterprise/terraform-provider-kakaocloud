@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package vpc
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -21,14 +21,12 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure   = &vpcResource{}
 	_ resource.ResourceWithImportState = &vpcResource{}
 	_ resource.ResourceWithModifyPlan  = &vpcResource{}
 )
 
-// NewVpcResource is a helper function to simplify the provider implementation.
 func NewVpcResource() resource.Resource {
 	return &vpcResource{}
 }
@@ -37,15 +35,13 @@ type vpcResource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (r *vpcResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_vpc"
 }
 
-// Schema defines the schema for the resource.
 func (r *vpcResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents a vpc resource.",
+		Description: docs.GetResourceDescription("Vpc"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			vpcResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -55,7 +51,6 @@ func (r *vpcResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp
 	}
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *vpcResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan vpcResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -150,7 +145,6 @@ func (r *vpcResource) Create(ctx context.Context, req resource.CreateRequest, re
 
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *vpcResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state vpcResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -176,7 +170,6 @@ func (r *vpcResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 		},
 	)
 
-	// 404 → remove Terraform state
 	if httpResp != nil && httpResp.StatusCode == 404 {
 		resp.State.RemoveResource(ctx)
 		return
@@ -199,7 +192,6 @@ func (r *vpcResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *vpcResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state vpcResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -254,7 +246,6 @@ func (r *vpcResource) Update(ctx context.Context, req resource.UpdateRequest, re
 	}
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *vpcResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state vpcResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -289,18 +280,6 @@ func (r *vpcResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 		return
 	}
 
-	// Poll until resource disappears
-	//BnsVpcV1ApiGetVpcModelResponseVPCModel
-	//common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
-	//	_, httpResp, err := r.kc.ApiClient.VPCAPI.
-	//		GetVpc(ctx, state.Id.ValueString()).
-	//		XAuthToken(r.kc.XAuthToken).
-	//		Execute()
-	//
-	//	if httpResp != nil && httpResp.StatusCode == 404 {
-	//		return true, httpResp, nil
-	//	}
-
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
@@ -316,8 +295,7 @@ func (r *vpcResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 }
 
 func (r *vpcResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}
@@ -336,7 +314,7 @@ func (r *vpcResource) Configure(_ context.Context, req resource.ConfigureRequest
 }
 
 func (r *vpcResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
@@ -396,12 +374,10 @@ func (r *vpcResource) ModifyPlan(
 		return
 	}
 
-	// Delete: pass
 	if req.Plan.Raw.IsNull() {
 		return
 	}
 
-	// Insert
 	if req.State.Raw.IsNull() && !req.Plan.Raw.IsNull() {
 		if plan.Subnet.IsNull() {
 			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,

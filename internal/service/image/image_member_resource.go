@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package image
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -20,7 +20,6 @@ import (
 
 var (
 	_ resource.ResourceWithConfigure      = &imageMemberResource{}
-	_ resource.ResourceWithImportState    = &imageMemberResource{}
 	_ resource.ResourceWithValidateConfig = &imageMemberResource{}
 )
 
@@ -41,17 +40,13 @@ func (r *imageMemberResource) ValidateConfig(ctx context.Context, req resource.V
 	}
 }
 
-func (r *imageMemberResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (r *imageMemberResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_image_member"
 }
 
-func (r *imageMemberResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *imageMemberResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: docs.GetResourceDescription("ImageMember"),
 		Attributes: utils.MergeAttributes[schema.Attribute](
 			imageMemberResourceSchema,
 			map[string]schema.Attribute{
@@ -125,7 +120,7 @@ func (r *imageMemberResource) Read(ctx context.Context, req resource.ReadRequest
 	}
 }
 
-func (r *imageMemberResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *imageMemberResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	resp.Diagnostics.AddError(
 		"Update Not Supported",
 		"This resource does not support update. Please recreate the resource if needed.",
@@ -171,7 +166,7 @@ func (r *imageMemberResource) Delete(ctx context.Context, req resource.DeleteReq
 	}
 }
 
-func (r *imageMemberResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *imageMemberResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}

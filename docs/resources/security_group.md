@@ -3,12 +3,16 @@
 page_title: "kakaocloud_security_group Resource - kakaocloud"
 subcategory: ""
 description: |-
-  Represents a KakaoCloud Security Group.
+  The kakaocloud_security_group resource allows you to create and manage security groups in KakaoCloud.
+  You can define inbound and outbound rules to control network traffic at the instance or subnet level, using protocols, ports, and CIDR ranges.
+  This resource also provides metadata and state information, ensuring secure and flexible access management for your cloud environment.
 ---
 
 # kakaocloud_security_group (Resource)
 
-Represents a KakaoCloud Security Group.
+The `kakaocloud_security_group` resource allows you to create and manage security groups in KakaoCloud.
+You can define inbound and outbound rules to control network traffic at the instance or subnet level, using protocols, ports, and CIDR ranges.
+This resource also provides metadata and state information, ensuring secure and flexible access management for your cloud environment.
 
 
 

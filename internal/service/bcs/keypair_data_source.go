@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package bcs
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -16,7 +16,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &keypairDataSource{}
 	_ datasource.DataSourceWithConfigure = &keypairDataSource{}
@@ -26,7 +25,6 @@ func NewKeypairDataSource() datasource.DataSource {
 	return &keypairDataSource{}
 }
 
-// keypairDataSource is the data source implementation.
 type keypairDataSource struct {
 	kc *common.KakaoCloudClient
 }
@@ -37,7 +35,7 @@ func (d *keypairDataSource) Metadata(_ context.Context, req datasource.MetadataR
 
 func (d *keypairDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud의 특정 키페어를 이름으로 조회하는 데이터 소스",
+		Description: docs.GetDataSourceDescription("Keypair"),
 		Attributes: MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"name": schema.StringAttribute{

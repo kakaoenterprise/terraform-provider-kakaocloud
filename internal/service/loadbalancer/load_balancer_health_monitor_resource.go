@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -20,7 +20,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Ensure the implementation satisfies the expected interfaces
 var (
 	_ resource.Resource                = &loadBalancerHealthMonitorResource{}
 	_ resource.ResourceWithConfigure   = &loadBalancerHealthMonitorResource{}
@@ -56,7 +55,7 @@ func (r *loadBalancerHealthMonitorResource) Metadata(_ context.Context, req reso
 
 func (r *loadBalancerHealthMonitorResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a KakaoCloud Load Balancer Health Monitor.",
+		Description: docs.GetResourceDescription("LoadBalancerHealthMonitor"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			loadBalancerHealthMonitorResourceSchema,
 			map[string]schema.Attribute{
@@ -88,24 +87,20 @@ func (r *loadBalancerHealthMonitorResource) Create(ctx context.Context, req reso
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Map Terraform model to SDK create request
 	createReq, diags := mapHealthMonitorToCreateRequest(ctx, &plan)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
 	}
 
-	// Create the health monitor
 	body := *loadbalancer.NewBodyCreateHealthMonitor(*createReq)
 
-	// First try with normal auth retry, then with conflict retry if needed
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiCreateHealthMonitorModelResponseHealthMonitorModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.CreateHealthMonitor(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateHealthMonitor(body).Execute()
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		respModel, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiCreateHealthMonitorModelResponseHealthMonitorModel, *http.Response, error) {
@@ -138,7 +133,6 @@ func (r *loadBalancerHealthMonitorResource) Create(ctx context.Context, req reso
 		return
 	}
 
-	// Set the state
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 }
@@ -160,7 +154,6 @@ func (r *loadBalancerHealthMonitorResource) Read(ctx context.Context, req resour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Get the health monitor
 	healthMonitor, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupHealthMonitorModelResponseHealthMonitorModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -170,7 +163,6 @@ func (r *loadBalancerHealthMonitorResource) Read(ctx context.Context, req resour
 		},
 	)
 
-	// 404 → Remove from Terraform state
 	if httpResp != nil && httpResp.StatusCode == 404 {
 		resp.State.RemoveResource(ctx)
 		return
@@ -181,13 +173,11 @@ func (r *loadBalancerHealthMonitorResource) Read(ctx context.Context, req resour
 		return
 	}
 
-	// Map response back to Terraform model
 	ok := mapHealthMonitorFromGetResponse(ctx, &state.loadBalancerHealthMonitorBaseModel, &healthMonitor.HealthMonitor, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Set the state
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
@@ -215,17 +205,14 @@ func (r *loadBalancerHealthMonitorResource) Update(ctx context.Context, req reso
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Map Terraform model to SDK update request
 	updateReq, diags := mapHealthMonitorToUpdateRequest(ctx, &plan)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
 	}
 
-	// Update the health monitor
 	body := loadbalancer.BodyUpdateHealthMonitor{HealthMonitor: *updateReq}
 
-	// First try with normal auth retry, then with conflict retry if needed
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateHealthMonitorModelResponseHealthMonitorModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -236,7 +223,6 @@ func (r *loadBalancerHealthMonitorResource) Update(ctx context.Context, req reso
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateHealthMonitorModelResponseHealthMonitorModel, *http.Response, error) {
@@ -254,7 +240,6 @@ func (r *loadBalancerHealthMonitorResource) Update(ctx context.Context, req reso
 		return
 	}
 
-	// Wait for the health monitor to become active again
 	result, ok := common.PollUntilResult(
 		ctx,
 		r,
@@ -277,13 +262,11 @@ func (r *loadBalancerHealthMonitorResource) Update(ctx context.Context, req reso
 		return
 	}
 
-	// Update the model with the final state
 	ok = mapHealthMonitorFromGetResponse(ctx, &plan.loadBalancerHealthMonitorBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Set the state
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 }
@@ -305,8 +288,6 @@ func (r *loadBalancerHealthMonitorResource) Delete(ctx context.Context, req reso
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Delete the health monitor
-	// First try with normal auth retry, then with conflict retry if needed
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (struct{}, *http.Response, error) {
 			httpResp, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -317,7 +298,6 @@ func (r *loadBalancerHealthMonitorResource) Delete(ctx context.Context, req reso
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (struct{}, *http.Response, error) {
@@ -335,7 +315,6 @@ func (r *loadBalancerHealthMonitorResource) Delete(ctx context.Context, req reso
 		return
 	}
 
-	// Wait for deletion to complete
 	common.PollUntilDeletion(ctx, r, 5*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
 			GetTargetGroupHealthMonitor(ctx, state.Id.ValueString()).
@@ -348,7 +327,6 @@ func (r *loadBalancerHealthMonitorResource) Delete(ctx context.Context, req reso
 	})
 }
 
-// pollHealthMonitorUntilStatus polls the health monitor until it reaches one of the target statuses
 func (r *loadBalancerHealthMonitorResource) pollHealthMonitorUntilStatus(
 	ctx context.Context,
 	healthMonitorId string,

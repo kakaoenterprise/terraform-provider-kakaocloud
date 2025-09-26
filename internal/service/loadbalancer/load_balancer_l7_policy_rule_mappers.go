@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -14,7 +13,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-// mapLoadBalancerL7PolicyRuleBaseModel maps from SDK response to base model
 func mapLoadBalancerL7PolicyRuleBaseModel(
 	ctx context.Context,
 	base *loadBalancerL7PolicyRuleBaseModel,
@@ -36,7 +34,6 @@ func mapLoadBalancerL7PolicyRuleBaseModel(
 	return !diags.HasError()
 }
 
-// mapLoadBalancerL7PolicyRuleDataSourceFromGetRuleResponse maps GET API response to data source model
 func mapLoadBalancerL7PolicyRuleDataSourceFromGetRuleResponse(
 	ctx context.Context,
 	config *loadBalancerL7PolicyRuleDataSourceModel,
@@ -52,7 +49,6 @@ func mapLoadBalancerL7PolicyRuleDataSourceFromGetRuleResponse(
 	return !diags.HasError()
 }
 
-// mapLoadBalancerL7PolicyRuleToCreateRequest maps Terraform resource model to CREATE API request
 func mapLoadBalancerL7PolicyRuleToCreateRequest(plan loadBalancerL7PolicyRuleResourceModel) loadbalancer.CreateL7PolicyRuleModel {
 	var key loadbalancer.NullableString
 	if !plan.Key.IsNull() && !plan.Key.IsUnknown() {
@@ -74,7 +70,6 @@ func mapLoadBalancerL7PolicyRuleToCreateRequest(plan loadBalancerL7PolicyRuleRes
 	}
 }
 
-// mapLoadBalancerL7PolicyRuleToUpdateRequest maps Terraform resource model to UPDATE API request
 func mapLoadBalancerL7PolicyRuleToUpdateRequest(plan loadBalancerL7PolicyRuleResourceModel) loadbalancer.EditL7PolicyRuleModel {
 	var key loadbalancer.NullableString
 	if !plan.Key.IsNull() && !plan.Key.IsUnknown() {
@@ -96,7 +91,6 @@ func mapLoadBalancerL7PolicyRuleToUpdateRequest(plan loadBalancerL7PolicyRuleRes
 	}
 }
 
-// mapLoadBalancerL7PolicyRuleFromGetResponse maps the GET L7 policy rule API response to Terraform resource model
 func mapLoadBalancerL7PolicyRuleFromGetResponse(src loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyRuleModelL7PolicyRuleModel, l7PolicyId string, timeouts resourceTimeouts.Value) loadBalancerL7PolicyRuleResourceModel {
 	return loadBalancerL7PolicyRuleResourceModel{
 		loadBalancerL7PolicyRuleBaseModel: loadBalancerL7PolicyRuleBaseModel{
@@ -115,7 +109,6 @@ func mapLoadBalancerL7PolicyRuleFromGetResponse(src loadbalancer.BnsLoadBalancer
 	}
 }
 
-// mapLoadBalancerL7PolicyRuleListFromGetPolicyResponse maps the GET L7 policy API response to list data source model
 func mapLoadBalancerL7PolicyRuleListFromGetPolicyResponse(src loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyModelResponseL7PolicyModel, l7PolicyId string, timeouts datasourceTimeouts.Value) loadBalancerL7PolicyRuleListDataSourceModel {
 	var l7Rules []loadBalancerL7PolicyRuleBaseModel
 

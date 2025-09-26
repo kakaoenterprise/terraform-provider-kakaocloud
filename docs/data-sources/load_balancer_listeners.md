@@ -3,14 +3,206 @@
 page_title: "kakaocloud_load_balancer_listeners Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Use this data source to get information about KakaoCloud Load Balancer Listeners lists.
+  The kakaocloud_load_balancer_listeners data source retrieves a list of listeners associated with KakaoCloud Load Balancers.
+  It supports filtering by attributes such as name and returns details including protocol, port, connection limits, TLS configuration, associated L7 policies, and SSL certificates.
+  Use this data source when you need to:- Query multiple listeners dynamically instead of hardcoding listener IDs.
+  Filter listeners by attributes (e.g., name, protocol, or port) for use in other Terraform resources.Validate that listeners are configured correctly before attaching them to load balancers or applying policies.
+  Available filters
+  | Filter            | Type                        | Description |
+  |-----------------------|-----------------------------|-------------|
+  | id                    | string                     | Unique ID of the listener |
+  | load_balancer_id      | string                     | ID of the associated load balancer |
+  | protocol              | string                  | Protocol used by the listener <br>Possible values: <br>- `HTTP`: HTTP <br>- `TCP`: TCP <br>- `UDP`: UDP <br>- `TERMINATED_HTTPS`: SSL-terminated HTTPS |
+  | protocol_port         | string                     | Port number on which the listener receives traffic |
+  | provisioning_status   | string       | Provisioning status <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+  | operating_status      | string | Operating status <br>- `ONLINE`: Online <br>- `DRAINING`: Draining connections <br>- `OFFLINE`: Offline <br>- `DEGRADED`: Degraded <br>- `ERROR`: Error <br>- `NO_MONITOR`: No monitoring |
+  | secret_name           | string                     | Name of the TLS certificate |
+  | secret_id             | string                     | ID of the TLS certificate |
+  | tls_certificate_id    | string                     | ID of the TLS certificate attached to the listener |
+  | created_at            | string                     | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+  | updated_at            | string                     | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 ---
 
 # kakaocloud_load_balancer_listeners (Data Source)
 
-Use this data source to get information about KakaoCloud Load Balancer Listeners lists.
+The `kakaocloud_load_balancer_listeners` data source retrieves a list of listeners associated with KakaoCloud Load Balancers.
+It supports filtering by attributes such as `name` and returns details including protocol, port, connection limits, TLS configuration, associated L7 policies, and SSL certificates.
 
+Use this data source when you need to:- Query multiple listeners dynamically instead of hardcoding listener IDs.
+- Filter listeners by attributes (e.g., name, protocol, or port) for use in other Terraform resources.
+- Validate that listeners are configured correctly before attaching them to load balancers or applying policies.
 
+## Available filters
+
+| Filter            | Type                        | Description |
+|-----------------------|-----------------------------|-------------|
+| id                    | string                     | Unique ID of the listener |
+| load_balancer_id      | string                     | ID of the associated load balancer |
+| protocol              | string                  | Protocol used by the listener <br>Possible values: <br>- `HTTP`: HTTP <br>- `TCP`: TCP <br>- `UDP`: UDP <br>- `TERMINATED_HTTPS`: SSL-terminated HTTPS |
+| protocol_port         | string                     | Port number on which the listener receives traffic |
+| provisioning_status   | string       | Provisioning status <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+| operating_status      | string | Operating status <br>- `ONLINE`: Online <br>- `DRAINING`: Draining connections <br>- `OFFLINE`: Offline <br>- `DEGRADED`: Degraded <br>- `ERROR`: Error <br>- `NO_MONITOR`: No monitoring |
+| secret_name           | string                     | Name of the TLS certificate |
+| secret_id             | string                     | ID of the TLS certificate |
+| tls_certificate_id    | string                     | ID of the TLS certificate attached to the listener |
+| created_at            | string                     | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+| updated_at            | string                     | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
+
+## Example Usage
+
+```terraform
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+# List all load balancer listeners
+data "kakaocloud_load_balancer_listeners" "all" {
+  # No filters - get all listeners
+}
+
+# List listeners for a specific load balancer using filter
+data "kakaocloud_load_balancer_listeners" "by_load_balancer" {
+  filter = [
+    {
+      name  = "id"
+      value = "your-listener-id-here" # Replace with your listener ID
+    },
+    {
+      name  = "load_balancer_id"
+      value = "your-load-balancer-id-here" # Replace with your load balancer ID
+    },
+    {
+      name  = "protocol"
+      value = "HTTP"
+    },
+    {
+      name  = "protocol_port"
+      value = "80"
+    },
+    {
+      name  = "provisioning_status"
+      value = "ACTIVE"
+    },
+    {
+      name  = "operating_status"
+      value = "ONLINE"
+    },
+    {
+      name  = "secret_name"
+      value = "your-secret-name" # Replace with your secret name
+    },
+    {
+      name  = "secret_id"
+      value = "your-secret-id" # Replace with your secret ID
+    },
+    {
+      name  = "tls_certificate_id"
+      value = "your-tls-certificate-id" # Replace with your TLS certificate ID
+    },
+    {
+      name  = "created_at"
+      value = "2021-01-01T00:00:00Z" # Replace with your created at
+    },
+    {
+      name  = "updated_at"
+      value = "2021-01-01T00:00:00Z" # Replace with your updated at
+    }
+  ]
+}
+
+# List listeners with filters
+data "kakaocloud_load_balancer_listeners" "filtered" {
+  filter = [
+    {
+      name  = "protocol"
+      value = "HTTP"
+    },
+    {
+      name  = "protocol_port"
+      value = "80"
+    },
+    {
+      name  = "provisioning_status"
+      value = "ACTIVE"
+    }
+  ]
+}
+
+# List HTTPS listeners with TLS certificate filters
+data "kakaocloud_load_balancer_listeners" "https_listeners" {
+  filter = [
+    {
+      name  = "protocol"
+      value = "TERMINATED_HTTPS"
+    },
+    {
+      name  = "operating_status"
+      value = "ONLINE"
+    },
+    {
+      name  = "secret_name"
+      value = "your-secret-name" # Replace with your secret name
+    }
+  ]
+}
+
+# List listeners by load balancer and TLS certificate
+data "kakaocloud_load_balancer_listeners" "by_lb_and_tls" {
+  filter = [
+    {
+      name  = "load_balancer_id"
+      value = "your-load-balancer-id-here" # Replace with your load balancer ID
+    },
+    {
+      name  = "tls_certificate_id"
+      value = "your-tls-certificate-id" # Replace with your TLS certificate ID
+    },
+    {
+      name  = "secret_id"
+      value = "your-secret-id" # Replace with your secret ID
+    }
+  ]
+}
+
+# Output all listeners
+output "all_listeners" {
+  description = "List of all load balancer listeners"
+  value = {
+    count     = length(data.kakaocloud_load_balancer_listeners.all.listeners)
+    ids       = data.kakaocloud_load_balancer_listeners.all.listeners[*].id
+    protocols = data.kakaocloud_load_balancer_listeners.all.listeners[*].protocol
+  }
+}
+
+# Output listeners by load balancer
+output "load_balancer_listeners" {
+  description = "Listeners for specific load balancer"
+  value = {
+    count     = length(data.kakaocloud_load_balancer_listeners.by_load_balancer.listeners)
+    ids       = data.kakaocloud_load_balancer_listeners.by_load_balancer.listeners[*].id
+    protocols = data.kakaocloud_load_balancer_listeners.by_load_balancer.listeners[*].protocol
+  }
+}
+
+# Output filtered listeners
+output "filtered_listeners" {
+  description = "Filtered load balancer listeners"
+  value = {
+    count     = length(data.kakaocloud_load_balancer_listeners.filtered.listeners)
+    ids       = data.kakaocloud_load_balancer_listeners.filtered.listeners[*].id
+    protocols = data.kakaocloud_load_balancer_listeners.filtered.listeners[*].protocol
+  }
+}
+
+# Output HTTPS listeners
+output "https_listeners" {
+  description = "HTTPS load balancer listeners"
+  value = {
+    count     = length(data.kakaocloud_load_balancer_listeners.https_listeners.listeners)
+    ids       = data.kakaocloud_load_balancer_listeners.https_listeners.listeners[*].id
+    protocols = data.kakaocloud_load_balancer_listeners.https_listeners.listeners[*].protocol
+  }
+}
+```
 
 <!-- schema generated by tfplugindocs -->
 ## Schema

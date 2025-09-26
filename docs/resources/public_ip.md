@@ -3,12 +3,16 @@
 page_title: "kakaocloud_public_ip Resource - kakaocloud"
 subcategory: ""
 description: |-
-  
+  The kakaocloud_public_ip resource allows you to allocate and manage public IP addresses in KakaoCloud.
+  You can associate public IPs with instances or load balancers, and retrieve detailed information about the linked resource, subnet, and VPC.
+  This resource enables flexible network connectivity and external access management for your cloud workloads.
 ---
 
 # kakaocloud_public_ip (Resource)
 
-
+The `kakaocloud_public_ip` resource allows you to allocate and manage public IP addresses in KakaoCloud.
+You can associate public IPs with instances or load balancers, and retrieve detailed information about the linked resource, subnet, and VPC.
+This resource enables flexible network connectivity and external access management for your cloud workloads.
 
 
 

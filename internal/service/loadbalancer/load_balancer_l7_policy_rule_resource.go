@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -21,7 +21,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure      = &loadBalancerL7PolicyRuleResource{}
 	_ resource.ResourceWithImportState    = &loadBalancerL7PolicyRuleResource{}
@@ -36,15 +35,13 @@ type loadBalancerL7PolicyRuleResource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (r *loadBalancerL7PolicyRuleResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_load_balancer_l7_policy_rule"
 }
 
-// Schema defines the schema for the resource.
 func (r *loadBalancerL7PolicyRuleResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents a KakaoCloud Load Balancer L7 Policy Rule resource.",
+		Description: docs.GetResourceDescription("LoadBalancerL7PolicyRule"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			loadBalancerL7PolicyRuleResourceSchema,
 			map[string]schema.Attribute{
@@ -54,7 +51,6 @@ func (r *loadBalancerL7PolicyRuleResource) Schema(ctx context.Context, _ resourc
 	}
 }
 
-// Configure adds the provider configured client to the resource.
 func (r *loadBalancerL7PolicyRuleResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -72,12 +68,10 @@ func (r *loadBalancerL7PolicyRuleResource) Configure(_ context.Context, req reso
 	r.kc = client
 }
 
-// ValidateConfig validates the resource configuration.
 func (r *loadBalancerL7PolicyRuleResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	ValidateL7PolicyRuleConfig(ctx, req, resp)
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *loadBalancerL7PolicyRuleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan loadBalancerL7PolicyRuleResourceModel
 
@@ -96,18 +90,14 @@ func (r *loadBalancerL7PolicyRuleResource) Create(ctx context.Context, req resou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Map Terraform plan to API request
 	createReq := mapLoadBalancerL7PolicyRuleToCreateRequest(plan)
 
-	// Create the L7 policy rule
-	// First try with normal auth retry, then with conflict retry if needed
 	createResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiAddL7PolicyRuleModelResponseL7PolicyRuleModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.AddL7PolicyRule(ctx, plan.L7PolicyId.ValueString()).BodyAddL7PolicyRule(loadbalancer.BodyAddL7PolicyRule{L7Rule: createReq}).XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		createResp, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiAddL7PolicyRuleModelResponseL7PolicyRuleModel, *http.Response, error) {
@@ -121,10 +111,8 @@ func (r *loadBalancerL7PolicyRuleResource) Create(ctx context.Context, req resou
 		return
 	}
 
-	// Set the ID from create response
 	plan.Id = types.StringValue(createResp.L7Rule.Id)
 
-	// Wait for the L7 policy rule to become active
 	result, ok := r.pollL7PolicyRuleUntilStatus(
 		ctx,
 		plan.L7PolicyId.ValueString(),
@@ -148,7 +136,6 @@ func (r *loadBalancerL7PolicyRuleResource) Create(ctx context.Context, req resou
 	resp.Diagnostics.Append(diags...)
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *loadBalancerL7PolicyRuleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state loadBalancerL7PolicyRuleResourceModel
 
@@ -167,14 +154,12 @@ func (r *loadBalancerL7PolicyRuleResource) Read(ctx context.Context, req resourc
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Get the L7 policy rule
 	getResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.Responsel7PolicyRuleModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.GetL7PolicyRule(ctx, state.L7PolicyId.ValueString(), state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
 
-	// 404 → Remove from Terraform state
 	if httpResp != nil && httpResp.StatusCode == 404 {
 		resp.State.RemoveResource(ctx)
 		return
@@ -184,15 +169,12 @@ func (r *loadBalancerL7PolicyRuleResource) Read(ctx context.Context, req resourc
 		return
 	}
 
-	// Map API response to Terraform state
 	state = mapLoadBalancerL7PolicyRuleFromGetResponse(getResp.L7Rule, state.L7PolicyId.ValueString(), state.Timeouts)
 
-	// Set state
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *loadBalancerL7PolicyRuleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state loadBalancerL7PolicyRuleResourceModel
 
@@ -217,18 +199,14 @@ func (r *loadBalancerL7PolicyRuleResource) Update(ctx context.Context, req resou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Map Terraform plan to API request
 	updateReq := mapLoadBalancerL7PolicyRuleToUpdateRequest(plan)
 
-	// Update the L7 policy rule
-	// First try with normal auth retry, then with conflict retry if needed
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateL7PolicyRuleModelResponseL7PolicyRuleModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.UpdateL7PolicyRule(ctx, state.L7PolicyId.ValueString(), state.Id.ValueString()).BodyUpdateL7PolicyRule(loadbalancer.BodyUpdateL7PolicyRule{L7Rule: updateReq}).XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateL7PolicyRuleModelResponseL7PolicyRuleModel, *http.Response, error) {
@@ -242,7 +220,6 @@ func (r *loadBalancerL7PolicyRuleResource) Update(ctx context.Context, req resou
 		return
 	}
 
-	// Wait for the L7 policy rule to become active again
 	result, ok := r.pollL7PolicyRuleUntilStatus(
 		ctx,
 		state.L7PolicyId.ValueString(),
@@ -259,7 +236,6 @@ func (r *loadBalancerL7PolicyRuleResource) Update(ctx context.Context, req resou
 		return
 	}
 
-	// Map the final GET response
 	ok = mapLoadBalancerL7PolicyRuleBaseModel(ctx, &plan.loadBalancerL7PolicyRuleBaseModel, &result.L7Rule, state.L7PolicyId.ValueString(), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
@@ -270,7 +246,6 @@ func (r *loadBalancerL7PolicyRuleResource) Update(ctx context.Context, req resou
 	resp.Diagnostics.Append(diags...)
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *loadBalancerL7PolicyRuleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state loadBalancerL7PolicyRuleResourceModel
 
@@ -289,7 +264,6 @@ func (r *loadBalancerL7PolicyRuleResource) Delete(ctx context.Context, req resou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// First try with normal auth retry, then with conflict retry if needed
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			httpResp, err := r.kc.ApiClient.LoadBalancerL7PoliciesAPI.DeleteL7PolicyRule(ctx, state.L7PolicyId.ValueString(), state.Id.ValueString()).
@@ -299,7 +273,6 @@ func (r *loadBalancerL7PolicyRuleResource) Delete(ctx context.Context, req resou
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
@@ -319,7 +292,6 @@ func (r *loadBalancerL7PolicyRuleResource) Delete(ctx context.Context, req resou
 		return
 	}
 
-	// Poll until resource disappears
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := r.kc.ApiClient.LoadBalancerL7PoliciesAPI.
 			GetL7PolicyRule(ctx, state.L7PolicyId.ValueString(), state.Id.ValueString()).
@@ -333,9 +305,8 @@ func (r *loadBalancerL7PolicyRuleResource) Delete(ctx context.Context, req resou
 	})
 }
 
-// ImportState imports the resource from the existing infrastructure.
 func (r *loadBalancerL7PolicyRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Import format: l7_policy_id,rule_id
+
 	parts := strings.Split(req.ID, ",")
 	if len(parts) != 2 {
 		resp.Diagnostics.AddError(
@@ -349,7 +320,6 @@ func (r *loadBalancerL7PolicyRuleResource) ImportState(ctx context.Context, req 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), parts[1])...)
 }
 
-// pollL7PolicyRuleUntilStatus polls the L7 policy rule until it reaches one of the target statuses
 func (r *loadBalancerL7PolicyRuleResource) pollL7PolicyRuleUntilStatus(
 	ctx context.Context,
 	l7PolicyId, ruleId string,

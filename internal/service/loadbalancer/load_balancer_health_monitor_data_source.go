@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 
 	"terraform-provider-kakaocloud/internal/utils"
 
@@ -17,7 +17,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Ensure the implementation satisfies the expected interfaces
 var (
 	_ datasource.DataSource              = &loadBalancerHealthMonitorDataSource{}
 	_ datasource.DataSourceWithConfigure = &loadBalancerHealthMonitorDataSource{}
@@ -52,7 +51,7 @@ func (d *loadBalancerHealthMonitorDataSource) Metadata(_ context.Context, req da
 
 func (d *loadBalancerHealthMonitorDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Get information about a KakaoCloud Load Balancer Health Monitor.",
+		Description: docs.GetDataSourceDescription("LoadBalancerHealthMonitor"),
 		Attributes: utils.MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
@@ -74,7 +73,6 @@ func (d *loadBalancerHealthMonitorDataSource) Read(ctx context.Context, req data
 		return
 	}
 
-	// Get the health monitor
 	healthMonitor, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupHealthMonitorModelResponseHealthMonitorModel, *http.Response, error) {
 			return d.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -84,7 +82,6 @@ func (d *loadBalancerHealthMonitorDataSource) Read(ctx context.Context, req data
 		},
 	)
 
-	// 404 → Not found
 	if httpResp != nil && httpResp.StatusCode == 404 {
 		resp.Diagnostics.AddError(
 			"Health Monitor Not Found",
@@ -98,13 +95,11 @@ func (d *loadBalancerHealthMonitorDataSource) Read(ctx context.Context, req data
 		return
 	}
 
-	// Map response back to Terraform model
 	ok := mapHealthMonitorFromGetResponse(ctx, &data.loadBalancerHealthMonitorBaseModel, &healthMonitor.HealthMonitor, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Set the state
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }

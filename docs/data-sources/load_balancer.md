@@ -3,46 +3,35 @@
 page_title: "kakaocloud_load_balancer Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Use this data source to get information about a specific KakaoCloud Load Balancer.
+  The kakaocloud_load_balancer data source retrieves detailed information about a specific Load Balancer in KakaoCloud.
+  It provides attributes such as availability zone, subnet configuration, VPC details, provisioning/operating status, associated listeners, and target group counts.
+  Use this data source when you need to:- Reference an existing load balancer without hardcoding its attributes.
+  Dynamically fetch listener or target group IDs for use in other Terraform resources.Validate load balancer status (e.g., operating or provisioning) before attaching new resources.
 ---
 
 # kakaocloud_load_balancer (Data Source)
 
-Use this data source to get information about a specific KakaoCloud Load Balancer.
+The `kakaocloud_load_balancer` data source retrieves detailed information about a specific Load Balancer in KakaoCloud.
+It provides attributes such as availability zone, subnet configuration, VPC details, provisioning/operating status, associated listeners, and target group counts.
+
+Use this data source when you need to:- Reference an existing load balancer without hardcoding its attributes.
+- Dynamically fetch listener or target group IDs for use in other Terraform resources.
+- Validate load balancer status (e.g., operating or provisioning) before attaching new resources.
 
 ## Example Usage
 
 ```terraform
-terraform {
-  required_providers {
-    kakaocloud = {
-      source = "registry.terraform.io/hashicorp/kakaocloud"
-    }
-  }
-}
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
 
-# Configure the KakaoCloud Provider
-# Make sure your X_AUTH_TOKEN is set as an environment variable
-provider "kakaocloud" {
-  # provider config
-}
-
-# Use the data source to fetch the load balancer
-data "kakaocloud_load_balancer" "my_lb" {
-  id = "lb-xxxxxxxx" # <-- TODO: Replace with a REAL load balancer ID
+# Get a specific load balancer by ID
+data "kakaocloud_load_balancer" "example" {
+  id = "your-load-balancer-id-here" # Replace with your load balancer ID
 }
 
 # Output the fetched data
 output "load_balancer_name" {
-  value = data.kakaocloud_load_balancer.my_lb.name
-}
-
-output "load_balancer_private_vip" {
-  value = data.kakaocloud_load_balancer.my_lb.private_vip
-}
-
-output "load_balancer_operating_status" {
-  value = data.kakaocloud_load_balancer.my_lb.operating_status
+  value = data.kakaocloud_load_balancer.example
 }
 ```
 

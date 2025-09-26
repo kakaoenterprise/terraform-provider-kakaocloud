@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package network
 
 import (
@@ -10,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -43,7 +43,7 @@ func (r *securityGroupResource) Metadata(_ context.Context, req resource.Metadat
 
 func (r *securityGroupResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents a KakaoCloud Security Group.",
+		Description: docs.GetResourceDescription("SecurityGroup"),
 		Attributes: utils.MergeAttributes(
 			securityGroupResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -77,7 +77,6 @@ func (r *securityGroupResource) ValidateConfig(ctx context.Context, req resource
 		remoteIpSet := !(rule.RemoteIpPrefix.IsNull() || rule.RemoteIpPrefix.IsUnknown() || rule.RemoteIpPrefix.ValueString() == "")
 		remoteGroupSet := !(rule.RemoteGroupId.IsNull() || rule.RemoteGroupId.IsUnknown() || rule.RemoteGroupId.ValueString() == "")
 
-		// Exactly one of remote_ip_prefix or remote_group_id must be provided
 		if (remoteIpSet && remoteGroupSet) || (!remoteIpSet && !remoteGroupSet) {
 			resp.Diagnostics.AddError(
 				"Invalid security group rule",
@@ -209,12 +208,7 @@ func (r *securityGroupResource) Create(ctx context.Context, req resource.CreateR
 		}
 
 		desiredRuleCount = len(desired)
-		//
-		//ruleSet, rDiags := types.SetValueFrom(ctx, plan.Rules.ElementType(ctx), desired)
-		//resp.Diagnostics.Append(rDiags...)
-		//if !resp.Diagnostics.HasError() {
-		//	plan.Rules = ruleSet
-		//}
+
 	}
 
 	finalSg, ok := r.waitForRulesToPropagate(ctx, respModel.SecurityGroup.Id, desiredRuleCount, &resp.Diagnostics)
@@ -222,7 +216,6 @@ func (r *securityGroupResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	// Preserve null for optional rules if user did not specify them to avoid unexpected new value during apply
 	originalRulesNull := plan.Rules.IsNull() || plan.Rules.IsUnknown()
 
 	ok = mapSecurityGroupBaseModel(ctx, &plan.securityGroupBaseModel, finalSg, &resp.Diagnostics)
@@ -288,6 +281,7 @@ func (r *securityGroupResource) Update(ctx context.Context, req resource.UpdateR
 	}
 
 	if !plan.Rules.Equal(state.Rules) {
+
 		planRules, pDiags := expandSecurityGroupRules(ctx, plan.Rules)
 		resp.Diagnostics.Append(pDiags...)
 		stateRules, sDiags := expandSecurityGroupRules(ctx, state.Rules)
@@ -433,7 +427,6 @@ func (r *securityGroupResource) waitForRulesToPropagate(
 	return result, ok
 }
 
-// --- Helpers for List/ID-based rule reconciliation ---
 func (r *securityGroupResource) addSecurityGroupRule(ctx context.Context, sgId string, rule *securityGroupRuleModel, diags *diag.Diagnostics) bool {
 	creq := network.CreateSecurityGroupRuleModel{
 		Direction: network.SecurityGroupRuleDirection(rule.Direction.ValueString()),

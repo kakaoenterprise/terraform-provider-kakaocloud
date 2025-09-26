@@ -3,12 +3,22 @@
 page_title: "kakaocloud_kubernetes_engine_clusters Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud 쿠버네티스 클러스터 목록을 조회하는 데이터 소스
+  The kakaocloud_kubernetes_engine_clusters data source retrieves a list of Kubernetes Engine clusters in KakaoCloud.
+  It returns details for each cluster, including network configuration, control plane endpoint, VPC settings, Kubernetes version, upgrade availability, and current status.
+  Use this data source when you need to:- Query multiple existing clusters dynamically instead of hardcoding cluster names or IDs.
+  Validate cluster configurations (e.g., pod/service CIDRs, version details, upgrade availability) across projects.Reference existing clusters in other Terraform resources without duplicating their attributes.
 ---
 
 # kakaocloud_kubernetes_engine_clusters (Data Source)
 
-kakaocloud 쿠버네티스 클러스터 목록을 조회하는 데이터 소스
+The `kakaocloud_kubernetes_engine_clusters` data source retrieves a list of Kubernetes Engine clusters in KakaoCloud.
+It returns details for each cluster, including network configuration, control plane endpoint, VPC settings, Kubernetes version, upgrade availability, and current status.
+
+Use this data source when you need to:- Query multiple existing clusters dynamically instead of hardcoding cluster names or IDs.
+- Validate cluster configurations (e.g., pod/service CIDRs, version details, upgrade availability) across projects.
+- Reference existing clusters in other Terraform resources without duplicating their attributes.
+
+<!-- ## Available filters 없음 -->
 
 
 

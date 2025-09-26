@@ -3,12 +3,16 @@
 page_title: "kakaocloud_instance Resource - kakaocloud"
 subcategory: ""
 description: |-
-  Represents a instance resource.
+  The kakaocloud_instance resource allows you to create and manage virtual machine (VM) or bare metal (BM) instances in KakaoCloud.
+  You can specify compute configurations such as instance type, image, and attached volumes, as well as networking details including subnets and security groups.
+  This resource also provides access to detailed metadata and status information, enabling full lifecycle management of instances for various workloads and environments.
 ---
 
 # kakaocloud_instance (Resource)
 
-Represents a instance resource.
+The `kakaocloud_instance` resource allows you to create and manage virtual machine (VM) or bare metal (BM) instances in KakaoCloud.
+You can specify compute configurations such as instance type, image, and attached volumes, as well as networking details including subnets and security groups.
+This resource also provides access to detailed metadata and status information, enabling full lifecycle management of instances for various workloads and environments.
 
 ## Example Usage
 

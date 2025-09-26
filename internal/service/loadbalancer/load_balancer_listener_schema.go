@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -618,8 +617,6 @@ func getListenerL7PolicyDataSourceSchema() map[string]dschema.Attribute {
 	}
 }
 
-// listenerResourceSchemaAttributes defines the schema for the listener resource
 var listenerResourceSchemaAttributes = getListenerResourceSchema()
 
-// listenerDataSourceSchemaAttributes defines the schema for the listener data source
 var listenerDataSourceSchemaAttributes = getListenerDataSourceSchema()

@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package vpc
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -20,7 +20,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure   = &networkInterfaceResource{}
 	_ resource.ResourceWithImportState = &networkInterfaceResource{}
@@ -34,15 +33,13 @@ type networkInterfaceResource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (r *networkInterfaceResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_network_interface"
 }
 
-// Schema defines the schema for the resource.
 func (r *networkInterfaceResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents a network interface resource.",
+		Description: docs.GetResourceDescription("NetworkInterface"),
 		Attributes: MergeResourceSchemaAttributes(
 			networkInterfaceResourceSchema,
 			map[string]schema.Attribute{
@@ -52,7 +49,6 @@ func (r *networkInterfaceResource) Schema(ctx context.Context, _ resource.Schema
 	}
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *networkInterfaceResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan networkInterfaceResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -154,7 +150,6 @@ func (r *networkInterfaceResource) Create(ctx context.Context, req resource.Crea
 
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *networkInterfaceResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state networkInterfaceResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -201,7 +196,6 @@ func (r *networkInterfaceResource) Read(ctx context.Context, req resource.ReadRe
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *networkInterfaceResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state networkInterfaceResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -229,7 +223,6 @@ func (r *networkInterfaceResource) Update(ctx context.Context, req resource.Upda
 	var result *vpc.BnsVpcV1ApiGetNetworkInterfaceModelNetworkInterfaceModel
 	var ok bool
 
-	// basic update
 	if !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) || !plan.SecurityGroups.Equal(state.SecurityGroups) {
 		var editReq vpc.EditNetworkInterfaceModel
 
@@ -281,7 +274,6 @@ func (r *networkInterfaceResource) Update(ctx context.Context, req resource.Upda
 		}
 	}
 
-	// AllowedAddressPairs update
 	if !plan.AllowedAddressPairs.IsNull() && !plan.AllowedAddressPairs.IsUnknown() && !plan.AllowedAddressPairs.Equal(state.AllowedAddressPairs) {
 		if !r.updateAllowedAddressPairs(ctx, plan, &resp.Diagnostics) {
 			return
@@ -310,7 +302,6 @@ func (r *networkInterfaceResource) Update(ctx context.Context, req resource.Upda
 	}
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *networkInterfaceResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state networkInterfaceResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -345,7 +336,6 @@ func (r *networkInterfaceResource) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	// Poll until resource disappears
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (*vpc.BnsVpcV1ApiGetNetworkInterfaceModelResponseNetworkInterfaceModel, *http.Response, error) {
@@ -361,8 +351,7 @@ func (r *networkInterfaceResource) Delete(ctx context.Context, req resource.Dele
 }
 
 func (r *networkInterfaceResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}
@@ -381,7 +370,7 @@ func (r *networkInterfaceResource) Configure(_ context.Context, req resource.Con
 }
 
 func (r *networkInterfaceResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 

@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -20,13 +19,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &loadBalancerL7PoliciesDataSource{}
 	_ datasource.DataSourceWithConfigure = &loadBalancerL7PoliciesDataSource{}
 )
 
-// NewLoadBalancerL7PoliciesDataSource is a helper function to simplify the provider implementation.
 func NewLoadBalancerL7PoliciesDataSource() datasource.DataSource {
 	return &loadBalancerL7PoliciesDataSource{}
 }
@@ -35,12 +32,10 @@ type loadBalancerL7PoliciesDataSource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the data source type name.
 func (d *loadBalancerL7PoliciesDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_load_balancer_l7_policies"
 }
 
-// Schema defines the schema for the data source.
 func (d *loadBalancerL7PoliciesDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Use this data source to get information about KakaoCloud Load Balancer L7 Policy lists.",
@@ -84,7 +79,6 @@ func (d *loadBalancerL7PoliciesDataSource) Schema(ctx context.Context, _ datasou
 	}
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (d *loadBalancerL7PoliciesDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config loadBalancerL7PoliciesDataSourceModel
 
@@ -103,14 +97,12 @@ func (d *loadBalancerL7PoliciesDataSource) Read(ctx context.Context, req datasou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Initialize the API call with required path parameters
 	l7PolicyApi := d.kc.ApiClient.LoadBalancerL7PoliciesAPI.ListL7Policies(
 		ctx,
 		config.LoadBalancerId.ValueString(),
 		config.ListenerId.ValueString(),
 	)
 
-	// Apply filters
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
 			continue
@@ -172,7 +164,6 @@ func (d *loadBalancerL7PoliciesDataSource) Read(ctx context.Context, req datasou
 		return
 	}
 
-	// Execute the API call
 	lbL7PoliciesResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (*loadbalancer.L7PolicyListModel, *http.Response, error) {
 			return l7PolicyApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
@@ -201,12 +192,10 @@ func (d *loadBalancerL7PoliciesDataSource) Read(ctx context.Context, req datasou
 		config.L7Policies = append(config.L7Policies, tmplb7Policy)
 	}
 
-	// Save data into Terraform state
 	diags = resp.State.Set(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 }
 
-// Configure adds the provider configured client to the data source.
 func (d *loadBalancerL7PoliciesDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return

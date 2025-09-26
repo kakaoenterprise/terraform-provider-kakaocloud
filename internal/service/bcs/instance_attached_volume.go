@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package bcs
 
 import (
@@ -80,7 +79,6 @@ func (r *instanceResource) updateAttachedVolumes(
 		}
 	}
 
-	// Detach or Replace
 	for _, s := range *states {
 		if _, exists := planMap[s.Id.ValueString()]; !exists {
 			ok := r.detachVolume(ctx, instanceId, s.Id.ValueString(), resp)
@@ -90,7 +88,7 @@ func (r *instanceResource) updateAttachedVolumes(
 
 		} else {
 			plan := planMap[s.Id.ValueString()]
-			// case: IsDeleteOnTermination
+
 			if !plan.IsDeleteOnTermination.IsNull() && !plan.IsDeleteOnTermination.IsUnknown() &&
 				!plan.IsDeleteOnTermination.Equal(s.IsDeleteOnTermination) {
 				ok := r.updateAttachedVolumeData(ctx, instanceId, &plan, resp)
@@ -98,14 +96,14 @@ func (r *instanceResource) updateAttachedVolumes(
 					return false
 				}
 			}
-			// case: size
+
 			if !plan.Size.IsNull() && !plan.Size.IsUnknown() && !plan.Size.Equal(s.Size) {
 				ok := r.UpdateVolumeSize(ctx, r.kc, plan.Id.ValueString(), plan.Size.ValueInt32(), resp)
 				if !ok {
 					return false
 				}
 			}
-			// case: TypeId, EncryptionSecretId -> Detach and Attach
+
 			if !plan.TypeId.IsNull() && !plan.TypeId.IsUnknown() && !plan.TypeId.Equal(s.TypeId) ||
 				!plan.EncryptionSecretId.IsNull() && !plan.EncryptionSecretId.IsUnknown() && !plan.EncryptionSecretId.Equal(s.EncryptionSecretId) {
 				ok := r.detachVolume(ctx, instanceId, s.Id.ValueString(), resp)
@@ -122,7 +120,7 @@ func (r *instanceResource) updateAttachedVolumes(
 
 	for _, plan := range *plans {
 		_, exists := stateMap[plan.Id.ValueString()]
-		// Attach
+
 		if !exists {
 			ok := r.attacheVolume(ctx, instanceId, &plan, resp)
 			if !ok {

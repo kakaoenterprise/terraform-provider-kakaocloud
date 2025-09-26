@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -273,8 +272,6 @@ func getL7PolicyRuleDataSourceSchemaAttributes() map[string]dschema.Attribute {
 	}
 }
 
-// loadBalancerL7PolicyResourceSchemaAttributes defines the schema for the L7 policy resource
 var loadBalancerL7PolicyResourceSchemaAttributes = getL7PolicyResourceSchema()
 
-// loadBalancerL7PolicyDataSourceSchemaAttributes defines the schema for the L7 policy data source
 var loadBalancerL7PolicyDataSourceSchemaAttributes = getL7PolicyDataSourceSchema()

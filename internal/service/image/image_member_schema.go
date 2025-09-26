@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package image
 
 import (
@@ -52,7 +51,6 @@ func getImageMemberResourceSchema() map[string]rschema.Attribute {
 	}
 }
 
-// data source schema
 func getImageMemberDataSourceSchema() map[string]dschema.Attribute {
 	desc := docs.Image("bcs_image__v1__api__list_image_shared_projects__model__ImageMemberModel")
 

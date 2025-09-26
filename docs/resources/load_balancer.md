@@ -3,12 +3,16 @@
 page_title: "kakaocloud_load_balancer Resource - kakaocloud"
 subcategory: ""
 description: |-
-  Manages a KakaoCloud Load Balancer.
+  The kakaocloud_load_balancer resource allows you to create and manage load balancers in KakaoCloud.
+  You can configure subnet placement, load balancer type, and logging options, while also retrieving detailed information such as VIP addresses, listeners, target groups, and operational status.
+  This resource enables high availability and traffic distribution for applications running in KakaoCloud.
 ---
 
 # kakaocloud_load_balancer (Resource)
 
-Manages a KakaoCloud Load Balancer.
+The `kakaocloud_load_balancer` resource allows you to create and manage load balancers in KakaoCloud.
+You can configure subnet placement, load balancer type, and logging options, while also retrieving detailed information such as VIP addresses, listeners, target groups, and operational status.
+This resource enables high availability and traffic distribution for applications running in KakaoCloud.
 
 
 

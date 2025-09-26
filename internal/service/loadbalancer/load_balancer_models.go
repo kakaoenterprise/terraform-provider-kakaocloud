@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -11,14 +10,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// accessLogModel defines the access log configuration structure.
 type accessLogModel struct {
 	Bucket    types.String `tfsdk:"bucket"`
 	AccessKey types.String `tfsdk:"access_key"`
 	SecretKey types.String `tfsdk:"secret_key"`
 }
 
-// loadBalancerBaseModel defines the common attributes for a load balancer.
 type loadBalancerBaseModel struct {
 	Id                        types.String `tfsdk:"id"`
 	Name                      types.String `tfsdk:"name"`
@@ -46,7 +43,6 @@ type loadBalancerBaseModel struct {
 	SubnetId                  types.String `tfsdk:"subnet_id"`
 }
 
-// loadBalancerDataSourceBaseModel defines the data source model with string access_logs
 type loadBalancerDataSourceBaseModel struct {
 	Id                        types.String `tfsdk:"id"`
 	Name                      types.String `tfsdk:"name"`
@@ -59,7 +55,7 @@ type loadBalancerDataSourceBaseModel struct {
 	CreatedAt                 types.String `tfsdk:"created_at"`
 	UpdatedAt                 types.String `tfsdk:"updated_at"`
 	AvailabilityZone          types.String `tfsdk:"availability_zone"`
-	AccessLogs                types.String `tfsdk:"access_logs"` // String for data sources
+	AccessLogs                types.String `tfsdk:"access_logs"`
 	BeyondLoadBalancerId      types.String `tfsdk:"beyond_load_balancer_id"`
 	BeyondLoadBalancerName    types.String `tfsdk:"beyond_load_balancer_name"`
 	BeyondLoadBalancerDnsName types.String `tfsdk:"beyond_load_balancer_dns_name"`
@@ -74,20 +70,17 @@ type loadBalancerDataSourceBaseModel struct {
 	SubnetId                  types.String `tfsdk:"subnet_id"`
 }
 
-// loadBalancerDataSourceModel maps the data source schema to a Go struct.
 type loadBalancerDataSourceModel struct {
 	loadBalancerDataSourceBaseModel
 	Timeouts datasourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
-// loadBalancersDataSourceModel maps the plural data source schema to a Go struct.
 type loadBalancersDataSourceModel struct {
 	Filter        []common.FilterModel              `tfsdk:"filter"`
 	LoadBalancers []loadBalancerDataSourceBaseModel `tfsdk:"load_balancers"`
 	Timeouts      datasourceTimeouts.Value          `tfsdk:"timeouts"`
 }
 
-// loadBalancerResourceModel maps the resource schema to a Go struct.
 type loadBalancerResourceModel struct {
 	loadBalancerBaseModel
 	FlavorId types.String           `tfsdk:"flavor_id"`

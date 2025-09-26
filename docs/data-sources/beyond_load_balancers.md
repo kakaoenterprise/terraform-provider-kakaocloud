@@ -3,14 +3,123 @@
 page_title: "kakaocloud_beyond_load_balancers Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Use this data source to get information about KakaoCloud Beyond Load Balancer lists.
+  The kakaocloud_beyond_load_balancers data source retrieves a list of Beyond Load Balancer HA Groups in KakaoCloud.
+  It supports filtering by attributes such as name and returns information including availability zones, VPC configuration, operating status, and the list of load balancers associated with each HA Group.
+  Use this data source when you want to reference multiple Beyond Load Balancer HA Groups in your Terraform configuration without hardcoding their attributes.
+  Available filters
+  | Filter             | Type                          | Description |
+  |------------------------|-------------------------------|-------------|
+  | id                     | string                       | Load balancer ID |
+  | name                   | string                       | Load balancer name |
+  | type                   | string                       | Load balancer type <br>Possible values: `ALB`, `NLB`, `NLB_L4_DSR` |
+  | private_vip            | string                       | Internal VIP address |
+  | public_vip             | string                       | External VIP address |
+  | provisioning_status    | string          | Provisioning status <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+  | operating_status       | string  | Operating status <br>- `ONLINE`: Online <br>- `DRAINING`: Draining connections <br>- `OFFLINE`: Offline <br>- `DEGRADED`: Degraded <br>- `ERROR`: Error <br>- `NO_MONITOR`: No monitoring |
+  | subnet_id              | string                       | Subnet ID |
+  | subnet_cidr_block      | string                       | IPv4 CIDR block of the subnet |
+  | vpc_id                 | string                       | Unique ID of the VPC |
+  | vpc_name               | string                       | VPC name |
+  | availability_zone      | string            | Availability zone <br>Possible values: `kr-central-2-a`, `kr-central-2-b`, `kr-central-2-c` |
+  | beyond_load_balancer_name | string                    | Associated high availability group name |
+  | created_at             | string                       | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+  | updated_at             | string                       | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 ---
 
 # kakaocloud_beyond_load_balancers (Data Source)
 
-Use this data source to get information about KakaoCloud Beyond Load Balancer lists.
+The `kakaocloud_beyond_load_balancers` data source retrieves a list of Beyond Load Balancer HA Groups in KakaoCloud.
+It supports filtering by attributes such as `name` and returns information including availability zones, VPC configuration, operating status, and the list of load balancers associated with each HA Group.
 
+Use this data source when you want to reference multiple Beyond Load Balancer HA Groups in your Terraform configuration without hardcoding their attributes.
 
+## Available filters
+
+| Filter             | Type                          | Description |
+|------------------------|-------------------------------|-------------|
+| id                     | string                       | Load balancer ID |
+| name                   | string                       | Load balancer name |
+| type                   | string                       | Load balancer type <br>Possible values: `ALB`, `NLB`, `NLB_L4_DSR` |
+| private_vip            | string                       | Internal VIP address |
+| public_vip             | string                       | External VIP address |
+| provisioning_status    | string          | Provisioning status <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+| operating_status       | string  | Operating status <br>- `ONLINE`: Online <br>- `DRAINING`: Draining connections <br>- `OFFLINE`: Offline <br>- `DEGRADED`: Degraded <br>- `ERROR`: Error <br>- `NO_MONITOR`: No monitoring |
+| subnet_id              | string                       | Subnet ID |
+| subnet_cidr_block      | string                       | IPv4 CIDR block of the subnet |
+| vpc_id                 | string                       | Unique ID of the VPC |
+| vpc_name               | string                       | VPC name |
+| availability_zone      | string            | Availability zone <br>Possible values: `kr-central-2-a`, `kr-central-2-b`, `kr-central-2-c` |
+| beyond_load_balancer_name | string                    | Associated high availability group name |
+| created_at             | string                       | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+| updated_at             | string                       | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
+
+## Example Usage
+
+```terraform
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+# List all beyond load balancers
+data "kakaocloud_beyond_load_balancers" "all" {
+  # No filters - get all beyond load balancers
+}
+
+# List beyond load balancers with filters
+data "kakaocloud_beyond_load_balancers" "filtered" {
+  filter = [
+    {
+      name  = "id"
+      value = "your-beyond-load-balancer-id" # Replace with your beyond load balancer ID
+    },
+    {
+      name  = "name"
+      value = "your-beyond-load-balancer-name" # Replace with your beyond load balancer name
+    },
+    {
+      name  = "dns_name"
+      value = "your-beyond-load-balancer-dns-name" # Replace with your beyond load balancer DNS name
+    },
+    {
+      name  = "scheme"
+      value = "internal"
+    },
+    {
+      name  = "provisioning_status"
+      value = "ACTIVE"
+    },
+    {
+      name  = "operating_status"
+      value = "ONLINE"
+    },
+    {
+      name  = "type"
+      value = "ALB"
+    },
+    {
+      name  = "vpc_id"
+      value = "your-vpc-id-here" # Replace with your VPC ID
+    },
+    {
+      name  = "vpc_name"
+      value = "your-vpc-name" # Replace with your VPC name
+    },
+    {
+      name  = "created_at"
+      value = "2021-01-01T00:00:00Z" # Replace with your created at
+    },
+    {
+      name  = "updated_at"
+      value = "2021-01-01T00:00:00Z" # Replace with your updated at
+    }
+  ]
+}
+
+# Output beyond load balancers
+output "beyond_load_balancers" {
+  description = "List of beyond load balancers"
+  value       = data.kakaocloud_beyond_load_balancers.all
+}
+```
 
 <!-- schema generated by tfplugindocs -->
 ## Schema

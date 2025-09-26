@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package volume
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -17,7 +17,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &volumeTypesDataSource{}
 	_ datasource.DataSourceWithConfigure = &volumeTypesDataSource{}
@@ -37,7 +36,7 @@ func (d *volumeTypesDataSource) Metadata(_ context.Context, req datasource.Metad
 
 func (d *volumeTypesDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud volume type list datasource",
+		Description: docs.GetDataSourceDescription("VolumeType"),
 		Attributes: map[string]schema.Attribute{
 			"volume_types": schema.ListNestedAttribute{
 				Computed: true,
@@ -99,8 +98,7 @@ func (d *volumeTypesDataSource) Read(ctx context.Context, req datasource.ReadReq
 }
 
 func (d *volumeTypesDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}

@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package volume
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -19,13 +19,11 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure   = &volumeSnapshotResource{}
 	_ resource.ResourceWithImportState = &volumeSnapshotResource{}
 )
 
-// NewVolumeSnapshotResource is a helper function to simplify the provider implementation.
 func NewVolumeSnapshotResource() resource.Resource {
 	return &volumeSnapshotResource{}
 }
@@ -34,15 +32,13 @@ type volumeSnapshotResource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (r *volumeSnapshotResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_volume_snapshot"
 }
 
-// Schema defines the schema for the resource.
 func (r *volumeSnapshotResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents a volume snapshot resource.",
+		Description: docs.GetResourceDescription("VolumeSnapshot"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			volumeSnapshotResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -52,7 +48,6 @@ func (r *volumeSnapshotResource) Schema(ctx context.Context, _ resource.SchemaRe
 	}
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *volumeSnapshotResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan volumeSnapshotResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -145,7 +140,6 @@ func (r *volumeSnapshotResource) Create(ctx context.Context, req resource.Create
 
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *volumeSnapshotResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state volumeSnapshotResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -193,7 +187,6 @@ func (r *volumeSnapshotResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *volumeSnapshotResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state volumeSnapshotResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -253,7 +246,6 @@ func (r *volumeSnapshotResource) Update(ctx context.Context, req resource.Update
 	}
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *volumeSnapshotResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state volumeSnapshotResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -302,8 +294,7 @@ func (r *volumeSnapshotResource) Delete(ctx context.Context, req resource.Delete
 }
 
 func (r *volumeSnapshotResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}
@@ -322,7 +313,7 @@ func (r *volumeSnapshotResource) Configure(_ context.Context, req resource.Confi
 }
 
 func (r *volumeSnapshotResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 

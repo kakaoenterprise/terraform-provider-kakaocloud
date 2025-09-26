@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package common
 
 import (
@@ -28,25 +27,21 @@ type KakaoCloudClient struct {
 	XAuthToken   string
 }
 
-// NewClient creates a new authenticated KakaoCloud client
 func NewClient(config *Config, userAgent string) (*KakaoCloudClient, error) {
 	if err := completeConfig(config); err != nil {
 		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
-	// Create client instance
 	client := &KakaoCloudClient{
 		Config: config,
 	}
 
-	// Initialize API client
 	endpoints := client.buildEndpoints()
 	client.ApiClient = kakaocloud.NewAPIClient(kakaocloud.Config{
 		Endpoints: endpoints,
 		UserAgent: userAgent,
 	})
 
-	// Initialize token manager
 	client.TokenManager = auth.NewTokenManager(
 		client.ApiClient.IdentityAPI,
 		client.Config.ApplicationCredentialID.ValueString(),
@@ -57,7 +52,7 @@ func NewClient(config *Config, userAgent string) (*KakaoCloudClient, error) {
 }
 
 func completeConfig(config *Config) error {
-	// Load credentials from environment if not provided
+
 	if config.ApplicationCredentialID.IsNull() {
 		config.ApplicationCredentialID = types.StringValue(os.Getenv("APPLICATION_CREDENTIAL_ID"))
 	}
@@ -65,7 +60,6 @@ func completeConfig(config *Config) error {
 		config.ApplicationCredentialSecret = types.StringValue(os.Getenv("APPLICATION_CREDENTIAL_SECRET"))
 	}
 
-	// Validate required fields
 	if config.ApplicationCredentialID.ValueString() == "" {
 		return fmt.Errorf("application_credential_id is required")
 	}
@@ -73,7 +67,6 @@ func completeConfig(config *Config) error {
 		return fmt.Errorf("application_credential_secret is required")
 	}
 
-	// Set default values
 	if config.Region.IsUnknown() || config.ServiceRealm.IsNull() {
 		config.ServiceRealm = types.StringValue("public")
 	}
@@ -85,7 +78,6 @@ func completeConfig(config *Config) error {
 		config.EndpointOverrides = make(map[string]string)
 	}
 
-	// Validate region and service realm combination
 	availabilityZones, ok := AvailabilityZonesFor(config.ServiceRealm.ValueString(), config.Region.ValueString())
 	if !ok {
 		return fmt.Errorf("unsupported combination: service_realm=%s, region=%s",

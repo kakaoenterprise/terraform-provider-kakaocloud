@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -9,12 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Target group model for health monitor
 type healthMonitorTargetGroupModel struct {
 	Id types.String `tfsdk:"id"`
 }
 
-// Base model for health monitor that can be embedded in resource and data source models
 type loadBalancerHealthMonitorBaseModel struct {
 	Id                 types.String `tfsdk:"id"`
 	Name               types.String `tfsdk:"name"`
@@ -36,13 +33,11 @@ type loadBalancerHealthMonitorBaseModel struct {
 	UpdatedAt          types.String `tfsdk:"updated_at"`
 }
 
-// Resource model for health monitor
 type loadBalancerHealthMonitorResourceModel struct {
 	loadBalancerHealthMonitorBaseModel
 	Timeouts resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
-// Data source model for health monitor
 type loadBalancerHealthMonitorDataSourceModel struct {
 	loadBalancerHealthMonitorBaseModel
 	Timeouts datasourceTimeouts.Value `tfsdk:"timeouts"`

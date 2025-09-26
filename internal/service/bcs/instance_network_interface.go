@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package bcs
 
 import (
@@ -13,26 +12,80 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 	"golang.org/x/net/context"
 )
 
-func (r *instanceResource) setOneNetworkInterfaceId(ctx context.Context, plan *instanceResourceModel, respDiags *diag.Diagnostics) {
+func (r *instanceResource) setNetworkInterfaceId(ctx context.Context, plan *instanceResourceModel, respDiags *diag.Diagnostics) {
 	if plan.Subnets.IsNull() || plan.Subnets.Elements() == nil {
 		return
 	}
 
-	planList, planDiags := r.convertListToInstanceSubnetModel(ctx, plan.Subnets)
-	respDiags.Append(planDiags...)
+	subnetList, subnetDiags := r.convertListToInstanceSubnetModel(ctx, plan.Subnets)
+	respDiags.Append(subnetDiags...)
 	if respDiags.HasError() {
 		return
 	}
 
-	if planList[0].NetworkInterfaceId.IsNull() || planList[0].NetworkInterfaceId.ValueString() == "" {
-		address := plan.Addresses.Elements()[0].(types.Object)
-		planList[0].NetworkInterfaceId = address.Attributes()["network_interface_id"].(types.String)
+	needsSet := false
+	for _, subnet := range subnetList {
+		if subnet.NetworkInterfaceId.IsNull() || subnet.NetworkInterfaceId.ValueString() == "" {
+			needsSet = true
+			break
+		}
 	}
 
-	convertedList, diags := types.ListValueFrom(ctx, plan.Subnets.ElementType(ctx), planList)
+	if !needsSet {
+		return
+	}
+
+	existNicMap := make(map[string]bool)
+	for _, subnet := range subnetList {
+		if !subnet.NetworkInterfaceId.IsNull() {
+			existNicMap[subnet.NetworkInterfaceId.ValueString()] = true
+		}
+	}
+
+	addressList, addressDiags := r.convertListToInstanceAddressModel(ctx, plan.Addresses)
+	respDiags.Append(addressDiags...)
+	if respDiags.HasError() {
+		return
+	}
+
+	subnetMap := make(map[string]string)
+	for _, address := range addressList {
+		nicId := address.NetworkInterfaceId.ValueString()
+		if nicId == "" || existNicMap[nicId] {
+			continue
+		}
+		nicResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+			func() (*vpc.BnsVpcV1ApiGetNetworkInterfaceModelResponseNetworkInterfaceModel, *http.Response, error) {
+				return r.kc.ApiClient.NetworkInterfaceAPI.GetNetworkInterface(ctx, nicId).XAuthToken(r.kc.XAuthToken).Execute()
+			},
+		)
+		if err != nil {
+			common.AddApiActionError(ctx, r, httpResp, "GetNetworkInterface", err, respDiags)
+			return
+		}
+		if nicResp.NetworkInterface.SubnetId.Get() != nil {
+			subnetId := nicResp.NetworkInterface.SubnetId.Get()
+			subnetMap[*subnetId] = nicId
+		}
+	}
+
+	for i, subnet := range subnetList {
+		if subnet.NetworkInterfaceId.IsNull() || subnet.NetworkInterfaceId.ValueString() == "" {
+			nicId, exists := subnetMap[subnet.Id.ValueString()]
+			if !exists {
+				common.AddGeneralError(ctx, r, respDiags,
+					fmt.Sprintf("No network interface found for subnet_iD: %s", subnet.Id.ValueString()))
+				return
+			}
+			subnetList[i].NetworkInterfaceId = types.StringValue(nicId)
+		}
+	}
+
+	convertedList, diags := types.ListValueFrom(ctx, plan.Subnets.ElementType(ctx), subnetList)
 	respDiags.Append(diags...)
 	plan.Subnets = convertedList
 }
@@ -61,7 +114,6 @@ func (r *instanceResource) updateNetworkInterface(
 		}
 	}
 
-	// Detach
 	for _, s := range *states {
 		if _, exists := planMap[s.NetworkInterfaceId.ValueString()]; !exists {
 			ok := r.detachNetworkInterface(ctx, instanceId, s.NetworkInterfaceId.ValueString(), resp)
@@ -71,7 +123,6 @@ func (r *instanceResource) updateNetworkInterface(
 		}
 	}
 
-	// Attach
 	for _, s := range *plans {
 		if _, exists := stateMap[s.NetworkInterfaceId.ValueString()]; !exists {
 			ok := r.attacheNetworkInterface(ctx, instanceId, s.NetworkInterfaceId.ValueString(), resp)
@@ -133,6 +184,24 @@ func (r *instanceResource) convertListToInstanceSubnetModel(
 	for _, elem := range list.Elements() {
 		if obj, ok := elem.(types.Object); ok {
 			var model instanceSubnetModel
+			elemDiags := obj.As(ctx, &model, basetypes.ObjectAsOptions{})
+			diags.Append(elemDiags...)
+			result = append(result, model)
+		}
+	}
+	return result, diags
+}
+
+func (r *instanceResource) convertListToInstanceAddressModel(
+	ctx context.Context,
+	list types.List,
+) ([]instanceAddressModel, diag.Diagnostics) {
+	var result []instanceAddressModel
+	var diags diag.Diagnostics
+
+	for _, elem := range list.Elements() {
+		if obj, ok := elem.(types.Object); ok {
+			var model instanceAddressModel
 			elemDiags := obj.As(ctx, &model, basetypes.ObjectAsOptions{})
 			diags.Append(elemDiags...)
 			result = append(result, model)

@@ -1,7 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
-// load_balancer_flavor_models.go
 package loadbalancer
 
 import (

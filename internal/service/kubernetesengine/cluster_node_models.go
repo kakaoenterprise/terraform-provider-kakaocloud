@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package kubernetesengine
 
 import (
@@ -15,19 +14,19 @@ type nodeBaseModel struct {
 	CreatedAt      types.String `tfsdk:"created_at"`
 	Flavor         types.String `tfsdk:"flavor"`
 	Id             types.String `tfsdk:"id"`
-	Ip             types.String `tfsdk:"ip"` // nullable
+	Ip             types.String `tfsdk:"ip"`
 	Name           types.String `tfsdk:"name"`
 	NodePoolName   types.String `tfsdk:"node_pool_name"`
 	SshKeyName     types.String `tfsdk:"ssh_key_name"`
-	FailureMessage types.String `tfsdk:"failure_message"` // nullable
+	FailureMessage types.String `tfsdk:"failure_message"`
 	UpdatedAt      types.String `tfsdk:"updated_at"`
 	Version        types.String `tfsdk:"version"`
 	VolumeSize     types.Int32  `tfsdk:"volume_size"`
 
 	IsHyperThreading types.Bool   `tfsdk:"is_hyper_threading"`
-	Image            types.Object `tfsdk:"image"`    // nodeImageInfoModel
-	Status           types.Object `tfsdk:"status"`   // nodeStatusModel
-	VpcInfo          types.Object `tfsdk:"vpc_info"` // nodeVpcInfoModel
+	Image            types.Object `tfsdk:"image"`
+	Status           types.Object `tfsdk:"status"`
+	VpcInfo          types.Object `tfsdk:"vpc_info"`
 }
 
 type nodeImageInfoModel struct {
@@ -49,7 +48,7 @@ type nodeStatusModel struct {
 
 type nodeVpcInfoModel struct {
 	Id      types.String `tfsdk:"id"`
-	Subnets types.Set    `tfsdk:"subnets"` // set<object> of nodeSubnetModel
+	Subnets types.Set    `tfsdk:"subnets"`
 }
 
 type nodeSubnetModel struct {

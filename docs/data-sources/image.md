@@ -3,12 +3,17 @@
 page_title: "kakaocloud_image Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud 특정 이미지를 조회하는 데이터 소스
+  The kakaocloud_image data source retrieves information about a specific image in KakaoCloud.
+  It returns attributes such as image name, description, operating system details, disk and RAM requirements, visibility, and current status.
+  Use this data source when you need to: - Reference an existing image by its ID in your Terraform configuration. - Dynamically obtain image attributes (e.g., OS type, minimum disk/RAM requirements) without hardcoding them. - Validate that an image is available and shared correctly across projects before creating dependent resources.
 ---
 
 # kakaocloud_image (Data Source)
 
-kakaocloud 특정 이미지를 조회하는 데이터 소스
+The `kakaocloud_image` data source retrieves information about a specific image in KakaoCloud.
+It returns attributes such as image name, description, operating system details, disk and RAM requirements, visibility, and current status.
+
+Use this data source when you need to: - Reference an existing image by its ID in your Terraform configuration. - Dynamically obtain image attributes (e.g., OS type, minimum disk/RAM requirements) without hardcoding them. - Validate that an image is available and shared correctly across projects before creating dependent resources.
 
 
 

@@ -3,12 +3,54 @@
 page_title: "kakaocloud_volumes Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud volume list datasource
+  The kakaocloud_volumes data source retrieves a list of Volumes in KakaoCloud.
+  You can optionally filter the results by attributes such as name, project, or status.
+  Available filters
+  | Filter          | Type             | Description |
+  |--------------------|------------------|-------------|
+  | id                 | string           | ID of the volume to query |
+  | name               | string           | Name of the volume to query |
+  | status             | string           | Status of the volume  |
+  | instance_id        | string           | Unique ID of the instance associated with the volume |
+  | mount_point        | string           | Mount path of the volume on the instance (e.g., `/dev/vdb`) |
+  | type               | string           | Storage type of the volume |
+  | size               | integer          | Size of the volume in GB |
+  | availability_zone  | string | Availability zone where the volume was created <br>Possible values: <br>- `kr-central-2-a`: Availability zone `kr-central-2-a` <br>- `kr-central-2-b`: Availability zone `kr-central-2-b` <br>- `kr-central-2-c`: Availability zone `kr-central-2-c` |
+  | instance_name      | string           | Name of the associated instance |
+  | volume_type        | string           | Name of the volume type |
+  | attach_status      | string           | Attachment status of the volume <br>Examples: `attached`, `detached` |
+  | is_bootable        | boolean          | Whether the volume is bootable |
+  | is_encrypted       | boolean          | Whether the volume is encrypted |
+  | is_root            | boolean          | Whether the volume is a root disk |
+  | created_at         | string           | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+  | updated_at         | string           | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 ---
 
 # kakaocloud_volumes (Data Source)
 
-kakaocloud volume list datasource
+The `kakaocloud_volumes` data source retrieves a list of Volumes in KakaoCloud.
+You can optionally filter the results by attributes such as name, project, or status.
+
+## Available filters
+
+| Filter          | Type             | Description |
+|--------------------|------------------|-------------|
+| id                 | string           | ID of the volume to query |
+| name               | string           | Name of the volume to query |
+| status             | string           | Status of the volume  |
+| instance_id        | string           | Unique ID of the instance associated with the volume |
+| mount_point        | string           | Mount path of the volume on the instance (e.g., `/dev/vdb`) |
+| type               | string           | Storage type of the volume |
+| size               | integer          | Size of the volume in GB |
+| availability_zone  | string | Availability zone where the volume was created <br>Possible values: <br>- `kr-central-2-a`: Availability zone `kr-central-2-a` <br>- `kr-central-2-b`: Availability zone `kr-central-2-b` <br>- `kr-central-2-c`: Availability zone `kr-central-2-c` |
+| instance_name      | string           | Name of the associated instance |
+| volume_type        | string           | Name of the volume type |
+| attach_status      | string           | Attachment status of the volume <br>Examples: `attached`, `detached` |
+| is_bootable        | boolean          | Whether the volume is bootable |
+| is_encrypted       | boolean          | Whether the volume is encrypted |
+| is_root            | boolean          | Whether the volume is a root disk |
+| created_at         | string           | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+| updated_at         | string           | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 
 ## Example Usage
 

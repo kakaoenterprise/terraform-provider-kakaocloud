@@ -3,12 +3,16 @@
 page_title: "kakaocloud_kubernetes_engine_node_pool Resource - kakaocloud"
 subcategory: ""
 description: |-
-  Represents a Kubernetes Engine Node Pool resource.
+  The kakaocloud_kubernetes_engine_node_pool resource allows you to create and manage node pools in a KakaoCloud Kubernetes Engine cluster.
+  You can configure instance types, images, storage, security groups, labels, taints, and autoscaling policies.
+  This resource provides full lifecycle management of node pools, ensuring flexible scaling, workload isolation, and optimized cluster operations.
 ---
 
 # kakaocloud_kubernetes_engine_node_pool (Resource)
 
-Represents a Kubernetes Engine Node Pool resource.
+The `kakaocloud_kubernetes_engine_node_pool` resource allows you to create and manage node pools in a KakaoCloud Kubernetes Engine cluster.
+You can configure instance types, images, storage, security groups, labels, taints, and autoscaling policies.
+This resource provides full lifecycle management of node pools, ensuring flexible scaling, workload isolation, and optimized cluster operations.
 
 
 

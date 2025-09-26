@@ -3,12 +3,51 @@
 page_title: "kakaocloud_images Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  KakaoCloud 이미지 목록을 조회하는 데이터 소스
+  The kakaocloud_images data source retrieves a list of images available in KakaoCloud.
+  It supports filtering by attributes such as name and returns detailed information for each image, including operating system details, disk and RAM requirements, ownership, visibility, and status.
+  Use this data source when you need to: - Query available images dynamically instead of hardcoding image IDs. - Filter images by attributes (e.g., name, OS type) to select the appropriate image for your resources. - Validate image properties such as minimum disk/RAM requirements before provisioning compute instances.
+  Available filters
+  | Filter            | Type                | Description |
+  |-----------------------|---------------------|-------------|
+  | id                    | string             | Unique ID of the image |
+  | name                  | string             | Image name |
+  | instance_type         | ImageInstanceType  | Compatible instance type for the image <br>Possible values: <br>- `vm`: Virtual Machine type <br>- `bm`: Bare Metal Server type |
+  | image_type            | ImageVisibilityType | Image visibility type <br>Possible values: <br>- `basic`: Default images provided by Kakao Cloud (Linux and Windows) <br>- `my`: Custom images created by the project user |
+  | size                  | integer            | Image size (in bytes) |
+  | min_disk              | integer            | Minimum disk size required to use the image (in GB) |
+  | disk_format           | integer            | Disk format of the image |
+  | status                | string             | Status of the image |
+  | os_type               | string             | Operating system type |
+  | visibility            | string             | Image visibility |
+  | image_member_status   | string             | Member status of a shared image |
+  | created_at            | string             | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+  | updated_at            | string             | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 ---
 
 # kakaocloud_images (Data Source)
 
-KakaoCloud 이미지 목록을 조회하는 데이터 소스
+The `kakaocloud_images` data source retrieves a list of images available in KakaoCloud.
+It supports filtering by attributes such as `name` and returns detailed information for each image, including operating system details, disk and RAM requirements, ownership, visibility, and status.
+
+Use this data source when you need to: - Query available images dynamically instead of hardcoding image IDs. - Filter images by attributes (e.g., name, OS type) to select the appropriate image for your resources. - Validate image properties such as minimum disk/RAM requirements before provisioning compute instances.
+
+## Available filters
+
+| Filter            | Type                | Description |
+|-----------------------|---------------------|-------------|
+| id                    | string             | Unique ID of the image |
+| name                  | string             | Image name |
+| instance_type         | ImageInstanceType  | Compatible instance type for the image <br>Possible values: <br>- `vm`: Virtual Machine type <br>- `bm`: Bare Metal Server type |
+| image_type            | ImageVisibilityType | Image visibility type <br>Possible values: <br>- `basic`: Default images provided by Kakao Cloud (Linux and Windows) <br>- `my`: Custom images created by the project user |
+| size                  | integer            | Image size (in bytes) |
+| min_disk              | integer            | Minimum disk size required to use the image (in GB) |
+| disk_format           | integer            | Disk format of the image |
+| status                | string             | Status of the image |
+| os_type               | string             | Operating system type |
+| visibility            | string             | Image visibility |
+| image_member_status   | string             | Member status of a shared image |
+| created_at            | string             | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+| updated_at            | string             | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 
 
 

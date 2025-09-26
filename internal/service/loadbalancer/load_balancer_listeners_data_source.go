@@ -1,32 +1,28 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
 	"context"
 	"fmt"
 	"net/http"
+	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/jinzhu/copier"
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 
 	"terraform-provider-kakaocloud/internal/common"
 
-	//"terraform-provider-kakaocloud/internal/utils"
-
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &loadBalancerListenersDataSource{}
 	_ datasource.DataSourceWithConfigure = &loadBalancerListenersDataSource{}
 )
 
-// NewLoadBalancerListenersDataSource is a helper function to simplify the provider implementation.
 func NewLoadBalancerListenersDataSource() datasource.DataSource {
 	return &loadBalancerListenersDataSource{}
 }
@@ -35,12 +31,10 @@ type loadBalancerListenersDataSource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the data source type name.
 func (d *loadBalancerListenersDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_load_balancer_listeners"
 }
 
-// Configure adds the provider configured client to the data source.
 func (d *loadBalancerListenersDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -57,10 +51,9 @@ func (d *loadBalancerListenersDataSource) Configure(_ context.Context, req datas
 	d.kc = client
 }
 
-// Schema defines the schema for the data source.
 func (d *loadBalancerListenersDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Use this data source to get information about KakaoCloud Load Balancer Listeners lists.",
+		Description: docs.GetDataSourceDescription("LoadBalancerListeners"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -86,7 +79,6 @@ func (d *loadBalancerListenersDataSource) Schema(ctx context.Context, _ datasour
 	}
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (d *loadBalancerListenersDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config loadBalancerListenersDataSourceModel
 
@@ -106,7 +98,6 @@ func (d *loadBalancerListenersDataSource) Read(ctx context.Context, req datasour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// The SDK function and response object will need to be verified against the actual Go SDK.
 	lblApi := d.kc.ApiClient.LoadBalancerListenerAPI.ListListeners(ctx)
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
@@ -215,7 +206,6 @@ func (d *loadBalancerListenersDataSource) Read(ctx context.Context, req datasour
 		config.Listeners = append(config.Listeners, tmpLbl)
 	}
 
-	// Save data into Terraform state
 	diags = resp.State.Set(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 }

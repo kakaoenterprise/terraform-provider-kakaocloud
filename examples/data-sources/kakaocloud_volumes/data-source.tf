@@ -1,3 +1,5 @@
+# Copyright (c) HashiCorp, Inc.
+
 # List all volumes or filtered volumes.
 data "kakaocloud_volumes" "example_list" {
   filter = [

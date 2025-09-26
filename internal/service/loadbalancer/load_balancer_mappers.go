@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -14,19 +13,16 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// mapAccessLogsToString maps the API access logs string response to a string for data sources.
 func mapAccessLogsToString(apiAccessLogs string) types.String {
 	return types.StringValue(apiAccessLogs)
 }
 
-// accessLogAttrType defines the attribute types for access log object.
 var accessLogAttrType = map[string]attr.Type{
 	"bucket":     types.StringType,
 	"access_key": types.StringType,
 	"secret_key": types.StringType,
 }
 
-// mapLoadBalancer maps the GetLoadBalancer API response to our base model.
 func mapLoadBalancer(
 	ctx context.Context,
 	base *loadBalancerBaseModel,
@@ -43,8 +39,7 @@ func mapLoadBalancer(
 	base.CreatedAt = utils.ConvertNullableTime(lb.CreatedAt)
 	base.UpdatedAt = utils.ConvertNullableTime(lb.UpdatedAt)
 	base.AvailabilityZone = utils.ConvertNullableString(lb.AvailabilityZone)
-	// Access logs are write-only, so we don't map them from API response
-	// They will be preserved from the state - initialize as null if not set
+
 	base.BeyondLoadBalancerId = utils.ConvertNullableString(lb.BeyondLoadBalancerId)
 	base.BeyondLoadBalancerName = utils.ConvertNullableString(lb.BeyondLoadBalancerName)
 	base.BeyondLoadBalancerDnsName = utils.ConvertNullableString(lb.BeyondLoadBalancerDnsName)
@@ -65,7 +60,6 @@ func mapLoadBalancer(
 	return !diags.HasError()
 }
 
-// mapLoadBalancerBaseForDataSource maps the GetLoadBalancer API response to data source base model.
 func mapLoadBalancerBaseForDataSource(
 	ctx context.Context,
 	base *loadBalancerDataSourceBaseModel,

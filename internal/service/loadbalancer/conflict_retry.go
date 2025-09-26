@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -16,8 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-// ExecuteWithLoadBalancerConflictRetry executes operations with smart 409 conflict retry handling
-// This function is specifically designed for load balancer operations that may conflict due to API locking
 func ExecuteWithLoadBalancerConflictRetry[T any](
 	ctx context.Context,
 	kc *common.KakaoCloudClient,
@@ -33,7 +30,6 @@ func ExecuteWithLoadBalancerConflictRetry[T any](
 	for i := 0; i < maxRetries; i++ {
 		result, httpResp, err := operation()
 
-		// Handle 409 Conflict with exponential backoff
 		if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 			if shouldRetryLoadBalancerConflict(err, httpResp) {
 				if i < maxRetries-1 {
@@ -44,7 +40,7 @@ func ExecuteWithLoadBalancerConflictRetry[T any](
 
 					select {
 					case <-time.After(conflictInterval):
-						conflictInterval *= 2 // Exponential backoff
+						conflictInterval *= 2
 						continue
 					case <-ctx.Done():
 						respDiags.AddError(
@@ -54,32 +50,28 @@ func ExecuteWithLoadBalancerConflictRetry[T any](
 						return zero, httpResp, ctx.Err()
 					}
 				}
-				// 409 retries exhausted
+
 				respDiags.AddError(
 					fmt.Sprintf("Error during %s", action),
 					fmt.Sprintf("Exceeded max retry attempts (%d) due to 409 Conflict", maxRetries),
 				)
 				return zero, httpResp, err
 			}
-			// Non-retryable 409 conflict, return immediately
+
 			return result, httpResp, err
 		}
 
-		// Success or other error
 		return result, httpResp, err
 	}
 
 	return zero, nil, fmt.Errorf("unexpected error: should not reach here")
 }
 
-// shouldRetryLoadBalancerConflict determines if a 409 conflict should be retried for load balancer operations
-// Only retries for specific immutable/resource locking conflicts
 func shouldRetryLoadBalancerConflict(err error, resp *http.Response) bool {
 	if resp == nil || resp.Body == nil {
 		return false
 	}
 
-	// Read the response body to check error message
 	body, readErr := io.ReadAll(resp.Body)
 	if readErr != nil {
 		return false
@@ -88,8 +80,6 @@ func shouldRetryLoadBalancerConflict(err error, resp *http.Response) bool {
 
 	errorMsg := strings.ToLower(string(body))
 
-	// Only retry for specific immutable/resource locking conflicts
-	// These are temporary conflicts that can be resolved by waiting
 	retryableKeywords := []string{
 		"resource is locked",
 		"operation in progress",
@@ -109,7 +99,6 @@ func shouldRetryLoadBalancerConflict(err error, resp *http.Response) bool {
 		}
 	}
 
-	// Don't retry for name conflicts, validation errors, or other permanent errors
 	tflog.Info(context.Background(), fmt.Sprintf("Non-retryable 409 conflict: %s", errorMsg))
 	return false
 }

@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package network
 
 import (
@@ -10,7 +9,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/kakaoenterprise/kc-sdk-go/services/network"
 )
 
@@ -29,20 +27,10 @@ func mapPublicIpBaseModel(
 	base.CreatedAt = ConvertNullableTime(publicIpResult.CreatedAt)
 	base.UpdatedAt = ConvertNullableTime(publicIpResult.UpdatedAt)
 
-	deviceType := types.StringNull()
-	if !base.RelatedResource.IsNull() && !base.RelatedResource.IsUnknown() {
-		var planRR resourceModel
-		if d := base.RelatedResource.As(ctx, &planRR, basetypes.ObjectAsOptions{}); d.HasError() {
-			respDiags.Append(d...)
-			return false
-		}
-		deviceType = planRR.DeviceType
-	}
-
 	relatedResourceObj, relatedResourceDiags := ConvertObjectFromModel(
 		ctx, publicIpResult.RelatedResource, relatedResourceAttrType,
 		func(src network.BnsNetworkV1ApiGetPublicIpModelRelatedResourceInfoModel) any {
-			dt := deviceType
+			dt := types.StringNull()
 			if dt.IsNull() || dt.IsUnknown() {
 				owner := ""
 				if src.DeviceOwner.Get() != nil {
@@ -98,19 +86,9 @@ func (d *publicIpsDataSource) mapPublicIps(
 	base.CreatedAt = ConvertNullableTime(publicIpResult.CreatedAt)
 	base.UpdatedAt = ConvertNullableTime(publicIpResult.UpdatedAt)
 
-	deviceType := types.StringNull()
-	if !base.RelatedResource.IsNull() && !base.RelatedResource.IsUnknown() {
-		var planRR resourceModel
-		if d := base.RelatedResource.As(ctx, &planRR, basetypes.ObjectAsOptions{}); d.HasError() {
-			respDiags.Append(d...)
-			return false
-		}
-		deviceType = planRR.DeviceType
-	}
-
 	relatedResourceObj, relatedResourceDiags := ConvertObjectFromModel(ctx, publicIpResult.RelatedResource, relatedResourceAttrType,
 		func(src network.BnsNetworkV1ApiListPublicIpsModelRelatedResourceInfoModel) any {
-			dt := deviceType
+			dt := types.StringNull()
 			if dt.IsNull() || dt.IsUnknown() {
 				owner := ""
 				if src.DeviceOwner.Get() != nil {

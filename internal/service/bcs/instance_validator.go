@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package bcs
 
 import (
@@ -52,7 +51,6 @@ func (r *instanceResource) validateVolumesConfig(ctx context.Context, config ins
 	}
 }
 
-// NetworkInterfaceId check
 func (r *instanceResource) validateSubnetsConfig(ctx context.Context, config instanceResourceModel, resp *resource.ValidateConfigResponse) {
 	configList, planDiags := r.convertListToInstanceSubnetModel(ctx, config.Subnets)
 	resp.Diagnostics.Append(planDiags...)
@@ -69,12 +67,14 @@ func (r *instanceResource) validateSubnetsConfig(ctx context.Context, config ins
 		}
 	}
 
-	for i := 1; i < len(configList); i++ {
-		tfv := configList[i]
-		if tfv.NetworkInterfaceId.IsNull() {
-			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
-				fmt.Sprintf("Invalid Configuration: Network interface ID is mandatory from the second configured subnet."),
-			)
+	mapSubnet := make(map[string]bool)
+	for _, subnet := range configList {
+		if subnet.NetworkInterfaceId.IsNull() {
+			if mapSubnet[subnet.Id.ValueString()] {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("Invalid Configuration: A different subnet or a Network Interface ID must be specified. subnet_id: %s", subnet.Id))
+			}
+			mapSubnet[subnet.Id.ValueString()] = true
 		}
 	}
 
@@ -102,12 +102,10 @@ func (r *instanceResource) ModifyPlan(
 		return
 	}
 
-	// Delete: pass
 	if req.Plan.Raw.IsNull() {
 		return
 	}
 
-	// instance_type, status
 	if !plan.InstanceType.IsNull() && !plan.InstanceType.IsUnknown() && !plan.Status.IsNull() && !plan.Status.IsUnknown() {
 		instanceType := plan.InstanceType.ValueString()
 		status := plan.Status.ValueString()
@@ -119,9 +117,12 @@ func (r *instanceResource) ModifyPlan(
 		}
 	}
 
-	// Update
+	if req.State.Raw.IsNull() && !req.Plan.Raw.IsNull() {
+		return
+	}
+
 	if !req.State.Raw.IsNull() && !req.Plan.Raw.IsNull() {
-		// Volumes
+
 		if !plan.Volumes.Equal(state.Volumes) && !state.Volumes.IsNull() {
 			planList, planDiags := r.convertListToInstanceVolumeModel(ctx, plan.Volumes)
 			stateList, stateDiags := r.convertListToInstanceVolumeModel(ctx, state.Volumes)
@@ -141,7 +142,6 @@ func (r *instanceResource) ModifyPlan(
 			plan1st := planList[0]
 			state1st := stateList[0]
 
-			// Root Volumes: only size, delete_on_termination can be updated.
 			if !plan1st.Id.Equal(state1st.Id) ||
 				!plan1st.TypeId.Equal(state1st.TypeId) ||
 				!plan1st.EncryptionSecretId.Equal(state1st.EncryptionSecretId) {
@@ -150,13 +150,13 @@ func (r *instanceResource) ModifyPlan(
 			}
 
 			for _, plan := range planList {
-				// Attached Volumes: size can not be updated.
+
 				if !plan.Size.IsNull() && stateMap[plan.Id.ValueString()].Size.IsNull() {
 					common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 						fmt.Sprintf("Invalid Configuration: Attached volumes cannot be updated size."))
 					break
 				}
-				// Add Volumes: only provide id and isDeleteOnTermination as inputs.
+
 				if plan.Id.IsNull() {
 					common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 						fmt.Sprintf("Invalid Configuration: Adding volumes requires a volume ID."))
@@ -165,10 +165,33 @@ func (r *instanceResource) ModifyPlan(
 			}
 		}
 
-		// SecurityGroups
 		if !plan.SecurityGroups.IsUnknown() && !plan.SecurityGroups.Equal(state.SecurityGroups) {
 			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 				fmt.Sprintf("Invalid Configuration: Changing the security group is not allowed."))
+		}
+
+		planList, planDiags := r.convertListToInstanceSubnetModel(ctx, plan.Subnets)
+		resp.Diagnostics.Append(planDiags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		for _, plan := range planList {
+			if plan.NetworkInterfaceId.IsUnknown() {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("Invalid Configuration: Changing the subnet requires specifying a Network Interface ID."))
+			}
+		}
+
+		if plan.InstanceType.ValueString() == common.InstanceTypeBM {
+			if !plan.Volumes.Equal(state.Volumes) {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("Invalid Configuration: BM instances cannot modify attached volumes."))
+			}
+			if !plan.Subnets.Equal(state.Subnets) {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("Invalid Configuration: BM instances cannot modify subnets."))
+			}
 		}
 	}
 }

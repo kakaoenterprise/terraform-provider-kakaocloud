@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -13,7 +12,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Helper function to map common fields from any member response to base model
 func mapMemberBaseFields(
 	ctx context.Context,
 	model *loadBalancerTargetGroupMemberBaseModel,
@@ -22,7 +20,7 @@ func mapMemberBaseFields(
 ) bool {
 	switch s := src.(type) {
 	case *loadbalancer.BnsLoadBalancerV1ApiAddTargetModelResponseTargetGroupMemberModel:
-		// CREATE response mapping
+
 		model.Id = types.StringValue(s.Member.Id)
 		model.Name = utils.ConvertNullableString(s.Member.Name)
 		model.Address = types.StringValue(s.Member.Address)
@@ -36,26 +34,23 @@ func mapMemberBaseFields(
 		model.OperatingStatus = types.StringValue(string(s.Member.OperatingStatus))
 		model.ProvisioningStatus = types.StringValue(string(s.Member.ProvisioningStatus))
 
-		// Map monitor port
 		if s.Member.MonitorPort.IsSet() && s.Member.MonitorPort.Get() != nil {
 			model.MonitorPort = types.Int64Value(int64(*s.Member.MonitorPort.Get()))
 		} else {
 			model.MonitorPort = types.Int64Null()
 		}
 
-		// Initialize subnet object with null values since CREATE response doesn't include full subnet info
 		model.Subnet = types.ObjectNull(loadBalancerTargetGroupMemberSubnetAttrType)
 
-		// Initialize other fields that are not available in CREATE response
 		model.NetworkInterfaceId = types.StringNull()
 		model.InstanceId = types.StringNull()
 		model.InstanceName = types.StringNull()
 		model.VpcId = types.StringNull()
-		// Initialize security groups as null list since CREATE response doesn't include security groups
+
 		model.SecurityGroups = types.ListNull(types.ObjectType{AttrTypes: loadBalancerTargetGroupMemberSecurityGroupAttrType})
 
 	case *loadbalancer.BnsLoadBalancerV1ApiListTargetsInTargetGroupModelTargetGroupMemberModel:
-		// GET/LIST response mapping
+
 		model.Id = types.StringValue(s.Id)
 		model.Name = utils.ConvertNullableString(s.Name)
 		model.Address = utils.ConvertNullableString(s.IpAddress)
@@ -65,41 +60,33 @@ func mapMemberBaseFields(
 		model.OperatingStatus = types.StringValue(string(s.OperatingStatus))
 		model.ProvisioningStatus = utils.ConvertNullableString(s.ProvisioningStatus)
 
-		// Map protocol port
 		if s.ProtocolPort.IsSet() && s.ProtocolPort.Get() != nil {
 			model.ProtocolPort = types.Int64Value(int64(*s.ProtocolPort.Get()))
 		} else {
 			model.ProtocolPort = types.Int64Null()
 		}
 
-		// Map subnet ID
 		model.SubnetId = types.StringValue(s.Subnet.Id)
 
-		// Map weight
 		if s.Weight.IsSet() && s.Weight.Get() != nil {
 			model.Weight = types.Int64Value(int64(*s.Weight.Get()))
 		} else {
 			model.Weight = types.Int64Null()
 		}
 
-		// Map monitor port
 		if s.MonitorPort.IsSet() && s.MonitorPort.Get() != nil {
 			model.MonitorPort = types.Int64Value(int64(*s.MonitorPort.Get()))
 		} else {
 			model.MonitorPort = types.Int64Null()
 		}
 
-		// Note: IsBackup field is not available in the list response model
 		model.IsBackup = types.BoolValue(false)
 
-		// Map new fields from API
 		model.NetworkInterfaceId = utils.ConvertNullableString(s.NetworkInterfaceId)
 		model.InstanceId = utils.ConvertNullableString(s.InstanceId)
 		model.InstanceName = utils.ConvertNullableString(s.InstanceName)
 		model.VpcId = utils.ConvertNullableString(s.VpcId)
 
-		// Map subnet object
-		// Map health check IPs
 		var healthCheckIps types.List
 		if len(s.Subnet.HealthCheckIps) > 0 {
 			healthCheckIpValues := make([]attr.Value, len(s.Subnet.HealthCheckIps))
@@ -111,7 +98,6 @@ func mapMemberBaseFields(
 			healthCheckIps = types.ListNull(types.StringType)
 		}
 
-		// Map availability zone
 		var availabilityZone types.String
 		if s.Subnet.AvailabilityZone.IsSet() && s.Subnet.AvailabilityZone.Get() != nil {
 			availabilityZone = types.StringValue(string(*s.Subnet.AvailabilityZone.Get()))
@@ -127,7 +113,6 @@ func mapMemberBaseFields(
 			"health_check_ips":  healthCheckIps,
 		})
 
-		// Map security groups
 		if len(s.SecurityGroups) > 0 {
 			securityGroupValues := make([]attr.Value, len(s.SecurityGroups))
 			for i, sg := range s.SecurityGroups {
@@ -142,7 +127,7 @@ func mapMemberBaseFields(
 		}
 
 	case *loadbalancer.BnsLoadBalancerV1ApiUpdateTargetModelResponseTargetGroupMemberModel:
-		// UPDATE response mapping
+
 		model.Id = types.StringValue(s.Member.Id)
 		model.Name = utils.ConvertNullableString(s.Member.Name)
 		model.Address = types.StringValue(s.Member.Address)
@@ -156,22 +141,19 @@ func mapMemberBaseFields(
 		model.OperatingStatus = types.StringValue(string(s.Member.OperatingStatus))
 		model.ProvisioningStatus = types.StringValue(string(s.Member.ProvisioningStatus))
 
-		// Map monitor port
 		if s.Member.MonitorPort.IsSet() && s.Member.MonitorPort.Get() != nil {
 			model.MonitorPort = types.Int64Value(int64(*s.Member.MonitorPort.Get()))
 		} else {
 			model.MonitorPort = types.Int64Null()
 		}
 
-		// Initialize subnet object with null values since UPDATE response doesn't include full subnet info
 		model.Subnet = types.ObjectNull(loadBalancerTargetGroupMemberSubnetAttrType)
 
-		// Initialize other fields that are not available in UPDATE response
 		model.NetworkInterfaceId = types.StringNull()
 		model.InstanceId = types.StringNull()
 		model.InstanceName = types.StringNull()
 		model.VpcId = types.StringNull()
-		// Initialize security groups as null list since UPDATE response doesn't include security groups
+
 		model.SecurityGroups = types.ListNull(types.ObjectType{AttrTypes: loadBalancerTargetGroupMemberSecurityGroupAttrType})
 
 	default:
@@ -182,7 +164,6 @@ func mapMemberBaseFields(
 	return true
 }
 
-// mapLoadBalancerTargetGroupMemberToCreateRequest maps resource model to CREATE API request
 func mapLoadBalancerTargetGroupMemberToCreateRequest(
 	ctx context.Context,
 	model *loadBalancerTargetGroupMemberResourceModel,
@@ -194,7 +175,6 @@ func mapLoadBalancerTargetGroupMemberToCreateRequest(
 		model.SubnetId.ValueString(),
 	)
 
-	// Set optional fields
 	if !model.Name.IsNull() && !model.Name.IsUnknown() {
 		createReq.SetName(model.Name.ValueString())
 	}
@@ -210,7 +190,6 @@ func mapLoadBalancerTargetGroupMemberToCreateRequest(
 	return createReq
 }
 
-// mapLoadBalancerTargetGroupMemberFromGetResponse maps GET API response to resource/data source model
 func mapLoadBalancerTargetGroupMemberFromGetResponse(
 	ctx context.Context,
 	model *loadBalancerTargetGroupMemberResourceModel,
@@ -220,7 +199,6 @@ func mapLoadBalancerTargetGroupMemberFromGetResponse(
 	return mapMemberBaseFields(ctx, &model.loadBalancerTargetGroupMemberBaseModel, src, diags)
 }
 
-// mapLoadBalancerTargetGroupMemberToUpdateRequest maps resource model to UPDATE API request
 func mapLoadBalancerTargetGroupMemberToUpdateRequest(
 	ctx context.Context,
 	model *loadBalancerTargetGroupMemberResourceModel,
@@ -228,7 +206,6 @@ func mapLoadBalancerTargetGroupMemberToUpdateRequest(
 ) *loadbalancer.BnsLoadBalancerV1ApiUpdateTargetModelEditTargetGroupMember {
 	updateReq := loadbalancer.NewBnsLoadBalancerV1ApiUpdateTargetModelEditTargetGroupMember()
 
-	// Set optional fields
 	if !model.Name.IsNull() && !model.Name.IsUnknown() {
 		updateReq.SetName(model.Name.ValueString())
 	}
@@ -244,7 +221,6 @@ func mapLoadBalancerTargetGroupMemberToUpdateRequest(
 	return updateReq
 }
 
-// mapLoadBalancerTargetGroupMemberFromUpdateResponse maps UPDATE API response to resource model
 func mapLoadBalancerTargetGroupMemberFromUpdateResponse(
 	ctx context.Context,
 	model *loadBalancerTargetGroupMemberResourceModel,
@@ -254,7 +230,6 @@ func mapLoadBalancerTargetGroupMemberFromUpdateResponse(
 	return mapMemberBaseFields(ctx, &model.loadBalancerTargetGroupMemberBaseModel, src, diags)
 }
 
-// mapLoadBalancerTargetGroupMemberListFromGetResponse maps list GET API response to data source model
 func mapLoadBalancerTargetGroupMemberListFromGetResponse(
 	ctx context.Context,
 	model *loadBalancerTargetGroupMemberListDataSourceModel,
@@ -273,7 +248,7 @@ func mapLoadBalancerTargetGroupMemberListFromGetResponse(
 			members = append(members, loadBalancerTargetGroupMemberListMemberModel{
 				loadBalancerTargetGroupMemberBaseModel: memberModel.loadBalancerTargetGroupMemberBaseModel,
 			})
-			// Set target_group_id from data source input since API response doesn't include it
+
 			members[len(members)-1].TargetGroupId = model.TargetGroupId
 		}
 	}

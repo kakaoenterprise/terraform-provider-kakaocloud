@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package image
 
 import (
@@ -13,7 +12,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/image"
 )
 
-// BcsImageV1ApiGetImageModelResponseImageModel
 func (r *imageResource) pollImageUtilsStatus(
 	ctx context.Context,
 	imageId string,

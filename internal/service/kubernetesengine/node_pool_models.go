@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package kubernetesengine
 
 import (
@@ -10,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Request models (plan)
 type NodePoolVpcInfoModelSet struct {
 	Id      types.String `tfsdk:"id"`
 	Subnets types.Set    `tfsdk:"subnets"`
@@ -33,12 +31,10 @@ type NodePoolTaintModel struct {
 }
 
 type NodePoolBaseModel struct {
-	// identifiers
 	Id          types.String `tfsdk:"id"`
 	ClusterName types.String `tfsdk:"cluster_name"`
 	Name        types.String `tfsdk:"name"`
 
-	// spec (inputs)
 	Description           types.String `tfsdk:"description"`
 	FlavorId              types.String `tfsdk:"flavor_id"`
 	VolumeSize            types.Int32  `tfsdk:"volume_size"`
@@ -52,7 +48,6 @@ type NodePoolBaseModel struct {
 	Labels                types.Set    `tfsdk:"labels"`
 	Taints                types.Set    `tfsdk:"taints"`
 
-	// observed (read-only)
 	CreatedAt      types.String `tfsdk:"created_at"`
 	FailureMessage types.String `tfsdk:"failure_message"`
 	IsGpu          types.Bool   `tfsdk:"is_gpu"`
@@ -72,7 +67,6 @@ type NodePoolResourceModel struct {
 	Timeouts resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
-// Data source single item model
 type nodePoolDataSourceModel struct {
 	NodePoolBaseModel
 	Timeouts datasourceTimeouts.Value `tfsdk:"timeouts"`

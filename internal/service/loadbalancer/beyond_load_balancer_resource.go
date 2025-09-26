@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"sort"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -22,7 +22,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure   = &beyondLoadBalancerResource{}
 	_ resource.ResourceWithImportState = &beyondLoadBalancerResource{}
@@ -36,15 +35,13 @@ type beyondLoadBalancerResource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (r *beyondLoadBalancerResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_beyond_load_balancer"
 }
 
-// Schema defines the schema for the resource.
 func (r *beyondLoadBalancerResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents a beyond load balancer resource.",
+		Description: docs.GetResourceDescription("BeyondLoadBalancer"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			beyondLoadBalancerResourceSchema,
 			map[string]schema.Attribute{
@@ -54,7 +51,6 @@ func (r *beyondLoadBalancerResource) Schema(ctx context.Context, _ resource.Sche
 	}
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *beyondLoadBalancerResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan beyondLoadBalancerResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -101,7 +97,6 @@ func (r *beyondLoadBalancerResource) Create(ctx context.Context, req resource.Cr
 
 	body := *loadbalancer.NewBodyCreateHaGroup(createReq)
 
-	// First try with normal auth retry, then with conflict retry if needed
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiCreateHaGroupModelResponseBeyondLoadBalancerModel, *http.Response, error) {
 			return r.kc.ApiClient.BeyondLoadBalancerAPI.CreateHaGroup(ctx).
@@ -109,7 +104,6 @@ func (r *beyondLoadBalancerResource) Create(ctx context.Context, req resource.Cr
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		respModel, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiCreateHaGroupModelResponseBeyondLoadBalancerModel, *http.Response, error) {
@@ -150,7 +144,6 @@ func (r *beyondLoadBalancerResource) Create(ctx context.Context, req resource.Cr
 	}
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *beyondLoadBalancerResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state beyondLoadBalancerResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -176,7 +169,6 @@ func (r *beyondLoadBalancerResource) Read(ctx context.Context, req resource.Read
 		},
 	)
 
-	// 404 → Remove Terraform state
 	if httpResp != nil && httpResp.StatusCode == 404 {
 		resp.State.RemoveResource(ctx)
 		return
@@ -233,7 +225,6 @@ func (r *beyondLoadBalancerResource) Read(ctx context.Context, req resource.Read
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state beyondLoadBalancerResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -258,14 +249,12 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// basic update
 	if !plan.Description.Equal(state.Description) && !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		var editReq loadbalancer.EditBeyondLoadBalancerModel
 		editReq.SetDescription(plan.Description.ValueString())
 
 		body := *loadbalancer.NewBodyUpdateHaGroup(editReq)
 
-		// First try with normal auth retry, then with conflict retry if needed
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
 				return r.kc.ApiClient.BeyondLoadBalancerAPI.UpdateHaGroup(ctx, plan.Id.ValueString()).
@@ -275,7 +264,6 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 			},
 		)
 
-		// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 		if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 			_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 				func() (interface{}, *http.Response, error) {
@@ -309,17 +297,14 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 		}
 	}
 
-	// lb update
 	if !plan.AttachedLoadBalancers.Equal(state.AttachedLoadBalancers) {
 		planList, planDiags := r.convertSetToBlbLoadBalancerModel(ctx, plan.AttachedLoadBalancers)
-		stateList, stateDiags := r.convertSetToBlbLoadBalancerModel(ctx, state.AttachedLoadBalancers)
 		resp.Diagnostics.Append(planDiags...)
-		resp.Diagnostics.Append(stateDiags...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
-		if !r.updateLoadBalancers(ctx, plan.Id.ValueString(), &planList, &stateList, &resp.Diagnostics) {
+		if !r.updateLoadBalancers(ctx, plan.Id.ValueString(), &planList, &resp.Diagnostics) {
 			return
 		}
 
@@ -347,7 +332,6 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 	}
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *beyondLoadBalancerResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state beyondLoadBalancerResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -366,7 +350,6 @@ func (r *beyondLoadBalancerResource) Delete(ctx context.Context, req resource.De
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// First try with normal auth retry, then with conflict retry if needed
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			httpResp, err := r.kc.ApiClient.BeyondLoadBalancerAPI.DeleteHaGroup(ctx, state.Id.ValueString()).
@@ -376,7 +359,6 @@ func (r *beyondLoadBalancerResource) Delete(ctx context.Context, req resource.De
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
@@ -396,7 +378,6 @@ func (r *beyondLoadBalancerResource) Delete(ctx context.Context, req resource.De
 		return
 	}
 
-	// Poll until resource disappears
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := r.kc.ApiClient.BeyondLoadBalancerAPI.
 			GetHaGroup(ctx, state.Id.ValueString()).
@@ -411,8 +392,7 @@ func (r *beyondLoadBalancerResource) Delete(ctx context.Context, req resource.De
 }
 
 func (r *beyondLoadBalancerResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}
@@ -431,7 +411,7 @@ func (r *beyondLoadBalancerResource) Configure(_ context.Context, req resource.C
 }
 
 func (r *beyondLoadBalancerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
@@ -485,77 +465,34 @@ func (r *beyondLoadBalancerResource) updateLoadBalancers(
 	ctx context.Context,
 	blbId string,
 	planList *[]attachedLoadBalancerModel,
-	stateList *[]attachedLoadBalancerModel,
 	diags *diag.Diagnostics,
 ) bool {
-	stateMap := make(map[string]attachedLoadBalancerModel)
-	for _, s := range *stateList {
-		stateMap[s.Id.ValueString()] = s
+	var lbs []loadbalancer.BnsLoadBalancerV1ApiUpdateHaGroupLoadBalancerModelSubnetModel
+	for _, lb := range *planList {
+		tmpLb := loadbalancer.BnsLoadBalancerV1ApiUpdateHaGroupLoadBalancerModelSubnetModel{
+			LoadBalancerId:   lb.Id.ValueString(),
+			AvailabilityZone: loadbalancer.AvailabilityZone(lb.AvailabilityZone.ValueString()),
+		}
+		lbs = append(lbs, tmpLb)
 	}
 
-	planMap := make(map[string]attachedLoadBalancerModel)
-	for _, s := range *planList {
-		planMap[s.Id.ValueString()] = s
+	body := loadbalancer.BodyUpdateHaGroupLoadBalancer{
+		BeyondLoadBalancer: *loadbalancer.NewBnsLoadBalancerV1ApiUpdateHaGroupLoadBalancerModelCreateBeyondLoadBalancerModel(lbs),
 	}
 
-	for _, stateLb := range *stateList {
-		if _, ok := planMap[stateLb.Id.ValueString()]; !ok ||
-			!stateLb.AvailabilityZone.Equal(planMap[stateLb.Id.ValueString()].AvailabilityZone) {
-			_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
-				func() (interface{}, *http.Response, error) {
-					httpResp, err := r.kc.ApiClient.BeyondLoadBalancerAPI.
-						DetachHaGroupLoadBalancer(ctx, blbId, stateLb.Id.ValueString()).
-						XAuthToken(r.kc.XAuthToken).
-						Execute()
-					return nil, httpResp, err
-				},
-			)
-			if err != nil {
-				common.AddApiActionError(ctx, r, httpResp, "DetachHaGroupLoadBalancer", err, diags)
-				return false
-			}
-			result, ok := r.pollBeyondLoadBalancerUntilStatus(
-				ctx,
-				blbId,
-				[]string{ProvisioningStatusActive, ProvisioningStatusError},
-				diags,
-			)
-			if !ok || diags.HasError() {
-				return false
-			}
-			common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, diags)
-		}
+	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
+		func() (interface{}, *http.Response, error) {
+			return r.kc.ApiClient.BeyondLoadBalancerAPI.
+				UpdateHaGroupLoadBalancer(ctx, blbId).
+				XAuthToken(r.kc.XAuthToken).
+				BodyUpdateHaGroupLoadBalancer(body).
+				Execute()
+		},
+	)
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "UpdateHaGroupLoadBalancer", err, diags)
+		return false
 	}
-
-	if len(*planList) > 0 {
-		var lbs []loadbalancer.BnsLoadBalancerV1ApiUpdateHaGroupLoadBalancerModelSubnetModel
-		for _, lb := range *planList {
-			tmpLb := loadbalancer.BnsLoadBalancerV1ApiUpdateHaGroupLoadBalancerModelSubnetModel{
-				LoadBalancerId:   lb.Id.ValueString(),
-				AvailabilityZone: loadbalancer.AvailabilityZone(lb.AvailabilityZone.ValueString()),
-			}
-			lbs = append(lbs, tmpLb)
-		}
-
-		body := loadbalancer.BodyUpdateHaGroupLoadBalancer{
-			BeyondLoadBalancer: *loadbalancer.NewBnsLoadBalancerV1ApiUpdateHaGroupLoadBalancerModelCreateBeyondLoadBalancerModel(lbs),
-		}
-
-		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
-			func() (interface{}, *http.Response, error) {
-				return r.kc.ApiClient.BeyondLoadBalancerAPI.
-					UpdateHaGroupLoadBalancer(ctx, blbId).
-					XAuthToken(r.kc.XAuthToken).
-					BodyUpdateHaGroupLoadBalancer(body).
-					Execute()
-			},
-		)
-		if err != nil {
-			common.AddApiActionError(ctx, r, httpResp, "UpdateHaGroupLoadBalancer", err, diags)
-			return false
-		}
-	}
-
 	return true
 }
 
@@ -567,22 +504,36 @@ func (r *beyondLoadBalancerResource) ValidateConfig(ctx context.Context, req res
 		return
 	}
 
-	r.validateAvailabilityZoneConfig(ctx, config, resp)
-}
-
-func (r *beyondLoadBalancerResource) validateAvailabilityZoneConfig(ctx context.Context, config beyondLoadBalancerResourceModel, resp *resource.ValidateConfigResponse) {
-	configList, planDiags := r.convertSetToBlbLoadBalancerModel(ctx, config.AttachedLoadBalancers)
+	configLbList, planDiags := r.convertSetToBlbLoadBalancerModel(ctx, config.AttachedLoadBalancers)
 	resp.Diagnostics.Append(planDiags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	for _, configLb := range configList {
+	r.validateAvailabilityZoneConfig(ctx, configLbList, resp)
+	r.validateAttachedLoadBalancersConfig(ctx, configLbList, resp)
+}
+
+func (r *beyondLoadBalancerResource) validateAvailabilityZoneConfig(ctx context.Context, configLbList []attachedLoadBalancerModel, resp *resource.ValidateConfigResponse) {
+	for _, configLb := range configLbList {
 		common.ValidateAvailabilityZone(
 			path.Root("availability_zone"),
 			configLb.AvailabilityZone,
 			r.kc,
 			&resp.Diagnostics,
 		)
+	}
+}
+
+func (r *beyondLoadBalancerResource) validateAttachedLoadBalancersConfig(ctx context.Context, configLbList []attachedLoadBalancerModel, resp *resource.ValidateConfigResponse) {
+	zoneMap := make(map[string]bool)
+
+	for _, configLb := range configLbList {
+		if zoneMap[configLb.AvailabilityZone.ValueString()] {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("Duplicate Availability Zone: %s", configLb.AvailabilityZone))
+			return
+		}
+		zoneMap[configLb.AvailabilityZone.ValueString()] = true
 	}
 }

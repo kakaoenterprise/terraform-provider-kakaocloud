@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package network
 
 import (
@@ -245,10 +244,8 @@ func getSecurityGroupDataSourceSchema() map[string]dschema.Attribute {
 	}
 }
 
-// securityGroupResourceSchemaAttributes defines the schema attributes for the security group resource.
 var securityGroupResourceSchemaAttributes = getSecurityGroupResourceSchema()
 var securityGroupRuleInlineResourceSchema = getSecurityGroupRuleInlineResourceSchema()
 
-// Schema for security group data source
 var securityGroupDataSourceSchemaAttributes = getSecurityGroupDataSourceSchema()
 var securityGroupRuleDataSourceSchema = getSecurityGroupRuleDataSourceSchema()

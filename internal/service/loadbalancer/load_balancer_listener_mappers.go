@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -10,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	//"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 	"golang.org/x/net/context"
 )
@@ -38,7 +36,7 @@ func mapLoadBalancerListenerBaseModel(
 
 	l7Policies, l7PolicyDiags := utils.ConvertListFromModel(ctx, src.L7Policies, loadBalancerListenerL7PolicyAttrType, func(policy loadbalancer.BnsLoadBalancerV1ApiGetListenerModelL7PolicyModel) any {
 		if policy.Id == "" {
-			// Return nil, which your modified ConvertListFromModel helper will safely skip.
+
 			return nil
 		}
 		rules, ruleDiags := utils.ConvertListFromModel(ctx, policy.Rules, loadBalancerListenerL7PolicyRuleAttrType, func(rule loadbalancer.BnsLoadBalancerV1ApiGetListenerModelRuleModel) any {
@@ -81,7 +79,6 @@ func mapLoadBalancerListenerBaseModel(
 
 	var insertHeadersObject types.Object
 
-	// 2. Check if the API returned data
 	if len(src.InsertHeaders) == 0 {
 		insertHeadersObject = types.ObjectNull(insertHeadersAttrTypes)
 	} else {
@@ -101,7 +98,6 @@ func mapLoadBalancerListenerBaseModel(
 		insertHeadersObject = obj
 	}
 
-	// 3. Assign the correctly typed object to the model field
 	base.InsertHeaders = insertHeadersObject
 
 	base.Id = types.StringValue(src.Id)
@@ -112,7 +108,7 @@ func mapLoadBalancerListenerBaseModel(
 	base.Secrets = secrets
 	base.L7Policies = l7Policies
 	base.TlsCiphers = utils.ConvertNullableString(src.TlsCiphers)
-	// Convert []TLSVersion to []string for Terraform
+
 	if len(src.TlsVersions) > 0 {
 		tlsVersionStrings := make([]string, len(src.TlsVersions))
 		for i, version := range src.TlsVersions {

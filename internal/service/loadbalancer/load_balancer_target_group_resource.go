@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -20,7 +20,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure   = &loadBalancerTargetGroupResource{}
 	_ resource.ResourceWithImportState = &loadBalancerTargetGroupResource{}
@@ -34,15 +33,13 @@ type loadBalancerTargetGroupResource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (r *loadBalancerTargetGroupResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_load_balancer_target_group"
 }
 
-// Schema defines the schema for the resource.
 func (r *loadBalancerTargetGroupResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents a load balancer target group resource.",
+		Description: docs.GetResourceDescription("LoadBalancerTargetGroup"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			loadBalancerTargetGroupResourceSchema,
 			map[string]schema.Attribute{
@@ -52,7 +49,6 @@ func (r *loadBalancerTargetGroupResource) Schema(ctx context.Context, _ resource
 	}
 }
 
-// Configure adds the provider configured client to the resource.
 func (r *loadBalancerTargetGroupResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -68,7 +64,6 @@ func (r *loadBalancerTargetGroupResource) Configure(_ context.Context, req resou
 	r.kc = client
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan loadBalancerTargetGroupResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -86,15 +81,13 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Map plan to create request
 	createReq := mapLoadBalancerTargetGroupToCreateRequest(ctx, &plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Create target group
 	body := loadbalancer.BodyCreateTargetGroup{TargetGroup: *createReq}
-	// First try with normal auth retry, then with conflict retry if needed
+
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiCreateTargetGroupModelResponseTargetGroupModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -105,7 +98,6 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		respModel, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiCreateTargetGroupModelResponseTargetGroupModel, *http.Response, error) {
@@ -123,7 +115,6 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 		return
 	}
 
-	// Set the ID from create response
 	plan.Id = types.StringValue(respModel.TargetGroup.Id)
 
 	ok := mapLoadBalancerTargetGroupFromCreateResponse(ctx, &plan, &respModel.TargetGroup, &resp.Diagnostics)
@@ -131,7 +122,6 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 		return
 	}
 
-	// Poll until target group is active
 	result, ok := r.pollTargetGroupUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
@@ -142,7 +132,6 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 		return
 	}
 
-	// Check if target group is in error state
 	if result.ProvisioningStatus.IsSet() && result.ProvisioningStatus.Get() != nil && string(*result.ProvisioningStatus.Get()) == "ERROR" {
 		resp.Diagnostics.AddError(
 			"Target Group Creation Failed",
@@ -153,28 +142,22 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 
 	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
 
-	// Preserve original health monitor configuration before mapping
 	originalHealthMonitor := plan.HealthMonitor
 	originalSessionPersistence := plan.SessionPersistence
 
-	// Map the final Get response after polling to get all computed fields
 	ok = mapLoadBalancerTargetGroupFromGetResponse(ctx, &plan, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Only restore original health monitor if API didn't return it at all
-	// If API returns adjusted values, we should accept them as the API has business logic constraints
 	if plan.HealthMonitor.IsNull() && !originalHealthMonitor.IsNull() && !originalHealthMonitor.IsUnknown() {
 		plan.HealthMonitor = preserveHealthMonitorUserConfig(ctx, originalHealthMonitor)
 	}
-	// FIXED: For session persistence, only restore if the original plan had it (not null)
-	// This prevents issues when creating without session persistence
+
 	if plan.SessionPersistence.IsNull() && !originalSessionPersistence.IsNull() && !originalSessionPersistence.IsUnknown() {
 		plan.SessionPersistence = originalSessionPersistence
 	}
 
-	// Set state
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 
@@ -183,7 +166,6 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 	}
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *loadBalancerTargetGroupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state loadBalancerTargetGroupResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -201,7 +183,6 @@ func (r *loadBalancerTargetGroupResource) Read(ctx context.Context, req resource
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Get target group - now returns single object (SDK updated)
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.TargetGroupResponseModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -221,13 +202,11 @@ func (r *loadBalancerTargetGroupResource) Read(ctx context.Context, req resource
 		return
 	}
 
-	// Map response to state - now using single object response
 	ok := mapLoadBalancerTargetGroupFromGetResponse(ctx, &state, &respModel.TargetGroup, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Set state
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -235,7 +214,6 @@ func (r *loadBalancerTargetGroupResource) Read(ctx context.Context, req resource
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *loadBalancerTargetGroupResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state loadBalancerTargetGroupResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -259,15 +237,13 @@ func (r *loadBalancerTargetGroupResource) Update(ctx context.Context, req resour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Map plan to update request
 	updateReq := mapLoadBalancerTargetGroupToUpdateRequest(ctx, &plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Update target group
 	body := loadbalancer.NewBodyUpdateTargetGroup(*updateReq)
-	// First try with normal auth retry, then with conflict retry if needed
+
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateTargetGroupModelResponseTargetGroupModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -278,7 +254,6 @@ func (r *loadBalancerTargetGroupResource) Update(ctx context.Context, req resour
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		respModel, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateTargetGroupModelResponseTargetGroupModel, *http.Response, error) {
@@ -296,13 +271,11 @@ func (r *loadBalancerTargetGroupResource) Update(ctx context.Context, req resour
 		return
 	}
 
-	// Map response to state
 	ok := mapLoadBalancerTargetGroupFromUpdateResponse(ctx, &plan, &respModel.TargetGroup, &state, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Set the ID from create response
 	plan.Id = types.StringValue(respModel.TargetGroup.Id)
 
 	result, ok := r.pollTargetGroupUntilStatus(
@@ -315,7 +288,6 @@ func (r *loadBalancerTargetGroupResource) Update(ctx context.Context, req resour
 		return
 	}
 
-	// Check if target group is in error state
 	if result.ProvisioningStatus.IsSet() && result.ProvisioningStatus.Get() != nil && string(*result.ProvisioningStatus.Get()) == "ERROR" {
 		resp.Diagnostics.AddError(
 			"Target Group Update Failed",
@@ -326,39 +298,30 @@ func (r *loadBalancerTargetGroupResource) Update(ctx context.Context, req resour
 
 	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
 
-	// FIXED: Preserve original configurations BEFORE mapping from Get response
 	originalHealthMonitor := plan.HealthMonitor
 	originalSessionPersistence := plan.SessionPersistence
 
-	// Map the final Get response after polling to get all computed fields
 	ok = mapLoadBalancerTargetGroupFromGetResponse(ctx, &plan, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Only restore original health monitor if API didn't return it at all
-	// If API returns adjusted values, we should accept them as the API has business logic constraints
 	if plan.HealthMonitor.IsNull() && !originalHealthMonitor.IsNull() && !originalHealthMonitor.IsUnknown() {
 		plan.HealthMonitor = preserveHealthMonitorUserConfig(ctx, originalHealthMonitor)
 	}
 
-	// FIXED: For session persistence, respect user's intent
-	// If the original plan had session persistence (not null), preserve it
-	// If the original plan was null, that means user wants to remove it - keep it null regardless of what API returns
 	if !originalSessionPersistence.IsNull() && !originalSessionPersistence.IsUnknown() {
-		// User had session persistence in original plan - preserve it
+
 		plan.SessionPersistence = originalSessionPersistence
 	} else {
-		// User wants to remove session persistence - keep it null even if API still returns it
+
 		plan.SessionPersistence = types.ObjectNull(loadBalancerTargetGroupSessionPersistenceAttrType)
 	}
 
-	// Set state
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *loadBalancerTargetGroupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state loadBalancerTargetGroupResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -376,8 +339,6 @@ func (r *loadBalancerTargetGroupResource) Delete(ctx context.Context, req resour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Delete target group
-	// First try with normal auth retry, then with conflict retry if needed
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			httpResp, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -388,7 +349,6 @@ func (r *loadBalancerTargetGroupResource) Delete(ctx context.Context, req resour
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
@@ -402,7 +362,7 @@ func (r *loadBalancerTargetGroupResource) Delete(ctx context.Context, req resour
 	}
 
 	if httpResp != nil && httpResp.StatusCode == 404 {
-		// Target group already deleted, nothing to do
+
 		return
 	}
 
@@ -411,7 +371,6 @@ func (r *loadBalancerTargetGroupResource) Delete(ctx context.Context, req resour
 		return
 	}
 
-	// Poll until deletion is confirmed
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics,
 		func(ctx context.Context) (bool, *http.Response, error) {
 			_, httpResp, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -419,20 +378,18 @@ func (r *loadBalancerTargetGroupResource) Delete(ctx context.Context, req resour
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 			if httpResp != nil && httpResp.StatusCode == 404 {
-				return true, httpResp, nil // Deleted successfully
+				return true, httpResp, nil
 			}
 			return false, httpResp, err
 		},
 	)
 }
 
-// ImportState imports the resource from the existing infrastructure.
 func (r *loadBalancerTargetGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Import by target group ID
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-// pollTargetGroupUntilStatus polls the target group until it reaches one of the target statuses
 func (r *loadBalancerTargetGroupResource) pollTargetGroupUntilStatus(
 	ctx context.Context,
 	targetGroupId string,

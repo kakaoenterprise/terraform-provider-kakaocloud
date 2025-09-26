@@ -3,12 +3,36 @@
 page_title: "kakaocloud_vpcs Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud VPC 목록을 조회하는 데이터 소스
+  The kakaocloud_vpcs data source retrieves a list of VPCs in KakaoCloud.
+  It provides details for each VPC, including CIDR block, DNS support, default route table, and internet gateway (IGW).
+  Available filters
+  | Filter           | Type              | Description |
+  |---------------------|-------------------|-------------|
+  | id                  | string            | ID of the VPC to query  |
+  | name                | string            | Name of the VPC to query |
+  | cidr_block          | string            | IPv4 CIDR block of the VPC (e.g., `10.0.0.0/16`) |
+  | provisioning_status | string    | Provisioning status of the VPC <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+  | is_default          | boolean           | Whether the VPC is a default VPC |
+  | created_at          | string            | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+  | updated_at          | string            | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 ---
 
 # kakaocloud_vpcs (Data Source)
 
-kakaocloud VPC 목록을 조회하는 데이터 소스
+The `kakaocloud_vpcs` data source retrieves a list of VPCs in KakaoCloud.
+It provides details for each VPC, including CIDR block, DNS support, default route table, and internet gateway (IGW).
+
+## Available filters
+
+| Filter           | Type              | Description |
+|---------------------|-------------------|-------------|
+| id                  | string            | ID of the VPC to query  |
+| name                | string            | Name of the VPC to query |
+| cidr_block          | string            | IPv4 CIDR block of the VPC (e.g., `10.0.0.0/16`) |
+| provisioning_status | string    | Provisioning status of the VPC <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+| is_default          | boolean           | Whether the VPC is a default VPC |
+| created_at          | string            | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+| updated_at          | string            | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 
 
 

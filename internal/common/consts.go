@@ -1,11 +1,9 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package common
 
 import "time"
 
-// common
 const (
 	DefaultCreateTimeout  = 60 * time.Minute
 	DefaultReadTimeout    = 30 * time.Minute
@@ -21,7 +19,6 @@ const (
 	ActionD = "delete"
 )
 
-// bcs
 const (
 	InstanceStatusActive  = "active"
 	InstanceStatusStopped = "stopped"
@@ -51,7 +48,6 @@ func IsInstanceValidStatus(s string) bool {
 	return false
 }
 
-// volume
 const (
 	VolumeStatusAvailable    = "available"
 	VolumeStatusInUse        = "in_use"
@@ -64,7 +60,6 @@ const (
 	VolumeSnapshotStatusError     = "error"
 )
 
-// vpc
 const (
 	VpcProvisioningStatusActive = "ACTIVE"
 	VpcProvisioningStatusError  = "ERROR"

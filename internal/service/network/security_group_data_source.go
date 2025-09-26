@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package network
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -52,7 +52,7 @@ func (d *securityGroupDataSource) Metadata(_ context.Context, req datasource.Met
 
 func (d *securityGroupDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Data source to read a specific KakaoCloud Security Group.",
+		Description: docs.GetDataSourceDescription("SecurityGroup"),
 		Attributes: MergeAttributes[schema.Attribute](
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{

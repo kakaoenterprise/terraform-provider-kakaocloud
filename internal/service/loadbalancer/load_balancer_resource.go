@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -56,7 +56,7 @@ func (r *loadBalancerResource) Metadata(_ context.Context, req resource.Metadata
 
 func (r *loadBalancerResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a KakaoCloud Load Balancer.",
+		Description: docs.GetResourceDescription("LoadBalancer"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			loadBalancerResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -84,7 +84,6 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Check name uniqueness before creating
 	if err := r.checkLoadBalancerNameExists(ctx, plan.Name.ValueString(), "", &resp.Diagnostics); err != nil {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("name"),
@@ -93,8 +92,6 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 		)
 		return
 	}
-
-	// Access logs can now be set during creation (write-only field)
 
 	createReq := loadbalancer.CreateLoadBalancerModel{
 		Name:             plan.Name.ValueString(),
@@ -107,10 +104,8 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 		createReq.SetDescription(plan.Description.ValueString())
 	}
 
-	// Based on the pattern from vpc_resource.go
 	body := loadbalancer.BodyCreateLoadBalancer{LoadBalancer: createReq}
 
-	// Create Load Balancer
 	lb, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiCreateLoadBalancerModelResponseLoadBalancerModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerAPI.CreateLoadBalancer(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateLoadBalancer(body).Execute()
@@ -140,9 +135,8 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	// If access logs are specified, update them after creation
 	if !plan.AccessLogs.IsNull() && !plan.AccessLogs.IsUnknown() {
-		// Update access logs using the separate API endpoint
+
 		var accessLog accessLogModel
 		diags := plan.AccessLogs.As(ctx, &accessLog, basetypes.ObjectAsOptions{})
 		resp.Diagnostics.Append(diags...)
@@ -150,7 +144,6 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 			return
 		}
 
-		// Validate that all required fields are provided
 		if accessLog.Bucket.IsNull() || accessLog.Bucket.IsUnknown() || accessLog.Bucket.ValueString() == "" {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("access_logs").AtName("bucket"),
@@ -197,7 +190,6 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 			return
 		}
 
-		// Wait for the load balancer to become active again
 		finalResult, ok := r.pollLoadBalancerUntilStatus(
 			ctx,
 			plan.Id.ValueString(),
@@ -213,16 +205,13 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 			return
 		}
 
-		// Update the state with the final result, but preserve access logs from plan
 		ok = mapLoadBalancer(ctx, &plan.loadBalancerBaseModel, finalResult, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
 
-		// Preserve the access logs from the plan (write-only field)
-		// Access logs are already set in plan, no need to reassign
 	} else {
-		// If access logs are not specified, ensure they are set to null
+
 		plan.AccessLogs = types.ObjectNull(accessLogAttrType)
 	}
 
@@ -270,7 +259,7 @@ func (r *loadBalancerResource) Read(ctx context.Context, req resource.ReadReques
 		common.AddApiActionError(ctx, r, httpResp, "GetLoadBalancer", err, &resp.Diagnostics)
 		return
 	}
-	// Preserve access logs from state before mapping API response (write-only field)
+
 	preservedAccessLogs := state.AccessLogs
 
 	loadBalancerResult := respModel.LoadBalancer
@@ -279,7 +268,6 @@ func (r *loadBalancerResource) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	// Restore access logs from state (write-only field)
 	state.AccessLogs = preservedAccessLogs
 
 	if state.FlavorId.IsNull() {
@@ -323,9 +311,8 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	// Only proceed if one of the updatable attributes has changed
 	if !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) {
-		// Check name uniqueness if name is being changed
+
 		if !plan.Name.Equal(state.Name) {
 			if err := r.checkLoadBalancerNameExists(ctx, plan.Name.ValueString(), state.Id.ValueString(), &resp.Diagnostics); err != nil {
 				resp.Diagnostics.AddAttributeError(
@@ -345,22 +332,19 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
 
-		// Create an empty request model
 		editReq := loadbalancer.EditLoadBalancerModel{}
 
-		// Conditionally set Name ONLY if it has changed
 		if !plan.Name.Equal(state.Name) {
 			if !plan.Name.IsNull() && !plan.Name.IsUnknown() {
 				editReq.SetName(plan.Name.ValueString())
 			}
 		}
 
-		// Conditionally set Description ONLY if it has changed
 		if !plan.Description.Equal(state.Description) {
 			if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 				editReq.SetDescription(plan.Description.ValueString())
 			} else {
-				// Handle case where description is being cleared
+
 				editReq.SetDescription("")
 			}
 		}
@@ -382,7 +366,6 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 			return
 		}
 
-		// Wait for the load balancer to become active again
 		result, ok := r.pollLoadBalancerUntilStatus(
 			ctx,
 			state.Id.ValueString(),
@@ -404,10 +387,9 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 		}
 	}
 
-	// Handle access logs update if changed
 	if !plan.AccessLogs.Equal(state.AccessLogs) {
 		if !plan.AccessLogs.IsNull() && !plan.AccessLogs.IsUnknown() {
-			// Update access logs using the separate API endpoint
+
 			var accessLog accessLogModel
 			diags := plan.AccessLogs.As(ctx, &accessLog, basetypes.ObjectAsOptions{})
 			resp.Diagnostics.Append(diags...)
@@ -415,7 +397,6 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 				return
 			}
 
-			// Validate that all required fields are provided
 			if accessLog.Bucket.IsNull() || accessLog.Bucket.IsUnknown() || accessLog.Bucket.ValueString() == "" {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("access_logs").AtName("bucket"),
@@ -462,7 +443,6 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 				return
 			}
 
-			// Wait for the load balancer to become active again
 			result, ok := r.pollLoadBalancerUntilStatus(
 				ctx,
 				state.Id.ValueString(),
@@ -478,21 +458,14 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 				return
 			}
 
-			// Update the state with the new result, but preserve the access logs from the plan
 			ok = mapLoadBalancer(ctx, &state.loadBalancerBaseModel, result, &resp.Diagnostics)
 			if !ok || resp.Diagnostics.HasError() {
 				return
 			}
 
-			// Set the access logs in the state to match what was provided in the plan
 			state.AccessLogs = plan.AccessLogs
 		} else if plan.AccessLogs.IsNull() {
-			// Handle case where access_logs is explicitly set to null (disable access logs)
-			// Try to disable access logs by sending an empty request body
-			// This might work if the API supports it (similar to DetachPublicIpFromLoadBalancer)
 
-			// Try to disable access logs by sending empty values
-			// This should work with PATCH API to explicitly remove access logs
 			accessLogReq := loadbalancer.EditLoadBalancerAccessLogModel{
 				Bucket:    "",
 				AccessKey: "",
@@ -507,14 +480,14 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 			)
 
 			if err != nil {
-				// If the API doesn't support disabling access logs, add a warning but don't fail
+
 				resp.Diagnostics.AddWarning(
 					"Access Logs Disable Not Supported",
 					"The API does not support disabling access logs. Access logs will remain configured.",
 				)
-				// Don't return here - continue with the update
+
 			} else {
-				// Wait for the load balancer to become active again
+
 				result, ok := r.pollLoadBalancerUntilStatus(
 					ctx,
 					state.Id.ValueString(),
@@ -530,17 +503,15 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 					return
 				}
 
-				// Update the state with the new result
 				ok = mapLoadBalancer(ctx, &state.loadBalancerBaseModel, result, &resp.Diagnostics)
 				if !ok || resp.Diagnostics.HasError() {
 					return
 				}
 			}
 
-			// Set the access logs in the state to null
 			state.AccessLogs = plan.AccessLogs
 		}
-		// Note: If plan.AccessLogs.IsUnknown(), we preserve the existing state (handled by plan modifier)
+
 	}
 
 	state.Timeouts = plan.Timeouts
@@ -616,7 +587,7 @@ func (r *loadBalancerResource) ImportState(ctx context.Context, req resource.Imp
 }
 
 func (r *loadBalancerResource) checkLoadBalancerNameExists(ctx context.Context, name string, currentId string, diags *diag.Diagnostics) error {
-	// List all load balancers and check if name exists
+
 	lbs, _, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
 		func() (*loadbalancer.LoadBalancerListModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerAPI.ListLoadBalancers(ctx).XAuthToken(r.kc.XAuthToken).Execute()
@@ -628,7 +599,7 @@ func (r *loadBalancerResource) checkLoadBalancerNameExists(ctx context.Context, 
 
 	for _, lb := range lbs.LoadBalancers {
 		if lb.Name.IsSet() && *lb.Name.Get() == name {
-			// If this is an update operation and the name belongs to the current resource, skip it
+
 			if currentId != "" && lb.Id == currentId {
 				continue
 			}

@@ -3,12 +3,16 @@
 page_title: "kakaocloud_image_member Resource - kakaocloud"
 subcategory: ""
 description: |-
-  
+  The kakaocloud_image_member resource allows you to manage image sharing between projects in KakaoCloud.
+  By using this resource, you can share a specific image with another project, control its sharing status, and track creation and update details.
+  This helps ensure secure and consistent image access across multiple projects within your environment.
 ---
 
 # kakaocloud_image_member (Resource)
 
-
+The `kakaocloud_image_member` resource allows you to manage image sharing between projects in KakaoCloud.
+By using this resource, you can share a specific image with another project, control its sharing status, and track creation and update details.
+This helps ensure secure and consistent image access across multiple projects within your environment.
 
 
 

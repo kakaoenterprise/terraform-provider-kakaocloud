@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package vpc
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -22,7 +22,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure   = &subnetShareResource{}
 	_ resource.ResourceWithImportState = &subnetShareResource{}
@@ -42,7 +41,7 @@ func (r *subnetShareResource) Metadata(_ context.Context, req resource.MetadataR
 
 func (r *subnetShareResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud 특정 Subnet 을 공유받은 프로젝트 관리",
+		Description: docs.GetResourceDescription("SubnetShare"),
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Required:   true,
@@ -70,7 +69,6 @@ func (r *subnetShareResource) Schema(ctx context.Context, _ resource.SchemaReque
 	}
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *subnetShareResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan subnetShareResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -171,7 +169,6 @@ func (r *subnetShareResource) Read(ctx context.Context, req resource.ReadRequest
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *subnetShareResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state subnetShareResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -217,7 +214,6 @@ func (r *subnetShareResource) Update(ctx context.Context, req resource.UpdateReq
 		stateSet[id] = struct{}{}
 	}
 
-	// Attach: in a plan but not in a state
 	for id := range planSet {
 		if _, exists := stateSet[id]; !exists {
 			_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
@@ -233,7 +229,6 @@ func (r *subnetShareResource) Update(ctx context.Context, req resource.UpdateReq
 		}
 	}
 
-	// Detach: in state but not in plan
 	for id := range stateSet {
 		if _, exists := planSet[id]; !exists {
 			_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
@@ -263,7 +258,6 @@ func (r *subnetShareResource) Update(ctx context.Context, req resource.UpdateReq
 	}
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *subnetShareResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state subnetShareResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -306,8 +300,7 @@ func (r *subnetShareResource) Delete(ctx context.Context, req resource.DeleteReq
 }
 
 func (r *subnetShareResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}
@@ -326,6 +319,6 @@ func (r *subnetShareResource) Configure(_ context.Context, req resource.Configur
 }
 
 func (r *subnetShareResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

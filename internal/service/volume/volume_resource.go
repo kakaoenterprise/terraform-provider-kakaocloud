@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package volume
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -20,14 +20,12 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure      = &volumeResource{}
 	_ resource.ResourceWithImportState    = &volumeResource{}
 	_ resource.ResourceWithValidateConfig = &volumeResource{}
 )
 
-// NewVolumeResource is a helper function to simplify the provider implementation.
 func NewVolumeResource() resource.Resource {
 	return &volumeResource{}
 }
@@ -36,15 +34,13 @@ type volumeResource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (r *volumeResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_volume"
 }
 
-// Schema defines the schema for the resource.
 func (r *volumeResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud volume resource",
+		Description: docs.GetResourceDescription("Volume"),
 		Attributes: MergeResourceSchemaAttributes(
 			volumeResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -54,7 +50,6 @@ func (r *volumeResource) Schema(ctx context.Context, _ resource.SchemaRequest, r
 	}
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *volumeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan volumeResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -125,7 +120,6 @@ func (r *volumeResource) Create(ctx context.Context, req resource.CreateRequest,
 
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *volumeResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state volumeResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -150,7 +144,6 @@ func (r *volumeResource) Read(ctx context.Context, req resource.ReadRequest, res
 		},
 	)
 
-	// 404 → remove Terraform state
 	if httpResp != nil && httpResp.StatusCode == 404 {
 		resp.State.RemoveResource(ctx)
 		return
@@ -174,7 +167,6 @@ func (r *volumeResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *volumeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state volumeResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -243,7 +235,6 @@ func (r *volumeResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *volumeResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state volumeResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -293,8 +284,7 @@ func (r *volumeResource) Delete(ctx context.Context, req resource.DeleteRequest,
 }
 
 func (r *volumeResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}
@@ -313,7 +303,7 @@ func (r *volumeResource) Configure(_ context.Context, req resource.ConfigureRequ
 }
 
 func (r *volumeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
@@ -440,7 +430,6 @@ func (r *volumeResource) validateVolumeConfig(ctx context.Context, config volume
 	}
 }
 
-// UpdateVolumeSize updates the size of a volume.
 func (r *volumeResource) UpdateVolumeSize(ctx context.Context, kc *common.KakaoCloudClient, volumeId string, newSize int32, diags *diag.Diagnostics) bool {
 	body := volume.BodyExtendVolume{
 		Volume: volume.ExtendVolumeModel{

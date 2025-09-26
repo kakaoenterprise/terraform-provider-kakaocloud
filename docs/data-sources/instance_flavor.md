@@ -3,12 +3,17 @@
 page_title: "kakaocloud_instance_flavor Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud 특정 Flavor를 조회하는 데이터 소스
+  The kakaocloud_instance_flavor data source retrieves detailed information about a specific instance flavor in KakaoCloud.
+  It returns attributes such as CPU, memory, disk type, availability zones, hyper-threading support, and other hardware specifications.
+  Use this data source when you need to: - Reference a specific flavor by its ID in your Terraform configuration. - Dynamically obtain hardware details (e.g., vCPUs, memory, disk type) without hardcoding them. - Validate that a flavor meets the requirements for your workloads before creating instances.
 ---
 
 # kakaocloud_instance_flavor (Data Source)
 
-kakaocloud 특정 Flavor를 조회하는 데이터 소스
+The `kakaocloud_instance_flavor` data source retrieves detailed information about a specific instance flavor in KakaoCloud.
+It returns attributes such as CPU, memory, disk type, availability zones, hyper-threading support, and other hardware specifications.
+
+Use this data source when you need to: - Reference a specific flavor by its ID in your Terraform configuration. - Dynamically obtain hardware details (e.g., vCPUs, memory, disk type) without hardcoding them. - Validate that a flavor meets the requirements for your workloads before creating instances.
 
 
 

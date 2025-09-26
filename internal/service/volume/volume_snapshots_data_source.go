@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package volume
 
 import (
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -18,7 +18,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource              = &volumeSnapshotsDataSource{}
 	_ datasource.DataSourceWithConfigure = &volumeSnapshotsDataSource{}
@@ -32,15 +31,13 @@ type volumeSnapshotsDataSource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (d *volumeSnapshotsDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_volume_snapshots"
 }
 
-// Schema defines the schema for the resource.
 func (d *volumeSnapshotsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents volume snapshot list datasource.",
+		Description: docs.GetDataSourceDescription("VolumeSnapshots"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -74,7 +71,6 @@ func (d *volumeSnapshotsDataSource) Schema(ctx context.Context, _ datasource.Sch
 	}
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (d *volumeSnapshotsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config volumeSnapshotsDataSourceModel
 	diags := req.Config.Get(ctx, &config)
@@ -203,8 +199,7 @@ func (d *volumeSnapshotsDataSource) Read(ctx context.Context, req datasource.Rea
 }
 
 func (d *volumeSnapshotsDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}

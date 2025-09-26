@@ -3,12 +3,16 @@
 page_title: "kakaocloud_subnet_share Resource - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud 특정 Subnet 을 공유받은 프로젝트 관리
+  The kakaocloud_subnet_share resource allows you to manage subnet sharing between projects in KakaoCloud.
+  You can grant other projects access to a specific subnet by specifying their project IDs, while also retrieving the list of projects that currently have access.
+  This resource helps enable cross-project collaboration and controlled network resource sharing within KakaoCloud.
 ---
 
 # kakaocloud_subnet_share (Resource)
 
-kakaocloud 특정 Subnet 을 공유받은 프로젝트 관리
+The `kakaocloud_subnet_share` resource allows you to manage subnet sharing between projects in KakaoCloud.
+You can grant other projects access to a specific subnet by specifying their project IDs, while also retrieving the list of projects that currently have access.
+This resource helps enable cross-project collaboration and controlled network resource sharing within KakaoCloud.
 
 
 

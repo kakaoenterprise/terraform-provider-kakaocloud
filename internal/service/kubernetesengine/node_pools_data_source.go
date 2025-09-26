@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package kubernetesengine
 
 import (
@@ -65,7 +64,6 @@ func (d *nodePoolsDataSource) Schema(ctx context.Context, req datasource.SchemaR
 	}
 }
 
-// Use the same model as resource for simplicity in mapping
 func (d *nodePoolsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config nodePoolsDataSourceModel
 	diags := req.Config.Get(ctx, &config)
@@ -90,7 +88,7 @@ func (d *nodePoolsDataSource) Read(ctx context.Context, req datasource.ReadReque
 			if err != nil {
 				return struct{ NodePools []struct{ Name string } }{}, httpResp, err
 			}
-			// Transform to minimal shape needed
+
 			tmp := struct{ NodePools []struct{ Name string } }{NodePools: make([]struct{ Name string }, len(resp.NodePools))}
 			for i, np := range resp.NodePools {
 				tmp.NodePools[i] = struct{ Name string }{Name: np.Name}
@@ -105,7 +103,7 @@ func (d *nodePoolsDataSource) Read(ctx context.Context, req datasource.ReadReque
 
 	for _, np := range listResp.NodePools {
 		var model NodePoolBaseModel
-		// For each node pool name, retrieve full details
+
 		detail, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 			func() (struct {
 				NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel

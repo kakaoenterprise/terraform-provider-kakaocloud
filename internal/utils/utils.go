@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package utils
 
 import (
@@ -62,12 +61,10 @@ func MergeAttributes[T any](base, override map[string]T) map[string]T {
 	return out
 }
 
-// CompareCIDRs compares two CIDR strings.
 func CompareCIDRs(cidrA, cidrB string) int {
 	ipA, netA, errA := net.ParseCIDR(cidrA)
 	ipB, netB, errB := net.ParseCIDR(cidrB)
 
-	// Fallback to string comparison if parsing fails
 	if errA != nil || errB != nil {
 		if cidrA < cidrB {
 			return -1

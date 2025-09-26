@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package kubernetesengine
 
 import (
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -62,6 +62,7 @@ func (r *scheduledScalingResource) Metadata(ctx context.Context, req resource.Me
 
 func (r *scheduledScalingResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: docs.GetResourceDescription("KubernetesEngineScheduledScaling"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			scheduledScalingResourceSchema,
 			map[string]schema.Attribute{

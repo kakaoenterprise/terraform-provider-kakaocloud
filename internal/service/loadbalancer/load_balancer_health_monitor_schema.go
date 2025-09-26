@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -19,43 +18,34 @@ import (
 )
 
 var (
-	// Health monitor type validator - based on Octavia DTO
 	healthMonitorTypeValidator = stringvalidator.OneOf(
 		"HTTP", "HTTPS", "TCP", "UDP", "PING",
 	)
 
-	// HTTP method validator - based on Octavia DTO
 	httpMethodValidator = stringvalidator.OneOf(
 		"CONNECT", "GET", "POST", "DELETE", "PATCH", "PUT", "HEAD", "OPTIONS", "TRACE",
 	)
 
-	// HTTP version validator - based on SDK
 	httpVersionValidator = stringvalidator.OneOf(
 		"1.0", "1.1",
 	)
 
-	// URL path validator - based on Octavia DTO: ^/(.{0,120})$
 	urlPathValidator = stringvalidator.RegexMatches(
 		regexp.MustCompile(`^/(.{0,120})$`),
 		"Must start with a forward slash (/) and be at most 120 characters long excluding the slash",
 	)
 
-	// Expected codes validator - HTTP status codes (supports ranges and comma-separated)
 	expectedCodesValidator = stringvalidator.RegexMatches(
 		regexp.MustCompile(`^([0-9]{3}(-[0-9]{3})?)(,([0-9]{3}(-[0-9]{3})?))*$`),
 		"must be comma-separated HTTP status codes or ranges (e.g., 200,201,202 or 200-399)",
 	)
 
-	// Delay validator - based on Octavia DTO: @Max(3600) @Min(0)
 	delayValidator = int64validator.Between(0, 3600)
 
-	// Timeout validator - based on Octavia DTO: @Max(900) @Min(0)
 	timeoutValidator = int64validator.Between(0, 900)
 
-	// Max retries validator - no specific constraints in Octavia DTO, using reasonable defaults
 	maxRetriesValidator = int64validator.Between(1, 10)
 
-	// Max retries down validator - no specific constraints in Octavia DTO, using reasonable defaults
 	maxRetriesDownValidator = int64validator.Between(1, 10)
 )
 
@@ -280,8 +270,6 @@ func getHealthMonitorDataSourceSchema() map[string]dschema.Attribute {
 	}
 }
 
-// Resource schema attributes
 var loadBalancerHealthMonitorResourceSchema = getHealthMonitorResourceSchema()
 
-// Data source schema with computed attributes
 var loadBalancerHealthMonitorDataSourceSchema = getHealthMonitorDataSourceSchema()

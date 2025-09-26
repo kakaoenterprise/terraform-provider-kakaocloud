@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package loadbalancer
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -55,7 +55,7 @@ func (r *loadBalancerListenerResource) Metadata(_ context.Context, req resource.
 
 func (r *loadBalancerListenerResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a KakaoCloud Load Balancer.",
+		Description: docs.GetResourceDescription("LoadBalancerListener"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			listenerResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -73,7 +73,6 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 		return
 	}
 
-	// Validate that sni_container_refs is not set during creation
 	if !plan.SniContainerRefs.IsNull() && !plan.SniContainerRefs.IsUnknown() {
 		resp.Diagnostics.AddError(
 			"Invalid Configuration",
@@ -114,14 +113,12 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 		Listener: createReq,
 	}
 
-	// First try with normal auth retry, then with conflict retry if needed
 	lbl, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiCreateListenerModelResponseListenerModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerListenerAPI.CreateListener(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateListener(body).Execute()
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		lbl, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiCreateListenerModelResponseListenerModel, *http.Response, error) {
@@ -152,21 +149,17 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 		return
 	}
 
-	// Phase 2: Update with fields that require update operations
 	finalResult, ok := r.updateListenerFields(ctx, plan.Id.ValueString(), &plan, resp)
 	if !ok || resp.Diagnostics.HasError() {
-		// If update fails, the entire create operation should fail
-		// Don't save the state with invalid data
+
 		return
 	}
 
-	// Map the final result to state
 	ok = mapLoadBalancerListenerBaseModel(ctx, &plan.loadBalancerListenerBaseModel, finalResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Map resource-specific fields
 	plan.TargetGroupId = utils.ConvertNullableString(finalResult.DefaultTargetGroupId)
 
 	diags = resp.State.Set(ctx, plan)
@@ -212,7 +205,6 @@ func (r *loadBalancerListenerResource) Read(ctx context.Context, req resource.Re
 		return
 	}
 
-	// Map resource-specific fields
 	state.TargetGroupId = utils.ConvertNullableString(loadBalancerListenerResult.DefaultTargetGroupId)
 
 	diags = resp.State.Set(ctx, &state)
@@ -236,7 +228,6 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 		return
 	}
 
-	// Only proceed if one of the updatable attributes has changed
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -245,11 +236,10 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Create an empty request model
 	editReq := loadbalancer.EditListener{}
 
 	if !plan.DefaultTlsContainerRef.Equal(state.DefaultTlsContainerRef) {
-		// Only set if the value is not null/unknown and not empty
+
 		if !plan.DefaultTlsContainerRef.IsNull() && !plan.DefaultTlsContainerRef.IsUnknown() && plan.DefaultTlsContainerRef.ValueString() != "" {
 			editReq.SetDefaultTlsContainerRef(plan.DefaultTlsContainerRef.ValueString())
 		}
@@ -268,7 +258,7 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 		editReq.SetConnectionLimit(int32(plan.ConnectionLimit.ValueInt64()))
 	}
 	if !plan.TargetGroupId.Equal(state.TargetGroupId) {
-		// Only set if the value is not null/unknown and not empty
+
 		if !plan.TargetGroupId.IsNull() && !plan.TargetGroupId.IsUnknown() && plan.TargetGroupId.ValueString() != "" {
 			editReq.SetTargetGroupId(plan.TargetGroupId.ValueString())
 		}
@@ -279,34 +269,31 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 	}
 
 	if !plan.TimeoutClientData.Equal(state.TimeoutClientData) {
-		// If value changed, set the new value
+
 		if !plan.TimeoutClientData.IsNull() && !plan.TimeoutClientData.IsUnknown() {
 			editReq.SetTimeoutClientData(int32(plan.TimeoutClientData.ValueInt64()))
 		}
 	} else {
-		// If value didn't change, use the existing value (but fix for validation)
+
 		currentValue := state.TimeoutClientData.ValueInt64()
 		if currentValue < 1000 {
-			editReq.SetTimeoutClientData(1000) // Fix for minimum value
+			editReq.SetTimeoutClientData(1000)
 		} else {
 			editReq.SetTimeoutClientData(int32(currentValue))
 		}
 	}
 
-	// Check if the insert_headers block has changed.
 	if !plan.InsertHeaders.Equal(state.InsertHeaders) {
-		// This is the model we will build and send to the API.
+
 		sdkHeaders := &loadbalancer.InsertHeaderModel{}
 
-		// Check if the user has the block configured in their plan.
 		if !plan.InsertHeaders.IsNull() && !plan.InsertHeaders.IsUnknown() {
-			// Use direct attribute access instead of As() for more reliability.
+
 			attrs := plan.InsertHeaders.Attributes()
 			xForwardedFor := attrs["x_forwarded_for"].(types.String)
 			xForwardedProto := attrs["x_forwarded_proto"].(types.String)
 			xForwardedPort := attrs["x_forwarded_port"].(types.String)
 
-			// Populate the SDK model, checking each value.
 			if !xForwardedFor.IsNull() {
 				enumVal := loadbalancer.XForwardedFor(xForwardedFor.ValueString())
 				sdkHeaders.XForwardedFor = *loadbalancer.NewNullableXForwardedFor(&enumVal)
@@ -326,14 +313,12 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 
 	body := *loadbalancer.NewBodyUpdateListener(editReq)
 
-	// First try with normal auth retry, then with conflict retry if needed
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerListenerAPI.UpdateListener(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateListener(body).Execute()
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
@@ -347,7 +332,6 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 		return
 	}
 
-	// Wait for the load balancer to become active again
 	result, ok := r.pollListenerUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
@@ -363,8 +347,6 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 		return
 	}
 
-	// TLS certificate fields are write-only (not returned in GET response)
-	// Preserve them from the plan BEFORE base model mapping to avoid state drift
 	state.DefaultTlsContainerRef = plan.DefaultTlsContainerRef
 	state.SniContainerRefs = plan.SniContainerRefs
 	state.TlsMinVersion = plan.TlsMinVersion
@@ -374,12 +356,10 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 		return
 	}
 
-	// Map resource-specific fields
-	// Only update target_group_id if it's explicitly set in the plan
 	if !plan.TargetGroupId.IsNull() && !plan.TargetGroupId.IsUnknown() {
 		state.TargetGroupId = plan.TargetGroupId
 	} else {
-		// If not set in plan, get the current value from API response
+
 		state.TargetGroupId = utils.ConvertNullableString(result.DefaultTargetGroupId)
 	}
 
@@ -396,7 +376,6 @@ func (r *loadBalancerListenerResource) Delete(ctx context.Context, req resource.
 		return
 	}
 
-	// First try with normal auth retry, then with conflict retry if needed
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			httpResp, err := r.kc.ApiClient.LoadBalancerListenerAPI.DeleteListener(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
@@ -404,7 +383,6 @@ func (r *loadBalancerListenerResource) Delete(ctx context.Context, req resource.
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
@@ -459,7 +437,6 @@ func (r *loadBalancerListenerResource) pollListenerUntilStatus(
 	)
 }
 
-// Helper function to handle listener updates for fields that require update operations
 func (r *loadBalancerListenerResource) updateListenerFields(
 	ctx context.Context,
 	listenerId string,
@@ -470,7 +447,6 @@ func (r *loadBalancerListenerResource) updateListenerFields(
 	needsUpdate := false
 	editReq := loadbalancer.EditListener{}
 
-	// Check which fields need updating (only fields that require update operations)
 	if !plan.TimeoutClientData.IsNull() && !plan.TimeoutClientData.IsUnknown() {
 		editReq.SetTimeoutClientData(int32(plan.TimeoutClientData.ValueInt64()))
 		needsUpdate = true
@@ -482,7 +458,7 @@ func (r *loadBalancerListenerResource) updateListenerFields(
 	}
 
 	if !plan.InsertHeaders.IsNull() && !plan.InsertHeaders.IsUnknown() {
-		// Handle insert_headers
+
 		sdkHeaders := &loadbalancer.InsertHeaderModel{}
 		attrs := plan.InsertHeaders.Attributes()
 		xForwardedFor := attrs["x_forwarded_for"].(types.String)
@@ -517,9 +493,8 @@ func (r *loadBalancerListenerResource) updateListenerFields(
 		needsUpdate = true
 	}
 
-	// If no updates needed, return current state
 	if !needsUpdate {
-		// Get current state
+
 		respModel, _, err := r.kc.ApiClient.LoadBalancerListenerAPI.GetListener(ctx, listenerId).
 			XAuthToken(r.kc.XAuthToken).Execute()
 		if err != nil {
@@ -529,17 +504,14 @@ func (r *loadBalancerListenerResource) updateListenerFields(
 		return &respModel.Listener, true
 	}
 
-	// Perform the update
 	body := *loadbalancer.NewBodyUpdateListener(editReq)
 
-	// First try with normal auth retry, then with conflict retry if needed
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerListenerAPI.UpdateListener(ctx, listenerId).XAuthToken(r.kc.XAuthToken).BodyUpdateListener(body).Execute()
 		},
 	)
 
-	// If we get a 409 conflict, retry with loadbalancer-specific conflict logic
 	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
 		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
@@ -553,7 +525,6 @@ func (r *loadBalancerListenerResource) updateListenerFields(
 		return nil, false
 	}
 
-	// Wait for update to complete
 	result, ok := r.pollListenerUntilStatus(ctx, listenerId,
 		[]string{ProvisioningStatusActive, ProvisioningStatusError}, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {

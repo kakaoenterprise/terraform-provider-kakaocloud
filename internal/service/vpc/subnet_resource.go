@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package vpc
 
 import (
@@ -8,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -20,7 +20,6 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.ResourceWithConfigure   = &subnetResource{}
 	_ resource.ResourceWithImportState = &subnetResource{}
@@ -34,15 +33,13 @@ type subnetResource struct {
 	kc *common.KakaoCloudClient
 }
 
-// Metadata returns the resource type name.
 func (r *subnetResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_subnet"
 }
 
-// Schema defines the schema for the resource.
 func (r *subnetResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Represents a subnet resource.",
+		Description: docs.GetResourceDescription("Subnet"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			subnetResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -52,7 +49,6 @@ func (r *subnetResource) Schema(ctx context.Context, _ resource.SchemaRequest, r
 	}
 }
 
-// Create creates the resource and sets the initial Terraform state.
 func (r *subnetResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan subnetResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -141,7 +137,6 @@ func (r *subnetResource) Create(ctx context.Context, req resource.CreateRequest,
 
 }
 
-// Read refreshes the Terraform state with the latest data.
 func (r *subnetResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state subnetResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -166,7 +161,7 @@ func (r *subnetResource) Read(ctx context.Context, req resource.ReadRequest, res
 				XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
-	// 404 → remove Terraform state
+
 	if httpResp != nil && httpResp.StatusCode == 404 {
 		resp.State.RemoveResource(ctx)
 		return
@@ -189,7 +184,6 @@ func (r *subnetResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 }
 
-// Update updates the resource and sets the updated Terraform state on success.
 func (r *subnetResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state subnetResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -244,7 +238,6 @@ func (r *subnetResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 }
 
-// Delete deletes the resource and removes the Terraform state on success.
 func (r *subnetResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state subnetResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -279,7 +272,6 @@ func (r *subnetResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	// Poll until resource disappears
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (*vpc.BnsVpcV1ApiGetSubnetModelResponseSubnetModel, *http.Response, error) {
@@ -295,8 +287,7 @@ func (r *subnetResource) Delete(ctx context.Context, req resource.DeleteRequest,
 }
 
 func (r *subnetResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Add a nil check when handling ProviderData because Terraform
-	// sets that data after it calls the ConfigureProvider RPC.
+
 	if req.ProviderData == nil {
 		return
 	}
@@ -315,7 +306,7 @@ func (r *subnetResource) Configure(_ context.Context, req resource.ConfigureRequ
 }
 
 func (r *subnetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 

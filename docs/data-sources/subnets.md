@@ -3,12 +3,51 @@
 page_title: "kakaocloud_subnets Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud Subnet 목록 조회하는 데이터 소스
+  The kakaocloud_subnets data source retrieves a list of Subnets in KakaoCloud.
+  It supports filtering by attributes such as name, and provides details including CIDR blocks, availability zones, project information, and associated route tables.
+  Use this data source when you need to reference multiple existing Subnets in your Terraform configuration.
+  Available filters
+  | Filter          | Type                 | Description |
+  |--------------------|----------------------|-------------|
+  | id                 | string               | ID of the subnet to query |
+  | name               | string               | Name of the subnet to query |
+  | availability_zone  | AvailabilityZone     | Availability zone of the subnet <br>Possible values: <br>- `kr-central-2-a`: Availability zone `kr-central-2-a` <br>- `kr-central-2-b`: Availability zone `kr-central-2-b` <br>- `kr-central-2-c`: Availability zone `kr-central-2-c` |
+  | provisioning_status| ProvisioningStatus   | Provisioning status of the subnet <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+  | operating_status   | SubnetOperatingStatus | Operating status of the subnet <br>- `ONLINE`: Online <br>- `OFFLINE`: Offline <br>- `IN_MAINTENANCE`: In maintenance <br>- `ERROR`: Error |
+  | cidr_block         | string               | IPv4 CIDR block of the subnet (e.g., `10.0.1.0/24`) |
+  | vpc_id             | string               | ID of the associated VPC |
+  | vpc_name           | string               | Name of the associated VPC |
+  | route_table_id     | string               | ID of the associated route table |
+  | route_table_name   | string               | Name of the associated route table |
+  | is_shared          | boolean              | Whether the subnet is shared |
+  | created_at         | string               | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+  | updated_at         | string               | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 ---
 
 # kakaocloud_subnets (Data Source)
 
-kakaocloud Subnet 목록 조회하는 데이터 소스
+The `kakaocloud_subnets` data source retrieves a list of Subnets in KakaoCloud.
+It supports filtering by attributes such as name, and provides details including CIDR blocks, availability zones, project information, and associated route tables.
+
+Use this data source when you need to reference multiple existing Subnets in your Terraform configuration.
+
+## Available filters
+
+| Filter          | Type                 | Description |
+|--------------------|----------------------|-------------|
+| id                 | string               | ID of the subnet to query |
+| name               | string               | Name of the subnet to query |
+| availability_zone  | AvailabilityZone     | Availability zone of the subnet <br>Possible values: <br>- `kr-central-2-a`: Availability zone `kr-central-2-a` <br>- `kr-central-2-b`: Availability zone `kr-central-2-b` <br>- `kr-central-2-c`: Availability zone `kr-central-2-c` |
+| provisioning_status| ProvisioningStatus   | Provisioning status of the subnet <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+| operating_status   | SubnetOperatingStatus | Operating status of the subnet <br>- `ONLINE`: Online <br>- `OFFLINE`: Offline <br>- `IN_MAINTENANCE`: In maintenance <br>- `ERROR`: Error |
+| cidr_block         | string               | IPv4 CIDR block of the subnet (e.g., `10.0.1.0/24`) |
+| vpc_id             | string               | ID of the associated VPC |
+| vpc_name           | string               | Name of the associated VPC |
+| route_table_id     | string               | ID of the associated route table |
+| route_table_name   | string               | Name of the associated route table |
+| is_shared          | boolean              | Whether the subnet is shared |
+| created_at         | string               | Time when the resource was created <br>- ISO_8601 format <br>- UTC |
+| updated_at         | string               | Time when the resource was last updated <br>- ISO_8601 format <br>- UTC |
 
 
 

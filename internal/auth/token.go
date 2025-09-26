@@ -1,6 +1,5 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-
 package auth
 
 import (
@@ -33,13 +32,11 @@ func NewTokenManager(identityAPI auth.IdentityAPI, credentialID, credentialSecre
 func (tm *TokenManager) GetValidToken(ctx context.Context) (string, error) {
 	tm.mutex.Lock()
 
-	// Return cached token if it expires in more than 5 minutes
 	if tm.currentToken != "" && time.Now().Add(5*time.Minute).Before(tm.expiresAt) {
 		tm.mutex.Unlock()
 		return tm.currentToken, nil
 	}
 
-	// Validate current token with server
 	if tm.currentToken != "" {
 		if isValid, err := tm.validateToken(ctx, tm.currentToken); err == nil && isValid {
 			tm.mutex.Unlock()
@@ -49,7 +46,6 @@ func (tm *TokenManager) GetValidToken(ctx context.Context) (string, error) {
 
 	tm.mutex.Unlock()
 
-	// Issue new token
 	return tm.IssueNewToken(ctx)
 }
 
@@ -69,7 +65,6 @@ func (tm *TokenManager) IssueNewToken(ctx context.Context) (string, error) {
 		},
 	}
 
-	// Request new token
 	resp, httpResp, err := tm.identityAPI.IssueToken(ctx).SwaggerIdPwdRequest(authReq).Execute()
 	if err != nil {
 		return "", fmt.Errorf("failed to issue token: %w", err)
@@ -89,7 +84,6 @@ func (tm *TokenManager) IssueNewToken(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("no token found in response headers")
 	}
 
-	// Store token and expiration
 	tm.currentToken = token
 	if resp != nil && resp.Token != nil && resp.Token.ExpiresAt != nil {
 		if expiresAt, err := time.Parse(time.RFC3339, *resp.Token.ExpiresAt); err == nil {
@@ -130,14 +124,12 @@ func (tm *TokenManager) validateToken(ctx context.Context, token string) (bool, 
 	return true, nil
 }
 
-// InvalidateToken clears the current token
 func (tm *TokenManager) InvalidateToken() {
 	tm.mutex.Lock()
 	defer tm.mutex.Unlock()
 	tm.currentToken = ""
 }
 
-// IsAuthError checks if error is authentication related
 func IsAuthError(err error) bool {
 	if err == nil {
 		return false
