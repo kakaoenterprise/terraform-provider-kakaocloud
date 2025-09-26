@@ -2,7 +2,7 @@
 
 # Terraform Provider for kakaocloud
 
-The [kakaocloud Provider](https://docs.kakaocloud.com/openapi) enables [Terraform](https://terraform.io) to manage [kakaocloud](https://kakaocloud.com/) resources.
+The kakaocloud Provider enables [Terraform](https://terraform.io) to manage [kakaocloud](https://kakaocloud.com/) resources.
 
 ## Requirements
 
