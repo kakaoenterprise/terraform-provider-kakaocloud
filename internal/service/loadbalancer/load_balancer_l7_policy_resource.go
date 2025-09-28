@@ -196,11 +196,28 @@ func (r *loadBalancerL7PolicyResource) Read(ctx context.Context, req resource.Re
 	l7PolicyResult := respModel.L7Policy
 
 	listenerIdFromState := state.ListenerId
+
 	ok := mapLoadBalancerL7PolicyFromGetResponse(ctx, &state.loadBalancerL7PolicyBaseModel, &l7PolicyResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
-	state.ListenerId = listenerIdFromState
+
+	if !listenerIdFromState.IsNull() && !listenerIdFromState.IsUnknown() {
+
+		state.ListenerId = listenerIdFromState
+	} else {
+
+		foundListenerId, err := r.findListenerIdByL7PolicyId(ctx, state.Id.ValueString())
+		if err != nil {
+
+			resp.Diagnostics.AddWarning(
+				"Could not determine listener_id",
+				fmt.Sprintf("Could not automatically determine listener_id for L7 policy %s. Please provide listener_id in your configuration.", state.Id.ValueString()),
+			)
+		} else {
+			state.ListenerId = types.StringValue(foundListenerId)
+		}
+	}
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -387,6 +404,35 @@ func (r *loadBalancerL7PolicyResource) pollL7PolicyUntilStatus(
 			return string(*policy.ProvisioningStatus.Get())
 		},
 	)
+}
+
+func (r *loadBalancerL7PolicyResource) findListenerIdByL7PolicyId(ctx context.Context, l7PolicyId string) (string, error) {
+
+	listenersResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &diag.Diagnostics{},
+		func() (*loadbalancer.ListenerListModel, *http.Response, error) {
+			return r.kc.ApiClient.LoadBalancerListenerAPI.ListListeners(ctx).Limit(1000).XAuthToken(r.kc.XAuthToken).Execute()
+		},
+	)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to list listeners: %w", err)
+	}
+
+	if httpResp != nil && httpResp.StatusCode != 200 {
+		return "", fmt.Errorf("failed to list listeners: HTTP %d", httpResp.StatusCode)
+	}
+
+	for _, listener := range listenersResp.Listeners {
+		if listener.L7Policies != nil {
+			for _, policy := range listener.L7Policies {
+				if policy.Id == l7PolicyId {
+					return listener.Id, nil
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("L7 policy %s not found in any listener", l7PolicyId)
 }
 
 func (r *loadBalancerL7PolicyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

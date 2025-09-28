@@ -1,5 +1,3 @@
-# Copyright (c) HashiCorp, Inc.
-
 # token-based authentication
 provider "kakaocloud" {
   x_auth_token = "gAAAAABogvKWgaGptpfaXjzFbhIbE1auswl4e6o2X8p-epdtmIApE7b7Ud0TNcYACaYlx-2z4EpFSiAJN5ZRQlBKyhi9ymKFqzROyTIh9t6o2Kwc0xes0HPGtA2GD_AQRcRoRSKnlRSYz0awvwNbDB5hDEfSg8fVaLJdoz6l-bOhQCRDeh_A0817fz7mbp38XHr5NU2DPMw6"

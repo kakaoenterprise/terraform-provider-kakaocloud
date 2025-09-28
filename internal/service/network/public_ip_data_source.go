@@ -58,7 +58,7 @@ func (d *publicIpDataSource) Schema(ctx context.Context, _ datasource.SchemaRequ
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
 					Required:    true,
-					Description: "Image ID",
+					Description: "Public IP ID",
 					Validators:  common.UuidValidator(),
 				},
 				"timeouts": timeouts.Attributes(ctx),

@@ -290,9 +290,7 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 			return
 		}
 		common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
-
-		ok = mapBeyondLoadBalancerBaseModel(ctx, &plan.beyondLoadBalancerBaseModel, result, &resp.Diagnostics)
-		if !ok || resp.Diagnostics.HasError() {
+		if resp.Diagnostics.HasError() {
 			return
 		}
 	}

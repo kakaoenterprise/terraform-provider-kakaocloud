@@ -25,6 +25,19 @@ func mapSecurityGroupBaseModel(
 		result.Rules,
 		securityGroupRuleAttrType,
 		func(src network.BnsNetworkV1ApiGetSecurityGroupModelSecurityGroupRuleModel) any {
+
+			portMin := ConvertNullableString(src.PortRangeMin)
+			portMax := ConvertNullableString(src.PortRangeMax)
+
+			if !portMin.IsNull() && !portMin.IsUnknown() &&
+				!portMax.IsNull() && !portMax.IsUnknown() {
+
+				if portMin.ValueString() == "ALL" && portMax.ValueString() == "ALL" {
+					portMin = types.StringValue("1")
+					portMax = types.StringValue("65535")
+				}
+			}
+
 			return securityGroupRuleModel{
 				Id:              types.StringValue(src.Id),
 				Description:     ConvertNullableString(src.Description),
@@ -32,8 +45,8 @@ func mapSecurityGroupBaseModel(
 				RemoteGroupName: ConvertNullableString(src.RemoteGroupName),
 				Direction:       ConvertNullableString(src.Direction),
 				Protocol:        types.StringValue(string(src.Protocol)),
-				PortRangeMin:    ConvertNullableString(src.PortRangeMin),
-				PortRangeMax:    ConvertNullableString(src.PortRangeMax),
+				PortRangeMin:    portMin,
+				PortRangeMax:    portMax,
 				RemoteIpPrefix:  ConvertNullableString(src.RemoteIpPrefix),
 				CreatedAt:       ConvertNullableTime(src.CreatedAt),
 				UpdatedAt:       ConvertNullableTime(src.UpdatedAt),

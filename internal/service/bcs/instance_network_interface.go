@@ -39,10 +39,10 @@ func (r *instanceResource) setNetworkInterfaceId(ctx context.Context, plan *inst
 		return
 	}
 
-	existNicMap := make(map[string]bool)
+	usedNicIds := make(map[string]bool)
 	for _, subnet := range subnetList {
 		if !subnet.NetworkInterfaceId.IsNull() {
-			existNicMap[subnet.NetworkInterfaceId.ValueString()] = true
+			usedNicIds[subnet.NetworkInterfaceId.ValueString()] = true
 		}
 	}
 
@@ -52,10 +52,10 @@ func (r *instanceResource) setNetworkInterfaceId(ctx context.Context, plan *inst
 		return
 	}
 
-	subnetMap := make(map[string]string)
+	subnetMap := make(map[string][]string)
 	for _, address := range addressList {
 		nicId := address.NetworkInterfaceId.ValueString()
-		if nicId == "" || existNicMap[nicId] {
+		if nicId == "" || usedNicIds[nicId] {
 			continue
 		}
 		nicResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
@@ -69,19 +69,33 @@ func (r *instanceResource) setNetworkInterfaceId(ctx context.Context, plan *inst
 		}
 		if nicResp.NetworkInterface.SubnetId.Get() != nil {
 			subnetId := nicResp.NetworkInterface.SubnetId.Get()
-			subnetMap[*subnetId] = nicId
+			subnetMap[*subnetId] = append(subnetMap[*subnetId], nicId)
 		}
 	}
 
 	for i, subnet := range subnetList {
 		if subnet.NetworkInterfaceId.IsNull() || subnet.NetworkInterfaceId.ValueString() == "" {
-			nicId, exists := subnetMap[subnet.Id.ValueString()]
+			nicIds, exists := subnetMap[subnet.Id.ValueString()]
 			if !exists {
 				common.AddGeneralError(ctx, r, respDiags,
-					fmt.Sprintf("No network interface found for subnet_iD: %s", subnet.Id.ValueString()))
+					fmt.Sprintf("No network interface found for subnet_id: %s", subnet.Id.ValueString()))
 				return
 			}
-			subnetList[i].NetworkInterfaceId = types.StringValue(nicId)
+
+			assigned := false
+			for _, nicId := range nicIds {
+				if !usedNicIds[nicId] {
+					subnetList[i].NetworkInterfaceId = types.StringValue(nicId)
+					usedNicIds[nicId] = true
+					assigned = true
+					break
+				}
+			}
+			if !assigned {
+				common.AddGeneralError(ctx, r, respDiags,
+					fmt.Sprintf("All network interfaces for subnet_id %s have already been used", subnet.Id.ValueString()))
+				return
+			}
 		}
 	}
 

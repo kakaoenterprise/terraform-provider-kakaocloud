@@ -111,7 +111,7 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 	}
 
 	if err != nil {
-		common.AddApiActionError(ctx, createReq, httpResp, "create", err, &resp.Diagnostics)
+		common.AddApiActionError(ctx, r, httpResp, "CreateTargetGroup", err, &resp.Diagnostics)
 		return
 	}
 
@@ -267,7 +267,7 @@ func (r *loadBalancerTargetGroupResource) Update(ctx context.Context, req resour
 	}
 
 	if err != nil {
-		common.AddApiActionError(ctx, updateReq, httpResp, "update", err, &resp.Diagnostics)
+		common.AddApiActionError(ctx, r, httpResp, "UpdateTargetGroup", err, &resp.Diagnostics)
 		return
 	}
 
@@ -367,7 +367,7 @@ func (r *loadBalancerTargetGroupResource) Delete(ctx context.Context, req resour
 	}
 
 	if err != nil {
-		common.AddApiActionError(ctx, nil, httpResp, "delete", err, &resp.Diagnostics)
+		common.AddApiActionError(ctx, nil, httpResp, "DeleteTargetGroup", err, &resp.Diagnostics)
 		return
 	}
 

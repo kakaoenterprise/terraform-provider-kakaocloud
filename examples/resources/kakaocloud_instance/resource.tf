@@ -1,5 +1,3 @@
-# Copyright (c) HashiCorp, Inc.
-
 # Manage example volume.
 resource "kakaocloud_instance" "example" {
   name              = "example"

@@ -10,6 +10,10 @@ const (
 	DefaultUpdateTimeout  = 30 * time.Minute
 	DefaultDeleteTimeout  = 30 * time.Minute
 	DefaultPollingTimeout = 10 * time.Second
+
+	LongCreateTimeout = 600 * time.Minute
+	LongUpdateTimeout = 300 * time.Minute
+	LongDeleteTimeout = 300 * time.Minute
 )
 
 const (

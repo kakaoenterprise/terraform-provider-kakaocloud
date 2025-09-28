@@ -47,6 +47,12 @@ func (r *instanceResource) validateVolumesConfig(ctx context.Context, config ins
 					fmt.Sprintf("Invalid Configuration: If the request volume ID is set, only is_delete_on_termination field can be specified."),
 				)
 			}
+		} else {
+			if tfv.Size.IsNull() {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("Invalid Configuration: Volume size must be specified when no volume ID is provided."),
+				)
+			}
 		}
 	}
 }
@@ -58,23 +64,15 @@ func (r *instanceResource) validateSubnetsConfig(ctx context.Context, config ins
 		return
 	}
 
+	if len(configList) == 0 {
+		return
+	}
 	config1st := configList[0]
 	if !config1st.NetworkInterfaceId.IsNull() {
-		if !config.SecurityGroups.IsNull() {
+		if !config.InitialSecurityGroups.IsNull() {
 			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 				fmt.Sprintf("Invalid Configuration: First Subnet Network interface ID cannot be specified when security groups are specified."),
 			)
-		}
-	}
-
-	mapSubnet := make(map[string]bool)
-	for _, subnet := range configList {
-		if subnet.NetworkInterfaceId.IsNull() {
-			if mapSubnet[subnet.Id.ValueString()] {
-				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
-					fmt.Sprintf("Invalid Configuration: A different subnet or a Network Interface ID must be specified. subnet_id: %s", subnet.Id))
-			}
-			mapSubnet[subnet.Id.ValueString()] = true
 		}
 	}
 
@@ -165,22 +163,30 @@ func (r *instanceResource) ModifyPlan(
 			}
 		}
 
-		if !plan.SecurityGroups.IsUnknown() && !plan.SecurityGroups.Equal(state.SecurityGroups) {
+		if !plan.InitialSecurityGroups.IsNull() && !plan.InitialSecurityGroups.Equal(state.InitialSecurityGroups) {
 			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
-				fmt.Sprintf("Invalid Configuration: Changing the security group is not allowed."))
+				fmt.Sprintf("Invalid Configuration: Changing the initial security group is not allowed."))
 		}
 
 		planList, planDiags := r.convertListToInstanceSubnetModel(ctx, plan.Subnets)
+		stateList, stateDiags := r.convertListToInstanceSubnetModel(ctx, state.Subnets)
 		resp.Diagnostics.Append(planDiags...)
+		resp.Diagnostics.Append(stateDiags...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
 		for _, plan := range planList {
-			if plan.NetworkInterfaceId.IsUnknown() {
+			if plan.NetworkInterfaceId.IsNull() {
 				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 					fmt.Sprintf("Invalid Configuration: Changing the subnet requires specifying a Network Interface ID."))
 			}
+		}
+
+		if !planList[0].Id.Equal(stateList[0].Id) || !planList[0].NetworkInterfaceId.Equal(stateList[0].NetworkInterfaceId) ||
+			!planList[0].PrivateIp.Equal(stateList[0].PrivateIp) {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("Invalid Configuration: Changing the default subnet is not allowed."))
 		}
 
 		if plan.InstanceType.ValueString() == common.InstanceTypeBM {

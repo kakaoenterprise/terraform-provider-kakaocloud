@@ -57,6 +57,10 @@ func (r *subnetResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
+	mutex := common.LockForID(plan.VpcId.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -97,7 +101,7 @@ func (r *subnetResource) Create(ctx context.Context, req resource.CreateRequest,
 	result, ok := common.PollUntilResult(
 		ctx,
 		r,
-		2*time.Second,
+		10*time.Second,
 		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError},
 		&resp.Diagnostics,
 		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetSubnetModelSubnetModel, *http.Response, error) {
@@ -123,6 +127,14 @@ func (r *subnetResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.VpcProvisioningStatusActive}, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !plan.RouteTableId.IsNull() && !plan.RouteTableId.IsUnknown() {
+		sourceRouteTable := result.RouteTableId.Get()
+		result, ok = r.setAssociation(ctx, *sourceRouteTable, plan, &resp.Diagnostics)
+	}
 
 	ok = mapSubnetBaseModel(&plan.subnetBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
@@ -198,6 +210,10 @@ func (r *subnetResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
+	mutex := common.LockForID(plan.VpcId.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -215,7 +231,7 @@ func (r *subnetResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 		body := *vpc.NewBodyUpdateSubnet(editReq)
 
-		respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (*vpc.BnsVpcV1ApiUpdateSubnetModelResponseSubnetModel, *http.Response, error) {
 				return r.kc.ApiClient.VPCSubnetAPI.UpdateSubnet(ctx, plan.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
@@ -227,11 +243,21 @@ func (r *subnetResource) Update(ctx context.Context, req resource.UpdateRequest,
 			common.AddApiActionError(ctx, r, httpResp, "UpdateSubnet", err, &resp.Diagnostics)
 			return
 		}
-
-		state.Name = types.StringValue(respModel.Subnet.Name)
 	}
 
-	diags = resp.State.Set(ctx, &state)
+	if !plan.RouteTableId.IsUnknown() && !plan.RouteTableId.Equal(state.RouteTableId) {
+		sourceRouteTable := state.RouteTableId.ValueString()
+		result, ok := r.setAssociation(ctx, sourceRouteTable, plan, &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+		ok = mapSubnetBaseModel(&plan.subnetBaseModel, result, &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
+	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -246,6 +272,10 @@ func (r *subnetResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
+	mutex := common.LockForID(state.VpcId.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -255,6 +285,16 @@ func (r *subnetResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	ok := checkVpcStatus(ctx, r, r.kc, state.VpcId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	ok = checkSubnetStatus(ctx, r, r.kc, state.Id.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
@@ -272,7 +312,7 @@ func (r *subnetResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
+	common.PollUntilDeletion(ctx, r, 10*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (*vpc.BnsVpcV1ApiGetSubnetModelResponseSubnetModel, *http.Response, error) {
 				_, httpResp, err := r.kc.ApiClient.VPCSubnetAPI.
@@ -328,6 +368,104 @@ func (r *subnetResource) validateAvailabilityZoneConfig(config subnetResourceMod
 		r.kc,
 		&resp.Diagnostics,
 	)
+}
+
+func (r *subnetResource) setAssociation(
+	ctx context.Context,
+	sourceRouteTableId string,
+	plan subnetResourceModel,
+	respDiags *diag.Diagnostics,
+) (*vpc.BnsVpcV1ApiGetSubnetModelSubnetModel, bool) {
+	subnetId := plan.Id.ValueString()
+
+	routeTableResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+		func() (*vpc.BnsVpcV1ApiGetRouteTableModelResponseRouteTableModel, *http.Response, error) {
+			return r.kc.ApiClient.VPCRouteTableAPI.GetRouteTable(ctx, sourceRouteTableId).
+				XAuthToken(r.kc.XAuthToken).Execute()
+		},
+	)
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "GetRouteTable", err, respDiags)
+		return nil, false
+	}
+
+	associations := routeTableResp.VpcRouteTable.Associations
+
+	ok := checkVpcStatus(ctx, r, r.kc, plan.VpcId.ValueString(), respDiags)
+	if !ok || respDiags.HasError() {
+		return nil, false
+	}
+
+	ok = checkSubnetStatus(ctx, r, r.kc, subnetId, respDiags)
+	if !ok || respDiags.HasError() {
+		return nil, false
+	}
+
+	var associationId *string
+
+	for _, association := range associations {
+		if association.SubnetId.Get() != nil && *association.SubnetId.Get() == subnetId {
+			associationId = &association.Id
+			break
+		}
+	}
+
+	if associationId == nil {
+		common.AddGeneralError(ctx, r, respDiags,
+			fmt.Sprintf("Source route table does not have a subnet_id '%v'.", subnetId))
+		return nil, false
+	}
+
+	req := vpc.EditAssociationModel{
+		TargetRouteTableId: plan.RouteTableId.ValueString(),
+	}
+
+	body := *vpc.NewBodyUpdateRouteTableAssociation(req)
+
+	_, httpResp, err = common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+		func() (*vpc.ResponseRouteTableAssociationModel, *http.Response, error) {
+			return r.kc.ApiClient.VPCRouteTableAssociationAPI.UpdateRouteTableAssociation(ctx, sourceRouteTableId, *associationId).
+				XAuthToken(r.kc.XAuthToken).BodyUpdateRouteTableAssociation(body).Execute()
+		},
+	)
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "UpdateRouteTableAssociation", err, respDiags)
+		return nil, false
+	}
+
+	result, ok := common.PollUntilResult(
+		ctx,
+		r,
+		10*time.Second,
+		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError},
+		respDiags,
+		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetSubnetModelSubnetModel, *http.Response, error) {
+			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+				func() (*vpc.BnsVpcV1ApiGetSubnetModelResponseSubnetModel, *http.Response, error) {
+					return r.kc.ApiClient.VPCSubnetAPI.
+						GetSubnet(ctx, plan.Id.ValueString()).
+						XAuthToken(r.kc.XAuthToken).
+						Execute()
+				},
+			)
+			if err != nil {
+				return nil, httpResp, err
+			}
+			return &respModel.Subnet, httpResp, nil
+		},
+		func(v *vpc.BnsVpcV1ApiGetSubnetModelSubnetModel) string {
+			return string(*v.ProvisioningStatus.Get())
+		},
+	)
+	if !ok || respDiags.HasError() {
+		return nil, false
+	}
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.VpcProvisioningStatusActive}, respDiags)
+	if respDiags.HasError() {
+		return nil, false
+	}
+
+	return result, true
 }
 
 func checkSubnetStatus(

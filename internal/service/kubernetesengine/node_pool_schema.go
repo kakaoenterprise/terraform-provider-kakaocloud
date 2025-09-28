@@ -82,6 +82,10 @@ func getNodePoolDataSourceSchema() map[string]dschema.Attribute {
 				Attributes: getNodePoolTaintDataSourceSchemaAttributes(),
 			},
 		},
+		"user_data": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("user_data"),
+		},
 		"vpc_info": dschema.SingleNestedAttribute{
 			Computed:    true,
 			Description: desc.String("vpc_info"),
@@ -323,7 +327,8 @@ func getNodePoolResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 		"volume_size": rschema.Int32Attribute{
-			Required:    true,
+			Optional:    true,
+			Computed:    true,
 			Description: createDesc.String("volume_size"),
 			PlanModifiers: []planmodifier.Int32{
 				int32planmodifier.UseStateForUnknown(),
@@ -398,11 +403,7 @@ func getNodePoolResourceSchema() map[string]rschema.Attribute {
 		},
 		"user_data": rschema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
 			Description: createDesc.String("user_data"),
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.RequiresReplace(),
-			},
 		},
 		"vpc_info": rschema.SingleNestedAttribute{
 			Required:      true,
@@ -442,10 +443,10 @@ func getNodePoolResourceSchema() map[string]rschema.Attribute {
 			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"status": rschema.SingleNestedAttribute{
-			Computed:      true,
-			Description:   desc.String("status"),
-			PlanModifiers: []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
-			Attributes:    getNodePoolStatusResourceSchemaAttributes(),
+			Computed:    true,
+			Description: desc.String("status"),
+
+			Attributes: getNodePoolStatusResourceSchemaAttributes(),
 		},
 		"image": rschema.SingleNestedAttribute{
 			Computed:      true,

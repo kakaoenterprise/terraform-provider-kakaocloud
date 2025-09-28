@@ -10,7 +10,6 @@ import (
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/kakaoenterprise/kc-sdk-go/services/network"
@@ -129,11 +128,7 @@ func getSecurityGroupResourceSchema() map[string]rschema.Attribute {
 		},
 		"rules": rschema.SetNestedAttribute{
 			Optional:    true,
-			Computed:    true,
 			Description: desc.String("rules"),
-			PlanModifiers: []planmodifier.Set{
-				setplanmodifier.UseStateForUnknown(),
-			},
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: securityGroupRuleInlineResourceSchema,
 			},

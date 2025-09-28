@@ -22,12 +22,12 @@ This resource also provides detailed metadata such as operating system informati
 ### Required
 
 - `name` (String) Name of the image
-- `volume_id` (String)
 
 ### Optional
 
 - `description` (String) Description of the image
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `volume_id` (String)
 
 ### Read-Only
 

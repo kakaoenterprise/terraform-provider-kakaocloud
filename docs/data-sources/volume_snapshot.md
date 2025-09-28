@@ -20,7 +20,13 @@ Use this data source when you need to reference an existing Volume Snapshot in y
 ```terraform
 # get a volume snapshot.
 data "kakaocloud_volume_snapshot" "example" {
-  id = "xxxxxx-yyyy-zzzz-81e8-836ebe461ba6"
+  id = "your-volume-snapshot-id-here" # Replace with your volume snapshot ID
+}
+
+# Output the volume snapshot information
+output "volume_snapshot_example" {
+  description = "Information about the example volume snapshot"
+  value       = kakaocloud_volume_snapshot.example
 }
 ```
 

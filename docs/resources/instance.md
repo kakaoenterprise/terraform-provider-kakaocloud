@@ -43,10 +43,10 @@ resource "kakaocloud_instance" "example" {
 
 - `availability_zone` (String) Name of the availability zone where the instance was created
 - `description` (String) Description of the instance
+- `initial_security_groups` (Attributes Set) List of initial security groups for the instance (see [below for nested schema](#nestedatt--initial_security_groups))
 - `is_bonding` (Boolean) Whether to enable network interface bonding <br/> - Required only when creating Bare Metal (`bm`) instances
 - `is_hyper_threading` (Boolean) Whether hyper-threading is enabled
 - `key_name` (String) Key pair name applied to the instance
-- `security_groups` (Attributes Set) List of security groups attached to the instance (see [below for nested schema](#nestedatt--security_groups))
 - `status` (String) Instance status <br/> - Refer to [Instance state and billing](https://docs.kakaocloud.com/en/service/bcs/vm/vm-main#instance-state-and-billing)
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 - `user_data` (String, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) User data script executed during instance initialization (runs only on the first boot)<br/> - Enter up to 16KB of user data script and `cloud-init` commands<br/> - Input must be a Base64-encoded string<br/> - Script is copied under `/var/lib/cloud/instances` and executed<br/>
@@ -73,6 +73,7 @@ resource "kakaocloud_instance" "example" {
 - `power_state` (String) Power state code
 - `project_id` (String) Project ID the instance belongs to
 - `security_group_count` (Number) Number of security groups attached to the instance
+- `security_groups` (Attributes Set) List of security groups attached to the instance (see [below for nested schema](#nestedatt--security_groups))
 - `task_state` (String) Current task state
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format <br/> - Based on UTC
 - `user_id` (String) ID of the user who created the instance
@@ -104,16 +105,12 @@ Optional:
 - `type_id` (String) Volume type ID of the block storage to attach (currently only `gp2` general-purpose SSD supported)<br/> - Required only for `image` or `blank` source types<br/> - Refer to `volume_types.id` from [List volume types](https://docs.kakaocloud.com/openapi/bcs/list-volume-types)
 
 
-<a id="nestedatt--security_groups"></a>
-### Nested Schema for `security_groups`
+<a id="nestedatt--initial_security_groups"></a>
+### Nested Schema for `initial_security_groups`
 
-Optional:
+Required:
 
 - `name` (String) Security group name
-
-Read-Only:
-
-- `id` (String) Security group ID
 
 
 <a id="nestedatt--timeouts"></a>
@@ -200,6 +197,18 @@ Read-Only:
 - `size` (Number) Image size (in bytes)
 - `status` (String) Image status
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format <br/> - Based on UTC
+
+
+<a id="nestedatt--security_groups"></a>
+### Nested Schema for `security_groups`
+
+Optional:
+
+- `name` (String) Security group name
+
+Read-Only:
+
+- `id` (String) Security group ID
 
 ## Import
 

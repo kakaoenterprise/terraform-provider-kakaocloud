@@ -200,7 +200,6 @@ func (p *kakaocloudProvider) Resources(_ context.Context) []func() resource.Reso
 		vpc.NewSubnetResource,
 		vpc.NewSubnetShareResource,
 		vpc.NewRouteTableResource,
-		vpc.NewRouteTableAssociationResource,
 		vpc.NewNetworkInterfaceResource,
 
 		network.NewPublicIpResource,

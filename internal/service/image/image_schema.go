@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -37,12 +36,14 @@ func getImageResourceSchema() map[string]rschema.Attribute {
 		"description": rschema.StringAttribute{
 			Optional:    true,
 			Computed:    true,
-			Default:     stringdefault.StaticString("-"),
 			Description: desc.String("description"),
 			Validators:  common.DescriptionValidator(),
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"volume_id": rschema.StringAttribute{
-			Required:    true,
+			Optional:    true,
 			Description: docs.ParameterDescription("image", "create_image", "path_volume_id"),
 			Validators:  common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{

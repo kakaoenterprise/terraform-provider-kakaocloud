@@ -395,31 +395,66 @@ func (r *loadBalancerTargetGroupMemberResource) pollTargetGroupMemberUntilStatus
 	targetStatuses []string,
 	resp *diag.Diagnostics,
 ) (*loadbalancer.BnsLoadBalancerV1ApiListTargetsInTargetGroupModelTargetGroupMemberModel, bool) {
-	return common.PollUntilResult(
-		ctx,
-		r,
-		2*time.Second,
-		targetStatuses,
-		resp,
-		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiListTargetsInTargetGroupModelTargetGroupMemberModel, *http.Response, error) {
-			respModel, httpResp, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
-				ListTargetsInTargetGroup(ctx, targetGroupId).
-				XAuthToken(r.kc.XAuthToken).
-				Execute()
-			if err != nil {
-				return nil, httpResp, err
-			}
 
-			for _, member := range respModel.Members {
-				if member.Id == memberId {
-					return &member, httpResp, nil
+	var lastErr error
+	attemptCount := 0
+	maxAttempts := 30
+
+	for {
+		select {
+		case <-ctx.Done():
+			if lastErr != nil {
+				resp.AddError("Polling Timeout", fmt.Sprintf("Failed to find target group member after polling: %v", lastErr))
+			} else {
+				resp.AddError("Polling Timeout", "Context cancelled while polling for target group member status")
+			}
+			return nil, false
+		default:
+		}
+
+		attemptCount++
+
+		respModel, _, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
+			ListTargetsInTargetGroup(ctx, targetGroupId).
+			XAuthToken(r.kc.XAuthToken).
+			Execute()
+		if err != nil {
+			lastErr = fmt.Errorf("failed to list targets in target group: %w", err)
+			if attemptCount >= maxAttempts {
+				resp.AddError("Polling Failed", fmt.Sprintf("Failed to list targets after %d attempts: %v", maxAttempts, lastErr))
+				return nil, false
+			}
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		for _, member := range respModel.Members {
+			if member.Id == memberId {
+
+				if member.ProvisioningStatus.IsSet() && member.ProvisioningStatus.Get() != nil {
+					status := string(*member.ProvisioningStatus.Get())
+					for _, targetStatus := range targetStatuses {
+						if status == targetStatus {
+							return &member, true
+						}
+					}
 				}
-			}
 
-			return nil, httpResp, fmt.Errorf("member %s not found in target group %s", memberId, targetGroupId)
-		},
-		func(v *loadbalancer.BnsLoadBalancerV1ApiListTargetsInTargetGroupModelTargetGroupMemberModel) string {
-			return string(*v.ProvisioningStatus.Get())
-		},
-	)
+				if attemptCount >= maxAttempts {
+					resp.AddError("Polling Timeout", fmt.Sprintf("Target group member found but did not reach target status within timeout"))
+					return nil, false
+				}
+				time.Sleep(2 * time.Second)
+				continue
+			}
+		}
+
+		lastErr = fmt.Errorf("member %s not found in target group %s", memberId, targetGroupId)
+		if attemptCount >= maxAttempts {
+			resp.AddError("Member Not Found", fmt.Sprintf("Target group member %s not found in target group %s after %d attempts. This may indicate the member creation failed or there is an API consistency issue.", memberId, targetGroupId, maxAttempts))
+			return nil, false
+		}
+
+		time.Sleep(2 * time.Second)
+	}
 }

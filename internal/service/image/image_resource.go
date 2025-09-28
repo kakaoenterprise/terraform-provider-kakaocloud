@@ -25,6 +25,7 @@ var (
 	_ resource.ResourceWithConfigure      = &imageResource{}
 	_ resource.ResourceWithImportState    = &imageResource{}
 	_ resource.ResourceWithValidateConfig = &imageResource{}
+	_ resource.ResourceWithModifyPlan     = &imageResource{}
 )
 
 func NewImageResource() resource.Resource {
@@ -33,6 +34,34 @@ func NewImageResource() resource.Resource {
 
 type imageResource struct {
 	kc *common.KakaoCloudClient
+}
+
+func (r *imageResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	var plan, state *imageResourceModel
+
+	planDiags := req.Plan.Get(ctx, &plan)
+	stateDiags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(planDiags...)
+	resp.Diagnostics.Append(stateDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	if req.State.Raw.IsNull() && !req.Plan.Raw.IsNull() {
+		if plan.VolumeId.IsNull() || plan.VolumeId.IsUnknown() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("volume_id"),
+				"Missing required attribute",
+				"The attribute 'volume_id' is required when creating an image. Please specify a valid volume ID.",
+			)
+			return
+		}
+	}
+
 }
 
 func (r *imageResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
@@ -95,9 +124,12 @@ func (r *imageResource) Create(ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
-	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
+	if plan.Description.IsNull() || plan.Description.IsUnknown() {
+		createReq.SetDescription("-")
+	} else {
 		createReq.SetDescription(plan.Description.ValueString())
 	}
+
 	body := volume.BodyCreateImage{Image: createReq}
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,

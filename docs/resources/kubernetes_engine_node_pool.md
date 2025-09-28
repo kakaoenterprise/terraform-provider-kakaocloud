@@ -26,12 +26,9 @@ This resource provides full lifecycle management of node pools, ensuring flexibl
 - `image_id` (String) Unique ID of the image
 - `name` (String) Target node pool name
 - `ssh_key_name` (String) SSH key name
-- `volume_size` (Number) Root volume size of the node pool (GiB)
 - `vpc_info` (Attributes) VPC information for creating the node pool (see [below for nested schema](#nestedatt--vpc_info))
 
 ### Optional
-
-> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
 
 - `autoscaling` (Attributes) Resource-based autoscaling configuration of the node pool (see [below for nested schema](#nestedatt--autoscaling))
 - `description` (String) Description of the node pool
@@ -41,7 +38,8 @@ This resource provides full lifecycle management of node pools, ensuring flexibl
 - `security_groups` (Set of String) List of security group IDs to connect
 - `taints` (Attributes Set) List of taints to apply to the node pool (see [below for nested schema](#nestedatt--taints))
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
-- `user_data` (String, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) User script to run when creating nodes in the node pool (requires base64 encoding)
+- `user_data` (String) User script to run when creating nodes in the node pool (requires base64 encoding)
+- `volume_size` (Number) Root volume size of the node pool (GiB)
 
 ### Read-Only
 

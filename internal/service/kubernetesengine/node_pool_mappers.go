@@ -40,6 +40,7 @@ func mapNodePoolFromResponse(
 	dst.VolumeSize = types.Int32Value(src.VolumeSize)
 	dst.IsCordon = types.BoolValue(src.IsCordon)
 	dst.IsHyperThreading = types.BoolValue(src.IsHyperThreading)
+	dst.UserData = ConvertNullableString(src.UserData)
 
 	statusVal, statusDiag := types.ObjectValueFrom(ctx, nodePoolStatusAttrTypes, nodePoolStatusModel{
 		Phase:            types.StringValue(string(src.Status.Phase)),

@@ -51,7 +51,7 @@ var networkInterfaceResourceSchema = map[string]rschema.Attribute{
 		Required:   true,
 		Validators: common.UuidValidator(),
 		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.UseStateForUnknown(),
+			stringplanmodifier.RequiresReplace(),
 		},
 	},
 	"mac_address": rschema.StringAttribute{
@@ -97,14 +97,13 @@ var networkInterfaceResourceSchema = map[string]rschema.Attribute{
 	"allowed_address_pairs": rschema.SetNestedAttribute{
 		Optional: true,
 		Computed: true,
-
 		NestedObject: rschema.NestedAttributeObject{
 			Attributes: map[string]rschema.Attribute{
 				"mac_address": rschema.StringAttribute{
 					Computed: true,
 				},
 				"ip_address": rschema.StringAttribute{
-					Optional: true,
+					Required: true,
 					Validators: []validator.String{
 						common.IpOrCIDRValidator{},
 					},

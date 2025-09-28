@@ -63,7 +63,7 @@ Read-Only:
 <a id="nestedatt--allowed_address_pairs"></a>
 ### Nested Schema for `allowed_address_pairs`
 
-Optional:
+Required:
 
 - `ip_address` (String)
 

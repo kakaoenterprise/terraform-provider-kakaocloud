@@ -40,6 +40,7 @@ type NodePoolBaseModel struct {
 	VolumeSize            types.Int32  `tfsdk:"volume_size"`
 	NodeCount             types.Int32  `tfsdk:"node_count"`
 	SshKeyName            types.String `tfsdk:"ssh_key_name"`
+	UserData              types.String `tfsdk:"user_data"`
 	VpcInfo               types.Object `tfsdk:"vpc_info"`
 	ImageId               types.String `tfsdk:"image_id"`
 	IsHyperThreading      types.Bool   `tfsdk:"is_hyper_threading"`
@@ -63,7 +64,6 @@ type NodePoolBaseModel struct {
 
 type NodePoolResourceModel struct {
 	NodePoolBaseModel
-	UserData types.String           `tfsdk:"user_data"`
 	Timeouts resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 

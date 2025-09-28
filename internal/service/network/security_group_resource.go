@@ -27,10 +27,34 @@ var (
 	_ resource.ResourceWithConfigure      = &securityGroupResource{}
 	_ resource.ResourceWithImportState    = &securityGroupResource{}
 	_ resource.ResourceWithValidateConfig = &securityGroupResource{}
+	_ resource.ResourceWithModifyPlan     = &securityGroupResource{}
 )
 
 func NewSecurityGroupResource() resource.Resource {
 	return &securityGroupResource{}
+}
+
+func (r *securityGroupResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	var plan, state securityGroupResourceModel
+
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !req.State.Raw.IsNull() {
+		_ = req.State.Get(ctx, &state)
+	}
+
+	if plan.Rules.IsNull() && !state.Rules.IsNull() && !state.Rules.IsUnknown() {
+		resp.Diagnostics.AddWarning(
+			"Optional 'rules' attribute not set",
+			"'rules' is optional, but to avoid unexpected update you should explicitly set it to an empty array: rules = []",
+		)
+	}
+
+	_ = resp.Plan.Set(ctx, &plan)
 }
 
 type securityGroupResource struct {
@@ -246,14 +270,16 @@ func (r *securityGroupResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
-	if !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) {
+	if !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) && !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		editReq := network.EditSecurityGroupModel{}
 		if !plan.Name.Equal(state.Name) {
 			editReq.SetName(plan.Name.ValueString())
 		}
-		if !plan.Description.Equal(state.Description) {
+
+		if !plan.Description.Equal(state.Description) && !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 			editReq.SetDescription(plan.Description.ValueString())
 		}
+
 		body := network.BodyUpdateSecurityGroup{SecurityGroup: editReq}
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
@@ -327,9 +353,14 @@ func (r *securityGroupResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
+	originalRulesNull := plan.Rules.IsNull() || plan.Rules.IsUnknown()
+
 	ok = mapSecurityGroupBaseModel(ctx, &plan.securityGroupBaseModel, finalSg, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+	if originalRulesNull {
+		plan.Rules = types.SetNull(types.ObjectType{AttrTypes: securityGroupRuleAttrType})
 	}
 
 	diags = resp.State.Set(ctx, &plan)

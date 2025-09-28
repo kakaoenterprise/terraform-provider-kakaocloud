@@ -80,21 +80,19 @@ func (r *networkInterfaceResource) Create(ctx context.Context, req resource.Crea
 		createReq.SetPrivateIp(plan.PrivateIp.ValueString())
 	}
 
-	if !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown() {
-		var sgList []securityGroupModel
-		diags := plan.SecurityGroups.ElementsAs(ctx, &sgList, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		var sgIds []string
-		for _, sg := range sgList {
-			if !sg.Id.IsNull() && !sg.Id.IsUnknown() {
-				sgIds = append(sgIds, sg.Id.ValueString())
-			}
-		}
-		createReq.SetSecurityGroups(sgIds)
+	var sgList []securityGroupModel
+	diags = plan.SecurityGroups.ElementsAs(ctx, &sgList, false)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
+	var sgIds []string
+	for _, sg := range sgList {
+		if !sg.Id.IsNull() && !sg.Id.IsUnknown() {
+			sgIds = append(sgIds, sg.Id.ValueString())
+		}
+	}
+	createReq.SetSecurityGroups(sgIds)
 
 	body := *vpc.NewBodyCreateNetworkInterface(createReq)
 
@@ -229,10 +227,14 @@ func (r *networkInterfaceResource) Update(ctx context.Context, req resource.Upda
 		if !plan.Name.Equal(state.Name) {
 			editReq.SetName(plan.Name.ValueString())
 		}
-		if !plan.Description.Equal(state.Description) && !plan.Description.IsNull() && !plan.Description.IsUnknown() {
-			editReq.SetDescription(plan.Description.ValueString())
+		if !plan.Description.Equal(state.Description) {
+			if plan.Description.IsUnknown() {
+				editReq.SetDescriptionNil()
+			} else {
+				editReq.SetDescription(plan.Description.ValueString())
+			}
 		}
-		if !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown() {
+		if !plan.SecurityGroups.IsNull() {
 			var sgList []securityGroupModel
 			diags := plan.SecurityGroups.ElementsAs(ctx, &sgList, false)
 			resp.Diagnostics.Append(diags...)
@@ -274,7 +276,9 @@ func (r *networkInterfaceResource) Update(ctx context.Context, req resource.Upda
 		}
 	}
 
-	if !plan.AllowedAddressPairs.IsNull() && !plan.AllowedAddressPairs.IsUnknown() && !plan.AllowedAddressPairs.Equal(state.AllowedAddressPairs) {
+	if (plan.AllowedAddressPairs.IsUnknown() && len(state.AllowedAddressPairs.Elements()) != 0) ||
+		(!plan.AllowedAddressPairs.IsUnknown() && !plan.AllowedAddressPairs.Equal(state.AllowedAddressPairs)) {
+
 		if !r.updateAllowedAddressPairs(ctx, plan, &resp.Diagnostics) {
 			return
 		}
@@ -409,15 +413,19 @@ func (r *networkInterfaceResource) pollNetworkInterfaceUntilStatus(
 func (r *networkInterfaceResource) updateAllowedAddressPairs(ctx context.Context, plan networkInterfaceResourceModel, resp *diag.Diagnostics) bool {
 	var editReq []vpc.EditAllowedAddressPairModel
 
-	var allowedAddressPairs []allowedAddressPairModel
-	diags := plan.AllowedAddressPairs.ElementsAs(ctx, &allowedAddressPairs, false)
-	resp.Append(diags...)
-	if resp.HasError() {
-		return false
-	}
+	if plan.AllowedAddressPairs.IsUnknown() || len(plan.AllowedAddressPairs.Elements()) == 0 {
+		var tmpEditReq vpc.EditAllowedAddressPairModel
+		tmpEditReq.SetIpAddressNil()
+		editReq = append(editReq, tmpEditReq)
+	} else {
+		var allowedAddressPairs []allowedAddressPairModel
+		diags := plan.AllowedAddressPairs.ElementsAs(ctx, &allowedAddressPairs, false)
+		resp.Append(diags...)
+		if resp.HasError() {
+			return false
+		}
 
-	for _, allowedAddressPair := range allowedAddressPairs {
-		if !allowedAddressPair.IpAddress.IsNull() && !allowedAddressPair.IpAddress.IsUnknown() {
+		for _, allowedAddressPair := range allowedAddressPairs {
 			var tmpEditReq vpc.EditAllowedAddressPairModel
 			tmpEditReq.SetIpAddress(allowedAddressPair.IpAddress.ValueString())
 			editReq = append(editReq, tmpEditReq)

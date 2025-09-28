@@ -5,24 +5,23 @@ package kubernetesengine
 import (
 	"context"
 	"fmt"
+	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
 	"net/http"
 	"strings"
-	"terraform-provider-kakaocloud/internal/docs"
 	"time"
-
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-
-	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
+	"terraform-provider-kakaocloud/internal/utils"
 )
 
 var (
@@ -118,15 +117,57 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	flavorResp, httpRespFlavor, errFlavor := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		func() (*bcs.ResponseFlavorModel, *http.Response, error) {
+			return r.kc.ApiClient.FlavorAPI.GetInstanceType(ctx, plan.FlavorId.ValueString()).
+				XAuthToken(r.kc.XAuthToken).Execute()
+		},
+	)
+	if errFlavor != nil {
+		common.AddApiActionError(ctx, r, httpRespFlavor, "GetInstanceType", errFlavor, &resp.Diagnostics)
+		return
+	}
+	if string(flavorResp.Flavor.GetInstanceType()) == common.InstanceTypeBM {
+
+		hasErr := false
+		if !config.VolumeSize.IsNull() && !config.VolumeSize.IsUnknown() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("volume_size"),
+				"volume_size is not allowed for bare metal node pools",
+				"Bare metal node pools do not support 'volume_size' configuration. Remove 'volume_size' from configuration.",
+			)
+			hasErr = true
+		}
+		if !config.Autoscaling.IsNull() && !config.Autoscaling.IsUnknown() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("autoscaling"),
+				"Autoscaling is not supported for bare metal node pools",
+				"This node pool flavor is bare metal. Remove the 'autoscaling' block from configuration.",
+			)
+			hasErr = true
+		}
+		if hasErr {
+			return
+		}
+	}
+
 	var initialNodeCount int32
 	var autoscalingProvided bool
 	var autoscalingEnabled bool
 	var autoscalingModel NodePoolAutoscalingModel
-	if !plan.Autoscaling.IsNull() && !plan.Autoscaling.IsUnknown() {
+
+	if !config.Autoscaling.IsNull() && !config.Autoscaling.IsUnknown() {
 		autoscalingProvided = true
-		_ = plan.Autoscaling.As(ctx, &autoscalingModel, basetypes.ObjectAsOptions{})
+		_ = config.Autoscaling.As(ctx, &autoscalingModel, basetypes.ObjectAsOptions{})
 		if !autoscalingModel.IsAutoscalerEnable.IsNull() && !autoscalingModel.IsAutoscalerEnable.IsUnknown() {
 			autoscalingEnabled = autoscalingModel.IsAutoscalerEnable.ValueBool()
+		}
+	}
+
+	if autoscalingProvided {
+		if ok, msg := validateAutoscalingModel(autoscalingModel); !ok {
+			resp.Diagnostics.AddError("Invalid autoscaling configuration", msg)
+			return
 		}
 	}
 
@@ -209,12 +250,15 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	createModel := kubernetesengine.NewKubernetesEngineV1ApiCreateNodePoolModelNodePoolRequestModel(
 		plan.Name.ValueString(),
 		plan.FlavorId.ValueString(),
-		plan.VolumeSize.ValueInt32(),
 		initialNodeCount,
 		plan.SshKeyName.ValueString(),
 		reqVpcInfo,
 		plan.ImageId.ValueString(),
 	)
+
+	if !plan.VolumeSize.IsNull() && !plan.VolumeSize.IsUnknown() {
+		createModel.SetVolumeSize(plan.VolumeSize.ValueInt32())
+	}
 
 	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		createModel.SetDescription(plan.Description.ValueString())
@@ -239,15 +283,15 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 
 	reqBody := kubernetesengine.CreateK8sClusterNodePoolRequestModel{NodePool: *createModel}
 
-	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
+	_, httpRespCreate, errCreate := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
 		return r.kc.ApiClient.NodePoolsAPI.
 			CreateNodePool(ctx, plan.ClusterName.ValueString()).
 			XAuthToken(r.kc.XAuthToken).
 			CreateK8sClusterNodePoolRequestModel(reqBody).
 			Execute()
 	})
-	if err != nil {
-		common.AddApiActionError(ctx, r, httpResp, "CreateNodePool", err, &resp.Diagnostics)
+	if errCreate != nil {
+		common.AddApiActionError(ctx, r, httpRespCreate, "CreateNodePool", errCreate, &resp.Diagnostics)
 		return
 	}
 
@@ -262,7 +306,7 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	if autoscalingProvided {
+	if autoscalingProvided && result != nil && !result.IsBareMetal {
 
 		if autoscalingModel.IsAutoscalerEnable.IsUnknown() || autoscalingModel.IsAutoscalerEnable.IsNull() {
 			resp.Diagnostics.AddError("Invalid autoscaling configuration on create", "'autoscaling.is_autoscaler_enable' must be set when configuring autoscaling during create.")
@@ -388,6 +432,10 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		)
 	}
 
+	if !config.UserData.IsNull() && !config.UserData.IsUnknown() && config.UserData.ValueString() != "" {
+		plan.UserData = config.UserData
+	}
+
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 }
@@ -460,6 +508,13 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
+	var config NodePoolResourceModel
+	diags = req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -506,6 +561,15 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 			),
 		)
 		return
+	}
+
+	if !config.Autoscaling.IsNull() && !config.Autoscaling.IsUnknown() && (state.IsBareMetal.IsNull() || state.IsBareMetal.IsUnknown() || !state.IsBareMetal.ValueBool()) {
+		var earlyAuto NodePoolAutoscalingModel
+		_ = config.Autoscaling.As(ctx, &earlyAuto, basetypes.ObjectAsOptions{})
+		if ok, msg := validateAutoscalingModel(earlyAuto); !ok {
+			resp.Diagnostics.AddError("Invalid autoscaling configuration", msg)
+			return
+		}
 	}
 
 	upd := kubernetesengine.NewKubernetesEngineV1ApiUpdateNodePoolModelNodePoolRequestModel()
@@ -661,12 +725,40 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		)
 	}
 
-	if !plan.Autoscaling.IsNull() && !plan.Autoscaling.IsUnknown() {
-		var auto NodePoolAutoscalingModel
-		_ = plan.Autoscaling.As(ctx, &auto, basetypes.ObjectAsOptions{})
+	didUpdateUserData := false
+	if !config.UserData.IsUnknown() && !config.UserData.IsNull() && config.UserData.ValueString() != "" {
+		if state.UserData.IsUnknown() || state.UserData.IsNull() || state.UserData.ValueString() != config.UserData.ValueString() {
+			script := kubernetesengine.NewNodePoolScriptRequestModel(config.UserData.ValueString())
+			usrBody := kubernetesengine.UpdateK8sClusterNodePoolUserScriptRequestModel{NodePool: *script}
 
-		if auto.IsAutoscalerEnable.IsUnknown() || auto.IsAutoscalerEnable.IsNull() {
-			resp.Diagnostics.AddError("Invalid autoscaling configuration", "'autoscaling.is_autoscaler_enable' must be set when configuring autoscaling.")
+			_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
+				return r.kc.ApiClient.NodePoolsAPI.
+					SetNodePoolUserScript(ctx, plan.ClusterName.ValueString(), state.Name.ValueString()).
+					XAuthToken(r.kc.XAuthToken).
+					UpdateK8sClusterNodePoolUserScriptRequestModel(usrBody).
+					Execute()
+			})
+			if err != nil {
+				common.AddApiActionError(ctx, r, httpResp, "SetNodePoolUserScript", err, &resp.Diagnostics)
+				return
+			}
+
+			_, _ = r.waitNodePoolReadyOrFailed(
+				ctx,
+				plan.ClusterName.ValueString(),
+				state.Name.ValueString(),
+				&resp.Diagnostics,
+			)
+			didUpdateUserData = true
+		}
+	}
+
+	if !config.Autoscaling.IsNull() && !config.Autoscaling.IsUnknown() && (state.IsBareMetal.IsNull() || state.IsBareMetal.IsUnknown() || !state.IsBareMetal.ValueBool()) {
+		var auto NodePoolAutoscalingModel
+		_ = config.Autoscaling.As(ctx, &auto, basetypes.ObjectAsOptions{})
+
+		if ok, msg := validateAutoscalingModel(auto); !ok {
+			resp.Diagnostics.AddError("Invalid autoscaling configuration", msg)
 			return
 		}
 
@@ -769,6 +861,10 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		newState.Id = types.StringValue(plan.ClusterName.ValueString() + "/" + state.Name.ValueString())
 	}
 
+	if didUpdateUserData {
+		newState.UserData = config.UserData
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
@@ -856,6 +952,42 @@ func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPl
 	}
 	effectiveAutoscaling := false
 
+	if !isCreate && !state.IsBareMetal.IsNull() && !state.IsBareMetal.IsUnknown() && state.IsBareMetal.ValueBool() {
+
+		if !config.Autoscaling.IsNull() && !config.Autoscaling.IsUnknown() {
+
+			if !state.Autoscaling.IsNull() && !state.Autoscaling.IsUnknown() {
+				resp.Plan.SetAttribute(ctx, path.Root("autoscaling"), state.Autoscaling)
+			} else {
+
+				resp.Plan.SetAttribute(ctx, path.Root("autoscaling"), types.ObjectNull(nodePoolAutoscalingAttrTypes))
+			}
+
+			resp.Diagnostics.AddAttributeError(
+				path.Root("autoscaling"),
+				"Autoscaling is not supported for bare metal node pools",
+				"This node pool is bare metal. Remove the 'autoscaling' block from configuration.",
+			)
+		}
+
+		if !config.VolumeSize.IsNull() && !config.VolumeSize.IsUnknown() {
+
+			resp.Plan.SetAttribute(ctx, path.Root("volume_size"), state.VolumeSize)
+
+			resp.Diagnostics.AddAttributeError(
+				path.Root("volume_size"),
+				"volume_size is not allowed for bare metal node pools",
+				"Bare metal node pools do not support 'volume_size' configuration.",
+			)
+		}
+		return
+	}
+
+	if isCreate {
+		resp.Plan.SetAttribute(ctx, path.Root("status").AtName("available_nodes"), types.Int32Unknown())
+		resp.Plan.SetAttribute(ctx, path.Root("status").AtName("unavailable_nodes"), types.Int32Unknown())
+	}
+
 	if !config.Autoscaling.IsNull() && !config.Autoscaling.IsUnknown() {
 		var cfAuto NodePoolAutoscalingModel
 		_ = config.Autoscaling.As(ctx, &cfAuto, basetypes.ObjectAsOptions{})
@@ -881,8 +1013,26 @@ func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPl
 			)
 			return
 		}
+		if isCreate {
 
-		resp.Plan.SetAttribute(ctx, path.Root("node_count"), types.Int32Unknown())
+			var cfAuto NodePoolAutoscalingModel
+			if !config.Autoscaling.IsNull() && !config.Autoscaling.IsUnknown() {
+				_ = config.Autoscaling.As(ctx, &cfAuto, basetypes.ObjectAsOptions{})
+				if !cfAuto.AutoscalerDesiredNodeCount.IsNull() && !cfAuto.AutoscalerDesiredNodeCount.IsUnknown() {
+					resp.Plan.SetAttribute(ctx, path.Root("node_count"), types.Int32Value(cfAuto.AutoscalerDesiredNodeCount.ValueInt32()))
+				} else {
+					resp.Plan.SetAttribute(ctx, path.Root("node_count"), types.Int32Unknown())
+				}
+			} else {
+				resp.Plan.SetAttribute(ctx, path.Root("node_count"), types.Int32Unknown())
+			}
+
+			resp.Plan.SetAttribute(ctx, path.Root("status").AtName("available_nodes"), types.Int32Unknown())
+			resp.Plan.SetAttribute(ctx, path.Root("status").AtName("unavailable_nodes"), types.Int32Unknown())
+		} else {
+
+			resp.Plan.SetAttribute(ctx, path.Root("node_count"), types.Int32Unknown())
+		}
 	} else {
 		prevAutoEnabled := false
 		if !isCreate && !state.Autoscaling.IsNull() && !state.Autoscaling.IsUnknown() {

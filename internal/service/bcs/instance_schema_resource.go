@@ -7,6 +7,7 @@ import (
 	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -163,12 +164,8 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 			Description: desc.String("attached_volume_count"),
 		},
 		"security_groups": schema.SetNestedAttribute{
-			Optional:    true,
 			Computed:    true,
 			Description: desc.String("security_groups"),
-			Validators: []validator.Set{
-				setvalidator.SizeAtLeast(1),
-			},
 			NestedObject: schema.NestedAttributeObject{
 				Attributes: getInstanceSecurityGroupsResourceSchemaAttributes(),
 			},
@@ -209,13 +206,29 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 		"subnets": schema.ListNestedAttribute{
 			Required:    true,
 			Description: instanceDesc.String("subnets"),
+			Validators: []validator.List{
+				listvalidator.SizeAtLeast(1),
+			},
 			NestedObject: schema.NestedAttributeObject{
 				Attributes: getInstanceSubnetsResourceSchemaAttributes(),
+			},
+		},
+		"initial_security_groups": schema.SetNestedAttribute{
+			Optional:    true,
+			Description: "List of initial security groups for the instance",
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+			},
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: getInstanceInitialSecurityGroupsResourceSchemaAttributes(),
 			},
 		},
 		"volumes": schema.ListNestedAttribute{
 			Required:    true,
 			Description: instanceDesc.String("volumes"),
+			Validators: []validator.List{
+				listvalidator.SizeAtLeast(1),
+			},
 			NestedObject: schema.NestedAttributeObject{
 				Attributes: getInstanceVolumesResourceSchemaAttributes(),
 			},
@@ -463,6 +476,17 @@ func getInstanceSecurityGroupsResourceSchemaAttributes() map[string]schema.Attri
 		"name": schema.StringAttribute{
 			Optional:    true,
 			Computed:    true,
+			Description: desc.String("name"),
+		},
+	}
+}
+
+func getInstanceInitialSecurityGroupsResourceSchemaAttributes() map[string]schema.Attribute {
+	desc := docs.Bcs("bcs_instance__v1__api__get_instance__model__InstanceSecurityGroupModel")
+
+	return map[string]schema.Attribute{
+		"name": schema.StringAttribute{
+			Required:    true,
 			Description: desc.String("name"),
 		},
 	}

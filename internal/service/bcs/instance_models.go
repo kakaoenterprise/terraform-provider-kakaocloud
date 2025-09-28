@@ -218,13 +218,18 @@ type instancesDataSourceModel struct {
 	Timeouts  datasourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
+type instanceInitialSecurityGroupModel struct {
+	Name types.String `tfsdk:"name"`
+}
+
 type instanceResourceModel struct {
 	instanceBaseModel
-	ImageId   types.String           `tfsdk:"image_id"`
-	FlavorId  types.String           `tfsdk:"flavor_id"`
-	Subnets   types.List             `tfsdk:"subnets"`
-	Volumes   types.List             `tfsdk:"volumes"`
-	UserData  types.String           `tfsdk:"user_data"`
-	IsBonding types.Bool             `tfsdk:"is_bonding"`
-	Timeouts  resourceTimeouts.Value `tfsdk:"timeouts"`
+	ImageId               types.String           `tfsdk:"image_id"`
+	FlavorId              types.String           `tfsdk:"flavor_id"`
+	Subnets               types.List             `tfsdk:"subnets"`
+	InitialSecurityGroups types.Set              `tfsdk:"initial_security_groups"`
+	Volumes               types.List             `tfsdk:"volumes"`
+	UserData              types.String           `tfsdk:"user_data"`
+	IsBonding             types.Bool             `tfsdk:"is_bonding"`
+	Timeouts              resourceTimeouts.Value `tfsdk:"timeouts"`
 }

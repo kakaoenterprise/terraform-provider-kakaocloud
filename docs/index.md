@@ -16,7 +16,7 @@ The provider needs to be configured with the proper credentials before it can be
 terraform {
   required_providers {
     kakaocloud = {
-      source  = "kakaocloud.com/kakaoenterprise/kakaocloud"
+      source  = "kakaoenterprise/kakaocloud"
       version = "~> 1.0"
     }
   }
@@ -48,7 +48,7 @@ Usage:
 terraform {
   required_providers {
     kakaocloud = {
-      source  = "kakaocloud.com/kakaoenterprise/kakaocloud"
+      source  = "kakaocloud/kakaocloud"
       version = "~> 1.0"
     }
   }
@@ -69,7 +69,7 @@ which represent the kakaocloud application credential ID and secret, respectivel
 terraform {
   required_providers {
     kakaocloud = {
-      source  = "kakaocloud.com/kakaoenterprise/kakaocloud"
+      source  = "kakaocloud/kakaocloud"
       version = "~> 1.0"
     }
   }

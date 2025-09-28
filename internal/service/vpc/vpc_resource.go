@@ -59,7 +59,7 @@ func (r *vpcResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
-	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
+	timeout, diags := plan.Timeouts.Create(ctx, common.LongCreateTimeout)
 
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -105,7 +105,7 @@ func (r *vpcResource) Create(ctx context.Context, req resource.CreateRequest, re
 	result, ok := common.PollUntilResult(
 		ctx,
 		r,
-		2*time.Second,
+		10*time.Second,
 		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError},
 		&resp.Diagnostics,
 		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetVpcModelVpcModel, *http.Response, error) {
@@ -131,6 +131,9 @@ func (r *vpcResource) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.VpcProvisioningStatusActive}, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	ok = mapVpcBaseModel(ctx, &plan.vpcBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
@@ -254,7 +257,7 @@ func (r *vpcResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 		return
 	}
 
-	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
+	timeout, diags := state.Timeouts.Delete(ctx, common.LongDeleteTimeout)
 
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -280,11 +283,11 @@ func (r *vpcResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 		return
 	}
 
-	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
+	common.PollUntilDeletion(ctx, r, 10*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
 				_, httpResp, err := r.kc.ApiClient.VPCAPI.
-					GetVpc(ctx, state.Name.ValueString()).
+					GetVpc(ctx, state.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
 				return nil, httpResp, err
@@ -381,7 +384,7 @@ func (r *vpcResource) ModifyPlan(
 	if req.State.Raw.IsNull() && !req.Plan.Raw.IsNull() {
 		if plan.Subnet.IsNull() {
 			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
-				"Missing required attribute 'subnet'.")
+				"Missing required attribute 'subnet' on create.")
 		}
 	}
 }

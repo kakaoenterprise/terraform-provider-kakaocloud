@@ -61,6 +61,10 @@ func (r *routeTableResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
+	mutex := common.LockForID(plan.VpcId.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -225,6 +229,10 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
+	mutex := common.LockForID(plan.VpcId.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -285,6 +293,7 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 		[]string{common.VpcProvisioningStatusActive},
 		&resp.Diagnostics,
 	)
+
 	if !plan.IsMain.IsNull() || !plan.IsMain.IsUnknown() {
 		isMain := plan.IsMain.ValueBool()
 		result.IsMain.Set(&isMain)
@@ -320,10 +329,14 @@ func (r *routeTableResource) Delete(ctx context.Context, req resource.DeleteRequ
 	}
 	if !state.Associations.IsNull() && len(state.Associations.Elements()) > 0 {
 		common.AddGeneralError(ctx, r, &resp.Diagnostics,
-			fmt.Sprintf("Route table %q has subnet associations.", state.Id.ValueString()),
+			fmt.Sprintf("Route table %q has subnet associations and cannot be deleted.", state.Id.ValueString()),
 		)
 		return
 	}
+
+	mutex := common.LockForID(state.VpcId.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
 

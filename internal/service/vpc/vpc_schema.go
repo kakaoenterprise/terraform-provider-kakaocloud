@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -85,9 +84,6 @@ var vpcResourceSchemaAttributes = map[string]rschema.Attribute{
 	},
 	"project_name": rschema.StringAttribute{
 		Computed: true,
-		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.UseStateForUnknown(),
-		},
 	},
 	"cidr_block": rschema.StringAttribute{
 		Required:   true,
@@ -99,16 +95,11 @@ var vpcResourceSchemaAttributes = map[string]rschema.Attribute{
 			stringplanmodifier.RequiresReplace(),
 		},
 	},
-	"is_default":          rschema.BoolAttribute{Computed: true},
-	"provisioning_status": rschema.StringAttribute{Computed: true},
-	"is_enable_dns_support": rschema.BoolAttribute{
-		Computed: true,
-		PlanModifiers: []planmodifier.Bool{
-			boolplanmodifier.UseStateForUnknown(),
-		},
-	},
-	"created_at": rschema.StringAttribute{Computed: true},
-	"updated_at": rschema.StringAttribute{Computed: true},
+	"is_default":            rschema.BoolAttribute{Computed: true},
+	"provisioning_status":   rschema.StringAttribute{Computed: true},
+	"is_enable_dns_support": rschema.BoolAttribute{Computed: true},
+	"created_at":            rschema.StringAttribute{Computed: true},
+	"updated_at":            rschema.StringAttribute{Computed: true},
 
 	"igw": rschema.SingleNestedAttribute{
 		Computed: true,

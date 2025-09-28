@@ -115,14 +115,13 @@ func (r *publicIpResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	if !plan.RelatedResource.IsNull() && !plan.RelatedResource.IsUnknown() {
-		var relatedResource resourceModel
-		diags := plan.RelatedResource.As(ctx, &relatedResource, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
+	relatedResource, ok, d := r.validateAndExtractRelatedResourceAtApply(ctx, plan.RelatedResource)
+	resp.Diagnostics.Append(d...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
+	if ok {
 		publicIpId := plan.Id.ValueString()
 
 		deviceId := relatedResource.DeviceId.ValueString()
@@ -130,6 +129,7 @@ func (r *publicIpResource) Create(ctx context.Context, req resource.CreateReques
 		networkInterfaceId := relatedResource.Id.ValueString()
 
 		if !r.attachPublicIPByType(ctx, &resp.Diagnostics, deviceType, networkInterfaceId, deviceId, publicIpId) {
+			_ = r.cleanupCreateFailurePublicIP(ctx, plan.Id.ValueString(), &resp.Diagnostics)
 			return
 		}
 
@@ -303,14 +303,14 @@ func (r *publicIpResource) Update(ctx context.Context, req resource.UpdateReques
 				return
 			}
 		}
-		if !plan.RelatedResource.IsNull() && !plan.RelatedResource.IsUnknown() {
-			var planRelatedResource resourceModel
-			diags := plan.RelatedResource.As(ctx, &planRelatedResource, basetypes.ObjectAsOptions{})
-			resp.Diagnostics.Append(diags...)
-			if resp.Diagnostics.HasError() {
-				return
-			}
 
+		planRelatedResource, ok, d := r.validateAndExtractRelatedResourceAtApply(ctx, plan.RelatedResource)
+		resp.Diagnostics.Append(d...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		if ok {
 			publicIpId := plan.Id.ValueString()
 
 			deviceId := planRelatedResource.DeviceId.ValueString()
@@ -534,19 +534,18 @@ func (r *publicIpResource) validateRelatedResourceConfig(
 		return
 	}
 
-	isProvided := func(s types.String) bool {
-		return !(s.IsNull() || s.IsUnknown())
+	if rr.DeviceType.IsNull() || rr.DeviceType.IsUnknown() {
+		return
 	}
-
 	deviceType := rr.DeviceType.ValueString()
 
 	switch deviceType {
 	case "instance":
-		if !isProvided(rr.Id) || !isProvided(rr.DeviceId) {
+		if rr.Id.IsNull() || rr.DeviceId.IsNull() {
 			msg := ""
-			if !isProvided(rr.Id) && !isProvided(rr.DeviceId) {
+			if rr.Id.IsNull() && rr.DeviceId.IsNull() {
 				msg = "Both `related_resource.id` and `related_resource.device_id` are required when `related_resource.device_type = instance`."
-			} else if !isProvided(rr.Id) {
+			} else if rr.Id.IsNull() {
 				msg = "`related_resource.id` is required when `related_resource.device_type = instance`."
 			} else {
 				msg = "`related_resource.device_id` is required when `related_resource.device_type = instance`."
@@ -559,20 +558,86 @@ func (r *publicIpResource) validateRelatedResourceConfig(
 		}
 
 	case "load-balancer":
-		if !isProvided(rr.DeviceId) {
+		if rr.DeviceId.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("related_resource").AtName("device_id"),
 				"Missing required field",
 				"`related_resource.device_id` must be provided when `related_resource.device_type = load-balancer`.",
 			)
 		}
-		if isProvided(rr.Id) {
+		if !(rr.Id.IsNull() || rr.Id.IsUnknown()) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("related_resource").AtName("id"),
 				"Invalid field",
 				"`related_resource.id` must not be set when `related_resource.device_type = load-balancer`.",
 			)
 		}
+	default:
+		return
+	}
+}
+
+func (r *publicIpResource) validateAndExtractRelatedResourceAtApply(
+	ctx context.Context,
+	related types.Object,
+) (rr resourceModel, ok bool, diags diag.Diagnostics) {
+	if related.IsNull() || related.IsUnknown() {
+		return rr, false, diags
+	}
+
+	if d := related.As(ctx, &rr, basetypes.ObjectAsOptions{}); d.HasError() {
+		diags.Append(d...)
+		return rr, false, diags
+	}
+
+	if rr.DeviceType.IsNull() || rr.DeviceType.IsUnknown() {
+		diags.AddAttributeError(
+			path.Root("related_resource").AtName("device_type"),
+			"Missing required field",
+			"`related_resource.device_type` must be a known, non-empty string at apply time.",
+		)
+		return rr, false, diags
+	}
+
+	switch rr.DeviceType.ValueString() {
+	case "load-balancer":
+		if rr.DeviceId.IsNull() || rr.DeviceId.IsUnknown() {
+			diags.AddAttributeError(
+				path.Root("related_resource").AtName("device_id"),
+				"Missing required field",
+				"`related_resource.device_id` must be a known, non-empty string at apply time when `device_type = load-balancer`.",
+			)
+			return rr, false, diags
+		}
+		if !(rr.Id.IsNull() || rr.Id.IsUnknown()) {
+			diags.AddAttributeError(
+				path.Root("related_resource").AtName("id"),
+				"Invalid field",
+				"`related_resource.id` must not be set when `related_resource.device_type = load-balancer`.",
+			)
+			return rr, false, diags
+		}
+		return rr, true, diags
+
+	case "instance":
+		if rr.Id.IsNull() || rr.Id.IsUnknown() ||
+			rr.DeviceId.IsNull() || rr.DeviceId.IsUnknown() || rr.DeviceId.ValueString() == "" {
+			diags.AddAttributeError(
+				path.Root("related_resource"),
+				"Missing required field(s)",
+				"`related_resource.id` and `related_resource.device_id` must be known, non-empty strings at apply time when `device_type = instance`.",
+			)
+			return rr, false, diags
+		}
+		return rr, true, diags
+
+	default:
+		diags.AddAttributeError(
+			path.Root("related_resource").AtName("device_type"),
+			"Invalid field value",
+			fmt.Sprintf("Unsupported `related_resource.device_type`: %q", rr.DeviceType.ValueString()),
+		)
+		return rr, false, diags
 	}
 }
 
@@ -626,4 +691,42 @@ func shouldReattachRelatedResource(ctx context.Context, planObj, stateObj types.
 	default:
 		return false, diags
 	}
+}
+
+func (r *publicIpResource) cleanupCreateFailurePublicIP(
+	ctx context.Context,
+	publicIpId string,
+	diags *diag.Diagnostics,
+) error {
+	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, diags,
+		func() (struct{}, *http.Response, error) {
+			resp, err := r.kc.ApiClient.PublicIPAPI.
+				DeletePublicIp(ctx, publicIpId).
+				XAuthToken(r.kc.XAuthToken).
+				Execute()
+			return struct{}{}, resp, err
+		},
+	)
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "DeletePublicIp(rollback)", err, diags)
+		return err
+	}
+
+	common.PollUntilDeletion(ctx, r, 2*time.Second, diags, func(ctx context.Context) (bool, *http.Response, error) {
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
+			func() (*network.BnsNetworkV1ApiGetPublicIpModelResponsePublicIpModel, *http.Response, error) {
+				_, hr, err := r.kc.ApiClient.PublicIPAPI.
+					GetPublicIp(ctx, publicIpId).
+					XAuthToken(r.kc.XAuthToken).
+					Execute()
+				return nil, hr, err
+			},
+		)
+		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+			return true, httpResp, nil
+		}
+		return false, httpResp, err
+	})
+
+	return nil
 }

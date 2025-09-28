@@ -153,7 +153,7 @@ func (v nameNoDoubleSymbolValidator) ValidateString(ctx context.Context, req val
 
 func DescriptionValidator() []validator.String {
 	return []validator.String{
-		stringvalidator.LengthAtMost(100),
+		stringvalidator.UTF8LengthAtMost(100),
 		stringvalidator.RegexMatches(
 			regexp.MustCompile(`^[a-zA-Z0-9ㄱ-ㅎ가-힣 .,!?()\[\]{}:;\"'@#%&*+=_/\\|<>~\-]*$`),
 			"Description contains invalid characters",
@@ -305,11 +305,12 @@ func ValidateAvailabilityZone(
 
 	val := az.ValueString()
 	if !utils.Contains(kc.Config.AvailabilityZones, val) {
+		allowedZones := strings.Join(kc.Config.AvailabilityZones, ", ")
 		diags.AddAttributeError(
 			attrPath,
 			"Invalid Availability Zone",
 			fmt.Sprintf("'%s' is not a valid availability zone for region %s (%s). Allowed: %v",
-				val, kc.Config.Region.ValueString(), kc.Config.ServiceRealm.ValueString(), kc.Config.AvailabilityZones),
+				val, kc.Config.Region.ValueString(), kc.Config.ServiceRealm.ValueString(), allowedZones),
 		)
 	}
 }

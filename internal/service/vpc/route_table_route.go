@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -137,5 +138,49 @@ func (r *routeTableResource) deleteRoute(ctx context.Context, routeTableId, vpcI
 		common.AddApiActionError(ctx, r, httpResp, "DeleteRoute", err, diag)
 		return false
 	}
+	ok = r.pollRouteDelete(ctx, routeTableId, routeId, diag)
+	if !ok {
+		return false
+	}
+
 	return true
+}
+
+func (r *routeTableResource) pollRouteDelete(
+	ctx context.Context,
+	routeTableId string,
+	routeId string,
+	resp *diag.Diagnostics,
+) bool {
+	for {
+		respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
+			func() (*vpc.BnsVpcV1ApiGetRouteTableModelResponseRouteTableModel, *http.Response, error) {
+				return r.kc.ApiClient.VPCRouteTableAPI.
+					GetRouteTable(ctx, routeTableId).
+					XAuthToken(r.kc.XAuthToken).
+					Execute()
+			},
+		)
+		if err != nil {
+			if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+				time.Sleep(2 * time.Second)
+				continue
+			}
+			common.AddApiActionError(ctx, r, httpResp, "GetRouteTable", err, resp)
+			return false
+		}
+
+		deleted := true
+		for _, respRoute := range respModel.VpcRouteTable.Routes {
+			if respRoute.Id == routeId {
+				deleted = false
+				break
+			}
+		}
+
+		if deleted {
+			return true
+		}
+		time.Sleep(2 * time.Second)
+	}
 }

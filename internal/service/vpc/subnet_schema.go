@@ -73,7 +73,11 @@ var subnetResourceSchemaAttributes = map[string]rschema.Attribute{
 	"vpc_name":         rschema.StringAttribute{Computed: true},
 	"project_name":     rschema.StringAttribute{Computed: true},
 	"owner_project_id": rschema.StringAttribute{Computed: true},
-	"route_table_id":   rschema.StringAttribute{Computed: true},
+	"route_table_id": rschema.StringAttribute{
+		Optional:   true,
+		Computed:   true,
+		Validators: common.UuidValidator(),
+	},
 	"route_table_name": rschema.StringAttribute{Computed: true},
 	"created_at":       rschema.StringAttribute{Computed: true},
 	"updated_at":       rschema.StringAttribute{Computed: true},

@@ -1,6 +1,11 @@
-# Copyright (c) HashiCorp, Inc.
-
 # get a instance.
 data "kakaocloud_instance" "example" {
-  id = "xxxxxx-yyyy-zzzz-81e8-836ebe461ba6"
+  id = "your-instance-id-here"  # Replace with your instance ID
+  
+}
+
+# Output the instance information
+output "instance_example" {
+  description = "Information about the example instance"
+  value = kakaocloud_instance.example
 }

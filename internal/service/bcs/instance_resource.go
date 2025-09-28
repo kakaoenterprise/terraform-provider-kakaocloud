@@ -107,37 +107,47 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		createReq.SetIsBonding(plan.IsBonding.ValueBool())
 	}
 
-	if !plan.Subnets.IsNull() && !plan.Subnets.IsUnknown() {
-		planList, planDiags := r.convertListToInstanceSubnetModel(ctx, plan.Subnets)
-		resp.Diagnostics.Append(planDiags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
+	attachNicExceptOne := false
+	configSubnetList, planDiags := r.convertListToInstanceSubnetModel(ctx, config.Subnets)
+	resp.Diagnostics.Append(planDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-		var subnets []bcs.CreateInstanceSubnetModel
-		for _, subnet := range planList {
+	var subnets []bcs.CreateInstanceSubnetModel
+	for _, subnet := range configSubnetList {
+		if subnet.NetworkInterfaceId.IsNull() {
 			v := bcs.CreateInstanceSubnetModel{
 				Id: subnet.Id.ValueString(),
-			}
-			if !subnet.NetworkInterfaceId.IsNull() && !subnet.NetworkInterfaceId.IsUnknown() {
-				v.SetNetworkInterfaceId(subnet.NetworkInterfaceId.ValueString())
 			}
 			if !subnet.PrivateIp.IsNull() && !subnet.PrivateIp.IsUnknown() {
 				v.SetPrivateIp(subnet.PrivateIp.ValueString())
 			}
 			subnets = append(subnets, v)
 		}
-		createReq.SetSubnets(subnets)
 	}
+	if len(subnets) == 0 {
+		attachNicExceptOne = true
+		subnet1st := configSubnetList[0]
+		v := bcs.CreateInstanceSubnetModel{
+			Id: subnet1st.Id.ValueString(),
+		}
+		v.SetNetworkInterfaceId(subnet1st.NetworkInterfaceId.ValueString())
+		if !subnet1st.PrivateIp.IsNull() && !subnet1st.PrivateIp.IsUnknown() {
+			v.SetPrivateIp(subnet1st.PrivateIp.ValueString())
+		}
+		subnets = append(subnets, v)
+	}
+	createReq.SetSubnets(subnets)
 
-	planList, planDiags := r.convertListToInstanceVolumeModel(ctx, plan.Volumes)
+	volumeList, planDiags := r.convertListToInstanceVolumeModel(ctx, plan.Volumes)
 	resp.Diagnostics.Append(planDiags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var volumes []bcs.CreateInstanceVolumeModel
-	for _, volume := range planList {
+	for _, volume := range volumeList {
 
 		var val bool
 		if volume.IsDeleteOnTermination.IsNull() || volume.IsDeleteOnTermination.IsUnknown() {
@@ -180,9 +190,9 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 	}
 	createReq.SetVolumes(volumes)
 
-	if !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown() {
-		var tfSg []instanceSecurityGroupModel
-		diags := plan.SecurityGroups.ElementsAs(ctx, &tfSg, false)
+	if !plan.InitialSecurityGroups.IsNull() && !plan.InitialSecurityGroups.IsUnknown() {
+		var tfSg []instanceInitialSecurityGroupModel
+		diags := plan.InitialSecurityGroups.ElementsAs(ctx, &tfSg, false)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
 			return
@@ -229,6 +239,41 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 	ok = r.mapInstance(ctx, &plan, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
+	}
+
+	nicAttached := false
+	start := 0
+	if attachNicExceptOne {
+		start = 1
+	}
+
+	for i := start; i < len(configSubnetList); i++ {
+		subnet := configSubnetList[i]
+		if !subnet.NetworkInterfaceId.IsNull() {
+			nicAttached = true
+			ok := r.attacheNetworkInterface(ctx, plan.Id.ValueString(), subnet.NetworkInterfaceId.ValueString(), &resp.Diagnostics)
+			if !ok {
+				return
+			}
+		}
+	}
+	if nicAttached {
+		result, ok = r.pollInstanceUntilStatus(
+			ctx,
+			plan.Id.ValueString(),
+			[]string{common.InstanceStatusActive, common.InstanceStatusError},
+			&resp.Diagnostics,
+		)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+
+		common.CheckResourceAvailableStatus(ctx, r, result.Status.Get(), []string{common.InstanceStatusActive}, &resp.Diagnostics)
+
+		ok = r.mapInstance(ctx, &plan, result, &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	if !config.Status.IsNull() && !config.Status.IsUnknown() && config.Status.ValueString() != common.InstanceStatusActive {

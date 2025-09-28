@@ -28,6 +28,7 @@ This resource also provides metadata such as project ownership, provisioning sta
 
 ### Optional
 
+- `route_table_id` (String)
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 
 ### Read-Only
@@ -39,7 +40,6 @@ This resource also provides metadata such as project ownership, provisioning sta
 - `project_id` (String)
 - `project_name` (String)
 - `provisioning_status` (String)
-- `route_table_id` (String)
 - `route_table_name` (String)
 - `updated_at` (String)
 - `vpc_name` (String)

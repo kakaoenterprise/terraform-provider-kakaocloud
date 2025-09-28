@@ -63,6 +63,7 @@ Read-Only:
 - `ssh_key_name` (String) SSH key name
 - `status` (Attributes) Node pool status (see [below for nested schema](#nestedatt--node_pools--status))
 - `taints` (Attributes Set) List of taints applied to the node pool (see [below for nested schema](#nestedatt--node_pools--taints))
+- `user_data` (String) User script set for the node pool (base64 encoded)
 - `version` (String) Kubernetes version of the node pool
 - `volume_size` (Number) Root volume size of the node pool (GiB)
 - `vpc_info` (Attributes) VPC information where the node pool belongs (see [below for nested schema](#nestedatt--node_pools--vpc_info))
