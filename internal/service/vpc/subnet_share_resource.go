@@ -49,7 +49,7 @@ func (r *subnetShareResource) Schema(ctx context.Context, _ resource.SchemaReque
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				Description: "ID of the subnet the IP belongs to",
+				Description: "Subnet ID",
 			},
 			"projects": schema.ListAttribute{
 				Computed:    true,

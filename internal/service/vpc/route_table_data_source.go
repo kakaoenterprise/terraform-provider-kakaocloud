@@ -39,8 +39,9 @@ func (d *routeTableDataSource) Schema(ctx context.Context, _ datasource.SchemaRe
 		Attributes: MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
-					Required:   true,
-					Validators: common.UuidValidator(),
+					Required:    true,
+					Description: "Route Table ID",
+					Validators:  common.UuidValidator(),
 				},
 				"timeouts": timeouts.Attributes(ctx),
 			},

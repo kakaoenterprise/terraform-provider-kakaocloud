@@ -39,8 +39,9 @@ func (d *vpcDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, 
 		Attributes: MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
-					Required:   true,
-					Validators: common.UuidValidator(),
+					Required:    true,
+					Description: "VPC ID",
+					Validators:  common.UuidValidator(),
 				},
 				"timeouts": timeouts.Attributes(ctx),
 			},

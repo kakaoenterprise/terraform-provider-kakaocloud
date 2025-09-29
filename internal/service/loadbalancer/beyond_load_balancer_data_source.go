@@ -39,8 +39,9 @@ func (d *beyondLoadBalancerDataSource) Schema(ctx context.Context, _ datasource.
 		Attributes: utils.MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
-					Required:   true,
-					Validators: common.UuidValidator(),
+					Required:    true,
+					Description: "beyond load balancer ID",
+					Validators:  common.UuidValidator(),
 				},
 				"timeouts": timeouts.Attributes(ctx),
 			},

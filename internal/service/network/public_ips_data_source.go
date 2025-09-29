@@ -75,7 +75,7 @@ func (d *publicIpsDataSource) Schema(ctx context.Context, _ datasource.SchemaReq
 					Attributes: MergeAttributes[schema.Attribute](
 						map[string]schema.Attribute{
 							"id": schema.StringAttribute{
-								Required:    true,
+								Computed:    true,
 								Description: "Public IP ID",
 							},
 						},

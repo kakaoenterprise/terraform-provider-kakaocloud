@@ -142,14 +142,11 @@ Optional:
 <a id="nestedatt--public_ips"></a>
 ### Nested Schema for `public_ips`
 
-Required:
-
-- `id` (String) Public IP ID
-
 Read-Only:
 
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `description` (String) Description of the public IP
+- `id` (String) Public IP ID
 - `private_ip` (String) Private IP address of the associated network interface (IPv4 format)
 - `project_id` (String) ID of the project this public IP belongs to
 - `public_ip` (String) Public IP address

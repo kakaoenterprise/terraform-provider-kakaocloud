@@ -39,13 +39,14 @@ func (d *subnetShareDataSource) Schema(ctx context.Context, _ datasource.SchemaR
 		Description: docs.GetDataSourceDescription("SubnetShare"),
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Required:   true,
-				Validators: common.UuidValidator(),
+				Required:    true,
+				Description: "Subnet ID",
+				Validators:  common.UuidValidator(),
 			},
 			"projects": schema.ListAttribute{
 				Computed:    true,
 				ElementType: types.StringType,
-				Description: "Subnet 을 공유받은 프로젝트 ID 목록",
+				Description: "List of Project IDs requesting subnet sharing",
 			},
 			"timeouts": timeouts.Attributes(ctx),
 		},

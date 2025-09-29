@@ -224,7 +224,7 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 			},
 		},
 		"volumes": schema.ListNestedAttribute{
-			Required:    true,
+			Optional:    true,
 			Description: instanceDesc.String("volumes"),
 			Validators: []validator.List{
 				listvalidator.SizeAtLeast(1),

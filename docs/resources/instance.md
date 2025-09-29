@@ -35,7 +35,6 @@ resource "kakaocloud_instance" "example" {
 - `image_id` (String) Unique ID of the image
 - `name` (String) Instance name
 - `subnets` (Attributes List) List of subnets to connect (see [below for nested schema](#nestedatt--subnets))
-- `volumes` (Attributes List) Volumes to attach to the instance (see [below for nested schema](#nestedatt--volumes))
 
 ### Optional
 
@@ -55,6 +54,7 @@ resource "kakaocloud_instance" "example" {
 ㄴ CentOS: `sudo cat /var/log/messages` or `sudo journalctl -u cloud-final.service`<br/>
 <br/>
 ⚠️ Entering incorrect or incomplete scripts may cause boot failure.
+- `volumes` (Attributes List) Volumes to attach to the instance (see [below for nested schema](#nestedatt--volumes))
 
 ### Read-Only
 
@@ -92,19 +92,6 @@ Optional:
 - `private_ip` (String) Manually assign a private IP if needed <br/> - Use when a static IP configuration is required instead of auto-assignment <br/> - Cannot be used together with `network_interface_id`
 
 
-<a id="nestedatt--volumes"></a>
-### Nested Schema for `volumes`
-
-Optional:
-
-- `encryption_secret_id` (String) Encryption key ID <br/> - Field name `encryption_secret_uuid` has been changed to `encryption_secret_id`<br/> - Requests with `encryption_secret_uuid` are still processed but will be deprecated in the future<br/> - If both `encryption_secret_id` and `encryption_secret_uuid` are provided, only `encryption_secret_id` will be used
-- `id` (String) Input value depends on `source_type`<br/>- `volume`: existing volume ID<br/>- `image`: image ID (default is `instance.image_id` in the request body)<br/>- `null`: not used<br/>- `blank`: omit
-- `image_id` (String) Unique ID of the image
-- `is_delete_on_termination` (Boolean) Whether to automatically delete the volume when the instance is terminated <br/> - First volume: default `true`<br/> - Additional volumes: default `false`
-- `size` (Number) Volume size (GB) <br/> - Allowed range: 1 ~ 16384<br/> - For `source_type = image`, must be greater than or equal to the image's `min_disk`; for Windows images, supports up to 2048GB
-- `type_id` (String) Volume type ID of the block storage to attach (currently only `gp2` general-purpose SSD supported)<br/> - Required only for `image` or `blank` source types<br/> - Refer to `volume_types.id` from [List volume types](https://docs.kakaocloud.com/openapi/bcs/list-volume-types)
-
-
 <a id="nestedatt--initial_security_groups"></a>
 ### Nested Schema for `initial_security_groups`
 
@@ -122,6 +109,19 @@ Optional:
 - `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
 - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 - `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+
+
+<a id="nestedatt--volumes"></a>
+### Nested Schema for `volumes`
+
+Optional:
+
+- `encryption_secret_id` (String) Encryption key ID <br/> - Field name `encryption_secret_uuid` has been changed to `encryption_secret_id`<br/> - Requests with `encryption_secret_uuid` are still processed but will be deprecated in the future<br/> - If both `encryption_secret_id` and `encryption_secret_uuid` are provided, only `encryption_secret_id` will be used
+- `id` (String) Input value depends on `source_type`<br/>- `volume`: existing volume ID<br/>- `image`: image ID (default is `instance.image_id` in the request body)<br/>- `null`: not used<br/>- `blank`: omit
+- `image_id` (String) Unique ID of the image
+- `is_delete_on_termination` (Boolean) Whether to automatically delete the volume when the instance is terminated <br/> - First volume: default `true`<br/> - Additional volumes: default `false`
+- `size` (Number) Volume size (GB) <br/> - Allowed range: 1 ~ 16384<br/> - For `source_type = image`, must be greater than or equal to the image's `min_disk`; for Windows images, supports up to 2048GB
+- `type_id` (String) Volume type ID of the block storage to attach (currently only `gp2` general-purpose SSD supported)<br/> - Required only for `image` or `blank` source types<br/> - Refer to `volume_types.id` from [List volume types](https://docs.kakaocloud.com/openapi/bcs/list-volume-types)
 
 
 <a id="nestedatt--addresses"></a>

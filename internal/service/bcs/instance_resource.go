@@ -68,7 +68,6 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
-
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -76,6 +75,25 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	instanceType, ok := r.getInstanceTypeFromFlavor(ctx, plan.FlavorId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	if *instanceType == bcs.INSTANCETYPE_BM {
+		if !plan.Volumes.IsNull() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("Invalid Configuration: BM instances cannot have volume definitions."))
+			return
+		}
+	} else {
+		if plan.Volumes.IsNull() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("Invalid Configuration: VM instances require a volume definition."))
+			return
+		}
+	}
 
 	createReq := bcs.CreateInstanceModel{
 		Name:     plan.Name.ValueString(),
@@ -164,7 +182,7 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		if !volume.Size.IsNull() && !volume.Size.IsUnknown() {
 			size = volume.Size.ValueInt32()
 		} else {
-			size = 100
+			size = 50
 		}
 
 		v := bcs.CreateInstanceVolumeModel{
@@ -503,6 +521,16 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	if !plan.FlavorId.Equal(state.FlavorId) {
+		instanceType, ok := r.getInstanceTypeFromFlavor(ctx, plan.FlavorId.ValueString(), &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+
+		if *instanceType == bcs.INSTANCETYPE_BM {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("Invalid Configuration: Instances can only be resized to flavors of type 'vm'."))
+			return
+		}
 
 		if desiredState != common.InstanceStatusStopped {
 			r.updateStatus(ctx, plan.Id.ValueString(), common.InstanceStatusStopped, desiredState, &resp.Diagnostics)
@@ -732,4 +760,21 @@ func (r *instanceResource) mapInstance(
 	}
 
 	return true
+}
+
+func (r *instanceResource) getInstanceTypeFromFlavor(
+	ctx context.Context,
+	flavorId string,
+	respDiags *diag.Diagnostics,
+) (*bcs.InstanceType, bool) {
+	flavorResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+		func() (*bcs.ResponseFlavorModel, *http.Response, error) {
+			return r.kc.ApiClient.FlavorAPI.GetInstanceType(ctx, flavorId).XAuthToken(r.kc.XAuthToken).Execute()
+		},
+	)
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "GetInstanceType", err, respDiags)
+		return nil, false
+	}
+	return flavorResp.Flavor.InstanceType.Get(), true
 }

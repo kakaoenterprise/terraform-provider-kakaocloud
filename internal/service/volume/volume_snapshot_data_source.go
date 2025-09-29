@@ -39,8 +39,9 @@ func (d *volumeSnapshotDataSource) Schema(ctx context.Context, _ datasource.Sche
 		Attributes: MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
-					Required:   true,
-					Validators: common.UuidValidator(),
+					Required:    true,
+					Description: "Volume Snapshot ID",
+					Validators:  common.UuidValidator(),
 				},
 				"timeouts": timeouts.Attributes(ctx),
 			},

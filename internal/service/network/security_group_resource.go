@@ -35,6 +35,11 @@ func NewSecurityGroupResource() resource.Resource {
 }
 
 func (r *securityGroupResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
 	var plan, state securityGroupResourceModel
 
 	diags := req.Plan.Get(ctx, &plan)
@@ -78,6 +83,11 @@ func (r *securityGroupResource) Schema(ctx context.Context, _ resource.SchemaReq
 }
 
 func (r *securityGroupResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+
+	if req.Config.Raw.IsNull() {
+		return
+	}
+
 	var cfg securityGroupResourceModel
 	d := req.Config.Get(ctx, &cfg)
 	resp.Diagnostics.Append(d...)
@@ -98,15 +108,22 @@ func (r *securityGroupResource) ValidateConfig(ctx context.Context, req resource
 
 	for _, rule := range rules {
 		proto := strings.ToUpper(rule.Protocol.ValueString())
-		remoteIpSet := !(rule.RemoteIpPrefix.IsNull() || rule.RemoteIpPrefix.IsUnknown() || rule.RemoteIpPrefix.ValueString() == "")
-		remoteGroupSet := !(rule.RemoteGroupId.IsNull() || rule.RemoteGroupId.IsUnknown() || rule.RemoteGroupId.ValueString() == "")
 
-		if (remoteIpSet && remoteGroupSet) || (!remoteIpSet && !remoteGroupSet) {
-			resp.Diagnostics.AddError(
-				"Invalid security group rule",
-				"Exactly one of remote_ip_prefix or remote_group_id must be provided (not both or neither)",
-			)
-			continue
+		remoteIpKnown := !rule.RemoteIpPrefix.IsUnknown()
+		remoteGrpKnown := !rule.RemoteGroupId.IsUnknown()
+		remoteIpSet := remoteIpKnown && !rule.RemoteIpPrefix.IsNull() && rule.RemoteIpPrefix.ValueString() != ""
+		remoteGroupSet := remoteGrpKnown && !rule.RemoteGroupId.IsNull() && rule.RemoteGroupId.ValueString() != ""
+
+		if remoteIpKnown && remoteGrpKnown {
+
+			onlyOneRemoteFieldExists := (remoteIpSet) != (remoteGroupSet)
+			if !onlyOneRemoteFieldExists {
+				resp.Diagnostics.AddError(
+					"Invalid security group rule",
+					"Exactly one of remote_ip_prefix or remote_group_id must be provided (not both or neither)",
+				)
+				continue
+			}
 		}
 
 		minProvided := !(rule.PortRangeMin.IsNull() || rule.PortRangeMin.IsUnknown() || rule.PortRangeMin.ValueString() == "")

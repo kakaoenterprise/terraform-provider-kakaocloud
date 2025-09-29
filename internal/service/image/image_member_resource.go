@@ -75,6 +75,28 @@ func (r *imageMemberResource) Create(ctx context.Context, req resource.CreateReq
 
 	imageId := plan.Id.ValueString()
 
+	currentResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		func() (*image.ImageMemberListModel, *http.Response, error) {
+			return r.kc.ApiClient.ImageAPI.
+				ListImageSharedProjects(ctx, imageId).
+				XAuthToken(r.kc.XAuthToken).
+				Execute()
+		},
+	)
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "ListImageSharedProjects", err, &resp.Diagnostics)
+		return
+	}
+	for _, m := range currentResp.Members {
+		if m.IsShared {
+			resp.Diagnostics.AddError(
+				"Image already has shared members",
+				fmt.Sprintf("Image %q already has shared members. Remove them first before applying.", imageId),
+			)
+			return
+		}
+	}
+
 	var sharedMemberIds []string
 	diags = plan.SharedMemberIds.ElementsAs(ctx, &sharedMemberIds, false)
 	resp.Diagnostics.Append(diags...)

@@ -163,7 +163,7 @@ func (r *instanceResource) ModifyPlan(
 			}
 		}
 
-		if !plan.InitialSecurityGroups.IsNull() && !plan.InitialSecurityGroups.Equal(state.InitialSecurityGroups) {
+		if !plan.InitialSecurityGroups.Equal(state.InitialSecurityGroups) {
 			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 				fmt.Sprintf("Invalid Configuration: Changing the initial security group is not allowed."))
 		}
@@ -197,6 +197,10 @@ func (r *instanceResource) ModifyPlan(
 			if !plan.Subnets.Equal(state.Subnets) {
 				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 					fmt.Sprintf("Invalid Configuration: BM instances cannot modify subnets."))
+			}
+			if !plan.FlavorId.Equal(state.FlavorId) {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("Invalid Configuration: BM instances cannot change the flavor."))
 			}
 		}
 	}

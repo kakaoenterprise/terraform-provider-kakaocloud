@@ -60,7 +60,8 @@ func (d *beyondLoadBalancersDataSource) Schema(ctx context.Context, _ datasource
 					Attributes: utils.MergeDataSourceSchemaAttributes(
 						map[string]schema.Attribute{
 							"id": schema.StringAttribute{
-								Computed: true,
+								Computed:    true,
+								Description: "beyond load balancer ID",
 							},
 						},
 						beyondLoadBalancerDatasourceSchema,

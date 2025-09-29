@@ -726,8 +726,9 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	didUpdateUserData := false
-	if !config.UserData.IsUnknown() && !config.UserData.IsNull() && config.UserData.ValueString() != "" {
+	if !config.UserData.IsUnknown() && !config.UserData.IsNull() {
 		if state.UserData.IsUnknown() || state.UserData.IsNull() || state.UserData.ValueString() != config.UserData.ValueString() {
+
 			script := kubernetesengine.NewNodePoolScriptRequestModel(config.UserData.ValueString())
 			usrBody := kubernetesengine.UpdateK8sClusterNodePoolUserScriptRequestModel{NodePool: *script}
 
