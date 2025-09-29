@@ -898,7 +898,7 @@ func (r *nodePoolResource) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
+	common.PollUntilDeletion(ctx, r, 10*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
 				_, hr, err := r.kc.ApiClient.NodePoolsAPI.
@@ -1058,7 +1058,7 @@ func (r *nodePoolResource) waitNodePoolReadyOrFailed(
 	result, ok := common.PollUntilResult(
 		ctx,
 		r,
-		2*time.Second,
+		10*time.Second,
 		[]string{
 			string(kubernetesengine.NODEPOOLSTATUS_RUNNING),
 			string(kubernetesengine.NODEPOOLSTATUS_RUNNING__SCHEDULING_DISABLE),

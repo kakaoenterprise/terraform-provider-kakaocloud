@@ -176,18 +176,18 @@ Optional:
 
 Read-Only:
 
-- `availability_zone` (String)
-- `cidr_block` (String)
-- `created_at` (String)
+- `availability_zone` (String) Availability zone the subnet belongs to
+- `cidr_block` (String) IPv4 CIDR block of the subnet
+- `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `id` (String) Subnet ID
-- `is_shared` (Boolean)
-- `name` (String)
-- `owner_project_id` (String)
-- `project_id` (String)
-- `project_name` (String)
-- `provisioning_status` (String)
-- `route_table_id` (String)
-- `route_table_name` (String)
-- `updated_at` (String)
-- `vpc_id` (String)
-- `vpc_name` (String)
+- `is_shared` (Boolean) Indicates whether it is shared
+- `name` (String) Subnet name
+- `owner_project_id` (String) ID of the project that owns the subnet
+- `project_id` (String) ID of the project that created the subnet
+- `project_name` (String) Name of the project the subnet belongs to
+- `provisioning_status` (String) Provisioning status
+- `route_table_id` (String) ID of the route table connected to the subnet
+- `route_table_name` (String) Name of the route table connected to the subnet
+- `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
+- `vpc_id` (String) ID of the VPC the subnet belongs to
+- `vpc_name` (String) Name of the VPC the subnet belongs to

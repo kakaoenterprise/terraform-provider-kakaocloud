@@ -49,7 +49,7 @@ func (d *nodePoolDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *nodePoolDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud 특정 클러스터의 노드 풀을 조회하는 데이터 소스",
+		Description: "Data source to retrieve node pools of a specific cluster",
 		Attributes: MergeAttributes[schema.Attribute](
 			nodePoolDataSourceAttributes,
 			map[string]schema.Attribute{
@@ -103,7 +103,7 @@ func (d *nodePoolDataSource) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	result := respModel.NodePool
-	ok := mapNodePoolFromResponse(ctx, &config.NodePoolBaseModel, &result, &resp.Diagnostics)
+	ok := mapNodePoolFromResponseDS(ctx, &config.NodePoolBaseModelDS, &result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

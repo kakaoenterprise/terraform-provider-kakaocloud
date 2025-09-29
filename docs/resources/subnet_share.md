@@ -21,7 +21,8 @@ This resource helps enable cross-project collaboration and controlled network re
 
 ### Required
 
-- `project_ids` (Set of String) Subnet 공유 요청 프로젝트 ID 목록
+- `id` (String) ID of the subnet the IP belongs to
+- `project_ids` (Set of String) List of Project IDs requesting subnet sharing
 
 ### Optional
 
@@ -29,8 +30,7 @@ This resource helps enable cross-project collaboration and controlled network re
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
-- `projects` (List of String) Subnet 을 공유받은 프로젝트 ID 목록
+- `projects` (List of String) List of shared Project IDs for the Subnet
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`

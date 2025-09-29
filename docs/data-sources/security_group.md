@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_security_group data source retrieves detailed information about a specific Security Group in KakaoCloud.
   It provides attributes such as name, description, stateful property, associated project, and security group rules (ingress and egress).
-  Use this data source when you need to:- Reference an existing Security Group by its ID in your Terraform configuration.
-  Access details of rules, including protocols, port ranges, and remote IPs or groups.
+  Use this data source when you need to:
+  Reference an existing Security Group by its ID in your Terraform configuration.Access details of rules, including protocols, port ranges, and remote IPs or groups.
 ---
 
 # kakaocloud_security_group (Data Source)
@@ -14,7 +14,9 @@ description: |-
 The `kakaocloud_security_group` data source retrieves detailed information about a specific Security Group in KakaoCloud.
 It provides attributes such as name, description, stateful property, associated project, and security group rules (ingress and egress).
 
-Use this data source when you need to:- Reference an existing Security Group by its ID in your Terraform configuration.
+Use this data source when you need to:
+
+- Reference an existing Security Group by its ID in your Terraform configuration.
 - Access details of rules, including protocols, port ranges, and remote IPs or groups.
 
 ## Example Usage

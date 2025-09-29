@@ -101,7 +101,7 @@ func (r *subnetResource) Create(ctx context.Context, req resource.CreateRequest,
 	result, ok := common.PollUntilResult(
 		ctx,
 		r,
-		10*time.Second,
+		5*time.Second,
 		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError},
 		&resp.Diagnostics,
 		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetSubnetModelSubnetModel, *http.Response, error) {
@@ -312,7 +312,7 @@ func (r *subnetResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	common.PollUntilDeletion(ctx, r, 10*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
+	common.PollUntilDeletion(ctx, r, 5*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (*vpc.BnsVpcV1ApiGetSubnetModelResponseSubnetModel, *http.Response, error) {
 				_, httpResp, err := r.kc.ApiClient.VPCSubnetAPI.
@@ -436,7 +436,7 @@ func (r *subnetResource) setAssociation(
 	result, ok := common.PollUntilResult(
 		ctx,
 		r,
-		10*time.Second,
+		5*time.Second,
 		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError},
 		respDiags,
 		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetSubnetModelSubnetModel, *http.Response, error) {

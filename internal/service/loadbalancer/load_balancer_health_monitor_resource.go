@@ -78,6 +78,14 @@ func (r *loadBalancerHealthMonitorResource) Create(ctx context.Context, req reso
 		return
 	}
 
+	loadBalancerId, ok := r.getLoadBalancerIdByTargetGroupId(ctx, plan.TargetGroupId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+	mutex := common.LockForID(*loadBalancerId)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -100,14 +108,6 @@ func (r *loadBalancerHealthMonitorResource) Create(ctx context.Context, req reso
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.CreateHealthMonitor(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateHealthMonitor(body).Execute()
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		respModel, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiCreateHealthMonitorModelResponseHealthMonitorModel, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerTargetGroupAPI.CreateHealthMonitor(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateHealthMonitor(body).Execute()
-			},
-		)
-	}
 
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "CreateHealthMonitor", err, &resp.Diagnostics)
@@ -196,6 +196,14 @@ func (r *loadBalancerHealthMonitorResource) Update(ctx context.Context, req reso
 		return
 	}
 
+	loadBalancerId, ok := r.getLoadBalancerIdByTargetGroupId(ctx, state.TargetGroupId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+	mutex := common.LockForID(*loadBalancerId)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -222,18 +230,6 @@ func (r *loadBalancerHealthMonitorResource) Update(ctx context.Context, req reso
 				Execute()
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateHealthMonitorModelResponseHealthMonitorModel, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
-					UpdateHealthMonitor(ctx, state.Id.ValueString()).
-					XAuthToken(r.kc.XAuthToken).
-					BodyUpdateHealthMonitor(body).
-					Execute()
-			},
-		)
-	}
 
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "UpdateHealthMonitor", err, &resp.Diagnostics)
@@ -279,6 +275,14 @@ func (r *loadBalancerHealthMonitorResource) Delete(ctx context.Context, req reso
 		return
 	}
 
+	loadBalancerId, ok := r.getLoadBalancerIdByTargetGroupId(ctx, state.TargetGroupId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+	mutex := common.LockForID(*loadBalancerId)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -297,18 +301,6 @@ func (r *loadBalancerHealthMonitorResource) Delete(ctx context.Context, req reso
 			return struct{}{}, httpResp, err
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (struct{}, *http.Response, error) {
-				httpResp, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
-					DeleteHealthMonitor(ctx, state.Id.ValueString()).
-					XAuthToken(r.kc.XAuthToken).
-					Execute()
-				return struct{}{}, httpResp, err
-			},
-		)
-	}
 
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "DeleteHealthMonitor", err, &resp.Diagnostics)
@@ -357,4 +349,19 @@ func (r *loadBalancerHealthMonitorResource) pollHealthMonitorUntilStatus(
 
 func (r *loadBalancerHealthMonitorResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+func (r *loadBalancerHealthMonitorResource) getLoadBalancerIdByTargetGroupId(ctx context.Context, targetGroupId string, respDiags *diag.Diagnostics) (*string, bool) {
+	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+		func() (*loadbalancer.TargetGroupResponseModel, *http.Response, error) {
+			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.GetTargetGroup(ctx, targetGroupId).
+				XAuthToken(r.kc.XAuthToken).Execute()
+		},
+	)
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "GetTargetGroup", err, respDiags)
+		return nil, false
+	}
+
+	return respModel.TargetGroup.LoadBalancerId.Get(), true
 }

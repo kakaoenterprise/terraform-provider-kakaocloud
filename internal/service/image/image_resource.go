@@ -22,10 +22,9 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure      = &imageResource{}
-	_ resource.ResourceWithImportState    = &imageResource{}
-	_ resource.ResourceWithValidateConfig = &imageResource{}
-	_ resource.ResourceWithModifyPlan     = &imageResource{}
+	_ resource.ResourceWithConfigure   = &imageResource{}
+	_ resource.ResourceWithImportState = &imageResource{}
+	_ resource.ResourceWithModifyPlan  = &imageResource{}
 )
 
 func NewImageResource() resource.Resource {
@@ -60,16 +59,6 @@ func (r *imageResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanR
 			)
 			return
 		}
-	}
-
-}
-
-func (r *imageResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config imageResourceModel
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
 	}
 
 }
@@ -119,11 +108,6 @@ func (r *imageResource) Create(ctx context.Context, req resource.CreateRequest, 
 	}
 	volumeId := plan.VolumeId.ValueString()
 
-	if plan.Name.IsNull() || plan.Name.IsUnknown() {
-		resp.Diagnostics.AddError("Missing required field", "name must be specified when creating an image")
-		return
-	}
-
 	if plan.Description.IsNull() || plan.Description.IsUnknown() {
 		createReq.SetDescription("-")
 	} else {
@@ -144,21 +128,19 @@ func (r *imageResource) Create(ctx context.Context, req resource.CreateRequest, 
 
 	plan.Id = types.StringValue(respModel.Image.Id)
 
-	if plan.Status.IsUnknown() || plan.Status.IsNull() {
-		result, ok := r.pollImageUtilsStatus(
-			ctx,
-			plan.Id.ValueString(),
-			[]string{ImageStatusActive},
-			&resp.Diagnostics,
-		)
-		if !ok || resp.Diagnostics.HasError() {
-			return
-		}
+	result, ok := r.pollImageUtilsStatus(
+		ctx,
+		plan.Id.ValueString(),
+		[]string{ImageStatusActive},
+		&resp.Diagnostics,
+	)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
-		ok = r.mapImage(ctx, &plan, result, &resp.Diagnostics)
-		if !ok || resp.Diagnostics.HasError() {
-			return
-		}
+	ok = r.mapImage(ctx, &plan, result, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
 	}
 
 	diags = resp.State.Set(ctx, plan)
@@ -243,11 +225,11 @@ func (r *imageResource) Update(ctx context.Context, req resource.UpdateRequest, 
 
 	editReq := image.EditImageModel{}
 
-	if !plan.Name.IsUnknown() && !plan.Name.IsNull() && !plan.Name.Equal(state.Name) {
+	if !plan.Name.Equal(state.Name) {
 		editReq.SetName(plan.Name.ValueString())
 	}
 
-	if !(plan.Description.IsUnknown() || plan.Description.IsNull()) && !plan.Description.Equal(state.Description) {
+	if !plan.Description.IsUnknown() && !plan.Description.Equal(state.Description) {
 		editReq.SetDescription(plan.Description.ValueString())
 	}
 
@@ -273,7 +255,6 @@ func (r *imageResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		return
 	}
 
-	state.Id = plan.Id
 	state.Name = ConvertNullableString(respModel.Image.Name)
 	state.Description = ConvertNullableString(respModel.Image.Description)
 

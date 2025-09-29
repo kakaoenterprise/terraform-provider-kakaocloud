@@ -67,14 +67,46 @@ type NodePoolResourceModel struct {
 	Timeouts resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
+type NodePoolBaseModelDS struct {
+	Id          types.String `tfsdk:"id"`
+	ClusterName types.String `tfsdk:"cluster_name"`
+	Name        types.String `tfsdk:"name"`
+
+	Description types.String `tfsdk:"description"`
+	FlavorId    types.String `tfsdk:"flavor_id"`
+	VolumeSize  types.Int32  `tfsdk:"volume_size"`
+	NodeCount   types.Int32  `tfsdk:"node_count"`
+	SshKeyName  types.String `tfsdk:"ssh_key_name"`
+	UserData    types.String `tfsdk:"user_data"`
+	VpcInfo     types.Object `tfsdk:"vpc_info"`
+
+	IsHyperThreading      types.Bool `tfsdk:"is_hyper_threading"`
+	SecurityGroups        types.Set  `tfsdk:"security_groups"`
+	DefaultSecurityGroups types.Set  `tfsdk:"default_security_groups"`
+	Labels                types.Set  `tfsdk:"labels"`
+	Taints                types.Set  `tfsdk:"taints"`
+
+	CreatedAt      types.String `tfsdk:"created_at"`
+	FailureMessage types.String `tfsdk:"failure_message"`
+	IsGpu          types.Bool   `tfsdk:"is_gpu"`
+	IsBareMetal    types.Bool   `tfsdk:"is_bare_metal"`
+	IsUpgradable   types.Bool   `tfsdk:"is_upgradable"`
+	Flavor         types.String `tfsdk:"flavor"`
+	Status         types.Object `tfsdk:"status"`
+	Image          types.Object `tfsdk:"image"`
+	Version        types.String `tfsdk:"version"`
+	IsCordon       types.Bool   `tfsdk:"is_cordon"`
+	Autoscaling    types.Object `tfsdk:"autoscaling"`
+}
+
 type nodePoolDataSourceModel struct {
-	NodePoolBaseModel
+	NodePoolBaseModelDS
 	Timeouts datasourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
 type nodePoolsDataSourceModel struct {
 	ClusterName types.String             `tfsdk:"cluster_name"`
-	NodePools   []NodePoolBaseModel      `tfsdk:"node_pools"`
+	NodePools   []NodePoolBaseModelDS    `tfsdk:"node_pools"`
 	Timeouts    datasourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
@@ -102,13 +134,29 @@ type nodePoolStatusModel struct {
 }
 
 type imageInfoModel struct {
-	Id   types.String `tfsdk:"id"`
-	Name types.String `tfsdk:"name"`
+	Id            types.String `tfsdk:"id"`
+	Name          types.String `tfsdk:"name"`
+	Architecture  types.String `tfsdk:"architecture"`
+	IsGpuType     types.Bool   `tfsdk:"is_gpu_type"`
+	InstanceType  types.String `tfsdk:"instance_type"`
+	KernelVersion types.String `tfsdk:"kernel_version"`
+	KeyPackage    types.String `tfsdk:"key_package"`
+	OsDistro      types.String `tfsdk:"os_distro"`
+	OsType        types.String `tfsdk:"os_type"`
+	OsVersion     types.String `tfsdk:"os_version"`
 }
 
 var imageInfoAttrTypes = map[string]attr.Type{
-	"id":   types.StringType,
-	"name": types.StringType,
+	"id":             types.StringType,
+	"name":           types.StringType,
+	"architecture":   types.StringType,
+	"is_gpu_type":    types.BoolType,
+	"instance_type":  types.StringType,
+	"kernel_version": types.StringType,
+	"key_package":    types.StringType,
+	"os_distro":      types.StringType,
+	"os_type":        types.StringType,
+	"os_version":     types.StringType,
 }
 
 var nodePoolAutoscalingAttrTypes = map[string]attr.Type{

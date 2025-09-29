@@ -21,8 +21,8 @@ This helps ensure secure and consistent image access across multiple projects wi
 
 ### Required
 
-- `image_id` (String) Unique ID of the image
-- `member_id` (String) ID of the project with which the image will be shared
+- `id` (String) Unique ID of the image
+- `shared_member_ids` (Set of String) Image shared member ID List
 
 ### Optional
 
@@ -30,10 +30,7 @@ This helps ensure secure and consistent image access across multiple projects wi
 
 ### Read-Only
 
-- `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
-- `id` (String) ID of the project receiving the shared image
-- `status` (String) Image sharing status
-- `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format  <br/> - Based on UTC
+- `members` (Attributes List) (see [below for nested schema](#nestedatt--members))
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -44,3 +41,16 @@ Optional:
 - `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
 - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 - `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+
+
+<a id="nestedatt--members"></a>
+### Nested Schema for `members`
+
+Read-Only:
+
+- `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
+- `id` (String) ID of the project receiving the shared image
+- `image_id` (String) Unique ID of the image
+- `is_shared` (Boolean)
+- `status` (String) Image sharing status
+- `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format  <br/> - Based on UTC

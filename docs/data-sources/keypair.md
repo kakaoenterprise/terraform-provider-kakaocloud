@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_keypair data source retrieves information about a specific key pair in KakaoCloud using its name.
   It returns attributes such as the key pair ID, fingerprint, type, public key, creation time, and the user who owns the key pair.
-  Use this data source when you need to:- Reference an existing key pair in your Terraform configuration without hardcoding its properties.
-  Dynamically obtain the fingerprint or public key of a key pair for use in other resources.Validate that a key pair exists before attaching it to compute instances.
+  Use this data source when you need to:
+  Reference an existing key pair in your Terraform configuration without hardcoding its properties.Dynamically obtain the fingerprint or public key of a key pair for use in other resources.Validate that a key pair exists before attaching it to compute instances.
 ---
 
 # kakaocloud_keypair (Data Source)
@@ -14,7 +14,9 @@ description: |-
 The `kakaocloud_keypair` data source retrieves information about a specific key pair in KakaoCloud using its name.
 It returns attributes such as the key pair ID, fingerprint, type, public key, creation time, and the user who owns the key pair.
 
-Use this data source when you need to:- Reference an existing key pair in your Terraform configuration without hardcoding its properties.
+Use this data source when you need to:
+
+- Reference an existing key pair in your Terraform configuration without hardcoding its properties.
 - Dynamically obtain the fingerprint or public key of a key pair for use in other resources.
 - Validate that a key pair exists before attaching it to compute instances.
 
@@ -25,7 +27,7 @@ Use this data source when you need to:- Reference an existing key pair in your T
 
 ### Required
 
-- `name` (String) 키페어 이름
+- `name` (String) Key Pair Name
 
 ### Optional
 
@@ -33,12 +35,12 @@ Use this data source when you need to:- Reference an existing key pair in your T
 
 ### Read-Only
 
-- `created_at` (String) 생성 시간
-- `fingerprint` (String) 핑거프린트
-- `id` (String) 키페어 ID
-- `public_key` (String) 공개키
-- `type` (String) 키페어 유형
-- `user_id` (String) 사용자 ID
+- `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
+- `fingerprint` (String) Unique fingerprint of the public key <br/> - Used for verification in SSH clients
+- `id` (String) Unique ID of the key pair
+- `public_key` (String) Public key
+- `type` (String) Key type
+- `user_id` (String) User ID of the key pair owner
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`

@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_network_interfaces data source retrieves a list of Network Interfaces in KakaoCloud.
   You can optionally filter results by attributes such as name, and the output includes details like private and public IP addresses, MAC address, associated security groups, allowed address pairs, and VPC/subnet information.
-  Use this data source when you need to:- Look up multiple existing network interfaces in your project.
-  Retrieve networking details for dependency resolution in Terraform configurations.Filter specific interfaces by attributes (e.g., name, project) instead of hardcoding IDs.
+  Use this data source when you need to:
+  Look up multiple existing network interfaces in your project.Retrieve networking details for dependency resolution in Terraform configurations.Filter specific interfaces by attributes (e.g., name, project) instead of hardcoding IDs.
   Available filters
   | Filter          | Type                   | Description |
   |--------------------|------------------------|-------------|
@@ -30,7 +30,9 @@ description: |-
 The `kakaocloud_network_interfaces` data source retrieves a list of Network Interfaces in KakaoCloud.
 You can optionally filter results by attributes such as name, and the output includes details like private and public IP addresses, MAC address, associated security groups, allowed address pairs, and VPC/subnet information.
 
-Use this data source when you need to:- Look up multiple existing network interfaces in your project.
+Use this data source when you need to:
+
+- Look up multiple existing network interfaces in your project.
 - Retrieve networking details for dependency resolution in Terraform configurations.
 - Filter specific interfaces by attributes (e.g., name, project) instead of hardcoding IDs.
 
@@ -179,36 +181,36 @@ Optional:
 
 Optional:
 
-- `description` (String)
+- `description` (String) Description of the network interface
 
 Read-Only:
 
-- `allowed_address_pairs` (Attributes Set) (see [below for nested schema](#nestedatt--network_interfaces--allowed_address_pairs))
-- `created_at` (String)
-- `device_id` (String)
-- `device_owner` (String)
+- `allowed_address_pairs` (Attributes Set) List of allowed IP addresses for packet transmission (see [below for nested schema](#nestedatt--network_interfaces--allowed_address_pairs))
+- `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
+- `device_id` (String) ID of the resource attached to the network interface
+- `device_owner` (String) Owner type of the resource attached to the interface (e.g., instance, router, etc.)
 - `id` (String) Network Interface ID
-- `is_network_interface_security_enabled` (Boolean)
-- `mac_address` (String)
-- `name` (String)
-- `private_ip` (String)
-- `project_id` (String)
-- `project_name` (String)
-- `public_ip` (String)
-- `secondary_ips` (List of String)
-- `security_groups` (Attributes Set) (see [below for nested schema](#nestedatt--network_interfaces--security_groups))
-- `status` (String)
-- `subnet_id` (String)
-- `updated_at` (String)
-- `vpc_id` (String)
+- `is_network_interface_security_enabled` (Boolean) Indicates whether security groups are enabled
+- `mac_address` (String) MAC address of the network interface
+- `name` (String) Name of the network interface
+- `private_ip` (String) Primary private IP address (IPv4 format)
+- `project_id` (String) ID of the project the network interface belongs to
+- `project_name` (String) Name of the project
+- `public_ip` (String) Associated public IP
+- `secondary_ips` (List of String) List of secondary IPs attached to the network interface
+- `security_groups` (Attributes Set) List of attached security groups (see [below for nested schema](#nestedatt--network_interfaces--security_groups))
+- `status` (String) Current status of the network interface
+- `subnet_id` (String) ID of the connected subnet
+- `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
+- `vpc_id` (String) ID of the VPC the network interface belongs to
 
 <a id="nestedatt--network_interfaces--allowed_address_pairs"></a>
 ### Nested Schema for `network_interfaces.allowed_address_pairs`
 
 Read-Only:
 
-- `ip_address` (String)
-- `mac_address` (String)
+- `ip_address` (String) Allowed IP address
+- `mac_address` (String) Allowed MAC address
 
 
 <a id="nestedatt--network_interfaces--security_groups"></a>
@@ -216,5 +218,5 @@ Read-Only:
 
 Read-Only:
 
-- `id` (String)
-- `name` (String)
+- `id` (String) Security group ID
+- `name` (String) Security group name

@@ -12,15 +12,19 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/kakaoenterprise/kc-sdk-go/services/image"
 )
 
 var (
-	_ resource.ResourceWithConfigure      = &imageMemberResource{}
-	_ resource.ResourceWithValidateConfig = &imageMemberResource{}
+	_ resource.ResourceWithConfigure   = &imageMemberResource{}
+	_ resource.ResourceWithImportState = &imageMemberResource{}
 )
 
 func NewImageMemberResource() resource.Resource {
@@ -31,17 +35,12 @@ type imageMemberResource struct {
 	kc *common.KakaoCloudClient
 }
 
-func (r *imageMemberResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config imageMemberResourceModel
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-}
-
 func (r *imageMemberResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_image_member"
+}
+
+func (r *imageMemberResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 func (r *imageMemberResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -74,29 +73,39 @@ func (r *imageMemberResource) Create(ctx context.Context, req resource.CreateReq
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	imageId := plan.ImageId.ValueString()
-	memberId := plan.MemberId.ValueString()
+	imageId := plan.Id.ValueString()
 
-	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*image.ResponseImageMemberModel, *http.Response, error) {
-			return r.kc.ApiClient.ImageAPI.
-				AddImageShare(ctx, imageId, memberId).
-				XAuthToken(r.kc.XAuthToken).
-				Execute()
-		},
-	)
-	if err != nil {
-		common.AddApiActionError(ctx, r, httpResp, "AddImageShare", err, &resp.Diagnostics)
+	var sharedMemberIds []string
+	diags = plan.SharedMemberIds.ElementsAs(ctx, &sharedMemberIds, false)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	member := respModel.Member
+	for _, sharedMemberId := range sharedMemberIds {
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+			func() (*image.ResponseImageMemberModel, *http.Response, error) {
+				return r.kc.ApiClient.ImageAPI.
+					AddImageShare(ctx, imageId, sharedMemberId).
+					XAuthToken(r.kc.XAuthToken).
+					Execute()
+			},
+		)
+		if err != nil {
+			common.AddApiActionError(ctx, r, httpResp, "AddImageShare", err, &resp.Diagnostics)
+			return
+		}
+	}
 
-	plan.Id = types.StringValue(member.Id)
-	plan.ImageId = types.StringValue(member.ImageId)
-	plan.Status = types.StringValue(member.Status)
-	plan.CreatedAt = types.StringValue(member.CreatedAt.Format(time.RFC3339))
-	plan.UpdatedAt = types.StringValue(member.UpdatedAt.Format(time.RFC3339))
+	imageMemberResp, ok := r.pollUntilAllMembers(ctx, imageId, sharedMemberIds, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	ok = r.mapImageMemberModel(ctx, &plan, imageMemberResp.Members, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
 	resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
@@ -113,6 +122,28 @@ func (r *imageMemberResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
+	imageMemberResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		func() (*image.ImageMemberListModel, *http.Response, error) {
+			return r.kc.ApiClient.ImageAPI.
+				ListImageSharedProjects(ctx, state.Id.ValueString()).
+				XAuthToken(r.kc.XAuthToken).
+				Execute()
+		},
+	)
+	if httpResp != nil && httpResp.StatusCode == 404 {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "ListImageSharedProjects", err, &resp.Diagnostics)
+		return
+	}
+
+	ok := r.mapImageMemberModel(ctx, &state, imageMemberResp.Members, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -120,11 +151,107 @@ func (r *imageMemberResource) Read(ctx context.Context, req resource.ReadRequest
 	}
 }
 
-func (r *imageMemberResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
-	resp.Diagnostics.AddError(
-		"Update Not Supported",
-		"This resource does not support update. Please recreate the resource if needed.",
-	)
+func (r *imageMemberResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state imageMemberResourceModel
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
+
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	if !plan.SharedMemberIds.Equal(state.SharedMemberIds) {
+		imageId := plan.Id.ValueString()
+
+		var planSharedMemberIds []string
+		diags = plan.SharedMemberIds.ElementsAs(ctx, &planSharedMemberIds, false)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		var stateSharedMemberIds []string
+		diags = state.SharedMemberIds.ElementsAs(ctx, &stateSharedMemberIds, false)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		planMap := make(map[string]bool)
+		for _, memberId := range planSharedMemberIds {
+			planMap[memberId] = true
+		}
+
+		stateMap := make(map[string]bool)
+		for _, memberId := range stateSharedMemberIds {
+			stateMap[memberId] = true
+		}
+
+		for _, memberId := range stateSharedMemberIds {
+			if !planMap[memberId] {
+				_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+					func() (*http.Response, *http.Response, error) {
+						httpResp, err := r.kc.ApiClient.ImageAPI.
+							RemoveImageShare(ctx, imageId, memberId).
+							XAuthToken(r.kc.XAuthToken).
+							Execute()
+						return nil, httpResp, err
+					},
+				)
+				if err != nil {
+					common.AddApiActionError(ctx, r, httpResp, "RemoveImageShare", err, &resp.Diagnostics)
+					return
+				}
+			}
+		}
+
+		for _, memberId := range planSharedMemberIds {
+			if !stateMap[memberId] {
+				_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+					func() (*image.ResponseImageMemberModel, *http.Response, error) {
+						return r.kc.ApiClient.ImageAPI.
+							AddImageShare(ctx, imageId, memberId).
+							XAuthToken(r.kc.XAuthToken).
+							Execute()
+					},
+				)
+				if err != nil {
+					common.AddApiActionError(ctx, r, httpResp, "AddImageShare", err, &resp.Diagnostics)
+					return
+				}
+			}
+		}
+
+		imageMemberResp, ok := r.pollUntilAllMembers(ctx, imageId, planSharedMemberIds, &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+
+		ok = r.mapImageMemberModel(ctx, &plan, imageMemberResp.Members, &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+
+		diags = resp.State.Set(ctx, &plan)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
 }
 
 func (r *imageMemberResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -145,24 +272,32 @@ func (r *imageMemberResource) Delete(ctx context.Context, req resource.DeleteReq
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	imageId := state.ImageId.ValueString()
-	memberId := state.MemberId.ValueString()
+	imageId := state.Id.ValueString()
 
-	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (interface{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.ImageAPI.
-				RemoveImageShare(ctx, imageId, memberId).
-				XAuthToken(r.kc.XAuthToken).
-				Execute()
-			return nil, httpResp, err
-		},
-	)
-	if err != nil {
-		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+	var sharedMemberIds []string
+	diags = state.SharedMemberIds.ElementsAs(ctx, &sharedMemberIds, false)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	for _, sharedMemberId := range sharedMemberIds {
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+			func() (interface{}, *http.Response, error) {
+				httpResp, err := r.kc.ApiClient.ImageAPI.
+					RemoveImageShare(ctx, imageId, sharedMemberId).
+					XAuthToken(r.kc.XAuthToken).
+					Execute()
+				return nil, httpResp, err
+			},
+		)
+		if err != nil {
+			if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+				return
+			}
+			common.AddApiActionError(ctx, r, httpResp, "RemoveImageShare", err, &resp.Diagnostics)
 			return
 		}
-		common.AddApiActionError(ctx, r, httpResp, "RemoveImageShare", err, &resp.Diagnostics)
-		return
 	}
 }
 
@@ -182,4 +317,97 @@ func (r *imageMemberResource) Configure(_ context.Context, req resource.Configur
 	}
 
 	r.kc = client
+}
+
+func (r *imageMemberResource) convertSetToMembersModel(
+	ctx context.Context,
+	set types.Set,
+) ([]imageMemberMemberModel, diag.Diagnostics) {
+	var result []imageMemberMemberModel
+	var diags diag.Diagnostics
+
+	for _, elem := range set.Elements() {
+		if obj, ok := elem.(types.Object); ok {
+			var model imageMemberMemberModel
+			elemDiags := obj.As(ctx, &model, basetypes.ObjectAsOptions{})
+			diags.Append(elemDiags...)
+			result = append(result, model)
+		}
+	}
+
+	return result, diags
+}
+
+func (r *imageMemberResource) pollUntilAllMembers(ctx context.Context, imageId string, memberIds []string, respDiags *diag.Diagnostics) (*image.ImageMemberListModel, bool) {
+	memberCount := len(memberIds)
+
+	for {
+		imageMemberResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+			func() (*image.ImageMemberListModel, *http.Response, error) {
+				return r.kc.ApiClient.ImageAPI.
+					ListImageSharedProjects(ctx, imageId).
+					XAuthToken(r.kc.XAuthToken).
+					Execute()
+			},
+		)
+		if err != nil {
+			common.AddApiActionError(ctx, r, httpResp, "ListImageSharedProjects", err, respDiags)
+			return nil, false
+		}
+
+		sharedCount := 0
+		for _, m := range imageMemberResp.Members {
+			if m.IsShared {
+				sharedCount++
+			}
+		}
+		if sharedCount != memberCount {
+			continue
+		}
+
+		foundMap := make(map[string]bool)
+		for _, member := range imageMemberResp.Members {
+			foundMap[member.Id] = true
+		}
+
+		allFound := true
+		for _, memberId := range memberIds {
+			if !foundMap[memberId] {
+				allFound = false
+				break
+			}
+		}
+
+		if allFound {
+			return imageMemberResp, true
+		}
+		time.Sleep(2 * time.Second)
+	}
+}
+
+func (r *imageMemberResource) mapImageMemberModel(
+	ctx context.Context,
+	model *imageMemberResourceModel,
+	membersResult []image.BcsImageV1ApiListImageSharedProjectsModelImageMemberModel,
+	respDiags *diag.Diagnostics,
+) bool {
+	ok := mapImageMemberModel(ctx, &model.imageMemberBaseModel, membersResult, respDiags)
+	if !ok || respDiags.HasError() {
+		return false
+	}
+
+	sharedMemberIds := make([]attr.Value, 0, len(membersResult))
+	for _, member := range membersResult {
+		if member.IsShared {
+			sharedMemberIds = append(sharedMemberIds, types.StringValue(member.Id))
+		}
+	}
+	val, diags := types.SetValue(types.StringType, sharedMemberIds)
+	respDiags.Append(diags...)
+	if respDiags.HasError() {
+		return false
+	}
+	model.SharedMemberIds = val
+
+	return true
 }

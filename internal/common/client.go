@@ -54,10 +54,10 @@ func NewClient(config *Config, userAgent string) (*KakaoCloudClient, error) {
 func completeConfig(config *Config) error {
 
 	if config.ApplicationCredentialID.IsNull() {
-		config.ApplicationCredentialID = types.StringValue(os.Getenv("APPLICATION_CREDENTIAL_ID"))
+		config.ApplicationCredentialID = types.StringValue(os.Getenv("KAKAOCLOUD_APPLICATION_CREDENTIAL_ID"))
 	}
 	if config.ApplicationCredentialSecret.IsNull() {
-		config.ApplicationCredentialSecret = types.StringValue(os.Getenv("APPLICATION_CREDENTIAL_SECRET"))
+		config.ApplicationCredentialSecret = types.StringValue(os.Getenv("KAKAOCLOUD_APPLICATION_CREDENTIAL_SECRET"))
 	}
 
 	if config.ApplicationCredentialID.ValueString() == "" {

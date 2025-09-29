@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_keypairs data source retrieves a list of key pairs in KakaoCloud.
   It supports filtering by attributes such as name and returns details including key pair ID, name, fingerprint, type, public key, creation time, and owner information.
-  Use this data source when you need to:- Query all existing key pairs dynamically without hardcoding their names or IDs.
-  Filter key pairs to select the correct one for attaching to compute instances.Validate key pair properties (e.g., fingerprint, type) before using them in other Terraform resources.
+  Use this data source when you need to:
+  Query all existing key pairs dynamically without hardcoding their names or IDs.Filter key pairs to select the correct one for attaching to compute instances.Validate key pair properties (e.g., fingerprint, type) before using them in other Terraform resources.
   Available filters
   | Filter    | Type     | Description |
   |--------------|----------|-------------|
@@ -22,7 +22,9 @@ description: |-
 The `kakaocloud_keypairs` data source retrieves a list of key pairs in KakaoCloud.
 It supports filtering by attributes such as `name` and returns details including key pair ID, name, fingerprint, type, public key, creation time, and owner information.
 
-Use this data source when you need to:- Query all existing key pairs dynamically without hardcoding their names or IDs.
+Use this data source when you need to:
+
+- Query all existing key pairs dynamically without hardcoding their names or IDs.
 - Filter key pairs to select the correct one for attaching to compute instances.
 - Validate key pair properties (e.g., fingerprint, type) before using them in other Terraform resources.
 
@@ -131,10 +133,10 @@ Optional:
 
 Read-Only:
 
-- `created_at` (String) 생성 시간
-- `fingerprint` (String) 핑거프린트
-- `id` (String) 키페어 ID
+- `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
+- `fingerprint` (String) Unique fingerprint of the public key <br/> - Used for verification in SSH clients
+- `id` (String) Unique ID of the key pair
 - `name` (String) 키페어 이름
-- `public_key` (String) 공개키
-- `type` (String) 키페어 유형
-- `user_id` (String) 사용자 ID
+- `public_key` (String) Public key
+- `type` (String) Key type
+- `user_id` (String) User ID of the key pair owner

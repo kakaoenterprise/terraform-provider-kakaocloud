@@ -45,7 +45,7 @@ func (d *nodePoolsDataSource) Metadata(ctx context.Context, req datasource.Metad
 
 func (d *nodePoolsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "kakaocloud 특정 클러스터의 노드 풀 목록을 조회하는 데이터 소스",
+		Description: "Data source to retrieve the list of node pools for a specific cluster",
 		Attributes: map[string]schema.Attribute{
 			"cluster_name": schema.StringAttribute{Required: true, Description: "클러스터 이름"},
 			"node_pools": schema.ListNestedAttribute{
@@ -102,7 +102,7 @@ func (d *nodePoolsDataSource) Read(ctx context.Context, req datasource.ReadReque
 	}
 
 	for _, np := range listResp.NodePools {
-		var model NodePoolBaseModel
+		var model NodePoolBaseModelDS
 
 		detail, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 			func() (struct {
@@ -127,7 +127,7 @@ func (d *nodePoolsDataSource) Read(ctx context.Context, req datasource.ReadReque
 			return
 		}
 		res := detail.NodePool
-		ok := mapNodePoolFromResponse(ctx, &model, &res, &resp.Diagnostics)
+		ok := mapNodePoolFromResponseDS(ctx, &model, &res, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

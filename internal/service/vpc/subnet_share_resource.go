@@ -49,16 +49,17 @@ func (r *subnetShareResource) Schema(ctx context.Context, _ resource.SchemaReque
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Description: "ID of the subnet the IP belongs to",
 			},
 			"projects": schema.ListAttribute{
 				Computed:    true,
 				ElementType: types.StringType,
-				Description: "Subnet 을 공유받은 프로젝트 ID 목록",
+				Description: "List of shared Project IDs for the Subnet",
 			},
 			"project_ids": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "Subnet 공유 요청 프로젝트 ID 목록",
+				Description: "List of Project IDs requesting subnet sharing",
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
 					setvalidator.ValueStringsAre(common.UuidNoHyphenValidator()...),

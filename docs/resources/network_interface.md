@@ -21,43 +21,43 @@ This resource provides detailed information such as MAC addresses, device owners
 
 ### Required
 
-- `name` (String)
-- `security_groups` (Attributes Set) (see [below for nested schema](#nestedatt--security_groups))
-- `subnet_id` (String)
+- `name` (String) Name of the network interface
+- `security_groups` (Attributes Set) List of attached security groups (see [below for nested schema](#nestedatt--security_groups))
+- `subnet_id` (String) ID of the connected subnet
 
 ### Optional
 
-- `allowed_address_pairs` (Attributes Set) (see [below for nested schema](#nestedatt--allowed_address_pairs))
-- `description` (String)
-- `private_ip` (String)
+- `allowed_address_pairs` (Attributes Set) List of allowed IP addresses for packet transmission (see [below for nested schema](#nestedatt--allowed_address_pairs))
+- `description` (String) Description of the network interface
+- `private_ip` (String) Primary private IP address (IPv4 format)
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 
 ### Read-Only
 
-- `created_at` (String)
-- `device_id` (String)
-- `device_owner` (String)
-- `id` (String) The ID of this resource.
-- `is_network_interface_security_enabled` (Boolean)
-- `mac_address` (String)
-- `project_id` (String)
-- `project_name` (String)
-- `public_ip` (String)
-- `secondary_ips` (List of String)
-- `status` (String)
-- `updated_at` (String)
-- `vpc_id` (String)
+- `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
+- `device_id` (String) ID of the resource attached to the network interface
+- `device_owner` (String) Owner type of the resource attached to the interface (e.g., instance, router, etc.)
+- `id` (String) Network interface ID
+- `is_network_interface_security_enabled` (Boolean) Indicates whether security groups are enabled
+- `mac_address` (String) MAC address of the network interface
+- `project_id` (String) ID of the project the network interface belongs to
+- `project_name` (String) Name of the project
+- `public_ip` (String) Associated public IP
+- `secondary_ips` (List of String) List of secondary IPs attached to the network interface
+- `status` (String) Current status of the network interface
+- `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
+- `vpc_id` (String) ID of the VPC the network interface belongs to
 
 <a id="nestedatt--security_groups"></a>
 ### Nested Schema for `security_groups`
 
 Required:
 
-- `id` (String)
+- `id` (String) Security group ID
 
 Read-Only:
 
-- `name` (String)
+- `name` (String) Security group name
 
 
 <a id="nestedatt--allowed_address_pairs"></a>
@@ -65,11 +65,11 @@ Read-Only:
 
 Required:
 
-- `ip_address` (String)
+- `ip_address` (String) Allowed IP address
 
 Read-Only:
 
-- `mac_address` (String)
+- `mac_address` (String) Allowed MAC address
 
 
 <a id="nestedatt--timeouts"></a>

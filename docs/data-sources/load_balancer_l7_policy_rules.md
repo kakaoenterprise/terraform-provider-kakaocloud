@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_load_balancer_l7_policy_rules data source retrieves a list of Layer 7 (L7) policy rules associated with a specific KakaoCloud Load Balancer L7 Policy.
   It returns attributes such as rule type, comparison method, key/value conditions, inversion flag, and provisioning/operating status.
-  Use this data source when you need to:- Query all rules for an L7 policy dynamically instead of hardcoding them.
-  Filter rules by attributes such as type, compare type, or value to configure routing behavior.Validate that an L7 policy has the expected set of rules before applying changes to your Terraform configuration.
+  Use this data source when you need to:
+  Query all rules for an L7 policy dynamically instead of hardcoding them.Filter rules by attributes such as type, compare type, or value to configure routing behavior.Validate that an L7 policy has the expected set of rules before applying changes to your Terraform configuration.
 ---
 
 # kakaocloud_load_balancer_l7_policy_rules (Data Source)
@@ -14,7 +14,9 @@ description: |-
 The `kakaocloud_load_balancer_l7_policy_rules` data source retrieves a list of Layer 7 (L7) policy rules associated with a specific KakaoCloud Load Balancer L7 Policy.
 It returns attributes such as rule type, comparison method, key/value conditions, inversion flag, and provisioning/operating status.
 
-Use this data source when you need to:- Query all rules for an L7 policy dynamically instead of hardcoding them.
+Use this data source when you need to:
+
+- Query all rules for an L7 policy dynamically instead of hardcoding them.
 - Filter rules by attributes such as type, compare type, or value to configure routing behavior.
 - Validate that an L7 policy has the expected set of rules before applying changes to your Terraform configuration.
 

@@ -17,19 +17,19 @@ import (
 )
 
 var (
-	_ datasource.DataSource              = &imageMembersDataSource{}
-	_ datasource.DataSourceWithConfigure = &imageMembersDataSource{}
+	_ datasource.DataSource              = &imageMemberDataSource{}
+	_ datasource.DataSourceWithConfigure = &imageMemberDataSource{}
 )
 
-func NewImageMembersDataSource() datasource.DataSource {
-	return &imageMembersDataSource{}
+func NewImageMemberDataSource() datasource.DataSource {
+	return &imageMemberDataSource{}
 }
 
-type imageMembersDataSource struct {
+type imageMemberDataSource struct {
 	kc *common.KakaoCloudClient
 }
 
-func (d *imageMembersDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *imageMemberDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -47,38 +47,23 @@ func (d *imageMembersDataSource) Configure(_ context.Context, req datasource.Con
 	d.kc = client
 }
 
-func (d *imageMembersDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_image_members"
+func (d *imageMemberDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_image_member"
 }
 
-func (d *imageMembersDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *imageMemberDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("ImageMembers"),
-		Attributes: map[string]schema.Attribute{
-			"image_id": schema.StringAttribute{
-				Required:   true,
-				Validators: common.UuidValidator(),
+		Description: docs.GetDataSourceDescription("ImageMember"),
+		Attributes: utils.MergeAttributes[schema.Attribute](
+			imageMemberDataSourceSchema,
+			map[string]schema.Attribute{
+				"timeouts": timeouts.Attributes(ctx),
 			},
-			"members": schema.ListNestedAttribute{
-				Computed: true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: utils.MergeAttributes[schema.Attribute](
-						map[string]schema.Attribute{
-							"id": schema.StringAttribute{
-								Computed:    true,
-								Description: "Image Member ID",
-							},
-						},
-						imageMemberDataSourceSchemaAttributes,
-					),
-				},
-			},
-			"timeouts": timeouts.Attributes(ctx),
-		},
+		),
 	}
 }
 
-func (d *imageMembersDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *imageMemberDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config imageMemberDataSourceModel
 
 	diags := req.Config.Get(ctx, &config)
@@ -100,7 +85,7 @@ func (d *imageMembersDataSource) Read(ctx context.Context, req datasource.ReadRe
 	imageMemberResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (*image.ImageMemberListModel, *http.Response, error) {
 			return d.kc.ApiClient.ImageAPI.
-				ListImageSharedProjects(ctx, config.ImageId.ValueString()).
+				ListImageSharedProjects(ctx, config.Id.ValueString()).
 				XAuthToken(d.kc.XAuthToken).
 				Execute()
 		},
@@ -110,14 +95,9 @@ func (d *imageMembersDataSource) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	for _, v := range imageMemberResp.Members {
-		var tmpImageMember imageMemberBaseModel
-		ok := mapImageMemberModel(ctx, &tmpImageMember, &v, &resp.Diagnostics)
-		if !ok || resp.Diagnostics.HasError() {
-			return
-		}
-
-		config.Members = append(config.Members, tmpImageMember)
+	ok := mapImageMemberModel(ctx, &config.imageMemberBaseModel, imageMemberResp.Members, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
 	}
 
 	diags = resp.State.Set(ctx, &config)

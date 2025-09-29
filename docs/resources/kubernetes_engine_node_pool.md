@@ -127,8 +127,16 @@ Optional:
 
 Read-Only:
 
+- `architecture` (String) Image architecture
 - `id` (String) Unique ID of the image
+- `instance_type` (String) Supported instance type for the image
+- `is_gpu_type` (Boolean) Whether the image supports GPU
+- `kernel_version` (String) Kernel version
+- `key_package` (String) Key package information included in the image
 - `name` (String) Image name
+- `os_distro` (String) Operating system distribution
+- `os_type` (String) Operating system type
+- `os_version` (String) Operating system version
 
 
 <a id="nestedatt--status"></a>

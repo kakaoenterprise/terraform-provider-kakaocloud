@@ -39,20 +39,20 @@ output "vpc_example" {
 
 ### Read-Only
 
-- `cidr_block` (String)
-- `created_at` (String)
-- `default_route_table` (Attributes) (see [below for nested schema](#nestedatt--default_route_table))
-- `description` (String)
+- `cidr_block` (String) IPv4 CIDR block of the VPC
+- `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
+- `default_route_table` (Attributes) Object containing default route table information (see [below for nested schema](#nestedatt--default_route_table))
+- `description` (String) Description of the VPC
 - `id` (String) The ID of this resource.
-- `igw` (Attributes) (see [below for nested schema](#nestedatt--igw))
-- `is_default` (Boolean)
-- `is_enable_dns_support` (Boolean)
-- `name` (String)
-- `project_id` (String)
-- `project_name` (String)
-- `provisioning_status` (String)
-- `region` (String)
-- `updated_at` (String)
+- `igw` (Attributes) Object containing information of the attached internet gateway (see [below for nested schema](#nestedatt--igw))
+- `is_default` (Boolean) Indicates whether it is the default VPC
+- `is_enable_dns_support` (Boolean) Indicates whether DNS support is enabled
+- `name` (String) VPC name
+- `project_id` (String) ID of the project the VPC belongs to
+- `project_name` (String) Name of the project the VPC belongs to
+- `provisioning_status` (String) Provisioning status
+- `region` (String) Region where the VPC resides
+- `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -67,12 +67,12 @@ Optional:
 
 Read-Only:
 
-- `created_at` (String)
-- `description` (String)
-- `id` (String)
-- `name` (String)
-- `provisioning_status` (String)
-- `updated_at` (String)
+- `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
+- `description` (String) Description of the route table
+- `id` (String) Route table ID
+- `name` (String) Route table name
+- `provisioning_status` (String) Provisioning status
+- `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 
 
 <a id="nestedatt--igw"></a>
@@ -80,12 +80,12 @@ Read-Only:
 
 Read-Only:
 
-- `created_at` (String)
-- `description` (String)
-- `id` (String)
-- `name` (String)
-- `operating_status` (String)
-- `project_id` (String)
-- `provisioning_status` (String)
-- `region` (String)
-- `updated_at` (String)
+- `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
+- `description` (String) Description of the internet gateway
+- `id` (String) Internet gateway ID
+- `name` (String) Internet gateway name
+- `operating_status` (String) Operating status
+- `project_id` (String) Project ID of the VPC
+- `provisioning_status` (String) Provisioning status
+- `region` (String) Region information
+- `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard

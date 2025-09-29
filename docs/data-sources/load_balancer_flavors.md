@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_load_balancer_flavors data source retrieves a list of available load balancer flavors in KakaoCloud.
   It returns details for each flavor, including its ID, name, description, and whether the flavor is enabled.
-  Use this data source when you need to:- Query available load balancer flavors dynamically instead of hardcoding IDs.
-  Select the appropriate flavor for provisioning a new load balancer.Validate that a specific flavor is available and enabled before referencing it in your Terraform configuration.
+  Use this data source when you need to:
+  Query available load balancer flavors dynamically instead of hardcoding IDs.Select the appropriate flavor for provisioning a new load balancer.Validate that a specific flavor is available and enabled before referencing it in your Terraform configuration.
 ---
 
 # kakaocloud_load_balancer_flavors (Data Source)
@@ -14,7 +14,9 @@ description: |-
 The `kakaocloud_load_balancer_flavors` data source retrieves a list of available load balancer flavors in KakaoCloud.
 It returns details for each flavor, including its ID, name, description, and whether the flavor is enabled.
 
-Use this data source when you need to:- Query available load balancer flavors dynamically instead of hardcoding IDs.
+Use this data source when you need to:
+
+- Query available load balancer flavors dynamically instead of hardcoding IDs.
 - Select the appropriate flavor for provisioning a new load balancer.
 - Validate that a specific flavor is available and enabled before referencing it in your Terraform configuration.
 

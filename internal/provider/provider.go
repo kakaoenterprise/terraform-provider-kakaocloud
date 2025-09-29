@@ -4,6 +4,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"terraform-provider-kakaocloud/internal/common"
 	"terraform-provider-kakaocloud/internal/service/bcs"
 
@@ -114,7 +115,8 @@ func (p *kakaocloudProvider) Configure(ctx context.Context, req provider.Configu
 	userAgent := "terraform-provider-kakaocloud/" + p.version
 	authClient, err := common.NewClient(authConfig, userAgent)
 	if err != nil {
-		common.AddGeneralError(ctx, p, &resp.Diagnostics, "Failed to initialize authenticated client: "+err.Error())
+		resp.Diagnostics.AddError("Unexpected Provider Configure",
+			fmt.Sprintf(err.Error()))
 		return
 	}
 
@@ -139,7 +141,7 @@ func (p *kakaocloudProvider) DataSources(_ context.Context) []func() datasource.
 
 		image.NewImagesDataSource,
 		image.NewImageDataSource,
-		image.NewImageMembersDataSource,
+		image.NewImageMemberDataSource,
 
 		vpc.NewVpcDataSource,
 		vpc.NewVpcsDataSource,

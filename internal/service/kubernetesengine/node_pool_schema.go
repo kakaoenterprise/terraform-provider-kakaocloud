@@ -50,10 +50,6 @@ func getNodePoolDataSourceSchema() map[string]dschema.Attribute {
 			Computed:    true,
 			Description: desc.String("ssh_key_name"),
 		},
-		"image_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: docs.Kubernetesengine("kubernetes_engine__v1__api__create_node_pool__model__NodePoolRequestModel").String("image_id"),
-		},
 		"is_hyper_threading": dschema.BoolAttribute{
 			Computed:    true,
 			Description: desc.String("is_hyper_threading"),
@@ -242,6 +238,38 @@ func getNodePoolImageDataSourceSchemaAttributes() map[string]dschema.Attribute {
 		"name": dschema.StringAttribute{
 			Computed:    true,
 			Description: desc.String("name"),
+		},
+		"architecture": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("architecture"),
+		},
+		"is_gpu_type": dschema.BoolAttribute{
+			Computed:    true,
+			Description: desc.String("is_gpu_type"),
+		},
+		"instance_type": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("instance_type"),
+		},
+		"kernel_version": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("kernel_version"),
+		},
+		"key_package": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("key_package"),
+		},
+		"os_distro": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("os_distro"),
+		},
+		"os_type": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("os_type"),
+		},
+		"os_version": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("os_version"),
 		},
 	}
 }
@@ -575,6 +603,38 @@ func getNodePoolImageResourceSchemaAttributes() map[string]rschema.Attribute {
 		"name": rschema.StringAttribute{
 			Computed:    true,
 			Description: desc.String("name"),
+		},
+		"architecture": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("architecture"),
+		},
+		"is_gpu_type": rschema.BoolAttribute{
+			Computed:    true,
+			Description: desc.String("is_gpu_type"),
+		},
+		"instance_type": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("instance_type"),
+		},
+		"kernel_version": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("kernel_version"),
+		},
+		"key_package": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("key_package"),
+		},
+		"os_distro": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("os_distro"),
+		},
+		"os_type": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("os_type"),
+		},
+		"os_version": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("os_version"),
 		},
 	}
 }

@@ -5,7 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_instance data source retrieves detailed information about a specific compute instance in KakaoCloud by its ID.
   It returns attributes such as instance name, flavor, image, network interfaces, attached volumes, availability zone, security groups, and current status.
-  Use this data source when you need to: - Reference an existing instance in your Terraform configuration without hardcoding its attributes. - Dynamically obtain instance details (e.g., attached volumes, IP addresses, or flavor information) for use in other resources. - Validate the state and configuration of an instance before applying changes.
+  Use this data source when you need to:
+  Reference an existing instance in your Terraform configuration without hardcoding its attributes.Dynamically obtain instance details (e.g., attached volumes, IP addresses, or flavor information) for use in other resources.Validate the state and configuration of an instance before applying changes.
 ---
 
 # kakaocloud_instance (Data Source)
@@ -13,7 +14,11 @@ description: |-
 The `kakaocloud_instance` data source retrieves detailed information about a specific compute instance in KakaoCloud by its ID.
 It returns attributes such as instance name, flavor, image, network interfaces, attached volumes, availability zone, security groups, and current status.
 
-Use this data source when you need to: - Reference an existing instance in your Terraform configuration without hardcoding its attributes. - Dynamically obtain instance details (e.g., attached volumes, IP addresses, or flavor information) for use in other resources. - Validate the state and configuration of an instance before applying changes.
+Use this data source when you need to:
+
+- Reference an existing instance in your Terraform configuration without hardcoding its attributes.
+- Dynamically obtain instance details (e.g., attached volumes, IP addresses, or flavor information) for use in other resources.
+- Validate the state and configuration of an instance before applying changes.
 
 ## Example Usage
 

@@ -6,7 +6,6 @@ import (
 	"terraform-provider-kakaocloud/internal/common"
 	"terraform-provider-kakaocloud/internal/docs"
 
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
@@ -14,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func getImageResourceSchema() map[string]rschema.Attribute {
@@ -38,13 +36,10 @@ func getImageResourceSchema() map[string]rschema.Attribute {
 			Computed:    true,
 			Description: desc.String("description"),
 			Validators:  common.DescriptionValidator(),
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
-			},
 		},
 		"volume_id": rschema.StringAttribute{
 			Optional:    true,
-			Description: docs.ParameterDescription("image", "create_image", "path_volume_id"),
+			Description: docs.ParameterDescription("volume", "get_volume", "path_volume_id"),
 			Validators:  common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
@@ -143,16 +138,10 @@ func getImageResourceSchema() map[string]rschema.Attribute {
 			Computed:    true,
 			Description: desc.String("updated_at"),
 		},
-		"os_info": rschema.ObjectAttribute{
+		"os_info": rschema.SingleNestedAttribute{
 			Computed:    true,
 			Description: desc.String("os_info"),
-			AttributeTypes: map[string]attr.Type{
-				"type":         types.StringType,
-				"distro":       types.StringType,
-				"architecture": types.StringType,
-				"admin_user":   types.StringType,
-				"is_hidden":    types.BoolType,
-			},
+			Attributes:  getImageOsInfoResourceSchemaAttributes(),
 			PlanModifiers: []planmodifier.Object{
 				objectplanmodifier.UseStateForUnknown(),
 			},
@@ -236,6 +225,33 @@ func getImageDataSourceSchema() map[string]dschema.Attribute {
 			Computed:    true,
 			Description: desc.String("os_info"),
 			Attributes:  getImageOsInfoSchemaAttributes(),
+		},
+	}
+}
+
+func getImageOsInfoResourceSchemaAttributes() map[string]rschema.Attribute {
+	desc := docs.Image("bcs_image__v1__api__get_image__model__OsInfoModel")
+
+	return map[string]rschema.Attribute{
+		"type": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("type"),
+		},
+		"distro": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("distro"),
+		},
+		"architecture": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("architecture"),
+		},
+		"admin_user": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("admin_user"),
+		},
+		"is_hidden": rschema.BoolAttribute{
+			Computed:    true,
+			Description: desc.String("is_hidden"),
 		},
 	}
 }

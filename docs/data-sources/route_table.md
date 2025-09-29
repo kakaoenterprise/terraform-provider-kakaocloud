@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_route_table data source retrieves detailed information about a specific Route Table in KakaoCloud.
   It provides attributes such as the associated VPC, route entries, subnet associations, provisioning status, and whether the Route Table is the main table in the VPC.
-  Use this data source when you need to:- Reference an existing Route Table in your Terraform configuration.
-  Query routing details dynamically instead of hardcoding route information.
+  Use this data source when you need to:
+  Reference an existing Route Table in your Terraform configuration.Query routing details dynamically instead of hardcoding route information.
 ---
 
 # kakaocloud_route_table (Data Source)
@@ -14,7 +14,9 @@ description: |-
 The `kakaocloud_route_table` data source retrieves detailed information about a specific Route Table in KakaoCloud.
 It provides attributes such as the associated VPC, route entries, subnet associations, provisioning status, and whether the Route Table is the main table in the VPC.
 
-Use this data source when you need to:- Reference an existing Route Table in your Terraform configuration.
+Use this data source when you need to:
+
+- Reference an existing Route Table in your Terraform configuration.
 - Query routing details dynamically instead of hardcoding route information.
 
 ## Example Usage
@@ -44,19 +46,19 @@ output "route_table_example" {
 
 ### Read-Only
 
-- `associations` (Attributes List) (see [below for nested schema](#nestedatt--associations))
-- `created_at` (String)
+- `associations` (Attributes List) List of subnet associations connected to the route table (see [below for nested schema](#nestedatt--associations))
+- `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `id` (String) The ID of this resource.
-- `is_main` (Boolean)
-- `name` (String)
-- `project_id` (String)
-- `project_name` (String)
-- `provisioning_status` (String)
-- `routes` (Attributes List) (see [below for nested schema](#nestedatt--routes))
-- `updated_at` (String)
-- `vpc_id` (String)
-- `vpc_name` (String)
-- `vpc_provisioning_status` (String)
+- `is_main` (Boolean) Indicates whether it is the main route table
+- `name` (String) Route table name
+- `project_id` (String) ID of the project the route table belongs to
+- `project_name` (String) Name of the project the route table belongs to
+- `provisioning_status` (String) Provisioning status
+- `routes` (Attributes List) List of routes registered in the route table (see [below for nested schema](#nestedatt--routes))
+- `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
+- `vpc_id` (String) ID of the VPC the route table belongs to
+- `vpc_name` (String) Name of the VPC the route table belongs to
+- `vpc_provisioning_status` (String) Status of the VPC
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -71,14 +73,14 @@ Optional:
 
 Read-Only:
 
-- `availability_zone` (String)
-- `id` (String)
-- `provisioning_status` (String)
-- `subnet_cidr_block` (String)
-- `subnet_id` (String)
-- `subnet_name` (String)
-- `vpc_id` (String)
-- `vpc_name` (String)
+- `availability_zone` (String) Availability zone
+- `id` (String) Association ID
+- `provisioning_status` (String) Provisioning status
+- `subnet_cidr_block` (String) IPv4 CIDR block of the subnet
+- `subnet_id` (String) ID of the connected subnet
+- `subnet_name` (String) Name of the connected subnet
+- `vpc_id` (String) ID of the connected VPC
+- `vpc_name` (String) Name of the connected VPC
 
 
 <a id="nestedatt--routes"></a>
@@ -86,10 +88,10 @@ Read-Only:
 
 Read-Only:
 
-- `destination` (String)
-- `id` (String)
-- `is_local_route` (Boolean)
-- `provisioning_status` (String)
-- `target_id` (String)
-- `target_name` (String)
-- `target_type` (String)
+- `destination` (String) Destination network address (CIDR format)
+- `id` (String) Route ID
+- `is_local_route` (Boolean) Indicates whether it is a local route<br/>  - `true`: route for communication within the same VPC
+- `provisioning_status` (String) Provisioning status
+- `target_id` (String) Target resource ID
+- `target_name` (String) Target resource name
+- `target_type` (String) Target resource type

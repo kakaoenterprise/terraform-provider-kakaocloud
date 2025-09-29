@@ -21,21 +21,21 @@ This resource provides lifecycle management for key pairs, including metadata su
 
 ### Required
 
-- `name` (String) The unique name for the keypair.
+- `name` (String) Key pair name
 
 ### Optional
 
-- `public_key` (String) The public key material
+- `public_key` (String) Public key
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 
 ### Read-Only
 
-- `created_at` (String) The creation time of the keypair.
-- `fingerprint` (String) The fingerprint of the public key.
-- `id` (String) The unique ID of the keypair.
-- `private_key` (String, Sensitive) The private key material (only returned on create).
-- `type` (String) The type of the keypair (e.g., ssh).
-- `user_id` (String) The user ID of the keypair owner.
+- `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
+- `fingerprint` (String) Unique fingerprint of the public key <br/> - Used for verification in SSH clients
+- `id` (String) Unique ID of the key pair
+- `private_key` (String, Sensitive) Private key of the created key pair <br/> - Saved in the user’s local environment and used for SSH authentication
+- `type` (String) Key type
+- `user_id` (String) User ID of the key pair owner
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`

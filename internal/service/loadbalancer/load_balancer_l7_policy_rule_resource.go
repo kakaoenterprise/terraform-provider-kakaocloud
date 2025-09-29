@@ -81,6 +81,14 @@ func (r *loadBalancerL7PolicyRuleResource) Create(ctx context.Context, req resou
 		return
 	}
 
+	loadBalancerId, ok := r.getLoadBalancerIdByL7PolicyId(ctx, plan.L7PolicyId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+	mutex := common.LockForID(*loadBalancerId)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -97,14 +105,6 @@ func (r *loadBalancerL7PolicyRuleResource) Create(ctx context.Context, req resou
 			return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.AddL7PolicyRule(ctx, plan.L7PolicyId.ValueString()).BodyAddL7PolicyRule(loadbalancer.BodyAddL7PolicyRule{L7Rule: createReq}).XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		createResp, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiAddL7PolicyRuleModelResponseL7PolicyRuleModel, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.AddL7PolicyRule(ctx, plan.L7PolicyId.ValueString()).BodyAddL7PolicyRule(loadbalancer.BodyAddL7PolicyRule{L7Rule: createReq}).XAuthToken(r.kc.XAuthToken).Execute()
-			},
-		)
-	}
 
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "AddL7PolicyRule", err, &resp.Diagnostics)
@@ -190,6 +190,14 @@ func (r *loadBalancerL7PolicyRuleResource) Update(ctx context.Context, req resou
 		return
 	}
 
+	loadBalancerId, ok := r.getLoadBalancerIdByL7PolicyId(ctx, state.L7PolicyId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+	mutex := common.LockForID(*loadBalancerId)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -206,14 +214,6 @@ func (r *loadBalancerL7PolicyRuleResource) Update(ctx context.Context, req resou
 			return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.UpdateL7PolicyRule(ctx, state.L7PolicyId.ValueString(), state.Id.ValueString()).BodyUpdateL7PolicyRule(loadbalancer.BodyUpdateL7PolicyRule{L7Rule: updateReq}).XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateL7PolicyRuleModelResponseL7PolicyRuleModel, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.UpdateL7PolicyRule(ctx, state.L7PolicyId.ValueString(), state.Id.ValueString()).BodyUpdateL7PolicyRule(loadbalancer.BodyUpdateL7PolicyRule{L7Rule: updateReq}).XAuthToken(r.kc.XAuthToken).Execute()
-			},
-		)
-	}
 
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "UpdateL7PolicyRule", err, &resp.Diagnostics)
@@ -255,6 +255,14 @@ func (r *loadBalancerL7PolicyRuleResource) Delete(ctx context.Context, req resou
 		return
 	}
 
+	loadBalancerId, ok := r.getLoadBalancerIdByL7PolicyId(ctx, state.L7PolicyId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+	mutex := common.LockForID(*loadBalancerId)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -272,17 +280,6 @@ func (r *loadBalancerL7PolicyRuleResource) Delete(ctx context.Context, req resou
 			return nil, httpResp, err
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (interface{}, *http.Response, error) {
-				httpResp, err := r.kc.ApiClient.LoadBalancerL7PoliciesAPI.DeleteL7PolicyRule(ctx, state.L7PolicyId.ValueString(), state.Id.ValueString()).
-					XAuthToken(r.kc.XAuthToken).
-					Execute()
-				return nil, httpResp, err
-			},
-		)
-	}
 
 	if err != nil {
 		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
@@ -318,6 +315,51 @@ func (r *loadBalancerL7PolicyRuleResource) ImportState(ctx context.Context, req 
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("l7_policy_id"), parts[0])...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), parts[1])...)
+}
+
+func (r *loadBalancerL7PolicyRuleResource) getLoadBalancerIdByL7PolicyId(ctx context.Context, l7PolicyId string, respDiags *diag.Diagnostics) (*string, bool) {
+
+	listenerId, err := r.findListenerIdByL7PolicyId(ctx, l7PolicyId)
+	if err != nil {
+		respDiags.AddError("Could not find listener for L7 policy", fmt.Sprintf("Failed to find listener for L7 policy %s: %v", l7PolicyId, err))
+		return nil, false
+	}
+
+	listenerResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+		func() (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelResponseListenerModel, *http.Response, error) {
+			return r.kc.ApiClient.LoadBalancerListenerAPI.GetListener(ctx, listenerId).
+				XAuthToken(r.kc.XAuthToken).Execute()
+		},
+	)
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "GetListener", err, respDiags)
+		return nil, false
+	}
+
+	return listenerResp.Listener.LoadBalancerId.Get(), true
+}
+
+func (r *loadBalancerL7PolicyRuleResource) findListenerIdByL7PolicyId(ctx context.Context, l7PolicyId string) (string, error) {
+
+	listenersResp, _, err := r.kc.ApiClient.LoadBalancerListenerAPI.
+		ListListeners(ctx).
+		XAuthToken(r.kc.XAuthToken).
+		Execute()
+	if err != nil {
+		return "", fmt.Errorf("failed to list listeners: %w", err)
+	}
+
+	for _, listener := range listenersResp.Listeners {
+		if listener.L7Policies != nil {
+			for _, policy := range listener.L7Policies {
+				if policy.Id == l7PolicyId {
+					return listener.Id, nil
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("L7 policy %s not found in any listener", l7PolicyId)
 }
 
 func (r *loadBalancerL7PolicyRuleResource) pollL7PolicyRuleUntilStatus(

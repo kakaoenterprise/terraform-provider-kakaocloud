@@ -107,7 +107,7 @@ func ToAvailabilityZone(v string) (*loadbalancer.AvailabilityZone, error) {
 }
 
 func ToListenerProtocol(v string) (*loadbalancer.Protocol, error) {
-	protocol := loadbalancer.Protocol(v)
+	protocol := loadbalancer.Protocol(strings.ToUpper(v))
 	for _, allowed := range loadbalancer.AllowedProtocolEnumValues {
 		if protocol == allowed {
 			return &protocol, nil

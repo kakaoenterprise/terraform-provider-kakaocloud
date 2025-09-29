@@ -40,7 +40,7 @@ func (d *keypairDataSource) Schema(ctx context.Context, _ datasource.SchemaReque
 			map[string]schema.Attribute{
 				"name": schema.StringAttribute{
 					Required:    true,
-					Description: "키페어 이름",
+					Description: "Key Pair Name",
 				},
 				"timeouts": timeouts.Attributes(ctx),
 			},

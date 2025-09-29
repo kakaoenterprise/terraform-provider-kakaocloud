@@ -48,7 +48,7 @@ Usage:
 terraform {
   required_providers {
     kakaocloud = {
-      source  = "kakaocloud/kakaocloud"
+      source  = "kakaoenterprise/kakaocloud"
       version = "~> 1.0"
     }
   }
@@ -69,7 +69,7 @@ which represent the kakaocloud application credential ID and secret, respectivel
 terraform {
   required_providers {
     kakaocloud = {
-      source  = "kakaocloud/kakaocloud"
+      source  = "kakaoenterprise/kakaocloud"
       version = "~> 1.0"
     }
   }

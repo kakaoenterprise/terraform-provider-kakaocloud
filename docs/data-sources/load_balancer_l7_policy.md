@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_load_balancer_l7_policy data source retrieves information about a specific Layer 7 (L7) policy in KakaoCloud.
   It returns details such as the policy action, listener ID, redirect configuration, position, status, and associated rules.
-  Use this data source when you need to:- Reference an existing L7 policy by its ID in your Terraform configuration.
-  Dynamically obtain policy attributes (e.g., action, redirect settings, or rules) without hardcoding them.Validate that an L7 policy is correctly configured before attaching it to a listener or target group.
+  Use this data source when you need to:
+  Reference an existing L7 policy by its ID in your Terraform configuration.Dynamically obtain policy attributes (e.g., action, redirect settings, or rules) without hardcoding them.Validate that an L7 policy is correctly configured before attaching it to a listener or target group.
 ---
 
 # kakaocloud_load_balancer_l7_policy (Data Source)
@@ -14,7 +14,9 @@ description: |-
 The `kakaocloud_load_balancer_l7_policy` data source retrieves information about a specific Layer 7 (L7) policy in KakaoCloud.
 It returns details such as the policy action, listener ID, redirect configuration, position, status, and associated rules.
 
-Use this data source when you need to:- Reference an existing L7 policy by its ID in your Terraform configuration.
+Use this data source when you need to:
+
+- Reference an existing L7 policy by its ID in your Terraform configuration.
 - Dynamically obtain policy attributes (e.g., action, redirect settings, or rules) without hardcoding them.
 - Validate that an L7 policy is correctly configured before attaching it to a listener or target group.
 

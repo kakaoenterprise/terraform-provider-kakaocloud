@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_public_ips data source retrieves a list of Public IPs in KakaoCloud.
   It supports filtering by attributes such as name, and provides details including the IP address, associated private IP, project, status, and related resource information (e.g., device, subnet, and VPC).
-  Use this data source when you need to:- Reference multiple existing Public IPs in your Terraform configuration.
-  Query networking information of Public IPs dynamically without hardcoding their attributes.
+  Use this data source when you need to:
+  Reference multiple existing Public IPs in your Terraform configuration.Query networking information of Public IPs dynamically without hardcoding their attributes.
   Available filters
   | Filter             | Type           | Description |
   |------------------------|----------------|-------------|
@@ -24,7 +24,9 @@ description: |-
 The `kakaocloud_public_ips` data source retrieves a list of Public IPs in KakaoCloud.
 It supports filtering by attributes such as name, and provides details including the IP address, associated private IP, project, status, and related resource information (e.g., device, subnet, and VPC).
 
-Use this data source when you need to:- Reference multiple existing Public IPs in your Terraform configuration.
+Use this data source when you need to:
+
+- Reference multiple existing Public IPs in your Terraform configuration.
 - Query networking information of Public IPs dynamically without hardcoding their attributes.
 
 ## Available filters

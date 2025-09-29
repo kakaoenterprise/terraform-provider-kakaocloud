@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_public_ip data source retrieves information about a specific Public IP in KakaoCloud.
   It provides details such as the IP address itself, associated private IP, project, status, and related resource information (e.g., device, subnet, and VPC).
-  Use this data source when you need to:- Reference an existing Public IP in your Terraform configuration.
-  Retrieve detailed networking information linked to the Public IP without hardcoding attributes.
+  Use this data source when you need to:
+  Reference an existing Public IP in your Terraform configuration.Retrieve detailed networking information linked to the Public IP without hardcoding attributes.
 ---
 
 # kakaocloud_public_ip (Data Source)
@@ -14,7 +14,9 @@ description: |-
 The `kakaocloud_public_ip` data source retrieves information about a specific Public IP in KakaoCloud.
 It provides details such as the IP address itself, associated private IP, project, status, and related resource information (e.g., device, subnet, and VPC).
 
-Use this data source when you need to:- Reference an existing Public IP in your Terraform configuration.
+Use this data source when you need to:
+
+- Reference an existing Public IP in your Terraform configuration.
 - Retrieve detailed networking information linked to the Public IP without hardcoding attributes.
 
 ## Example Usage

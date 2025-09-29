@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_load_balancer_listeners data source retrieves a list of listeners associated with KakaoCloud Load Balancers.
   It supports filtering by attributes such as name and returns details including protocol, port, connection limits, TLS configuration, associated L7 policies, and SSL certificates.
-  Use this data source when you need to:- Query multiple listeners dynamically instead of hardcoding listener IDs.
-  Filter listeners by attributes (e.g., name, protocol, or port) for use in other Terraform resources.Validate that listeners are configured correctly before attaching them to load balancers or applying policies.
+  Use this data source when you need to:
+  Query multiple listeners dynamically instead of hardcoding listener IDs.Filter listeners by attributes (e.g., name, protocol, or port) for use in other Terraform resources.Validate that listeners are configured correctly before attaching them to load balancers or applying policies.
   Available filters
   | Filter            | Type                        | Description |
   |-----------------------|-----------------------------|-------------|
@@ -28,7 +28,9 @@ description: |-
 The `kakaocloud_load_balancer_listeners` data source retrieves a list of listeners associated with KakaoCloud Load Balancers.
 It supports filtering by attributes such as `name` and returns details including protocol, port, connection limits, TLS configuration, associated L7 policies, and SSL certificates.
 
-Use this data source when you need to:- Query multiple listeners dynamically instead of hardcoding listener IDs.
+Use this data source when you need to:
+
+- Query multiple listeners dynamically instead of hardcoding listener IDs.
 - Filter listeners by attributes (e.g., name, protocol, or port) for use in other Terraform resources.
 - Validate that listeners are configured correctly before attaching them to load balancers or applying policies.
 

@@ -73,6 +73,14 @@ func (r *loadBalancerL7PolicyResource) Create(ctx context.Context, req resource.
 		return
 	}
 
+	loadBalancerId, ok := r.getLoadBalancerIdByListenerId(ctx, plan.ListenerId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+	mutex := common.LockForID(*loadBalancerId)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -120,14 +128,6 @@ func (r *loadBalancerL7PolicyResource) Create(ctx context.Context, req resource.
 			return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.CreateL7Policy(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateL7Policy(body).Execute()
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		createResp, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiCreateL7PolicyModelResponseL7PolicyModel, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.CreateL7Policy(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateL7Policy(body).Execute()
-			},
-		)
-	}
 
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "CreateL7Policy", err, &resp.Diagnostics)
@@ -237,6 +237,14 @@ func (r *loadBalancerL7PolicyResource) Update(ctx context.Context, req resource.
 		return
 	}
 
+	loadBalancerId, ok := r.getLoadBalancerIdByListenerId(ctx, state.ListenerId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+	mutex := common.LockForID(*loadBalancerId)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -295,14 +303,6 @@ func (r *loadBalancerL7PolicyResource) Update(ctx context.Context, req resource.
 		},
 	)
 
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateL7PolicyModelResponseL7PolicyModel, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.UpdateL7Policy(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateL7Policy(body).Execute()
-			},
-		)
-	}
-
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "UpdateL7Policy", err, &resp.Diagnostics)
 		return
@@ -345,21 +345,20 @@ func (r *loadBalancerL7PolicyResource) Delete(ctx context.Context, req resource.
 		return
 	}
 
+	loadBalancerId, ok := r.getLoadBalancerIdByListenerId(ctx, state.ListenerId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+	mutex := common.LockForID(*loadBalancerId)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			httpResp, err := r.kc.ApiClient.LoadBalancerL7PoliciesAPI.DeleteL7Policy(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
 			return nil, httpResp, err
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (interface{}, *http.Response, error) {
-				httpResp, err := r.kc.ApiClient.LoadBalancerL7PoliciesAPI.DeleteL7Policy(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
-				return nil, httpResp, err
-			},
-		)
-	}
 
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "DeleteL7Policy", err, &resp.Diagnostics)
@@ -437,4 +436,19 @@ func (r *loadBalancerL7PolicyResource) findListenerIdByL7PolicyId(ctx context.Co
 
 func (r *loadBalancerL7PolicyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+func (r *loadBalancerL7PolicyResource) getLoadBalancerIdByListenerId(ctx context.Context, listenerId string, respDiags *diag.Diagnostics) (*string, bool) {
+	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+		func() (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelResponseListenerModel, *http.Response, error) {
+			return r.kc.ApiClient.LoadBalancerListenerAPI.GetListener(ctx, listenerId).
+				XAuthToken(r.kc.XAuthToken).Execute()
+		},
+	)
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "GetListener", err, respDiags)
+		return nil, false
+	}
+
+	return respModel.Listener.LoadBalancerId.Get(), true
 }

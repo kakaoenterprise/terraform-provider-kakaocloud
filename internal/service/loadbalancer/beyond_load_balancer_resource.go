@@ -104,15 +104,6 @@ func (r *beyondLoadBalancerResource) Create(ctx context.Context, req resource.Cr
 		},
 	)
 
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		respModel, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiCreateHaGroupModelResponseBeyondLoadBalancerModel, *http.Response, error) {
-				return r.kc.ApiClient.BeyondLoadBalancerAPI.CreateHaGroup(ctx).
-					XAuthToken(r.kc.XAuthToken).BodyCreateHaGroup(body).Execute()
-			},
-		)
-	}
-
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "CreateHaGroup", err, &resp.Diagnostics)
 		return
@@ -264,17 +255,6 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 			},
 		)
 
-		if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-			_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-				func() (interface{}, *http.Response, error) {
-					return r.kc.ApiClient.BeyondLoadBalancerAPI.UpdateHaGroup(ctx, plan.Id.ValueString()).
-						XAuthToken(r.kc.XAuthToken).
-						BodyUpdateHaGroup(body).
-						Execute()
-				},
-			)
-		}
-
 		if err != nil {
 			common.AddApiActionError(ctx, r, httpResp, "UpdateHaGroup", err, &resp.Diagnostics)
 			return
@@ -356,17 +336,6 @@ func (r *beyondLoadBalancerResource) Delete(ctx context.Context, req resource.De
 			return nil, httpResp, err
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (interface{}, *http.Response, error) {
-				httpResp, err := r.kc.ApiClient.BeyondLoadBalancerAPI.DeleteHaGroup(ctx, state.Id.ValueString()).
-					XAuthToken(r.kc.XAuthToken).
-					Execute()
-				return nil, httpResp, err
-			},
-		)
-	}
 
 	if err != nil {
 		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
@@ -527,11 +496,13 @@ func (r *beyondLoadBalancerResource) validateAttachedLoadBalancersConfig(ctx con
 	zoneMap := make(map[string]bool)
 
 	for _, configLb := range configLbList {
-		if zoneMap[configLb.AvailabilityZone.ValueString()] {
-			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
-				fmt.Sprintf("Duplicate Availability Zone: %s", configLb.AvailabilityZone))
-			return
+		if !configLb.AvailabilityZone.IsUnknown() {
+			if zoneMap[configLb.AvailabilityZone.ValueString()] {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("Duplicate Availability Zone: %s", configLb.AvailabilityZone))
+				return
+			}
+			zoneMap[configLb.AvailabilityZone.ValueString()] = true
 		}
-		zoneMap[configLb.AvailabilityZone.ValueString()] = true
 	}
 }

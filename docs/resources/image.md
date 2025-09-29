@@ -27,7 +27,7 @@ This resource also provides detailed metadata such as operating system informati
 
 - `description` (String) Description of the image
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
-- `volume_id` (String)
+- `volume_id` (String) Unique ID of the volume
 
 ### Read-Only
 
@@ -40,7 +40,7 @@ This resource also provides detailed metadata such as operating system informati
 - `is_shared` (Boolean) Whether the image is shared
 - `min_disk` (Number) Minimum disk size required to use this image (GB)
 - `min_ram` (Number) Minimum memory required to use this image (MB)
-- `os_info` (Object) Operating system information of the image (see [below for nested schema](#nestedatt--os_info))
+- `os_info` (Attributes) Operating system information of the image (see [below for nested schema](#nestedatt--os_info))
 - `owner` (String) Owner of the image (project ID that owns the image)
 - `project_id` (String) Unique ID of the project
 - `size` (Number) Size of the image (in bytes)
@@ -65,8 +65,8 @@ Optional:
 
 Read-Only:
 
-- `admin_user` (String)
-- `architecture` (String)
-- `distro` (String)
-- `is_hidden` (Boolean)
-- `type` (String)
+- `admin_user` (String) Default administrator account name of the image
+- `architecture` (String) System architecture
+- `distro` (String) Name of the distribution
+- `is_hidden` (Boolean) Whether the image is hidden
+- `type` (String) Operating system type

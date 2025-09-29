@@ -73,6 +73,10 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 		return
 	}
 
+	mutex := common.LockForID(plan.LoadBalancerId.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	if !plan.SniContainerRefs.IsNull() && !plan.SniContainerRefs.IsUnknown() {
 		resp.Diagnostics.AddError(
 			"Invalid Configuration",
@@ -118,14 +122,6 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 			return r.kc.ApiClient.LoadBalancerListenerAPI.CreateListener(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateListener(body).Execute()
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		lbl, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiCreateListenerModelResponseListenerModel, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerListenerAPI.CreateListener(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateListener(body).Execute()
-			},
-		)
-	}
 
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "CreateListener", err, &resp.Diagnostics)
@@ -228,6 +224,10 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 		return
 	}
 
+	mutex := common.LockForID(state.LoadBalancerId.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -319,14 +319,6 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 		},
 	)
 
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (interface{}, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerListenerAPI.UpdateListener(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateListener(body).Execute()
-			},
-		)
-	}
-
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "UpdateListener", err, &resp.Diagnostics)
 		return
@@ -376,21 +368,16 @@ func (r *loadBalancerListenerResource) Delete(ctx context.Context, req resource.
 		return
 	}
 
+	mutex := common.LockForID(state.LoadBalancerId.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			httpResp, err := r.kc.ApiClient.LoadBalancerListenerAPI.DeleteListener(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
 			return nil, httpResp, err
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (interface{}, *http.Response, error) {
-				httpResp, err := r.kc.ApiClient.LoadBalancerListenerAPI.DeleteListener(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
-				return nil, httpResp, err
-			},
-		)
-	}
 
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "DeleteListener", err, &resp.Diagnostics)
@@ -511,14 +498,6 @@ func (r *loadBalancerListenerResource) updateListenerFields(
 			return r.kc.ApiClient.LoadBalancerListenerAPI.UpdateListener(ctx, listenerId).XAuthToken(r.kc.XAuthToken).BodyUpdateListener(body).Execute()
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (interface{}, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerListenerAPI.UpdateListener(ctx, listenerId).XAuthToken(r.kc.XAuthToken).BodyUpdateListener(body).Execute()
-			},
-		)
-	}
 
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "UpdateListener", err, &resp.Diagnostics)

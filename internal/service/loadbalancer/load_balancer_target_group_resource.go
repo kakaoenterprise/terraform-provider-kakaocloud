@@ -72,6 +72,10 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 		return
 	}
 
+	mutex := common.LockForID(plan.LoadBalancerId.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -97,18 +101,6 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 				Execute()
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		respModel, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiCreateTargetGroupModelResponseTargetGroupModel, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
-					CreateTargetGroup(ctx).
-					XAuthToken(r.kc.XAuthToken).
-					BodyCreateTargetGroup(body).
-					Execute()
-			},
-		)
-	}
 
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "CreateTargetGroup", err, &resp.Diagnostics)
@@ -228,6 +220,10 @@ func (r *loadBalancerTargetGroupResource) Update(ctx context.Context, req resour
 		return
 	}
 
+	mutex := common.LockForID(state.LoadBalancerId.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -253,18 +249,6 @@ func (r *loadBalancerTargetGroupResource) Update(ctx context.Context, req resour
 				Execute()
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		respModel, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateTargetGroupModelResponseTargetGroupModel, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
-					UpdateTargetGroup(ctx, state.Id.ValueString()).
-					XAuthToken(r.kc.XAuthToken).
-					BodyUpdateTargetGroup(*body).
-					Execute()
-			},
-		)
-	}
 
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "UpdateTargetGroup", err, &resp.Diagnostics)
@@ -330,6 +314,10 @@ func (r *loadBalancerTargetGroupResource) Delete(ctx context.Context, req resour
 		return
 	}
 
+	mutex := common.LockForID(state.LoadBalancerId.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -348,18 +336,6 @@ func (r *loadBalancerTargetGroupResource) Delete(ctx context.Context, req resour
 			return nil, httpResp, err
 		},
 	)
-
-	if httpResp != nil && httpResp.StatusCode == http.StatusConflict {
-		_, httpResp, err = ExecuteWithLoadBalancerConflictRetry(ctx, r.kc, &resp.Diagnostics,
-			func() (interface{}, *http.Response, error) {
-				httpResp, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
-					DeleteTargetGroup(ctx, state.Id.ValueString()).
-					XAuthToken(r.kc.XAuthToken).
-					Execute()
-				return nil, httpResp, err
-			},
-		)
-	}
 
 	if httpResp != nil && httpResp.StatusCode == 404 {
 

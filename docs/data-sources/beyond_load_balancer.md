@@ -5,28 +5,23 @@ subcategory: ""
 description: |-
   page_title: "kakaocloud_beyond_load_balancer Resource - kakaocloud" subcategory: ""
   description: |-
-  Represents a beyond load balancer resource. ---
   kakaocloud_beyond_load_balancer (Resource)
   Represents a beyond load balancer resource.
-  Schema
   Required
-  attached_load_balancers (Attributes Set) Request List of load balancers belonging to the HA group (see below for nested schema) - load_balancers (Attributes List) List of load balancers included in the high availability group (see below for nested schema) - name (String) High availability group name - scheme (String) Access type - type_id (String) High availability group type ID - vpc_id (String) Unique ID of the VPC
+  attached_load_balancers (Attributes Set) Request List of load balancers belonging to the HA group (see below for nested schema)load_balancers (Attributes List) List of load balancers included in the high availability group (see below for nested schema)name (String) High availability group namescheme (String) Access typetype_id (String) High availability group type IDvpc_id (String) Unique ID of the VPC
   Optional
-  description (String) Description of the high availability group - timeouts (Attributes) (see below for nested schema)
+  description (String) Description of the high availability grouptimeouts (Attributes) (see below for nested schema)
   Read-Only
-  availability_zones (List of String) List of availability zones configured for the high availability group - created_at (String) Time when the resource was created  - ISO_8601 format   - Based on UTC - dns_name (String) Associated DNS name (e.g., public address of the load balancer) - id (String) High availability group ID - operating_status (String) Operating status - project_id (String) Project ID - provider_name (String) Service provider information - provisioning_status (String) Provisioning status - type (String) Load balancer type https://docs.kakaocloud.com/en/service/bns/lb/lb-overview#사용-목적에-따른-로드-밸런서-유형-제공 - updated_at (String) Time when the resource was last updated  - ISO_8601 format   - Based on UTC - vpc_cidr_block (String) IPv4 CIDR block of the VPC - vpc_name (String) Associated VPC name
-  
-  Nested Schema for attached_load_balancers
+  availability_zones (List of String) List of availability zones configured for the high availability groupcreated_at (String) Time when the resource was created  - ISO_8601 format   - Based on UTCdns_name (String) Associated DNS name (e.g., public address of the load balancer)id (String) High availability group IDoperating_status (String) Operating statusproject_id (String) Project IDprovider_name (String) Service provider informationprovisioning_status (String) Provisioning statustype (String) Load balancer type https://docs.kakaocloud.com/en/service/bns/lb/lb-overview#사용-목적에-따른-로드-밸런서-유형-제공updated_at (String) Time when the resource was last updated  - ISO_8601 format   - Based on UTCvpc_cidr_block (String) IPv4 CIDR block of the VPCvpc_name (String) Associated VPC name
+   ### Nested Schema for attached_load_balancers
   Required:
-  availability_zone (String) Availability zone - id (String) Load balancer ID
-  
-  Nested Schema for load_balancers
+  availability_zone (String) Availability zoneid (String) Load balancer ID
+   ### Nested Schema for load_balancers
   Read-Only:
-  availability_zone (String) List of availability zones configured for the high availability group - created_at (String) Time when the resource was created  - ISO_8601 format   - Based on UTC - description (String) Description of the load balancer - id (String) Load balancer ID - name (String) Load balancer name - operating_status (String) Operating status - provisioning_status (String) Provisioning status - subnet_cidr_block (String) IPv4 CIDR block of the subnet - subnet_id (String) Associated subnet ID - subnet_name (String) Associated subnet name - type (String) Load balancer type - type_id (String) Load balancer type identifier - updated_at (String) Time when the resource was last updated  - ISO_8601 format   - Based on UTC
-  
-  Nested Schema for timeouts
+  availability_zone (String) List of availability zones configured for the high availability groupcreated_at (String) Time when the resource was created  - ISO_8601 format   - Based on UTCdescription (String) Description of the load balancerid (String) Load balancer IDname (String) Load balancer nameoperating_status (String) Operating statusprovisioning_status (String) Provisioning statussubnet_cidr_block (String) IPv4 CIDR block of the subnetsubnet_id (String) Associated subnet IDsubnet_name (String) Associated subnet nametype (String) Load balancer typetype_id (String) Load balancer type identifierupdated_at (String) Time when the resource was last updated  - ISO_8601 format   - Based on UTC
+   ### Nested Schema for timeouts
   Optional:
-  create (String) A string that can be parsed as a duration https://pkg.go.dev/time#ParseDuration consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). - delete (String) A string that can be parsed as a duration https://pkg.go.dev/time#ParseDuration consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs. - read (String) A string that can be parsed as a duration https://pkg.go.dev/time#ParseDuration consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled. - update (String) A string that can be parsed as a duration https://pkg.go.dev/time#ParseDuration consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+  create (String) A string that can be parsed as a duration https://pkg.go.dev/time#ParseDuration consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).delete (String) A string that can be parsed as a duration https://pkg.go.dev/time#ParseDuration consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.read (String) A string that can be parsed as a duration https://pkg.go.dev/time#ParseDuration consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.update (String) A string that can be parsed as a duration https://pkg.go.dev/time#ParseDuration consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 ---
 
 # kakaocloud_beyond_load_balancer (Data Source)
@@ -35,51 +30,74 @@ page_title: "kakaocloud_beyond_load_balancer Resource - kakaocloud" subcategory:
 
 description: |-
 
-Represents a beyond load balancer resource. ---
-
 # kakaocloud_beyond_load_balancer (Resource)
 
 Represents a beyond load balancer resource.
 
-<!-- schema generated by tfplugindocs -->
-
-## Schema
+<!-- schema generated by tfplugindocs --> ## Schema
 
 ### Required
 
-- `attached_load_balancers` (Attributes Set) Request List of load balancers belonging to the HA group (see [below for nested schema](#nestedatt--attached_load_balancers)) - `load_balancers` (Attributes List) List of load balancers included in the high availability group (see [below for nested schema](#nestedatt--load_balancers)) - `name` (String) High availability group name - `scheme` (String) Access type - `type_id` (String) High availability group type ID - `vpc_id` (String) Unique ID of the VPC
+- `attached_load_balancers` (Attributes Set) Request List of load balancers belonging to the HA group (see [below for nested schema](#nestedatt--attached_load_balancers))
+- `load_balancers` (Attributes List) List of load balancers included in the high availability group (see [below for nested schema](#nestedatt--load_balancers))
+- `name` (String) High availability group name
+- `scheme` (String) Access type
+- `type_id` (String) High availability group type ID
+- `vpc_id` (String) Unique ID of the VPC
 
 ### Optional
 
-- `description` (String) Description of the high availability group - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `description` (String) Description of the high availability group
+- `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 
 ### Read-Only
 
-- `availability_zones` (List of String) List of availability zones configured for the high availability group - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC - `dns_name` (String) Associated DNS name (e.g., public address of the load balancer) - `id` (String) High availability group ID - `operating_status` (String) Operating status - `project_id` (String) Project ID - `provider_name` (String) Service provider information - `provisioning_status` (String) Provisioning status - `type` (String) [Load balancer type](https://docs.kakaocloud.com/en/service/bns/lb/lb-overview#사용-목적에-따른-로드-밸런서-유형-제공) - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC - `vpc_cidr_block` (String) IPv4 CIDR block of the VPC - `vpc_name` (String) Associated VPC name
+- `availability_zones` (List of String) List of availability zones configured for the high availability group
+- `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
+- `dns_name` (String) Associated DNS name (e.g., public address of the load balancer)
+- `id` (String) High availability group ID
+- `operating_status` (String) Operating status
+- `project_id` (String) Project ID
+- `provider_name` (String) Service provider information
+- `provisioning_status` (String) Provisioning status
+- `type` (String) [Load balancer type](https://docs.kakaocloud.com/en/service/bns/lb/lb-overview#사용-목적에-따른-로드-밸런서-유형-제공)
+- `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
+- `vpc_cidr_block` (String) IPv4 CIDR block of the VPC
+- `vpc_name` (String) Associated VPC name
 
-<a id="nestedatt--attached_load_balancers"></a>
-
-### Nested Schema for `attached_load_balancers`
+<a id="nestedatt--attached_load_balancers"></a> ### Nested Schema for `attached_load_balancers`
 
 Required:
 
-- `availability_zone` (String) Availability zone - `id` (String) Load balancer ID
+- `availability_zone` (String) Availability zone
+- `id` (String) Load balancer ID
 
-<a id="nestedatt--load_balancers"></a>
-
-### Nested Schema for `load_balancers`
+<a id="nestedatt--load_balancers"></a> ### Nested Schema for `load_balancers`
 
 Read-Only:
 
-- `availability_zone` (String) List of availability zones configured for the high availability group - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC - `description` (String) Description of the load balancer - `id` (String) Load balancer ID - `name` (String) Load balancer name - `operating_status` (String) Operating status - `provisioning_status` (String) Provisioning status - `subnet_cidr_block` (String) IPv4 CIDR block of the subnet - `subnet_id` (String) Associated subnet ID - `subnet_name` (String) Associated subnet name - `type` (String) Load balancer type - `type_id` (String) Load balancer type identifier - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
+- `availability_zone` (String) List of availability zones configured for the high availability group
+- `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
+- `description` (String) Description of the load balancer
+- `id` (String) Load balancer ID
+- `name` (String) Load balancer name
+- `operating_status` (String) Operating status
+- `provisioning_status` (String) Provisioning status
+- `subnet_cidr_block` (String) IPv4 CIDR block of the subnet
+- `subnet_id` (String) Associated subnet ID
+- `subnet_name` (String) Associated subnet name
+- `type` (String) Load balancer type
+- `type_id` (String) Load balancer type identifier
+- `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 
-<a id="nestedatt--timeouts"></a>
-
-### Nested Schema for `timeouts`
+<a id="nestedatt--timeouts"></a> ### Nested Schema for `timeouts`
 
 Optional:
 
-- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). - `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs. - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled. - `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 ## Example Usage
 

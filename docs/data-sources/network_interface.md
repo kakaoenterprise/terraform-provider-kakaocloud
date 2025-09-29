@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The kakaocloud_network_interface data source retrieves detailed information about a specific Network Interface in KakaoCloud.
   It provides attributes such as private and public IP addresses, MAC address, associated security groups, allowed address pairs, and VPC/subnet information.
-  Use this data source when you need to:- Reference an existing network interface in your Terraform configuration.
-  Access networking details such as IPs, security groups, or VPC/subnet mappings without hardcoding values.Ensure dependent resources (e.g., instances, load balancers) are correctly attached to the intended network interface.
+  Use this data source when you need to:
+  Reference an existing network interface in your Terraform configuration.Access networking details such as IPs, security groups, or VPC/subnet mappings without hardcoding values.Ensure dependent resources (e.g., instances, load balancers) are correctly attached to the intended network interface.
 ---
 
 # kakaocloud_network_interface (Data Source)
@@ -14,7 +14,9 @@ description: |-
 The `kakaocloud_network_interface` data source retrieves detailed information about a specific Network Interface in KakaoCloud.
 It provides attributes such as private and public IP addresses, MAC address, associated security groups, allowed address pairs, and VPC/subnet information.
 
-Use this data source when you need to:- Reference an existing network interface in your Terraform configuration.
+Use this data source when you need to:
+
+- Reference an existing network interface in your Terraform configuration.
 - Access networking details such as IPs, security groups, or VPC/subnet mappings without hardcoding values.
 - Ensure dependent resources (e.g., instances, load balancers) are correctly attached to the intended network interface.
 
@@ -41,29 +43,29 @@ output "network_interface_example" {
 
 ### Optional
 
-- `description` (String)
+- `description` (String) Description of the network interface
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 
 ### Read-Only
 
-- `allowed_address_pairs` (Attributes Set) (see [below for nested schema](#nestedatt--allowed_address_pairs))
-- `created_at` (String)
-- `device_id` (String)
-- `device_owner` (String)
+- `allowed_address_pairs` (Attributes Set) List of allowed IP addresses for packet transmission (see [below for nested schema](#nestedatt--allowed_address_pairs))
+- `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
+- `device_id` (String) ID of the resource attached to the network interface
+- `device_owner` (String) Owner type of the resource attached to the interface (e.g., instance, router, etc.)
 - `id` (String) The ID of this resource.
-- `is_network_interface_security_enabled` (Boolean)
-- `mac_address` (String)
-- `name` (String)
-- `private_ip` (String)
-- `project_id` (String)
-- `project_name` (String)
-- `public_ip` (String)
-- `secondary_ips` (List of String)
-- `security_groups` (Attributes Set) (see [below for nested schema](#nestedatt--security_groups))
-- `status` (String)
-- `subnet_id` (String)
-- `updated_at` (String)
-- `vpc_id` (String)
+- `is_network_interface_security_enabled` (Boolean) Indicates whether security groups are enabled
+- `mac_address` (String) MAC address of the network interface
+- `name` (String) Name of the network interface
+- `private_ip` (String) Primary private IP address (IPv4 format)
+- `project_id` (String) ID of the project the network interface belongs to
+- `project_name` (String) Name of the project
+- `public_ip` (String) Associated public IP
+- `secondary_ips` (List of String) List of secondary IPs attached to the network interface
+- `security_groups` (Attributes Set) List of attached security groups (see [below for nested schema](#nestedatt--security_groups))
+- `status` (String) Current status of the network interface
+- `subnet_id` (String) ID of the connected subnet
+- `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
+- `vpc_id` (String) ID of the VPC the network interface belongs to
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -78,8 +80,8 @@ Optional:
 
 Read-Only:
 
-- `ip_address` (String)
-- `mac_address` (String)
+- `ip_address` (String) Allowed IP address
+- `mac_address` (String) Allowed MAC address
 
 
 <a id="nestedatt--security_groups"></a>
@@ -87,5 +89,5 @@ Read-Only:
 
 Read-Only:
 
-- `id` (String)
-- `name` (String)
+- `id` (String) Security group ID
+- `name` (String) Security group name

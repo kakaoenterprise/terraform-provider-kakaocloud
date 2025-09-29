@@ -4,6 +4,7 @@ package vpc
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -13,72 +14,156 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
-var subnetDataSourceSchemaAttributes = map[string]dschema.Attribute{
-	"name":              dschema.StringAttribute{Computed: true},
-	"is_shared":         dschema.BoolAttribute{Computed: true},
-	"availability_zone": dschema.StringAttribute{Computed: true},
-	"cidr_block": dschema.StringAttribute{
-		Computed:   true,
-		CustomType: cidrtypes.IPPrefixType{},
-	},
-	"project_id":          dschema.StringAttribute{Computed: true},
-	"provisioning_status": dschema.StringAttribute{Computed: true},
-	"vpc_id":              dschema.StringAttribute{Computed: true},
-	"vpc_name":            dschema.StringAttribute{Computed: true},
-	"project_name":        dschema.StringAttribute{Computed: true},
-	"owner_project_id":    dschema.StringAttribute{Computed: true},
-	"route_table_id":      dschema.StringAttribute{Computed: true},
-	"route_table_name":    dschema.StringAttribute{Computed: true},
-	"created_at":          dschema.StringAttribute{Computed: true},
-	"updated_at":          dschema.StringAttribute{Computed: true},
+func getSubnetDataSourceSchema() map[string]dschema.Attribute {
+	desc := docs.Vpc("bns_vpc__v1__api__get_subnet__model__SubnetModel")
+
+	return map[string]dschema.Attribute{
+		"name": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("name"),
+		},
+		"is_shared": dschema.BoolAttribute{
+			Computed:    true,
+			Description: desc.String("is_shared"),
+		},
+		"availability_zone": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("availability_zone"),
+		},
+		"cidr_block": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("cidr_block"),
+			CustomType:  cidrtypes.IPPrefixType{},
+		},
+		"project_id": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("project_id"),
+		},
+		"provisioning_status": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("provisioning_status"),
+		},
+		"vpc_id": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("vpc_id"),
+		},
+		"vpc_name": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("vpc_name"),
+		},
+		"project_name": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("project_name"),
+		},
+		"owner_project_id": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("owner_project_id"),
+		},
+		"route_table_id": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("route_table_id"),
+		},
+		"route_table_name": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("route_table_name"),
+		},
+		"created_at": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("created_at"),
+		},
+		"updated_at": dschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("updated_at"),
+		},
+	}
 }
 
-var subnetResourceSchemaAttributes = map[string]rschema.Attribute{
-	"id": rschema.StringAttribute{
-		Computed: true,
-		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.UseStateForUnknown(),
+func getSubnetResourceSchemaAttributes() map[string]rschema.Attribute {
+	desc := docs.Vpc("bns_vpc__v1__api__get_subnet__model__SubnetModel")
+
+	return map[string]rschema.Attribute{
+		"id": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("id"),
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
-	},
-	"name": rschema.StringAttribute{
-		Required:   true,
-		Validators: common.NameValidator(200),
-	},
-	"is_shared": rschema.BoolAttribute{Computed: true},
-	"availability_zone": rschema.StringAttribute{
-		Required: true,
-		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.RequiresReplace(),
+		"name": rschema.StringAttribute{
+			Required:    true,
+			Description: desc.String("name"),
+			Validators:  common.NameValidator(200),
 		},
-	},
-	"cidr_block": rschema.StringAttribute{
-		Required:   true,
-		CustomType: cidrtypes.IPPrefixType{},
-		Validators: []validator.String{
-			common.NewCIDRPrefixLengthValidator(20, 26),
+		"is_shared": rschema.BoolAttribute{
+			Computed:    true,
+			Description: desc.String("is_shared"),
 		},
-		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.RequiresReplace(),
+		"availability_zone": rschema.StringAttribute{
+			Required:    true,
+			Description: desc.String("availability_zone"),
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
 		},
-	},
-	"project_id":          rschema.StringAttribute{Computed: true},
-	"provisioning_status": rschema.StringAttribute{Computed: true},
-	"vpc_id": rschema.StringAttribute{
-		Required:   true,
-		Validators: common.UuidValidator(),
-		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.RequiresReplace(),
+		"cidr_block": rschema.StringAttribute{
+			Required:    true,
+			Description: desc.String("cidr_block"),
+			CustomType:  cidrtypes.IPPrefixType{},
+			Validators: []validator.String{
+				common.NewCIDRPrefixLengthValidator(20, 26),
+			},
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
 		},
-	},
-	"vpc_name":         rschema.StringAttribute{Computed: true},
-	"project_name":     rschema.StringAttribute{Computed: true},
-	"owner_project_id": rschema.StringAttribute{Computed: true},
-	"route_table_id": rschema.StringAttribute{
-		Optional:   true,
-		Computed:   true,
-		Validators: common.UuidValidator(),
-	},
-	"route_table_name": rschema.StringAttribute{Computed: true},
-	"created_at":       rschema.StringAttribute{Computed: true},
-	"updated_at":       rschema.StringAttribute{Computed: true},
+		"project_id": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("project_id"),
+		},
+		"provisioning_status": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("provisioning_status"),
+		},
+		"vpc_id": rschema.StringAttribute{
+			Required:    true,
+			Description: desc.String("vpc_id"),
+			Validators:  common.UuidValidator(),
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
+		},
+		"vpc_name": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("vpc_name"),
+		},
+		"project_name": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("project_name"),
+		},
+		"owner_project_id": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("owner_project_id"),
+		},
+		"route_table_id": rschema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: desc.String("route_table_id"),
+			Validators:  common.UuidValidator(),
+		},
+		"route_table_name": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("route_table_name"),
+		},
+		"created_at": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("created_at"),
+		},
+		"updated_at": rschema.StringAttribute{
+			Computed:    true,
+			Description: desc.String("updated_at"),
+		},
+	}
 }
+
+var subnetDataSourceSchemaAttributes = getSubnetDataSourceSchema()
+var subnetResourceSchemaAttributes = getSubnetResourceSchemaAttributes()

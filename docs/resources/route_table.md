@@ -21,40 +21,40 @@ This resource also provides detailed information on existing routes, association
 
 ### Required
 
-- `name` (String)
-- `vpc_id` (String)
+- `name` (String) Route table name
+- `vpc_id` (String) ID of the VPC the route table belongs to
 
 ### Optional
 
-- `is_main` (Boolean)
-- `request_routes` (Attributes List) (see [below for nested schema](#nestedatt--request_routes))
+- `is_main` (Boolean) Indicates whether it is the main route table
+- `request_routes` (Attributes List) List of routes registered in the route table (see [below for nested schema](#nestedatt--request_routes))
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 
 ### Read-Only
 
-- `associations` (Attributes List) (see [below for nested schema](#nestedatt--associations))
-- `created_at` (String)
-- `id` (String) The ID of this resource.
-- `project_id` (String)
-- `project_name` (String)
-- `provisioning_status` (String)
-- `routes` (Attributes List) (see [below for nested schema](#nestedatt--routes))
-- `updated_at` (String)
-- `vpc_name` (String)
-- `vpc_provisioning_status` (String)
+- `associations` (Attributes List) List of subnet associations connected to the route table (see [below for nested schema](#nestedatt--associations))
+- `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
+- `id` (String) Route table ID
+- `project_id` (String) ID of the project the route table belongs to
+- `project_name` (String) Name of the project the route table belongs to
+- `provisioning_status` (String) Provisioning status
+- `routes` (Attributes List) List of routes registered in the route table (see [below for nested schema](#nestedatt--routes))
+- `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
+- `vpc_name` (String) Name of the VPC the route table belongs to
+- `vpc_provisioning_status` (String) Status of the VPC
 
 <a id="nestedatt--request_routes"></a>
 ### Nested Schema for `request_routes`
 
 Required:
 
-- `destination` (String)
-- `target_id` (String)
-- `target_type` (String)
+- `destination` (String) Destination network address (CIDR format)
+- `target_id` (String) Target resource ID
+- `target_type` (String) Target resource type
 
 Read-Only:
 
-- `id` (String)
+- `id` (String) Route ID
 
 
 <a id="nestedatt--timeouts"></a>
@@ -73,14 +73,14 @@ Optional:
 
 Read-Only:
 
-- `availability_zone` (String)
-- `id` (String)
-- `provisioning_status` (String)
-- `subnet_cidr_block` (String)
-- `subnet_id` (String)
-- `subnet_name` (String)
-- `vpc_id` (String)
-- `vpc_name` (String)
+- `availability_zone` (String) Availability zone
+- `id` (String) Association ID
+- `provisioning_status` (String) Provisioning status
+- `subnet_cidr_block` (String) IPv4 CIDR block of the subnet
+- `subnet_id` (String) ID of the connected subnet
+- `subnet_name` (String) Name of the connected subnet
+- `vpc_id` (String) ID of the connected VPC
+- `vpc_name` (String) Name of the connected VPC
 
 
 <a id="nestedatt--routes"></a>
@@ -88,13 +88,13 @@ Read-Only:
 
 Required:
 
-- `destination` (String)
-- `target_id` (String)
-- `target_type` (String)
+- `destination` (String) Destination network address (CIDR format)
+- `target_id` (String) Target resource ID
+- `target_type` (String) Target resource type
 
 Read-Only:
 
-- `id` (String)
-- `is_local_route` (Boolean)
-- `provisioning_status` (String)
-- `target_name` (String)
+- `id` (String) Route ID
+- `is_local_route` (Boolean) Indicates whether it is a local route<br/>  - `true`: route for communication within the same VPC
+- `provisioning_status` (String) Provisioning status
+- `target_name` (String) Target resource name

@@ -3,12 +3,12 @@
 page_title: "kakaocloud_kubernetes_engine_node_pool Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  kakaocloud 특정 클러스터의 노드 풀을 조회하는 데이터 소스
+  Data source to retrieve node pools of a specific cluster
 ---
 
 # kakaocloud_kubernetes_engine_node_pool (Data Source)
 
-kakaocloud 특정 클러스터의 노드 풀을 조회하는 데이터 소스
+Data source to retrieve node pools of a specific cluster
 
 ## Example Usage
 
@@ -52,7 +52,6 @@ output "node_pool_example" {
 - `flavor_id` (String) Instance type ID
 - `id` (String) Unique ID of the node pool
 - `image` (Attributes) Image information (see [below for nested schema](#nestedatt--image))
-- `image_id` (String) Unique ID of the image
 - `is_bare_metal` (Boolean) Whether the node pool is bare metal type
 - `is_cordon` (Boolean) Whether all nodes in the node pool are in cordon (scheduling disabled) state
 - `is_gpu` (Boolean) Whether the node pool is GPU type
@@ -96,8 +95,16 @@ Read-Only:
 
 Read-Only:
 
+- `architecture` (String) Image architecture
 - `id` (String) Unique ID of the image
+- `instance_type` (String) Supported instance type for the image
+- `is_gpu_type` (Boolean) Whether the image supports GPU
+- `kernel_version` (String) Kernel version
+- `key_package` (String) Key package information included in the image
 - `name` (String) Image name
+- `os_distro` (String) Operating system distribution
+- `os_type` (String) Operating system type
+- `os_version` (String) Operating system version
 
 
 <a id="nestedatt--labels"></a>
