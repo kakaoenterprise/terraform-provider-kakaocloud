@@ -321,19 +321,6 @@ func (r *routeTableResource) Delete(ctx context.Context, req resource.DeleteRequ
 		return
 	}
 
-	if state.IsMain.ValueBool() {
-		common.AddGeneralError(ctx, r, &resp.Diagnostics,
-			fmt.Sprintf("Route table %q is the main route table and cannot be deleted.", state.Id.ValueString()),
-		)
-		return
-	}
-	if !state.Associations.IsNull() && len(state.Associations.Elements()) > 0 {
-		common.AddGeneralError(ctx, r, &resp.Diagnostics,
-			fmt.Sprintf("Route table %q has subnet associations and cannot be deleted.", state.Id.ValueString()),
-		)
-		return
-	}
-
 	mutex := common.LockForID(state.VpcId.ValueString())
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -353,14 +340,28 @@ func (r *routeTableResource) Delete(ctx context.Context, req resource.DeleteRequ
 		return
 	}
 
-	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (interface{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.VPCRouteTableAPI.DeleteRouteTable(ctx, state.Id.ValueString()).
-				XAuthToken(r.kc.XAuthToken).
-				Execute()
-			return nil, httpResp, err
-		},
+	var (
+		err       error
+		httpResp  *http.Response
+		maxRetry  = 3
+		retryWait = 2 * time.Second
 	)
+
+	for i := 0; i < maxRetry; i++ {
+		_, httpResp, err = common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+			func() (interface{}, *http.Response, error) {
+				httpResp, err := r.kc.ApiClient.VPCRouteTableAPI.DeleteRouteTable(ctx, state.Id.ValueString()).
+					XAuthToken(r.kc.XAuthToken).
+					Execute()
+				return nil, httpResp, err
+			},
+		)
+
+		if err == nil || (httpResp != nil && httpResp.StatusCode != http.StatusBadRequest) {
+			break
+		}
+		time.Sleep(retryWait)
+	}
 	if err != nil {
 		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
 			return

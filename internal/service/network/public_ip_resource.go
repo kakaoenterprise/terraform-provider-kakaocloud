@@ -285,23 +285,16 @@ func (r *publicIpResource) Update(ctx context.Context, req resource.UpdateReques
 
 			publicIpId := state.Id.ValueString()
 			networkInterfaceId := stateRelatedResource.Id.ValueString()
+			deviceId := stateRelatedResource.DeviceId.ValueString()
+			deviceType := stateRelatedResource.DeviceType.ValueString()
 
-			_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-				func() (*network.BnsNetworkV1ApiDisassociatePublicIpModelResponsePublicIpModel, *http.Response, error) {
-					return r.kc.ApiClient.PublicIPAPI.
-						DisassociatePublicIp(ctx, publicIpId, networkInterfaceId).
-						XAuthToken(r.kc.XAuthToken).
-						Execute()
-				},
-			)
-			if err != nil {
-				common.AddApiActionError(ctx, r, httpResp, "DisassociatePublicIp", err, &resp.Diagnostics)
+			if !r.detachPublicIPByType(ctx, &resp.Diagnostics, deviceType, networkInterfaceId, deviceId) {
 				return
 			}
 
 			_, ok := r.pollPublicIpUtilsStatus(
 				ctx,
-				state.Id.ValueString(),
+				publicIpId,
 				[]string{PublicIpAvailable},
 				&resp.Diagnostics,
 			)
@@ -396,24 +389,16 @@ func (r *publicIpResource) Delete(ctx context.Context, req resource.DeleteReques
 
 		publicIpId := state.Id.ValueString()
 		networkInterfaceId := relatedResource.Id.ValueString()
+		deviceId := relatedResource.DeviceId.ValueString()
+		deviceType := relatedResource.DeviceType.ValueString()
 
-		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*network.BnsNetworkV1ApiDisassociatePublicIpModelResponsePublicIpModel, *http.Response, error) {
-				return r.kc.ApiClient.PublicIPAPI.
-					DisassociatePublicIp(ctx, publicIpId, networkInterfaceId).
-					XAuthToken(r.kc.XAuthToken).
-					Execute()
-			},
-		)
-
-		if err != nil {
-			common.AddApiActionError(ctx, r, httpResp, "DisassociatePublicIp", err, &resp.Diagnostics)
+		if !r.detachPublicIPByType(ctx, &resp.Diagnostics, deviceType, networkInterfaceId, deviceId) {
 			return
 		}
 
 		_, ok := r.pollPublicIpUtilsStatus(
 			ctx,
-			state.Id.ValueString(),
+			publicIpId,
 			[]string{PublicIpAvailable},
 			&resp.Diagnostics,
 		)
@@ -504,6 +489,52 @@ func (r *publicIpResource) attachPublicIPByType(
 			func() (*loadbalancer.BnsLoadBalancerV1ApiAssociatePublicIpModelResponsePublicIpModel, *http.Response, error) {
 				return r.kc.ApiClient.LoadBalancerAPI.
 					AssociatePublicIp(ctx, deviceId, publicIpId).
+					XAuthToken(r.kc.XAuthToken).
+					Execute()
+			},
+		)
+
+	default:
+		common.AddGeneralError(ctx, r, respDiags,
+			fmt.Sprintf("Unsupported device_type: %s", deviceType),
+		)
+		return false
+	}
+
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "AssociatePublicIp", err, respDiags)
+		return false
+	}
+
+	return true
+}
+
+func (r *publicIpResource) detachPublicIPByType(
+	ctx context.Context,
+	respDiags *diag.Diagnostics,
+	deviceType, networkInterfaceId, deviceId string,
+) bool {
+	var (
+		httpResp *http.Response
+		err      error
+	)
+
+	switch deviceType {
+	case "instance":
+		_, httpResp, err = common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+			func() (*bcs.BcsInstanceV1ApiRemovePublicIpModelResponsePublicIpModel, *http.Response, error) {
+				return r.kc.ApiClient.InstancePublicIPAPI.
+					RemovePublicIp(ctx, deviceId, networkInterfaceId).
+					XAuthToken(r.kc.XAuthToken).
+					Execute()
+			},
+		)
+
+	case "load-balancer":
+		_, httpResp, err = common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+			func() (*loadbalancer.BnsLoadBalancerV1ApiRemovePublicIpModelResponsePublicIpModel, *http.Response, error) {
+				return r.kc.ApiClient.LoadBalancerAPI.
+					RemovePublicIp(ctx, deviceId).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
 			},

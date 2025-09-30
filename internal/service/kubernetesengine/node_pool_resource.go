@@ -243,8 +243,12 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	var userSGs []string
+	hasUserSGs := false
 	if !plan.RequestSecurityGroups.IsNull() && !plan.RequestSecurityGroups.IsUnknown() {
 		_ = plan.RequestSecurityGroups.ElementsAs(ctx, &userSGs, false)
+		if len(userSGs) > 0 {
+			hasUserSGs = true
+		}
 	}
 
 	createModel := kubernetesengine.NewKubernetesEngineV1ApiCreateNodePoolModelNodePoolRequestModel(
@@ -277,7 +281,7 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		createModel.SetTaints(taints)
 	}
 
-	if userSGs != nil {
+	if hasUserSGs {
 		createModel.SetSecurityGroups(userSGs)
 	}
 
@@ -588,11 +592,36 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	var userSGs []string
+	shouldSendSGs := false
 	if !plan.RequestSecurityGroups.IsNull() && !plan.RequestSecurityGroups.IsUnknown() {
+
 		_ = plan.RequestSecurityGroups.ElementsAs(ctx, &userSGs, false)
-		if userSGs != nil {
-			upd.SetSecurityGroups(userSGs)
+		if len(userSGs) > 0 {
+			shouldSendSGs = true
+		} else {
+
+			if !state.RequestSecurityGroups.IsNull() && !state.RequestSecurityGroups.IsUnknown() {
+				var prevReq []string
+				_ = state.RequestSecurityGroups.ElementsAs(ctx, &prevReq, false)
+				if len(prevReq) > 0 {
+					userSGs = []string{}
+					shouldSendSGs = true
+				}
+			}
 		}
+	} else {
+
+		if !state.RequestSecurityGroups.IsNull() && !state.RequestSecurityGroups.IsUnknown() {
+			var prevReq []string
+			_ = state.RequestSecurityGroups.ElementsAs(ctx, &prevReq, false)
+			if len(prevReq) > 0 {
+				userSGs = []string{}
+				shouldSendSGs = true
+			}
+		}
+	}
+	if shouldSendSGs {
+		upd.SetSecurityGroups(userSGs)
 	}
 
 	planLabels := map[string]string{}
@@ -1079,52 +1108,43 @@ func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPl
 		}
 	}
 
-	resp.Plan.SetAttribute(ctx, path.Root("security_groups"), types.SetUnknown(types.StringType))
-	var combined []string
+	if !isCreate {
 
-	if !state.SecurityGroups.IsNull() && !state.SecurityGroups.IsUnknown() {
-		_ = state.SecurityGroups.ElementsAs(ctx, &combined, false)
-	}
+		resp.Plan.SetAttribute(ctx, path.Root("security_groups"), types.SetUnknown(types.StringType))
 
-	if !plan.RequestSecurityGroups.IsNull() && !plan.RequestSecurityGroups.IsUnknown() {
-		var reqSGs []string
-		_ = plan.RequestSecurityGroups.ElementsAs(ctx, &reqSGs, false)
-		combined = append(combined, reqSGs...)
-	}
-
-	setVal, _ := types.SetValueFrom(ctx, types.StringType, combined)
-	resp.Plan.SetAttribute(ctx, path.Root("security_groups"), setVal)
-}
-
-func removeDuplicates(arr []string) []string {
-	seen := make(map[string]struct{}, len(arr))
-	out := make([]string, 0, len(arr))
-	for _, s := range arr {
-		if _, ok := seen[s]; !ok {
-			seen[s] = struct{}{}
-			out = append(out, s)
+		baseDefaults := make(map[string]struct{})
+		if !state.SecurityGroups.IsNull() && !state.SecurityGroups.IsUnknown() {
+			var stSGs []string
+			_ = state.SecurityGroups.ElementsAs(ctx, &stSGs, false)
+			for _, id := range stSGs {
+				baseDefaults[id] = struct{}{}
+			}
 		}
+		if !state.RequestSecurityGroups.IsNull() && !state.RequestSecurityGroups.IsUnknown() {
+			var prevReq []string
+			_ = state.RequestSecurityGroups.ElementsAs(ctx, &prevReq, false)
+			for _, id := range prevReq {
+				delete(baseDefaults, id)
+			}
+		}
+
+		if !plan.RequestSecurityGroups.IsNull() && !plan.RequestSecurityGroups.IsUnknown() {
+			var reqSGs []string
+			_ = plan.RequestSecurityGroups.ElementsAs(ctx, &reqSGs, false)
+			for _, id := range reqSGs {
+				baseDefaults[id] = struct{}{}
+			}
+		}
+
+		combined := make([]string, 0, len(baseDefaults))
+		for id := range baseDefaults {
+			combined = append(combined, id)
+		}
+
+		setVal, _ := types.SetValueFrom(ctx, types.StringType, combined)
+		resp.Plan.SetAttribute(ctx, path.Root("security_groups"), setVal)
 	}
-	return out
-}
 
-func mergeRequestedAndStateSGs(stateSGs, reqSGs []string) []string {
-	sgSet := make(map[string]struct{})
-
-	for _, s := range stateSGs {
-		sgSet[s] = struct{}{}
-	}
-
-	for _, s := range reqSGs {
-		sgSet[s] = struct{}{}
-	}
-
-	mergedSGs := make([]string, 0, len(sgSet))
-	for s := range sgSet {
-		mergedSGs = append(mergedSGs, s)
-	}
-
-	return mergedSGs
 }
 
 func (r *nodePoolResource) waitNodePoolReadyOrFailed(
