@@ -3,12 +3,46 @@
 page_title: "kakaocloud_load_balancer_l7_policies Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Use this data source to get information about KakaoCloud Load Balancer L7 Policy lists.
+  The kakaocloud_load_balancer_l7_policies data source allows you to retrieve information about Layer 7 (L7) policies configured for a specific Load Balancer listener in KakaoCloud.
+  This data source is useful when you need to:
+  List all L7 policies associated with a given load balancer and listener.Filter policies by attributes such as position, action, operating status, or provisioning status.Review detailed policy settings including redirects, priority, and associated L7 rules.Dynamically reference policy attributes (e.g., IDs, names, rules) in your Terraform configurations without hardcoding values.
+  Available filters
+  | Parameter             | Type                         | Description |
+  |---------------------|------------------------------|-------------|
+  | position            | integer                      | Policy priority. Smaller numbers indicate higher priority. <br>Possible values: > 0 |
+  | action              | L7PolicyAction               | Policy action type <br>Possible values: <br>- `REDIRECT_PREFIX`: Redirect by prefix <br>- `REDIRECT_TO_POOL`: Redirect to target pool <br>- `REDIRECT_TO_URL`: Redirect to URL |
+  | provisioning_status | ProvisioningStatus           | Provisioning status <br>Possible values: <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+  | operating_status    | LoadBalancerOperatingStatus  | Operating status <br>Possible values: <br>- `ONLINE`: Online <br>- `DRAINING`: Draining connections <br>- `OFFLINE`: Offline <br>- `DEGRADED`: Degraded <br>- `ERROR`: Error <br>- `NO_MONITOR`: No monitoring |
+  | name                | string                       | L7 policy name |
+  | sort_keys           | string                       | Fields to sort by (comma-separated) <br>Default value: `created_at` |
+  | sort_dirs           | string                       | Sort direction <br>Possible values: `asc`, `desc` <br>Default value: `desc` |
+  | limit               | integer                      | Maximum number of items to return per page <br>Range: 1–1000 <br>Default value: `20` |
+  | offset              | integer                      | Starting offset for the query <br>Range: ≥ 0 <br>Default value: `0` |
 ---
 
 # kakaocloud_load_balancer_l7_policies (Data Source)
 
-Use this data source to get information about KakaoCloud Load Balancer L7 Policy lists.
+The `kakaocloud_load_balancer_l7_policies` data source allows you to retrieve information about Layer 7 (L7) policies configured for a specific Load Balancer listener in KakaoCloud.
+
+This data source is useful when you need to:
+- List all L7 policies associated with a given load balancer and listener.
+- Filter policies by attributes such as position, action, operating status, or provisioning status.
+- Review detailed policy settings including redirects, priority, and associated L7 rules.
+- Dynamically reference policy attributes (e.g., IDs, names, rules) in your Terraform configurations without hardcoding values.
+
+## Available filters
+
+| Parameter             | Type                         | Description |
+|---------------------|------------------------------|-------------|
+| position            | integer                      | Policy priority. Smaller numbers indicate higher priority. <br>Possible values: > 0 |
+| action              | L7PolicyAction               | Policy action type <br>Possible values: <br>- `REDIRECT_PREFIX`: Redirect by prefix <br>- `REDIRECT_TO_POOL`: Redirect to target pool <br>- `REDIRECT_TO_URL`: Redirect to URL |
+| provisioning_status | ProvisioningStatus           | Provisioning status <br>Possible values: <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
+| operating_status    | LoadBalancerOperatingStatus  | Operating status <br>Possible values: <br>- `ONLINE`: Online <br>- `DRAINING`: Draining connections <br>- `OFFLINE`: Offline <br>- `DEGRADED`: Degraded <br>- `ERROR`: Error <br>- `NO_MONITOR`: No monitoring |
+| name                | string                       | L7 policy name |
+| sort_keys           | string                       | Fields to sort by (comma-separated) <br>Default value: `created_at` |
+| sort_dirs           | string                       | Sort direction <br>Possible values: `asc`, `desc` <br>Default value: `desc` |
+| limit               | integer                      | Maximum number of items to return per page <br>Range: 1–1000 <br>Default value: `20` |
+| offset              | integer                      | Starting offset for the query <br>Range: ≥ 0 <br>Default value: `0` |
 
 ## Example Usage
 

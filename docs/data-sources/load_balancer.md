@@ -15,7 +15,6 @@ The `kakaocloud_load_balancer` data source retrieves detailed information about 
 It provides attributes such as availability zone, subnet configuration, VPC details, provisioning/operating status, associated listeners, and target group counts.
 
 Use this data source when you need to:
-
 - Reference an existing load balancer without hardcoding its attributes.
 - Dynamically fetch listener or target group IDs for use in other Terraform resources.
 - Validate load balancer status (e.g., operating or provisioning) before attaching new resources.

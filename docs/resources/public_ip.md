@@ -40,11 +40,11 @@ This resource enables flexible network connectivity and external access manageme
 
 Required:
 
+- `device_id` (String) Device ID
 - `device_type` (String) The type of device to associate with the public IP (instance, load-balancer).
 
 Optional:
 
-- `device_id` (String) Device ID
 - `id` (String) ID of the associated resource
 
 Read-Only:

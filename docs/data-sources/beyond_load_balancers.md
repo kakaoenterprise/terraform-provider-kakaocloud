@@ -162,7 +162,7 @@ Read-Only:
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `description` (String) Description of the high availability group
 - `dns_name` (String) Associated DNS name (e.g., public address of the load balancer)
-- `id` (String)
+- `id` (String) beyond load balancer ID
 - `load_balancers` (Attributes List) List of load balancers included in the high availability group (see [below for nested schema](#nestedatt--beyond_load_balancers--load_balancers))
 - `name` (String) High availability group name
 - `operating_status` (String) Operating status

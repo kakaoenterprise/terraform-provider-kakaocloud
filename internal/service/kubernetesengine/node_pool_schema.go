@@ -59,11 +59,6 @@ func getNodePoolDataSourceSchema() map[string]dschema.Attribute {
 			ElementType: types.StringType,
 			Description: desc.String("security_groups"),
 		},
-		"default_security_groups": dschema.SetAttribute{
-			Computed:    true,
-			ElementType: types.StringType,
-			Description: desc.String("security_groups"),
-		},
 		"labels": dschema.SetNestedAttribute{
 			Computed:    true,
 			Description: desc.String("labels"),
@@ -395,21 +390,14 @@ func getNodePoolResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 		"security_groups": rschema.SetAttribute{
-			Optional:    true,
 			Computed:    true,
 			ElementType: types.StringType,
 			Description: createDesc.String("security_groups"),
-			PlanModifiers: []planmodifier.Set{
-				setplanmodifier.UseStateForUnknown(),
-			},
 		},
-		"default_security_groups": rschema.SetAttribute{
-			Computed:    true,
+		"request_security_groups": rschema.SetAttribute{
+			Optional:    true,
 			ElementType: types.StringType,
 			Description: createDesc.String("security_groups"),
-			PlanModifiers: []planmodifier.Set{
-				setplanmodifier.UseStateForUnknown(),
-			},
 		},
 		"labels": rschema.SetNestedAttribute{
 			Optional:      true,

@@ -3,12 +3,54 @@
 page_title: "kakaocloud_load_balancer_target_group_members Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Get a list of Load Balancer Target Group Members in KakaoCloud.
+  The kakaocloud_load_balancer_target_group_members data source retrieves information about the members associated with a specific Load Balancer target group in KakaoCloud.
+  This data source is useful when you need to:
+  List all members registered in a target group.Filter members by attributes such as ID, name, protocol, instance ID, subnet, or operating status.Access details such as IP addresses, ports, weights, health check settings, and security group associations.Dynamically reference target group member information in Terraform configurations without hardcoding values.
+  Available filters
+  | Filter               | Type                        | Description |
+  |-----------------------|-----------------------------|-------------|
+  | `ip`                 | string                      | IP address of the target instance |
+  | `protocol_port`       | string                      | Port number of the connection |
+  | `weight`             | string                      | Traffic distribution weight |
+  | `provisioning_status`| ProvisioningStatus           | Provisioning status <br/>Possible values: <br/>- `ACTIVE`: Active <br/>- `DELETED`: Deleted <br/>- `ERROR`: Error <br/>- `PENDING_CREATE`: Pending creation <br/>- `PENDING_UPDATE`: Pending update <br/>- `PENDING_DELETE`: Pending deletion |
+  | `operating_status`   | LoadBalancerOperatingStatus  | Operating status <br/>Possible values: <br/>- `ONLINE`: Online <br/>- `DRAINING`: Draining connections <br/>- `OFFLINE`: Offline <br/>- `DEGRADED`: Degraded <br/>- `ERROR`: Error <br/>- `NO_MONITOR`: No monitoring |
+  | `instance_id`        | string                      | Unique ID of the instance |
+  | `instance_name`      | string                      | Name of the associated instance |
+  | `vpc_id`             | string                      | VPC ID of the target instance |
+  | `subnet_id`          | string                      | Subnet ID of the target instance |
+  | `subnet_name`        | string                      | Subnet name of the target instance |
+  | `security_group_name`| string                      | Name of the security group |
+  | `created_at`         | string                      | Time when the resource was created <br/>- ISO_8601 format <br/>- UTC |
+  | `updated_at`         | string                      | Time when the resource was last updated <br/>- ISO_8601 format <br/>- UTC |
 ---
 
 # kakaocloud_load_balancer_target_group_members (Data Source)
 
-Get a list of Load Balancer Target Group Members in KakaoCloud.
+The `kakaocloud_load_balancer_target_group_members` data source retrieves information about the members associated with a specific Load Balancer target group in KakaoCloud.
+
+This data source is useful when you need to:
+- List all members registered in a target group.
+- Filter members by attributes such as ID, name, protocol, instance ID, subnet, or operating status.
+- Access details such as IP addresses, ports, weights, health check settings, and security group associations.
+- Dynamically reference target group member information in Terraform configurations without hardcoding values.
+
+## Available filters
+
+| Filter               | Type                        | Description |
+|-----------------------|-----------------------------|-------------|
+| `ip`                 | string                      | IP address of the target instance |
+| `protocol_port`       | string                      | Port number of the connection |
+| `weight`             | string                      | Traffic distribution weight |
+| `provisioning_status`| ProvisioningStatus           | Provisioning status <br/>Possible values: <br/>- `ACTIVE`: Active <br/>- `DELETED`: Deleted <br/>- `ERROR`: Error <br/>- `PENDING_CREATE`: Pending creation <br/>- `PENDING_UPDATE`: Pending update <br/>- `PENDING_DELETE`: Pending deletion |
+| `operating_status`   | LoadBalancerOperatingStatus  | Operating status <br/>Possible values: <br/>- `ONLINE`: Online <br/>- `DRAINING`: Draining connections <br/>- `OFFLINE`: Offline <br/>- `DEGRADED`: Degraded <br/>- `ERROR`: Error <br/>- `NO_MONITOR`: No monitoring |
+| `instance_id`        | string                      | Unique ID of the instance |
+| `instance_name`      | string                      | Name of the associated instance |
+| `vpc_id`             | string                      | VPC ID of the target instance |
+| `subnet_id`          | string                      | Subnet ID of the target instance |
+| `subnet_name`        | string                      | Subnet name of the target instance |
+| `security_group_name`| string                      | Name of the security group |
+| `created_at`         | string                      | Time when the resource was created <br/>- ISO_8601 format <br/>- UTC |
+| `updated_at`         | string                      | Time when the resource was last updated <br/>- ISO_8601 format <br/>- UTC |
 
 ## Example Usage
 

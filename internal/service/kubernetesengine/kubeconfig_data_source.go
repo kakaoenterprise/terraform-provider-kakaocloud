@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -34,6 +35,7 @@ func (d *kubernetesKubeconfigDataSource) Metadata(ctx context.Context, req datas
 
 func (d *kubernetesKubeconfigDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: docs.GetDataSourceDescription("KubernetesEngineKubeconfig"),
 		Attributes: MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"timeouts": timeouts.Attributes(ctx),

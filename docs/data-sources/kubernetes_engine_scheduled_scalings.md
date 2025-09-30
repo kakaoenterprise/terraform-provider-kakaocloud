@@ -3,12 +3,22 @@
 page_title: "kakaocloud_kubernetes_engine_scheduled_scalings Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  
+  The kakaocloud_kubernetes_engine_scheduled_scalings data source retrieves information about scheduled scaling configurations for node pools in a KakaoCloud Kubernetes Engine cluster.
+  This data source is useful when you need to:
+  List all scheduled scaling rules for a specific cluster or node pool.Review scaling policies including target node counts, schedules, and execution types.Track operational details such as creation time, start time, and historical execution records.Dynamically reference scheduled scaling settings in Terraform configurations without hardcoding values.
 ---
 
 # kakaocloud_kubernetes_engine_scheduled_scalings (Data Source)
 
+The `kakaocloud_kubernetes_engine_scheduled_scalings` data source retrieves information about scheduled scaling configurations for node pools in a KakaoCloud Kubernetes Engine cluster.
 
+This data source is useful when you need to:
+- List all scheduled scaling rules for a specific cluster or node pool.
+- Review scaling policies including target node counts, schedules, and execution types.
+- Track operational details such as creation time, start time, and historical execution records.
+- Dynamically reference scheduled scaling settings in Terraform configurations without hardcoding values.
+
+<!-- ## Available filters 없음-->
 
 
 

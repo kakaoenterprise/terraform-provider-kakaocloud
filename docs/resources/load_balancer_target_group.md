@@ -29,7 +29,6 @@ This resource provides detailed metadata and operational states, enabling effici
 ### Optional
 
 - `description` (String) Description of the target group
-- `health_monitor` (Attributes) Associated health monitor information (see [below for nested schema](#nestedatt--health_monitor))
 - `listener_id` (String) ID of the listener associated with this target group
 - `session_persistence` (Attributes) Session settings (see [below for nested schema](#nestedatt--session_persistence))
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
@@ -38,6 +37,7 @@ This resource provides detailed metadata and operational states, enabling effici
 
 - `availability_zone` (String) Availability zone
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
+- `health_monitor` (Attributes) Associated health monitor information (see [below for nested schema](#nestedatt--health_monitor))
 - `id` (String) Target group ID
 - `listeners` (Attributes List) List of associated listener information (see [below for nested schema](#nestedatt--listeners))
 - `load_balancer_name` (String) Associated load balancer name
@@ -53,29 +53,6 @@ This resource provides detailed metadata and operational states, enabling effici
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 - `vpc_id` (String) Unique VPC ID
 - `vpc_name` (String) VPC name
-
-<a id="nestedatt--health_monitor"></a>
-### Nested Schema for `health_monitor`
-
-Optional:
-
-- `delay` (Number) Health check interval (seconds)
-- `expected_codes` (String) Range of response codes considered healthy (type=HTTP/HTTPS)
-- `fall_threshold` (Number) Threshold for considering unhealthy (percentage)
-- `http_method` (String) HTTP request method
-- `http_version` (String) HTTP protocol version
-- `rise_threshold` (Number) Threshold for considering healthy (percentage)
-- `timeout` (Number) Response timeout (seconds)
-- `type` (String) Health monitor type
-- `url_path` (String) Health check request path
-
-Read-Only:
-
-- `id` (String) Health monitor ID
-- `operating_status` (String) Operating status
-- `project_id` (String) Project ID
-- `provisioning_status` (String) Provisioning status
-
 
 <a id="nestedatt--session_persistence"></a>
 ### Nested Schema for `session_persistence`
@@ -100,6 +77,29 @@ Optional:
 - `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
 - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 - `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+
+
+<a id="nestedatt--health_monitor"></a>
+### Nested Schema for `health_monitor`
+
+Optional:
+
+- `fall_threshold` (Number) Threshold for considering unhealthy (percentage)
+
+Read-Only:
+
+- `delay` (Number) Health check interval (seconds)
+- `expected_codes` (String) Range of response codes considered healthy (type=HTTP/HTTPS)
+- `http_method` (String) HTTP request method
+- `http_version` (String) HTTP protocol version
+- `id` (String) Health monitor ID
+- `operating_status` (String) Operating status
+- `project_id` (String) Project ID
+- `provisioning_status` (String) Provisioning status
+- `rise_threshold` (Number) Threshold for considering healthy (percentage)
+- `timeout` (Number) Response timeout (seconds)
+- `type` (String) Health monitor type
+- `url_path` (String) Health check request path
 
 
 <a id="nestedatt--listeners"></a>

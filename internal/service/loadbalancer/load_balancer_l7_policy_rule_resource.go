@@ -341,10 +341,11 @@ func (r *loadBalancerL7PolicyRuleResource) getLoadBalancerIdByL7PolicyId(ctx con
 
 func (r *loadBalancerL7PolicyRuleResource) findListenerIdByL7PolicyId(ctx context.Context, l7PolicyId string) (string, error) {
 
-	listenersResp, _, err := r.kc.ApiClient.LoadBalancerListenerAPI.
-		ListListeners(ctx).
-		XAuthToken(r.kc.XAuthToken).
-		Execute()
+	listenersResp, _, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &diag.Diagnostics{},
+		func() (*loadbalancer.ListenerListModel, *http.Response, error) {
+			return r.kc.ApiClient.LoadBalancerListenerAPI.ListListeners(ctx).Limit(1000).XAuthToken(r.kc.XAuthToken).Execute()
+		},
+	)
 	if err != nil {
 		return "", fmt.Errorf("failed to list listeners: %w", err)
 	}

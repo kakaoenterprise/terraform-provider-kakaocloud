@@ -243,6 +243,7 @@ func (r *subnetResource) Update(ctx context.Context, req resource.UpdateRequest,
 			common.AddApiActionError(ctx, r, httpResp, "UpdateSubnet", err, &resp.Diagnostics)
 			return
 		}
+		state.Name = plan.Name
 	}
 
 	if !plan.RouteTableId.IsUnknown() && !plan.RouteTableId.Equal(state.RouteTableId) {
@@ -255,9 +256,11 @@ func (r *subnetResource) Update(ctx context.Context, req resource.UpdateRequest,
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
+
+		state.RouteTableId = plan.RouteTableId
 	}
 
-	diags = resp.State.Set(ctx, &plan)
+	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return

@@ -3,12 +3,37 @@
 page_title: "kakaocloud_kubernetes_engine_images Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  
+  The kakaocloud_kubernetes_engine_images data source retrieves the list of available Kubernetes Engine images in KakaoCloud.
+  This data source is useful when you need to:
+  Query the latest images available for Kubernetes clusters.Filter images by attributes such as OS distribution, OS version, instance type, or Kubernetes version.Identify whether an image supports GPU workloads.Access detailed information including kernel version, key packages, and supported instance types.Dynamically reference image attributes in Terraform configurations without hardcoding values.
+  Available filters
+  | Parameter      | Type              | Description |
+  |----------------|-------------------|-------------|
+  | `os_distro`    | string            | Operating system distribution |
+  | `instance_type`| ImageInstanceType | Instance type <br/>Possible values: <br/>- `vm`: Virtual Machine type <br/>- `bm`: Bare Metal Server type |
+  | `is_gpu_type`  | boolean           | Whether the image supports GPU <br/>- `true`: Image supports GPU nodes <br/>- `false`: CPU-only image |
+  | `k8s_version`  | string            | Target Kubernetes version |
 ---
 
 # kakaocloud_kubernetes_engine_images (Data Source)
 
+The `kakaocloud_kubernetes_engine_images` data source retrieves the list of available Kubernetes Engine images in KakaoCloud.
 
+This data source is useful when you need to:
+- Query the latest images available for Kubernetes clusters.
+- Filter images by attributes such as OS distribution, OS version, instance type, or Kubernetes version.
+- Identify whether an image supports GPU workloads.
+- Access detailed information including kernel version, key packages, and supported instance types.
+- Dynamically reference image attributes in Terraform configurations without hardcoding values.
+
+## Available filters
+
+| Parameter      | Type              | Description |
+|----------------|-------------------|-------------|
+| `os_distro`    | string            | Operating system distribution |
+| `instance_type`| ImageInstanceType | Instance type <br/>Possible values: <br/>- `vm`: Virtual Machine type <br/>- `bm`: Bare Metal Server type |
+| `is_gpu_type`  | boolean           | Whether the image supports GPU <br/>- `true`: Image supports GPU nodes <br/>- `false`: CPU-only image |
+| `k8s_version`  | string            | Target Kubernetes version |
 
 
 

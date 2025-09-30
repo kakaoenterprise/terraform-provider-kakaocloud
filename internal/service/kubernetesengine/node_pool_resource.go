@@ -243,8 +243,8 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	var userSGs []string
-	if !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown() {
-		_ = plan.SecurityGroups.ElementsAs(ctx, &userSGs, false)
+	if !plan.RequestSecurityGroups.IsNull() && !plan.RequestSecurityGroups.IsUnknown() {
+		_ = plan.RequestSecurityGroups.ElementsAs(ctx, &userSGs, false)
 	}
 
 	createModel := kubernetesengine.NewKubernetesEngineV1ApiCreateNodePoolModelNodePoolRequestModel(
@@ -304,6 +304,13 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	)
 	if !ok || resp.Diagnostics.HasError() {
 		return
+	}
+
+	if len(userSGs) > 0 {
+		_, ok2 := r.waitNodePoolSecurityGroupsContains(ctx, plan.ClusterName.ValueString(), plan.Name.ValueString(), userSGs, &resp.Diagnostics)
+		if !ok2 || resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	if autoscalingProvided && result != nil && !result.IsBareMetal {
@@ -399,8 +406,8 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	result = &res
 
 	var planUserSGs []string
-	if !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown() {
-		_ = plan.SecurityGroups.ElementsAs(ctx, &planUserSGs, false)
+	if !plan.RequestSecurityGroups.IsNull() && !plan.RequestSecurityGroups.IsUnknown() {
+		_ = plan.RequestSecurityGroups.ElementsAs(ctx, &planUserSGs, false)
 	}
 	_ = mapNodePoolFromResponse(ctx, &plan.NodePoolBaseModel, result, &resp.Diagnostics, planUserSGs)
 
@@ -435,6 +442,8 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	if !config.UserData.IsNull() && !config.UserData.IsUnknown() && config.UserData.ValueString() != "" {
 		plan.UserData = config.UserData
 	}
+
+	plan.RequestSecurityGroups = config.RequestSecurityGroups
 
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -486,8 +495,8 @@ func (r *nodePoolResource) Read(ctx context.Context, req resource.ReadRequest, r
 	result := detail.NodePool
 
 	var stateUserSGs []string
-	if !state.SecurityGroups.IsNull() && !state.SecurityGroups.IsUnknown() {
-		_ = state.SecurityGroups.ElementsAs(ctx, &stateUserSGs, false)
+	if !state.RequestSecurityGroups.IsNull() && !state.RequestSecurityGroups.IsUnknown() {
+		_ = state.RequestSecurityGroups.ElementsAs(ctx, &stateUserSGs, false)
 	}
 	_ = mapNodePoolFromResponse(ctx, &state.NodePoolBaseModel, &result, &resp.Diagnostics, stateUserSGs)
 
@@ -579,8 +588,8 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	var userSGs []string
-	if !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown() {
-		_ = plan.SecurityGroups.ElementsAs(ctx, &userSGs, false)
+	if !plan.RequestSecurityGroups.IsNull() && !plan.RequestSecurityGroups.IsUnknown() {
+		_ = plan.RequestSecurityGroups.ElementsAs(ctx, &userSGs, false)
 		if userSGs != nil {
 			upd.SetSecurityGroups(userSGs)
 		}
@@ -702,8 +711,7 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	didSetDesc := !plan.Description.IsNull() && !plan.Description.IsUnknown()
-	didSetSG := !plan.SecurityGroups.IsNull() && !plan.SecurityGroups.IsUnknown()
-	if didSetDesc || didSetCount || didSetSG {
+	if didSetDesc || didSetCount {
 		reqBody := kubernetesengine.UpdateK8sClusterNodePoolRequestModel{NodePool: *upd}
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
 			return r.kc.ApiClient.NodePoolsAPI.
@@ -723,6 +731,13 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 			state.Name.ValueString(),
 			&resp.Diagnostics,
 		)
+
+		if len(userSGs) > 0 {
+			_, ok := r.waitNodePoolSecurityGroupsContains(ctx, plan.ClusterName.ValueString(), state.Name.ValueString(), userSGs, &resp.Diagnostics)
+			if !ok || resp.Diagnostics.HasError() {
+				return
+			}
+		}
 	}
 
 	didUpdateUserData := false
@@ -866,6 +881,14 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		newState.UserData = config.UserData
 	}
 
+	newState.RequestSecurityGroups = plan.RequestSecurityGroups
+
+	if latest.SecurityGroups != nil {
+		setVal, diags := types.SetValueFrom(ctx, types.StringType, latest.SecurityGroups)
+		resp.Diagnostics.Append(diags...)
+		newState.SecurityGroups = setVal
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
@@ -939,6 +962,13 @@ func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPl
 	}
 
 	isCreate := req.State.Raw.IsNull()
+
+	var plan NodePoolResourceModel
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	var config NodePoolResourceModel
 	d := req.Config.Get(ctx, &config)
@@ -1048,6 +1078,53 @@ func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPl
 			resp.Plan.SetAttribute(ctx, path.Root("node_count"), types.Int32Unknown())
 		}
 	}
+
+	resp.Plan.SetAttribute(ctx, path.Root("security_groups"), types.SetUnknown(types.StringType))
+	var combined []string
+
+	if !state.SecurityGroups.IsNull() && !state.SecurityGroups.IsUnknown() {
+		_ = state.SecurityGroups.ElementsAs(ctx, &combined, false)
+	}
+
+	if !plan.RequestSecurityGroups.IsNull() && !plan.RequestSecurityGroups.IsUnknown() {
+		var reqSGs []string
+		_ = plan.RequestSecurityGroups.ElementsAs(ctx, &reqSGs, false)
+		combined = append(combined, reqSGs...)
+	}
+
+	setVal, _ := types.SetValueFrom(ctx, types.StringType, combined)
+	resp.Plan.SetAttribute(ctx, path.Root("security_groups"), setVal)
+}
+
+func removeDuplicates(arr []string) []string {
+	seen := make(map[string]struct{}, len(arr))
+	out := make([]string, 0, len(arr))
+	for _, s := range arr {
+		if _, ok := seen[s]; !ok {
+			seen[s] = struct{}{}
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func mergeRequestedAndStateSGs(stateSGs, reqSGs []string) []string {
+	sgSet := make(map[string]struct{})
+
+	for _, s := range stateSGs {
+		sgSet[s] = struct{}{}
+	}
+
+	for _, s := range reqSGs {
+		sgSet[s] = struct{}{}
+	}
+
+	mergedSGs := make([]string, 0, len(sgSet))
+	for s := range sgSet {
+		mergedSGs = append(mergedSGs, s)
+	}
+
+	return mergedSGs
 }
 
 func (r *nodePoolResource) waitNodePoolReadyOrFailed(
@@ -1092,6 +1169,63 @@ func (r *nodePoolResource) waitNodePoolReadyOrFailed(
 		},
 		func(v *kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel) string {
 			return string(v.Status.Phase)
+		},
+	)
+	return result, ok
+}
+
+func (r *nodePoolResource) waitNodePoolSecurityGroupsContains(
+	ctx context.Context,
+	clusterName string,
+	nodePoolName string,
+	required []string,
+	diagnostics *diag.Diagnostics,
+) (*kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel, bool) {
+	if len(required) == 0 {
+		return nil, true
+	}
+
+	result, ok := common.PollUntilResult(
+		ctx,
+		r,
+		5*time.Second,
+		[]string{"ok"},
+		diagnostics,
+		func(ctx context.Context) (*kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel, *http.Response, error) {
+			model, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diagnostics,
+				func() (struct {
+					NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+				}, *http.Response, error) {
+					apiResp, hr, err := r.kc.ApiClient.NodePoolsAPI.
+						GetNodePool(ctx, clusterName, nodePoolName).
+						XAuthToken(r.kc.XAuthToken).
+						Execute()
+					if err != nil {
+						return struct {
+							NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+						}{}, hr, err
+					}
+					return struct {
+						NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+					}{NodePool: apiResp.NodePool}, hr, nil
+				},
+			)
+			if err != nil {
+				return nil, httpResp, err
+			}
+			return &model.NodePool, httpResp, nil
+		},
+		func(v *kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel) string {
+			present := map[string]struct{}{}
+			for _, id := range v.SecurityGroups {
+				present[id] = struct{}{}
+			}
+			for _, want := range required {
+				if _, ok := present[want]; !ok {
+					return "waiting"
+				}
+			}
+			return "ok"
 		},
 	)
 	return result, ok

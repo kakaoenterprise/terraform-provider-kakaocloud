@@ -70,40 +70,9 @@ func mapNodePoolFromResponse(
 		return false
 	}
 
-	apiSGs := src.SecurityGroups
-	userSGs := []string{}
-	defaultSGs := []string{}
-
-	hintSet := map[string]struct{}{}
-	if len(userSGsHint) > 0 && userSGsHint[0] != nil {
-		for _, s := range userSGsHint[0] {
-			hintSet[s] = struct{}{}
-		}
-	}
-
-	for _, sg := range apiSGs {
-		if _, ok := hintSet[sg]; ok {
-			userSGs = append(userSGs, sg)
-		} else {
-			defaultSGs = append(defaultSGs, sg)
-		}
-	}
-
-	if len(userSGs) > 0 {
-		userSet, d1 := types.SetValueFrom(ctx, types.StringType, userSGs)
-		diags.Append(d1...)
-		dst.SecurityGroups = userSet
-	} else {
-
-		emptySet, d1 := types.SetValueFrom(ctx, types.StringType, []string{})
-		diags.Append(d1...)
-		dst.SecurityGroups = emptySet
-	}
-
-	defaultSet, d2 := types.SetValueFrom(ctx, types.StringType, defaultSGs)
-	diags.Append(d2...)
-	dst.DefaultSecurityGroups = defaultSet
-
+	setVal, d1 := types.SetValueFrom(ctx, types.StringType, src.SecurityGroups)
+	diags.Append(d1...)
+	dst.SecurityGroups = setVal
 	if diags.HasError() {
 		return false
 	}
@@ -184,36 +153,9 @@ func mapNodePoolFromResponseDS(
 		return false
 	}
 
-	apiSGs := src.SecurityGroups
-	userSGs := []string{}
-	defaultSGs := []string{}
-
-	hintSet := map[string]struct{}{}
-	if len(userSGsHint) > 0 && userSGsHint[0] != nil {
-		for _, s := range userSGsHint[0] {
-			hintSet[s] = struct{}{}
-		}
-	}
-	for _, sg := range apiSGs {
-		if _, ok := hintSet[sg]; ok {
-			userSGs = append(userSGs, sg)
-		} else {
-			defaultSGs = append(defaultSGs, sg)
-		}
-	}
-
-	if len(userSGs) > 0 {
-		userSet, d1 := types.SetValueFrom(ctx, types.StringType, userSGs)
-		diags.Append(d1...)
-		dst.SecurityGroups = userSet
-	} else {
-		emptySet, d1 := types.SetValueFrom(ctx, types.StringType, []string{})
-		diags.Append(d1...)
-		dst.SecurityGroups = emptySet
-	}
-	defaultSet, d2 := types.SetValueFrom(ctx, types.StringType, defaultSGs)
-	diags.Append(d2...)
-	dst.DefaultSecurityGroups = defaultSet
+	setVal, d1 := types.SetValueFrom(ctx, types.StringType, src.SecurityGroups)
+	diags.Append(d1...)
+	dst.SecurityGroups = setVal
 	if diags.HasError() {
 		return false
 	}

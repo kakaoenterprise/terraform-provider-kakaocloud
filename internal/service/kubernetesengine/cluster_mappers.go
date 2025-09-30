@@ -158,6 +158,7 @@ func (d *clustersDataSource) mapClusters(
 		clusterNetworkAttrTypes,
 		func(src kubernetesengine.ClusterNetworkResponseModel) any {
 			return ClusterNetworkModel{
+				Cni:         types.StringValue(string(src.Cni)),
 				PodCidr:     types.StringValue(src.PodCidr),
 				ServiceCidr: types.StringValue(src.ServiceCidr),
 			}

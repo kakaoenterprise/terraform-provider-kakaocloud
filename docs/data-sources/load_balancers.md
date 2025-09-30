@@ -33,7 +33,6 @@ The `kakaocloud_load_balancers` data source retrieves a list of existing Load Ba
 It supports filtering by attributes such as name or project, and provides details including availability zone, VPC configuration, provisioning and operating status, listener information, and VIP addresses.
 
 Use this data source when you need to:
-
 - Reference multiple existing load balancers without hardcoding their attributes.
 - Dynamically filter load balancers by name, project, or other metadata.
 - Access information such as listener count, subnet, or operating status for monitoring and configuration.

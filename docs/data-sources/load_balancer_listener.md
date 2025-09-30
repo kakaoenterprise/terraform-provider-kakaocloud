@@ -15,7 +15,6 @@ The `kakaocloud_load_balancer_listener` data source retrieves detailed informati
 It returns attributes such as protocol, port, connection limits, TLS configuration, operating and provisioning status, associated L7 policies, and SSL certificates.
 
 Use this data source when you need to:
-
 - Reference an existing listener in your Terraform configuration by its ID.
 - Dynamically obtain listener attributes (e.g., protocol, port, TLS settings) without hardcoding them.
 - Validate that a listener is correctly configured before attaching target groups or defining L7 policies.

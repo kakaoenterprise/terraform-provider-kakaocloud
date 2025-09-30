@@ -3,12 +3,58 @@
 page_title: "kakaocloud_load_balancer_target_groups Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Use this data source to get information about KakaoCloud Load Balancer Target Groups lists.
+  The kakaocloud_load_balancer_target_groups data source retrieves information about Load Balancer target groups in KakaoCloud.
+  This data source is useful when you need to:
+  List all target groups in a given load balancer environment.Filter target groups by attributes such as name, ID, VPC, subnet, or protocol.Review configuration details including load balancing algorithm, health monitor settings, and session persistence.Dynamically reference target group attributes (e.g., IDs, member counts, listener associations) in Terraform without hardcoding values.
+  Available filters
+  | Filter                | Type                  | Description |
+  |------------------------|-----------------------|-------------|
+  | `id`                  | string                | Target group ID |
+  | `name`                | string                | Target group name |
+  | `protocol`            | TargetGroupProtocol   | Protocol of the target group <br/>Possible values: <br/>- `HTTP`: HTTP <br/>- `HTTPS`: HTTPS <br/>- `TCP`: TCP <br/>- `UDP`: UDP <br/>- `PROXY`: Proxy protocol |
+  | `availability_zone`   | AvailabilityZone      | Availability zone where the target group is located <br/>Possible values: `kr-central-2-a`, `kr-central-2-b`, `kr-central-2-c` |
+  | `load_balancer_algorithm` | TargetGroupAlgorithm | Load balancing algorithm <br/>Possible values: <br/>- `ROUND_ROBIN`: Round robin <br/>- `LEAST_CONNECTIONS`: Least connections <br/>- `SOURCE_IP`: Source IP based |
+  | `load_balancer_name`  | string                | Name of the associated load balancer |
+  | `load_balancer_id`    | string                | ID of the associated load balancer |
+  | `listener_protocol`   | Protocol              | Protocol of the listener <br/>Possible values: <br/>- `HTTP`: HTTP <br/>- `TCP`: TCP <br/>- `UDP`: UDP <br/>- `TERMINATED_HTTPS`: HTTPS with SSL termination at the load balancer |
+  | `vpc_name`            | string                | Name of the VPC where the target group belongs |
+  | `vpc_id`              | string                | ID of the VPC where the target group belongs |
+  | `subnet_name`         | string                | Subnet name |
+  | `subnet_id`           | string                | Subnet ID |
+  | `health_monitor_id`   | string                | ID of the associated health monitor |
+  | `created_at`          | string                | Time when the resource was created <br/>- ISO_8601 format <br/>- UTC |
+  | `updated_at`          | string                | Time when the resource was last updated <br/>- ISO_8601 format <br/>- UTC |
 ---
 
 # kakaocloud_load_balancer_target_groups (Data Source)
 
-Use this data source to get information about KakaoCloud Load Balancer Target Groups lists.
+The `kakaocloud_load_balancer_target_groups` data source retrieves information about Load Balancer target groups in KakaoCloud.
+
+This data source is useful when you need to:
+- List all target groups in a given load balancer environment.
+- Filter target groups by attributes such as name, ID, VPC, subnet, or protocol.
+- Review configuration details including load balancing algorithm, health monitor settings, and session persistence.
+- Dynamically reference target group attributes (e.g., IDs, member counts, listener associations) in Terraform without hardcoding values.
+
+## Available filters
+
+| Filter                | Type                  | Description |
+|------------------------|-----------------------|-------------|
+| `id`                  | string                | Target group ID |
+| `name`                | string                | Target group name |
+| `protocol`            | TargetGroupProtocol   | Protocol of the target group <br/>Possible values: <br/>- `HTTP`: HTTP <br/>- `HTTPS`: HTTPS <br/>- `TCP`: TCP <br/>- `UDP`: UDP <br/>- `PROXY`: Proxy protocol |
+| `availability_zone`   | AvailabilityZone      | Availability zone where the target group is located <br/>Possible values: `kr-central-2-a`, `kr-central-2-b`, `kr-central-2-c` |
+| `load_balancer_algorithm` | TargetGroupAlgorithm | Load balancing algorithm <br/>Possible values: <br/>- `ROUND_ROBIN`: Round robin <br/>- `LEAST_CONNECTIONS`: Least connections <br/>- `SOURCE_IP`: Source IP based |
+| `load_balancer_name`  | string                | Name of the associated load balancer |
+| `load_balancer_id`    | string                | ID of the associated load balancer |
+| `listener_protocol`   | Protocol              | Protocol of the listener <br/>Possible values: <br/>- `HTTP`: HTTP <br/>- `TCP`: TCP <br/>- `UDP`: UDP <br/>- `TERMINATED_HTTPS`: HTTPS with SSL termination at the load balancer |
+| `vpc_name`            | string                | Name of the VPC where the target group belongs |
+| `vpc_id`              | string                | ID of the VPC where the target group belongs |
+| `subnet_name`         | string                | Subnet name |
+| `subnet_id`           | string                | Subnet ID |
+| `health_monitor_id`   | string                | ID of the associated health monitor |
+| `created_at`          | string                | Time when the resource was created <br/>- ISO_8601 format <br/>- UTC |
+| `updated_at`          | string                | Time when the resource was last updated <br/>- ISO_8601 format <br/>- UTC |
 
 
 

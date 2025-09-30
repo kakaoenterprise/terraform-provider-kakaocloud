@@ -1,6 +1,6 @@
-package // Copyright (c) HashiCorp, Inc.
+// Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-kubernetesengine
+package kubernetesengine
 
 import (
 	"fmt"

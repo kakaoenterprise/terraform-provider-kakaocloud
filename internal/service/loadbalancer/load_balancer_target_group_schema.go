@@ -3,7 +3,6 @@
 package loadbalancer
 
 import (
-	"regexp"
 	"terraform-provider-kakaocloud/internal/common"
 	"terraform-provider-kakaocloud/internal/docs"
 
@@ -139,7 +138,6 @@ var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 		Description: listTargetGroupDesc.String("member_count"),
 	},
 	"health_monitor": rschema.SingleNestedAttribute{
-		Optional:    true,
 		Computed:    true,
 		Description: listTargetGroupDesc.String("health_monitor"),
 		Attributes: map[string]rschema.Attribute{
@@ -148,87 +146,41 @@ var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 				Description: healthMonitorDesc.String("id"),
 			},
 			"type": rschema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: healthMonitorDesc.String("type"),
-				Validators: []validator.String{
-					stringvalidator.OneOf(
-						"HTTP",
-						"HTTPS",
-						"TCP",
-						"PING",
-					),
-				},
 			},
 			"delay": rschema.Int64Attribute{
-				Optional:    true,
 				Computed:    true,
 				Description: healthMonitorDesc.String("delay"),
-				Validators: []validator.Int64{
-					int64validator.Between(0, 3600),
-				},
 			},
 			"timeout": rschema.Int64Attribute{
-				Optional:    true,
 				Computed:    true,
 				Description: healthMonitorDesc.String("timeout"),
-				Validators: []validator.Int64{
-					int64validator.Between(0, 900),
-				},
 			},
 			"fall_threshold": rschema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: healthMonitorDesc.String("fall_threshold"),
-				Validators: []validator.Int64{
-					int64validator.Between(1, 10),
-				},
 			},
 			"rise_threshold": rschema.Int64Attribute{
-				Optional:    true,
 				Computed:    true,
 				Description: healthMonitorDesc.String("rise_threshold"),
-				Validators: []validator.Int64{
-					int64validator.Between(1, 10),
-				},
 			},
 			"http_method": rschema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: healthMonitorDesc.String("http_method"),
-				Validators: []validator.String{
-					stringvalidator.OneOf(
-						"CONNECT",
-						"GET",
-					),
-				},
 			},
 			"http_version": rschema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: healthMonitorDesc.String("http_version"),
-				Validators: []validator.String{
-					stringvalidator.OneOf(
-						"1.0",
-						"1.1",
-					),
-				},
 			},
 			"expected_codes": rschema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: healthMonitorDesc.String("expected_codes"),
 			},
 			"url_path": rschema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: healthMonitorDesc.String("url_path"),
-				Validators: []validator.String{
-					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^/(.{0,120})$`),
-						"Must start with a forward slash (/) and be at most 120 characters long excluding the slash",
-					),
-				},
 			},
 			"operating_status": rschema.StringAttribute{
 				Computed:    true,

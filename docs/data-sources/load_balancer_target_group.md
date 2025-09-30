@@ -3,12 +3,23 @@
 page_title: "kakaocloud_load_balancer_target_group Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Fetches information about a KakaoCloud Load Balancer Target Group.
+  The kakaocloud_load_balancer_target_group_members data source allows you to retrieve information about the members registered in a specific Load Balancer target group in KakaoCloud.
+  This data source is useful when you need to:
+  List all members associated with a target group.Filter members by attributes such as ID, name, protocol, availability zone, or instance ID.Verify operational details like health check configuration, operating status, and provisioning status.Output member properties including addresses, ports, weights, and associated security groups or subnets.
+  By using this data source, you can dynamically reference target group members in your Terraform configuration without hardcoding their details.
 ---
 
 # kakaocloud_load_balancer_target_group (Data Source)
 
-Fetches information about a KakaoCloud Load Balancer Target Group.
+The `kakaocloud_load_balancer_target_group_members` data source allows you to retrieve information about the members registered in a specific Load Balancer target group in KakaoCloud.
+
+This data source is useful when you need to:
+- List all members associated with a target group.
+- Filter members by attributes such as ID, name, protocol, availability zone, or instance ID.
+- Verify operational details like health check configuration, operating status, and provisioning status.
+- Output member properties including addresses, ports, weights, and associated security groups or subnets.
+
+By using this data source, you can dynamically reference target group members in your Terraform configuration without hardcoding their details.
 
 ## Example Usage
 

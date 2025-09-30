@@ -21,7 +21,7 @@ This resource helps enable cross-project collaboration and controlled network re
 
 ### Required
 
-- `id` (String) ID of the subnet the IP belongs to
+- `id` (String) Subnet ID
 - `project_ids` (Set of String) List of Project IDs requesting subnet sharing
 
 ### Optional

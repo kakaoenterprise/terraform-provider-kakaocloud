@@ -177,11 +177,12 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 			SecretKey: accessLog.SecretKey.ValueString(),
 		}
 
-		body := loadbalancer.BodyUpdateAccessLog{AccessLogs: accessLogReq}
+		body := loadbalancer.NewBodyUpdateAccessLog()
+		body.SetAccessLogs(accessLogReq)
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateAccessLogModelResponseLoadBalancerModel, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerAPI.UpdateAccessLog(ctx, plan.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateAccessLog(body).Execute()
+				return r.kc.ApiClient.LoadBalancerAPI.UpdateAccessLog(ctx, plan.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateAccessLog(*body).Execute()
 			},
 		)
 
@@ -430,11 +431,12 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 				SecretKey: accessLog.SecretKey.ValueString(),
 			}
 
-			body := loadbalancer.BodyUpdateAccessLog{AccessLogs: accessLogReq}
+			body := loadbalancer.NewBodyUpdateAccessLog()
+			body.SetAccessLogs(accessLogReq)
 
 			_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 				func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateAccessLogModelResponseLoadBalancerModel, *http.Response, error) {
-					return r.kc.ApiClient.LoadBalancerAPI.UpdateAccessLog(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateAccessLog(body).Execute()
+					return r.kc.ApiClient.LoadBalancerAPI.UpdateAccessLog(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateAccessLog(*body).Execute()
 				},
 			)
 
@@ -466,26 +468,18 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 			state.AccessLogs = plan.AccessLogs
 		} else if plan.AccessLogs.IsNull() {
 
-			accessLogReq := loadbalancer.EditLoadBalancerAccessLogModel{
-				Bucket:    "",
-				AccessKey: "",
-				SecretKey: "",
-			}
-			body := loadbalancer.BodyUpdateAccessLog{AccessLogs: accessLogReq}
+			body := loadbalancer.NewBodyUpdateAccessLog()
+			body.SetAccessLogsNil()
 
 			_, _, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 				func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateAccessLogModelResponseLoadBalancerModel, *http.Response, error) {
-					return r.kc.ApiClient.LoadBalancerAPI.UpdateAccessLog(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateAccessLog(body).Execute()
+					return r.kc.ApiClient.LoadBalancerAPI.UpdateAccessLog(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateAccessLog(*body).Execute()
 				},
 			)
 
 			if err != nil {
-
-				resp.Diagnostics.AddWarning(
-					"Access Logs Disable Not Supported",
-					"The API does not support disabling access logs. Access logs will remain configured.",
-				)
-
+				common.AddApiActionError(ctx, r, nil, "UpdateAccessLog", err, &resp.Diagnostics)
+				return
 			} else {
 
 				result, ok := r.pollLoadBalancerUntilStatus(

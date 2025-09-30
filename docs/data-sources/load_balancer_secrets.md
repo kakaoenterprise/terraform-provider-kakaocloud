@@ -22,7 +22,6 @@ The `kakaocloud_load_balancer_secrets` data source retrieves a list of SSL/TLS s
 It supports filtering by attributes such as name, and provides details including creation time, expiration date, secret type, and status.
 
 Use this data source when you need to:
-
 - Dynamically fetch secret IDs or references for use in listener configuration.
 - Validate whether a secret (e.g., TLS certificate) is active before attaching it to a load balancer.
 - Manage multiple secrets without hardcoding their attributes in your Terraform configuration.

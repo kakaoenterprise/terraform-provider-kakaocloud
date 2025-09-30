@@ -35,7 +35,7 @@ This resource provides full lifecycle management of node pools, ensuring flexibl
 - `is_hyper_threading` (Boolean) Whether hyper-threading is enabled <br/> - `true`: Enable hyper-threading, recognizing 2 vCPUs per physical core <br/> - `false`: Disable hyper-threading, recognizing vCPUs equal to the number of physical cores
 - `labels` (Attributes Set) List of labels to apply to the node pool (key/value pairs) (see [below for nested schema](#nestedatt--labels))
 - `node_count` (Number) Number of nodes in the node pool
-- `security_groups` (Set of String) List of security group IDs to connect
+- `request_security_groups` (Set of String) List of security group IDs to connect
 - `taints` (Attributes Set) List of taints to apply to the node pool (see [below for nested schema](#nestedatt--taints))
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 - `user_data` (String) User script to run when creating nodes in the node pool (requires base64 encoding)
@@ -44,7 +44,6 @@ This resource provides full lifecycle management of node pools, ensuring flexibl
 ### Read-Only
 
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
-- `default_security_groups` (Set of String) List of security group IDs to connect
 - `failure_message` (String) Failure message if a node in the node pool changes to `Failed`
 - `flavor` (String) Instance type
 - `id` (String) Unique ID of the node pool
@@ -53,6 +52,7 @@ This resource provides full lifecycle management of node pools, ensuring flexibl
 - `is_cordon` (Boolean) Whether all nodes in the node pool are in cordon (scheduling disabled) state
 - `is_gpu` (Boolean) Whether the node pool is GPU type
 - `is_upgradable` (Boolean) Whether upgrade is available
+- `security_groups` (Set of String) List of security group IDs to connect
 - `status` (Attributes) Node pool status (see [below for nested schema](#nestedatt--status))
 - `version` (String) Kubernetes version of the node pool
 

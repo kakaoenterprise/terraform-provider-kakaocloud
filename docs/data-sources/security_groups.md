@@ -22,7 +22,6 @@ The `kakaocloud_security_groups` data source retrieves a list of Security Groups
 It supports filtering by attributes such as name, and provides details including group description, stateful property, associated project, and security group rules (ingress and egress).
 
 Use this data source when you need to:
-
 - Reference multiple Security Groups in your Terraform configuration.
 - Filter and inspect Security Group rules, including protocols, port ranges, and remote IPs or groups.
 

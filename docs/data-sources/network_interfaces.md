@@ -31,7 +31,6 @@ The `kakaocloud_network_interfaces` data source retrieves a list of Network Inte
 You can optionally filter results by attributes such as name, and the output includes details like private and public IP addresses, MAC address, associated security groups, allowed address pairs, and VPC/subnet information.
 
 Use this data source when you need to:
-
 - Look up multiple existing network interfaces in your project.
 - Retrieve networking details for dependency resolution in Terraform configurations.
 - Filter specific interfaces by attributes (e.g., name, project) instead of hardcoding IDs.

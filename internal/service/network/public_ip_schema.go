@@ -23,9 +23,6 @@ func getRelatedResourceSchema() map[string]rschema.Attribute {
 			Computed:    true,
 			Description: desc.String("id"),
 			Validators:  common.UuidValidator(),
-			PlanModifiers: []planmodifier.String{
-				common.NullToUnknownString(),
-			},
 		},
 		"name": rschema.StringAttribute{
 			Computed:    true,
@@ -40,8 +37,7 @@ func getRelatedResourceSchema() map[string]rschema.Attribute {
 			Description: desc.String("type"),
 		},
 		"device_id": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
+			Required:    true,
 			Description: desc.String("device_id"),
 			Validators:  common.UuidValidator(),
 		},
@@ -99,9 +95,6 @@ func getPublicIpResourceSchema() map[string]rschema.Attribute {
 			Computed:    true,
 			Description: desc.String("description"),
 			Validators:  common.DescriptionValidator(),
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
-			},
 		},
 		"project_id": rschema.StringAttribute{
 			Computed:    true,
@@ -134,7 +127,6 @@ func getPublicIpResourceSchema() map[string]rschema.Attribute {
 		},
 		"related_resource": rschema.SingleNestedAttribute{
 			Optional:    true,
-			Computed:    true,
 			Description: desc.String("related_resource"),
 			Attributes:  relatedResourceSchemaAttributes,
 		},

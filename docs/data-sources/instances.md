@@ -33,7 +33,6 @@ The `kakaocloud_instances` data source retrieves a list of compute instances in 
 It supports filtering by attributes such as `name` and returns detailed information about each instance, including flavor, image, network interfaces, attached volumes, availability zone, security groups, and current status.
 
 Use this data source when you need to:
-
 - Query multiple existing instances dynamically instead of hardcoding instance IDs.
 - Filter instances by attributes (e.g., name, flavor, or availability zone) to use in other resources.
 - Validate instance configurations or states before applying changes in your Terraform environment.

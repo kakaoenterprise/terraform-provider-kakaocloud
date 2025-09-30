@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -30,7 +31,7 @@ func (d *loadBalancerTargetGroupMembersDataSource) Metadata(_ context.Context, r
 
 func (d *loadBalancerTargetGroupMembersDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Get a list of Load Balancer Target Group Members in KakaoCloud.",
+		Description: docs.GetDataSourceDescription("LoadBalancerTargetGroupMembers"),
 		Attributes: map[string]schema.Attribute{
 			"target_group_id": schema.StringAttribute{
 				Required:    true,

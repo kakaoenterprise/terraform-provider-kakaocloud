@@ -15,7 +15,6 @@ The `kakaocloud_kubernetes_engine_cluster` data source retrieves information abo
 It returns attributes such as the cluster network configuration, control plane endpoint, VPC settings, Kubernetes version, upgrade availability, and current status.
 
 Use this data source when you need to:
-
 - Reference an existing Kubernetes cluster in your Terraform configuration without hardcoding its attributes.
 - Dynamically obtain cluster details (e.g., pod/service CIDRs, control plane host/port, version information) for use in other resources.
 - Validate the status and configuration of a cluster before applying changes to workloads or related infrastructure.

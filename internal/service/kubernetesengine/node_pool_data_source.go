@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -49,7 +50,7 @@ func (d *nodePoolDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *nodePoolDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Data source to retrieve node pools of a specific cluster",
+		Description: docs.GetDataSourceDescription("KubernetesEngineNodePool"),
 		Attributes: MergeAttributes[schema.Attribute](
 			nodePoolDataSourceAttributes,
 			map[string]schema.Attribute{

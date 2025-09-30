@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -52,6 +53,7 @@ func (d *scheduledScalingDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *scheduledScalingDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: docs.GetDataSourceDescription("KubernetesEngineScheduledScalings"),
 		Attributes: map[string]schema.Attribute{
 			"cluster_name": schema.StringAttribute{
 				Optional:    true,

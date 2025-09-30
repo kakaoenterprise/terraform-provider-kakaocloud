@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/jinzhu/copier"
 
@@ -38,7 +39,7 @@ func (d *loadBalancerL7PoliciesDataSource) Metadata(_ context.Context, req datas
 
 func (d *loadBalancerL7PoliciesDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Use this data source to get information about KakaoCloud Load Balancer L7 Policy lists.",
+		Description: docs.GetDataSourceDescription("LoadBalancerL7Policies"),
 		Attributes: map[string]schema.Attribute{
 			"load_balancer_id": schema.StringAttribute{
 				Required:    true,

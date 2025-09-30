@@ -15,7 +15,6 @@ The `kakaocloud_load_balancer_l7_policy_rule` data source retrieves details abou
 It returns attributes such as the rule type, comparison method, key/value conditions, inversion flag, and current provisioning/operating status.
 
 Use this data source when you need to:
-
 - Reference an existing L7 policy rule in your Terraform configuration by its ID.
 - Dynamically obtain rule attributes (e.g., type, key/value, compare type) without hardcoding them.
 - Validate that an L7 policy rule is correctly configured before applying or updating listener policies.

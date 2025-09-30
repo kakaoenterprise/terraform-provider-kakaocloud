@@ -1,6 +1,6 @@
-package // Copyright (c) HashiCorp, Inc.
+// Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
-common
+package common
 
 import "sync"
 

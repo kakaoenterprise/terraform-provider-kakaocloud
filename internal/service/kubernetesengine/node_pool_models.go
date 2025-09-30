@@ -35,19 +35,21 @@ type NodePoolBaseModel struct {
 	ClusterName types.String `tfsdk:"cluster_name"`
 	Name        types.String `tfsdk:"name"`
 
-	Description           types.String `tfsdk:"description"`
-	FlavorId              types.String `tfsdk:"flavor_id"`
-	VolumeSize            types.Int32  `tfsdk:"volume_size"`
-	NodeCount             types.Int32  `tfsdk:"node_count"`
-	SshKeyName            types.String `tfsdk:"ssh_key_name"`
-	UserData              types.String `tfsdk:"user_data"`
-	VpcInfo               types.Object `tfsdk:"vpc_info"`
-	ImageId               types.String `tfsdk:"image_id"`
-	IsHyperThreading      types.Bool   `tfsdk:"is_hyper_threading"`
-	SecurityGroups        types.Set    `tfsdk:"security_groups"`
-	DefaultSecurityGroups types.Set    `tfsdk:"default_security_groups"`
-	Labels                types.Set    `tfsdk:"labels"`
-	Taints                types.Set    `tfsdk:"taints"`
+	Description      types.String `tfsdk:"description"`
+	FlavorId         types.String `tfsdk:"flavor_id"`
+	VolumeSize       types.Int32  `tfsdk:"volume_size"`
+	NodeCount        types.Int32  `tfsdk:"node_count"`
+	SshKeyName       types.String `tfsdk:"ssh_key_name"`
+	UserData         types.String `tfsdk:"user_data"`
+	VpcInfo          types.Object `tfsdk:"vpc_info"`
+	ImageId          types.String `tfsdk:"image_id"`
+	IsHyperThreading types.Bool   `tfsdk:"is_hyper_threading"`
+
+	SecurityGroups types.Set `tfsdk:"security_groups"`
+
+	RequestSecurityGroups types.Set `tfsdk:"request_security_groups"`
+	Labels                types.Set `tfsdk:"labels"`
+	Taints                types.Set `tfsdk:"taints"`
 
 	CreatedAt      types.String `tfsdk:"created_at"`
 	FailureMessage types.String `tfsdk:"failure_message"`
@@ -80,11 +82,12 @@ type NodePoolBaseModelDS struct {
 	UserData    types.String `tfsdk:"user_data"`
 	VpcInfo     types.Object `tfsdk:"vpc_info"`
 
-	IsHyperThreading      types.Bool `tfsdk:"is_hyper_threading"`
-	SecurityGroups        types.Set  `tfsdk:"security_groups"`
-	DefaultSecurityGroups types.Set  `tfsdk:"default_security_groups"`
-	Labels                types.Set  `tfsdk:"labels"`
-	Taints                types.Set  `tfsdk:"taints"`
+	IsHyperThreading types.Bool `tfsdk:"is_hyper_threading"`
+
+	SecurityGroups types.Set `tfsdk:"security_groups"`
+
+	Labels types.Set `tfsdk:"labels"`
+	Taints types.Set `tfsdk:"taints"`
 
 	CreatedAt      types.String `tfsdk:"created_at"`
 	FailureMessage types.String `tfsdk:"failure_message"`

@@ -3,12 +3,22 @@
 page_title: "kakaocloud_kubernetes_engine_node_pools Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Data source to retrieve the list of node pools for a specific cluster
+  The kakaocloud_kubernetes_engine_node_pools data source retrieves a list of node pools for a specified KakaoCloud Kubernetes Engine cluster.
+  This data source is useful when you need to:
+  List all node pools associated with a cluster.Review configuration details such as autoscaling, instance flavors, images, labels, taints, and VPC information.Check operational information including node counts, status, creation time, and version.Dynamically reference node pool attributes in Terraform configurations without hardcoding values.
 ---
 
 # kakaocloud_kubernetes_engine_node_pools (Data Source)
 
-Data source to retrieve the list of node pools for a specific cluster
+The `kakaocloud_kubernetes_engine_node_pools` data source retrieves a list of node pools for a specified KakaoCloud Kubernetes Engine cluster.
+
+This data source is useful when you need to:
+- List all node pools associated with a cluster.
+- Review configuration details such as autoscaling, instance flavors, images, labels, taints, and VPC information.
+- Check operational information including node counts, status, creation time, and version.
+- Dynamically reference node pool attributes in Terraform configurations without hardcoding values.
+
+<!-- ## Available filters 없음-->
 
 
 
@@ -17,7 +27,7 @@ Data source to retrieve the list of node pools for a specific cluster
 
 ### Required
 
-- `cluster_name` (String) 클러스터 이름
+- `cluster_name` (String) Cluster name
 
 ### Optional
 
@@ -43,7 +53,6 @@ Read-Only:
 - `autoscaling` (Attributes) Resource-based autoscaling configuration of the node pool (see [below for nested schema](#nestedatt--node_pools--autoscaling))
 - `cluster_name` (String) Name of the cluster the node pool belongs to
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
-- `default_security_groups` (Set of String) List of connected security groups
 - `description` (String) Description of the node pool
 - `failure_message` (String) Failure message if a node in the node pool changes to `Failed`
 - `flavor` (String) Instance type

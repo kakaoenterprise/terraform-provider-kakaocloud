@@ -3,12 +3,20 @@
 page_title: "kakaocloud_kubernetes_engine_cluster_nodes Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  
+  The kakaocloud_kubernetes_engine_cluster_nodes data source retrieves information about the nodes in a specified KakaoCloud Kubernetes Engine cluster.
+  This data source is useful when you need to:
+  List all nodes in a cluster or filter them by node pool.Review details such as instance flavor, image, IP address, version, and attached VPC information.Check operational state including creation time, failure messages, and current status.Dynamically reference node attributes in Terraform without hardcoding values.
 ---
 
 # kakaocloud_kubernetes_engine_cluster_nodes (Data Source)
 
+The `kakaocloud_kubernetes_engine_cluster_nodes` data source retrieves information about the nodes in a specified KakaoCloud Kubernetes Engine cluster.
 
+This data source is useful when you need to:
+- List all nodes in a cluster or filter them by node pool.
+- Review details such as instance flavor, image, IP address, version, and attached VPC information.
+- Check operational state including creation time, failure messages, and current status.
+- Dynamically reference node attributes in Terraform without hardcoding values.
 
 
 

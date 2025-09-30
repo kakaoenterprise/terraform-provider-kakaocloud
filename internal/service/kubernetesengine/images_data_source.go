@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
+	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -54,6 +55,7 @@ func (d *kubernetesImagesDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *kubernetesImagesDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: docs.GetDataSourceDescription("KubernetesEngineImages"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,

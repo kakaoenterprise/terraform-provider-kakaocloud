@@ -3,12 +3,20 @@
 page_title: "kakaocloud_kubernetes_engine_node_pool Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  Data source to retrieve node pools of a specific cluster
+  The kakaocloud_kubernetes_engine_node_pool data source retrieves information about a specific node pool within a KakaoCloud Kubernetes Engine cluster.
+  This data source is useful when you need to:
+  Get details of a node pool by specifying the cluster name and node pool name.Review configuration settings such as autoscaling, instance flavor, image, labels, taints, and VPC information.Check operational details including node counts, status, creation time, and version.Dynamically reference node pool attributes in Terraform configurations without hardcoding values.
 ---
 
 # kakaocloud_kubernetes_engine_node_pool (Data Source)
 
-Data source to retrieve node pools of a specific cluster
+The `kakaocloud_kubernetes_engine_node_pool` data source retrieves information about a specific node pool within a KakaoCloud Kubernetes Engine cluster.
+
+This data source is useful when you need to:
+- Get details of a node pool by specifying the cluster name and node pool name.
+- Review configuration settings such as autoscaling, instance flavor, image, labels, taints, and VPC information.
+- Check operational details including node counts, status, creation time, and version.
+- Dynamically reference node pool attributes in Terraform configurations without hardcoding values.
 
 ## Example Usage
 
@@ -45,7 +53,6 @@ output "node_pool_example" {
 
 - `autoscaling` (Attributes) Resource-based autoscaling configuration of the node pool (see [below for nested schema](#nestedatt--autoscaling))
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
-- `default_security_groups` (Set of String) List of connected security groups
 - `description` (String) Description of the node pool
 - `failure_message` (String) Failure message if a node in the node pool changes to `Failed`
 - `flavor` (String) Instance type

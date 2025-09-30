@@ -15,7 +15,6 @@ The `kakaocloud_public_ip` data source retrieves information about a specific Pu
 It provides details such as the IP address itself, associated private IP, project, status, and related resource information (e.g., device, subnet, and VPC).
 
 Use this data source when you need to:
-
 - Reference an existing Public IP in your Terraform configuration.
 - Retrieve detailed networking information linked to the Public IP without hardcoding attributes.
 

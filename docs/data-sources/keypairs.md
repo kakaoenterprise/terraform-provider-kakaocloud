@@ -23,7 +23,6 @@ The `kakaocloud_keypairs` data source retrieves a list of key pairs in KakaoClou
 It supports filtering by attributes such as `name` and returns details including key pair ID, name, fingerprint, type, public key, creation time, and owner information.
 
 Use this data source when you need to:
-
 - Query all existing key pairs dynamically without hardcoding their names or IDs.
 - Filter key pairs to select the correct one for attaching to compute instances.
 - Validate key pair properties (e.g., fingerprint, type) before using them in other Terraform resources.

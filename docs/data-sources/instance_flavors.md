@@ -32,7 +32,6 @@ The `kakaocloud_instance_flavors` data source retrieves a list of available inst
 It supports filtering by attributes such as `name` and returns detailed specifications for each flavor, including CPU, memory, disk type, availability zones, and hardware information.
 
 Use this data source when you need to:
-
 - Query available flavors dynamically instead of hardcoding flavor IDs.
 - Filter instance flavors to select the right type for your workload (e.g., family, size, architecture).
 - Validate hardware requirements such as vCPUs, memory, or disk type before creating compute instances.
