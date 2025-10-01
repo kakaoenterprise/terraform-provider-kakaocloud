@@ -7,8 +7,10 @@ description: |-
 
 # kakaocloud Provider
 
-The Kakaocloud provider is used to interact with [kakaocloud](https://www.kakaocloud.com/) services.
+The kakaocloud provider is used to interact with [kakaocloud](https://www.kakaocloud.com/) services.
 The provider needs to be configured with the proper credentials before it can be used.
+
+!> **Warning** This provider is supported on **Terraform Version 1.11 or later**.
 
 ## Example Usage
 
@@ -17,7 +19,7 @@ terraform {
   required_providers {
     kakaocloud = {
       source  = "kakaoenterprise/kakaocloud"
-      version = "0.0.15"
+      version = "0.0.17"
     }
   }
 }
@@ -27,11 +29,11 @@ provider "kakaocloud" {
   application_credential_secret = var.application_credential_secret
 }
 ```
-See the provider reference section below for details on [authentication](##Authentication) and configuring the provider.
+See the **Authentication** section below for details on configuring provider credentials.
 
 ## Authentication
 
-The kakaocloud provider offers multiple ways to authenticate and manage credentials.
+The Kakaocloud provider supports two methods for authentication and credential management.
 
 It checks for credentials in the following order, as detailed below:
 
@@ -40,16 +42,14 @@ It checks for credentials in the following order, as detailed below:
 
 ### Static credentials
 
-Static credentials can be provided by adding `application_credential_id` and `application_credential_secret` in-line in the kakaocloud provider block.
-
-Usage:
+Static credentials can be specified directly in the Kakaocloud provider block using the `application_credential_id` and `application_credential_secret` arguments.
 
 ```hcl
 terraform {
   required_providers {
     kakaocloud = {
       source  = "kakaoenterprise/kakaocloud"
-      version = "0.0.15"
+      version = "0.0.17"
     }
   }
 }
@@ -62,15 +62,16 @@ provider "kakaocloud" {
 
 ### Environment variables
 
-Credentials can be provided via the `KAKAOCLOUD_APPLICATION_CREDENTIAL_ID` and `KAKAOCLOUD_APPLICATION_CREDENTIAL_SECRET` environment variables,
-which represent the kakaocloud application credential ID and secret, respectively.
+Credentials can be supplied using the `KAKAOCLOUD_APPLICATION_CREDENTIAL_ID` and `KAKAOCLOUD_APPLICATION_CREDENTIAL_SECRET` environment variables, which correspond to the application credential ID and secret for Kakaocloud.
+
+**Provider Example**
 
 ```hcl
 terraform {
   required_providers {
     kakaocloud = {
       source  = "kakaoenterprise/kakaocloud"
-      version = "0.0.15"
+      version = "0.0.17"
     }
   }
 }
@@ -78,7 +79,7 @@ terraform {
 provider "kakaocloud" {}
 ```
 
-Usage:
+**Environment Variables**
 
 ```shell
 $ export KAKAOCLOUD_APPLICATION_CREDENTIAL_ID="application-credential-id"
@@ -86,7 +87,7 @@ $ export KAKAOCLOUD_APPLICATION_CREDENTIAL_SECRET="application-credential-secret
 $ terraform plan
 ```
 
-~> **Note** Application credentials can be obtained from the Kakaocloud console.
+-> **Note** Application credentials can be generated from the Kakaocloud console.
 Please refer to the [kakaocloud documentation](https://docs.kakaocloud.com/start/console-guide/credentials) for detailed instructions on generating application credentials.
 
 ## Argument Reference

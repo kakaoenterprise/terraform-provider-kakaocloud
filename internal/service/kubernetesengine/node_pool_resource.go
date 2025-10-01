@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/services/network"
 	"net/http"
 	"strings"
 	"time"
@@ -83,14 +84,76 @@ func (r *nodePoolResource) ImportState(
 		)
 		return
 	}
-
 	clusterName, nodePoolName := parts[0], parts[1]
 
 	var diags diag.Diagnostics
 	diags = append(diags, resp.State.SetAttribute(ctx, path.Root("cluster_name"), clusterName)...)
 	diags = append(diags, resp.State.SetAttribute(ctx, path.Root("name"), nodePoolName)...)
 	diags = append(diags, resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
+	detail, _, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		func() (struct {
+			NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+		}, *http.Response, error) {
+			apiResp, hr, err := r.kc.ApiClient.NodePoolsAPI.
+				GetNodePool(ctx, clusterName, nodePoolName).
+				XAuthToken(r.kc.XAuthToken).
+				Execute()
+			if err != nil {
+				return struct {
+					NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+				}{}, hr, err
+			}
+			return struct {
+				NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+			}{NodePool: apiResp.NodePool}, hr, nil
+		},
+	)
+	if err != nil {
+		common.AddApiActionError(ctx, r, nil, "GetNodePool", err, &resp.Diagnostics)
+		return
+	}
+
+	sgIDs := detail.NodePool.SecurityGroups
+	if len(sgIDs) == 1 {
+
+		return
+	}
+
+	const defaultPrefix = "k8s-cluster-ke-cluster"
+	userSGs := make([]string, 0, len(sgIDs))
+
+	for _, sgID := range sgIDs {
+		sgResp, _, e := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+			func() (*network.BnsNetworkV1ApiGetSecurityGroupModelResponseSecurityGroupModel, *http.Response, error) {
+				return r.kc.ApiClient.SecurityGroupAPI.
+					GetSecurityGroup(ctx, sgID).
+					XAuthToken(r.kc.XAuthToken).
+					Execute()
+			},
+		)
+		if e != nil {
+			common.AddApiActionError(ctx, r, nil, "GetSecurityGroup", e, &resp.Diagnostics)
+			continue
+		}
+
+		var nameStr string
+		if sgResp.SecurityGroup.Name.IsSet() && sgResp.SecurityGroup.Name.Get() != nil {
+			nameStr = string(*sgResp.SecurityGroup.Name.Get())
+		}
+
+		if !strings.HasPrefix(nameStr, defaultPrefix) {
+
+			userSGs = append(userSGs, sgID)
+		}
+	}
+
+	diags = append(diags, resp.State.SetAttribute(ctx, path.Root("security_groups"), sgIDs)...)
+	diags = append(diags, resp.State.SetAttribute(ctx, path.Root("request_security_groups"), userSGs)...)
 	resp.Diagnostics.Append(diags...)
 }
 
