@@ -3,20 +3,20 @@
 page_title: "kakaocloud_kubernetes_engine_node_pool Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_kubernetes_engine_node_pool resource allows you to create and manage node pools in a KakaoCloud Kubernetes Engine cluster.
-  You can configure instance types, images, storage, security groups, labels, taints, and autoscaling policies.
-  This resource provides full lifecycle management of node pools, ensuring flexible scaling, workload isolation, and optimized cluster operations.
+  The kakaocloud_kubernetes_engine_node_pool resource allows you to create and manage node pools in a KakaoCloud Kubernetes Engine cluster.You can configure instance types, images, storage, security groups, labels, taints, and autoscaling policies.This resource provides full lifecycle management of node pools, ensuring flexible scaling, workload isolation, and optimized cluster operations.
   Node Count and Autoscaling ⚠️
-  **⚠️ Important** > > - If `autoscaling` is **enabled**, you **must not** set `node_count`. > - If `autoscaling` is **disabled**, you **must** set `node_count`.
+  **⚠️ Important**If `autoscaling` is **enabled**, you **must not** set `node_count`.If `autoscaling` is **disabled**, you **must** set `node_count`.
 ---
 
 # kakaocloud_kubernetes_engine_node_pool (Resource)
 
-The `kakaocloud_kubernetes_engine_node_pool` resource allows you to create and manage node pools in a KakaoCloud Kubernetes Engine cluster.
-You can configure instance types, images, storage, security groups, labels, taints, and autoscaling policies.
+The `kakaocloud_kubernetes_engine_node_pool` resource allows you to create and manage node pools in a KakaoCloud Kubernetes Engine cluster.  
+You can configure instance types, images, storage, security groups, labels, taints, and autoscaling policies.  
 This resource provides full lifecycle management of node pools, ensuring flexible scaling, workload isolation, and optimized cluster operations.
 
+
 ## Node Count and Autoscaling ⚠️
+
 > **⚠️ Important**
 >
 > - If `autoscaling` is **enabled**, you **must not** set `node_count`.

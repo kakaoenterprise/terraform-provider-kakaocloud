@@ -3,15 +3,13 @@
 page_title: "kakaocloud_kubernetes_engine_cluster Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_kubernetes_engine_cluster resource allows you to create and manage Kubernetes clusters in KakaoCloud.
-  You can configure networking, VPC settings, Kubernetes versions, and public access options, while the resource also provides detailed information on cluster status, upgrade availability, and control plane endpoints.
-  This enables flexible and reliable lifecycle management of containerized workloads in KakaoCloud.
+  The kakaocloud_kubernetes_engine_cluster resource allows you to create and manage Kubernetes clusters in KakaoCloud.You can configure networking, VPC settings, Kubernetes versions, and public access options, while the resource also provides detailed information on cluster status, upgrade availability, and control plane endpoints.This enables flexible and reliable lifecycle management of containerized workloads in KakaoCloud.
 ---
 
 # kakaocloud_kubernetes_engine_cluster (Resource)
 
-The `kakaocloud_kubernetes_engine_cluster` resource allows you to create and manage Kubernetes clusters in KakaoCloud.
-You can configure networking, VPC settings, Kubernetes versions, and public access options, while the resource also provides detailed information on cluster status, upgrade availability, and control plane endpoints.
+The `kakaocloud_kubernetes_engine_cluster` resource allows you to create and manage Kubernetes clusters in KakaoCloud.  
+You can configure networking, VPC settings, Kubernetes versions, and public access options, while the resource also provides detailed information on cluster status, upgrade availability, and control plane endpoints.  
 This enables flexible and reliable lifecycle management of containerized workloads in KakaoCloud.
 
 

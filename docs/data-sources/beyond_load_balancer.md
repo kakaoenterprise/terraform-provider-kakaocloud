@@ -3,8 +3,7 @@
 page_title: "kakaocloud_beyond_load_balancer Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_beyond_load_balancer resource represents a High Availability (HA) load balancer group in KakaoCloud.
-  This resource is used to provision and manage Beyond Load Balancer services, ensuring traffic distribution and fault tolerance across multiple load balancers.
+  The kakaocloud_beyond_load_balancer resource represents a High Availability (HA) load balancer group in KakaoCloud.This resource is used to provision and manage Beyond Load Balancer services, ensuring traffic distribution and fault tolerance across multiple load balancers.
   You can use this resource to:
   Create and manage HA groups with one or more load balancers.Define load balancers to be attached to the HA group.Associate the HA group with a VPC and its CIDR block.Retrieve DNS names, availability zones, and operational status of the group.Track provisioning and operating states for lifecycle management.
   By managing this resource in Terraform, you can automate deployment and scaling of resilient load balancing services in KakaoCloud.
@@ -12,15 +11,15 @@ description: |-
 
 # kakaocloud_beyond_load_balancer (Data Source)
 
-The `kakaocloud_beyond_load_balancer` resource represents a **High Availability (HA) load balancer group** in KakaoCloud.
-This resource is used to provision and manage Beyond Load Balancer services, ensuring traffic distribution and fault tolerance across multiple load balancers.
+The `kakaocloud_beyond_load_balancer` resource represents a **High Availability (HA) load balancer group** in KakaoCloud.  
+This resource is used to provision and manage Beyond Load Balancer services, ensuring traffic distribution and fault tolerance across multiple load balancers.  
 
-You can use this resource to:
-- Create and manage HA groups with one or more load balancers.
-- Define load balancers to be attached to the HA group.
-- Associate the HA group with a VPC and its CIDR block.
-- Retrieve DNS names, availability zones, and operational status of the group.
-- Track provisioning and operating states for lifecycle management.
+You can use this resource to:  
+- Create and manage HA groups with one or more load balancers.  
+- Define load balancers to be attached to the HA group.  
+- Associate the HA group with a VPC and its CIDR block.  
+- Retrieve DNS names, availability zones, and operational status of the group.  
+- Track provisioning and operating states for lifecycle management.  
 
 By managing this resource in Terraform, you can automate deployment and scaling of resilient load balancing services in KakaoCloud.
 

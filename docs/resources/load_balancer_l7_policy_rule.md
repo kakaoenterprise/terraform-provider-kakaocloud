@@ -3,15 +3,13 @@
 page_title: "kakaocloud_load_balancer_l7_policy_rule Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_load_balancer_l7_policy_rule resource allows you to define and manage Layer 7 (L7) policy rules for KakaoCloud Load Balancers.
-  You can configure rules based on paths, headers, hosts, cookies, or file types, with flexible comparison methods and optional inversion.
-  This resource enables advanced traffic routing and fine-grained control over request handling at the application layer.
+  The kakaocloud_load_balancer_l7_policy_rule resource allows you to define and manage Layer 7 (L7) policy rules for KakaoCloud Load Balancers.You can configure rules based on paths, headers, hosts, cookies, or file types, with flexible comparison methods and optional inversion.This resource enables advanced traffic routing and fine-grained control over request handling at the application layer.
 ---
 
 # kakaocloud_load_balancer_l7_policy_rule (Resource)
 
-The `kakaocloud_load_balancer_l7_policy_rule` resource allows you to define and manage Layer 7 (L7) policy rules for KakaoCloud Load Balancers.
-You can configure rules based on paths, headers, hosts, cookies, or file types, with flexible comparison methods and optional inversion.
+The `kakaocloud_load_balancer_l7_policy_rule` resource allows you to define and manage Layer 7 (L7) policy rules for KakaoCloud Load Balancers.  
+You can configure rules based on paths, headers, hosts, cookies, or file types, with flexible comparison methods and optional inversion.  
 This resource enables advanced traffic routing and fine-grained control over request handling at the application layer.
 
 ## Example Usage

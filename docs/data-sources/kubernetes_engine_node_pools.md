@@ -10,13 +10,13 @@ description: |-
 
 # kakaocloud_kubernetes_engine_node_pools (Data Source)
 
-The `kakaocloud_kubernetes_engine_node_pools` data source retrieves a list of node pools for a specified KakaoCloud Kubernetes Engine cluster.
+The `kakaocloud_kubernetes_engine_node_pools` data source retrieves a list of node pools for a specified KakaoCloud Kubernetes Engine cluster.  
 
-This data source is useful when you need to:
-- List all node pools associated with a cluster.
-- Review configuration details such as autoscaling, instance flavors, images, labels, taints, and VPC information.
-- Check operational information including node counts, status, creation time, and version.
-- Dynamically reference node pool attributes in Terraform configurations without hardcoding values.
+This data source is useful when you need to:  
+- List all node pools associated with a cluster.  
+- Review configuration details such as autoscaling, instance flavors, images, labels, taints, and VPC information.  
+- Check operational information including node counts, status, creation time, and version.  
+- Dynamically reference node pool attributes in Terraform configurations without hardcoding values.  
 
 <!-- ## Available filters 없음-->
 

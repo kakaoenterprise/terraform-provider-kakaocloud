@@ -3,8 +3,7 @@
 page_title: "kakaocloud_volume_snapshots Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_volume_snapshots data source retrieves a list of Volume Snapshots in KakaoCloud.
-  It supports filtering by attributes such as name and provides details including snapshot size, status, project information, and the source volume.
+  The kakaocloud_volume_snapshots data source retrieves a list of Volume Snapshots in KakaoCloud.It supports filtering by attributes such as name and provides details including snapshot size, status, project information, and the source volume.
   Use this data source when you need to reference multiple existing Volume Snapshots in your Terraform configuration.
   Available filters
   | Filter             | Type    | Description |
@@ -23,10 +22,11 @@ description: |-
 
 # kakaocloud_volume_snapshots (Data Source)
 
-The `kakaocloud_volume_snapshots` data source retrieves a list of Volume Snapshots in KakaoCloud.
-It supports filtering by attributes such as name and provides details including snapshot size, status, project information, and the source volume.
+The `kakaocloud_volume_snapshots` data source retrieves a list of Volume Snapshots in KakaoCloud.  
+It supports filtering by attributes such as name and provides details including snapshot size, status, project information, and the source volume.  
 
 Use this data source when you need to reference multiple existing Volume Snapshots in your Terraform configuration.
+
 
 ## Available filters
 

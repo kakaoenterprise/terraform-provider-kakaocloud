@@ -3,15 +3,13 @@
 page_title: "kakaocloud_load_balancer_health_monitor Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_load_balancer_health_monitor resource allows you to configure and manage health checks for load balancer target groups in KakaoCloud.
-  You can define check intervals, response timeouts, retry conditions, and HTTP-specific settings to ensure targets are monitored accurately.
-  This resource provides operational visibility and helps maintain high availability by automatically detecting unhealthy targets.
+  The kakaocloud_load_balancer_health_monitor resource allows you to configure and manage health checks for load balancer target groups in KakaoCloud.You can define check intervals, response timeouts, retry conditions, and HTTP-specific settings to ensure targets are monitored accurately.This resource provides operational visibility and helps maintain high availability by automatically detecting unhealthy targets.
 ---
 
 # kakaocloud_load_balancer_health_monitor (Resource)
 
-The `kakaocloud_load_balancer_health_monitor` resource allows you to configure and manage health checks for load balancer target groups in KakaoCloud.
-You can define check intervals, response timeouts, retry conditions, and HTTP-specific settings to ensure targets are monitored accurately.
+The `kakaocloud_load_balancer_health_monitor` resource allows you to configure and manage health checks for load balancer target groups in KakaoCloud.  
+You can define check intervals, response timeouts, retry conditions, and HTTP-specific settings to ensure targets are monitored accurately.  
 This resource provides operational visibility and helps maintain high availability by automatically detecting unhealthy targets.
 
 

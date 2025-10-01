@@ -3,15 +3,13 @@
 page_title: "kakaocloud_load_balancer_listener Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_load_balancer_listener resource allows you to configure listeners for KakaoCloud Load Balancers.
-  Listeners define the protocol, port, and SSL/TLS settings for incoming traffic, and can be associated with target groups or Layer 7 (L7) policies.
-  This resource provides fine-grained control over connection handling, security, and routing behavior.
+  The kakaocloud_load_balancer_listener resource allows you to configure listeners for KakaoCloud Load Balancers.Listeners define the protocol, port, and SSL/TLS settings for incoming traffic, and can be associated with target groups or Layer 7 (L7) policies.This resource provides fine-grained control over connection handling, security, and routing behavior.
 ---
 
 # kakaocloud_load_balancer_listener (Resource)
 
-The `kakaocloud_load_balancer_listener` resource allows you to configure listeners for KakaoCloud Load Balancers.
-Listeners define the protocol, port, and SSL/TLS settings for incoming traffic, and can be associated with target groups or Layer 7 (L7) policies.
+The `kakaocloud_load_balancer_listener` resource allows you to configure listeners for KakaoCloud Load Balancers.  
+Listeners define the protocol, port, and SSL/TLS settings for incoming traffic, and can be associated with target groups or Layer 7 (L7) policies.  
 This resource provides fine-grained control over connection handling, security, and routing behavior.
 
 

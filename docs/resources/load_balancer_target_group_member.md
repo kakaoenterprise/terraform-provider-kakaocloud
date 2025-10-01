@@ -3,15 +3,13 @@
 page_title: "kakaocloud_load_balancer_target_group_member Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_load_balancer_target_group_member resource allows you to register and manage target instances in a load balancer target group.
-  You can specify IP addresses, ports, and weights for traffic distribution, as well as optional health check settings.
-  This resource provides detailed metadata and status information, enabling precise control of backend servers within KakaoCloud load balancing.
+  The kakaocloud_load_balancer_target_group_member resource allows you to register and manage target instances in a load balancer target group.You can specify IP addresses, ports, and weights for traffic distribution, as well as optional health check settings.This resource provides detailed metadata and status information, enabling precise control of backend servers within KakaoCloud load balancing.
 ---
 
 # kakaocloud_load_balancer_target_group_member (Resource)
 
-The `kakaocloud_load_balancer_target_group_member` resource allows you to register and manage target instances in a load balancer target group.
-You can specify IP addresses, ports, and weights for traffic distribution, as well as optional health check settings.
+The `kakaocloud_load_balancer_target_group_member` resource allows you to register and manage target instances in a load balancer target group.  
+You can specify IP addresses, ports, and weights for traffic distribution, as well as optional health check settings.  
 This resource provides detailed metadata and status information, enabling precise control of backend servers within KakaoCloud load balancing.
 
 

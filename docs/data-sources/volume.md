@@ -3,15 +3,14 @@
 page_title: "kakaocloud_volume Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_volume data source retrieves information about a specific Volume in KakaoCloud.
-  It provides details such as size, type, availability zone, attachment status, encryption settings, and associated instance information.
+  The kakaocloud_volume data source retrieves information about a specific Volume in KakaoCloud.It provides details such as size, type, availability zone, attachment status, encryption settings, and associated instance information.
   Use this data source when you need to reference an existing Volume in your Terraform configuration without hardcoding all of its attributes.
 ---
 
 # kakaocloud_volume (Data Source)
 
-The `kakaocloud_volume` data source retrieves information about a specific Volume in KakaoCloud.
-It provides details such as size, type, availability zone, attachment status, encryption settings, and associated instance information.
+The `kakaocloud_volume` data source retrieves information about a specific Volume in KakaoCloud.  
+It provides details such as size, type, availability zone, attachment status, encryption settings, and associated instance information.  
 
 Use this data source when you need to reference an existing Volume in your Terraform configuration without hardcoding all of its attributes.
 

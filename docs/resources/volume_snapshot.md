@@ -3,15 +3,13 @@
 page_title: "kakaocloud_volume_snapshot Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_volume_snapshot resource allows you to create and manage snapshots of block storage volumes in KakaoCloud.
-  You can configure full or incremental snapshots, provide descriptions, and track dependencies between snapshots.
-  This resource also exposes metadata such as size, status, and schedule associations, enabling efficient backup and recovery of volume data.
+  The kakaocloud_volume_snapshot resource allows you to create and manage snapshots of block storage volumes in KakaoCloud.You can configure full or incremental snapshots, provide descriptions, and track dependencies between snapshots.This resource also exposes metadata such as size, status, and schedule associations, enabling efficient backup and recovery of volume data.
 ---
 
 # kakaocloud_volume_snapshot (Resource)
 
-The `kakaocloud_volume_snapshot` resource allows you to create and manage snapshots of block storage volumes in KakaoCloud.
-You can configure full or incremental snapshots, provide descriptions, and track dependencies between snapshots.
+The `kakaocloud_volume_snapshot` resource allows you to create and manage snapshots of block storage volumes in KakaoCloud.  
+You can configure full or incremental snapshots, provide descriptions, and track dependencies between snapshots.  
 This resource also exposes metadata such as size, status, and schedule associations, enabling efficient backup and recovery of volume data.
 
 ## Example Usage

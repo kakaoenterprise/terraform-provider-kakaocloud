@@ -3,8 +3,7 @@
 page_title: "kakaocloud_vpcs Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_vpcs data source retrieves a list of VPCs in KakaoCloud.
-  It provides details for each VPC, including CIDR block, DNS support, default route table, and internet gateway (IGW).
+  The kakaocloud_vpcs data source retrieves a list of VPCs in KakaoCloud.It provides details for each VPC, including CIDR block, DNS support, default route table, and internet gateway (IGW).
   Available filters
   | Filter           | Type              | Description |
   |---------------------|-------------------|-------------|
@@ -19,8 +18,9 @@ description: |-
 
 # kakaocloud_vpcs (Data Source)
 
-The `kakaocloud_vpcs` data source retrieves a list of VPCs in KakaoCloud.
+The `kakaocloud_vpcs` data source retrieves a list of VPCs in KakaoCloud.  
 It provides details for each VPC, including CIDR block, DNS support, default route table, and internet gateway (IGW).
+
 
 ## Available filters
 

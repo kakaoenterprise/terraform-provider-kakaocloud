@@ -3,8 +3,7 @@
 page_title: "kakaocloud_volumes Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_volumes data source retrieves a list of Volumes in KakaoCloud.
-  You can optionally filter the results by attributes such as name, project, or status.
+  The kakaocloud_volumes data source retrieves a list of Volumes in KakaoCloud.You can optionally filter the results by attributes such as name, project, or status.
   Available filters
   | Filter          | Type             | Description |
   |--------------------|------------------|-------------|
@@ -28,8 +27,9 @@ description: |-
 
 # kakaocloud_volumes (Data Source)
 
-The `kakaocloud_volumes` data source retrieves a list of Volumes in KakaoCloud.
+The `kakaocloud_volumes` data source retrieves a list of Volumes in KakaoCloud.  
 You can optionally filter the results by attributes such as name, project, or status.
+
 
 ## Available filters
 

@@ -3,15 +3,13 @@
 page_title: "kakaocloud_subnet Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_subnet resource allows you to create and manage subnets within a VPC in KakaoCloud.
-  You can define CIDR blocks, availability zones, and associate subnets with route tables.
-  This resource also provides metadata such as project ownership, provisioning status, and sharing options, enabling flexible and organized network segmentation.
+  The kakaocloud_subnet resource allows you to create and manage subnets within a VPC in KakaoCloud.You can define CIDR blocks, availability zones, and associate subnets with route tables.This resource also provides metadata such as project ownership, provisioning status, and sharing options, enabling flexible and organized network segmentation.
 ---
 
 # kakaocloud_subnet (Resource)
 
-The `kakaocloud_subnet` resource allows you to create and manage subnets within a VPC in KakaoCloud.
-You can define CIDR blocks, availability zones, and associate subnets with route tables.
+The `kakaocloud_subnet` resource allows you to create and manage subnets within a VPC in KakaoCloud.  
+You can define CIDR blocks, availability zones, and associate subnets with route tables.  
 This resource also provides metadata such as project ownership, provisioning status, and sharing options, enabling flexible and organized network segmentation.
 
 

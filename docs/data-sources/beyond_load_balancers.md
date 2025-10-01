@@ -3,8 +3,7 @@
 page_title: "kakaocloud_beyond_load_balancers Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_beyond_load_balancers data source retrieves a list of Beyond Load Balancer HA Groups in KakaoCloud.
-  It supports filtering by attributes such as name and returns information including availability zones, VPC configuration, operating status, and the list of load balancers associated with each HA Group.
+  The kakaocloud_beyond_load_balancers data source retrieves a list of Beyond Load Balancer HA Groups in KakaoCloud.It supports filtering by attributes such as name and returns information including availability zones, VPC configuration, operating status, and the list of load balancers associated with each HA Group.
   Use this data source when you want to reference multiple Beyond Load Balancer HA Groups in your Terraform configuration without hardcoding their attributes.
   Available filters
   | Filter             | Type                          | Description |
@@ -28,10 +27,11 @@ description: |-
 
 # kakaocloud_beyond_load_balancers (Data Source)
 
-The `kakaocloud_beyond_load_balancers` data source retrieves a list of Beyond Load Balancer HA Groups in KakaoCloud.
-It supports filtering by attributes such as `name` and returns information including availability zones, VPC configuration, operating status, and the list of load balancers associated with each HA Group.
+The `kakaocloud_beyond_load_balancers` data source retrieves a list of Beyond Load Balancer HA Groups in KakaoCloud.  
+It supports filtering by attributes such as `name` and returns information including availability zones, VPC configuration, operating status, and the list of load balancers associated with each HA Group.  
 
 Use this data source when you want to reference multiple Beyond Load Balancer HA Groups in your Terraform configuration without hardcoding their attributes.
+
 
 ## Available filters
 

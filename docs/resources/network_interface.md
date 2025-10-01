@@ -3,15 +3,13 @@
 page_title: "kakaocloud_network_interface Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_network_interface resource allows you to create and manage network interfaces in KakaoCloud.
-  You can attach network interfaces to subnets, assign private IPs, and configure security groups or allowed address pairs.
-  This resource provides detailed information such as MAC addresses, device ownership, public IPs, and operational status, enabling flexible and secure network configurations.
+  The kakaocloud_network_interface resource allows you to create and manage network interfaces in KakaoCloud.You can attach network interfaces to subnets, assign private IPs, and configure security groups or allowed address pairs.This resource provides detailed information such as MAC addresses, device ownership, public IPs, and operational status, enabling flexible and secure network configurations.
 ---
 
 # kakaocloud_network_interface (Resource)
 
-The `kakaocloud_network_interface` resource allows you to create and manage network interfaces in KakaoCloud.
-You can attach network interfaces to subnets, assign private IPs, and configure security groups or allowed address pairs.
+The `kakaocloud_network_interface` resource allows you to create and manage network interfaces in KakaoCloud.  
+You can attach network interfaces to subnets, assign private IPs, and configure security groups or allowed address pairs.  
 This resource provides detailed information such as MAC addresses, device ownership, public IPs, and operational status, enabling flexible and secure network configurations.
 
 

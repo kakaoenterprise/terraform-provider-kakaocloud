@@ -3,15 +3,14 @@
 page_title: "kakaocloud_subnet_share Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_subnet_share data source retrieves the list of projects that have been granted access to a specific Subnet in KakaoCloud.
-  It provides details such as the project IDs of consumers that are allowed to use the shared Subnet.
+  The kakaocloud_subnet_share data source retrieves the list of projects that have been granted access to a specific Subnet in KakaoCloud.It provides details such as the project IDs of consumers that are allowed to use the shared Subnet.
   Use this data source when you need to reference which projects have access to a shared Subnet in your Terraform configuration.
 ---
 
 # kakaocloud_subnet_share (Data Source)
 
-The `kakaocloud_subnet_share` data source retrieves the list of projects that have been granted access to a specific Subnet in KakaoCloud.
-It provides details such as the project IDs of consumers that are allowed to use the shared Subnet.
+The `kakaocloud_subnet_share` data source retrieves the list of projects that have been granted access to a specific Subnet in KakaoCloud.  
+It provides details such as the project IDs of consumers that are allowed to use the shared Subnet.  
 
 Use this data source when you need to reference which projects have access to a shared Subnet in your Terraform configuration.
 

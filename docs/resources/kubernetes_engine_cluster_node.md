@@ -3,15 +3,13 @@
 page_title: "kakaocloud_kubernetes_engine_cluster_node Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_kubernetes_engine_cluster_node resource allows you to manage worker nodes in a KakaoCloud Kubernetes Engine cluster.
-  You can cordon, drain, remove, or recreate nodes to maintain cluster stability during upgrades, scaling, or troubleshooting.
-  This resource helps automate node lifecycle operations while ensuring workloads are rescheduled safely.
+  The kakaocloud_kubernetes_engine_cluster_node resource allows you to manage worker nodes in a KakaoCloud Kubernetes Engine cluster.You can cordon, drain, remove, or recreate nodes to maintain cluster stability during upgrades, scaling, or troubleshooting.This resource helps automate node lifecycle operations while ensuring workloads are rescheduled safely.
 ---
 
 # kakaocloud_kubernetes_engine_cluster_node (Resource)
 
-The `kakaocloud_kubernetes_engine_cluster_node` resource allows you to manage worker nodes in a KakaoCloud Kubernetes Engine cluster.
-You can cordon, drain, remove, or recreate nodes to maintain cluster stability during upgrades, scaling, or troubleshooting.
+The `kakaocloud_kubernetes_engine_cluster_node` resource allows you to manage worker nodes in a KakaoCloud Kubernetes Engine cluster.  
+You can cordon, drain, remove, or recreate nodes to maintain cluster stability during upgrades, scaling, or troubleshooting.  
 This resource helps automate node lifecycle operations while ensuring workloads are rescheduled safely.
 
 

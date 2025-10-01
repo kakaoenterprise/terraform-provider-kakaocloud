@@ -3,15 +3,14 @@
 page_title: "kakaocloud_volume_snapshot Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_volume_snapshot data source retrieves information about a specific Volume Snapshot in KakaoCloud.
-  It provides details such as snapshot size, type, status, project information, and the source volume.
+  The kakaocloud_volume_snapshot data source retrieves information about a specific Volume Snapshot in KakaoCloud.It provides details such as snapshot size, type, status, project information, and the source volume.
   Use this data source when you need to reference an existing Volume Snapshot in your Terraform configuration.
 ---
 
 # kakaocloud_volume_snapshot (Data Source)
 
-The `kakaocloud_volume_snapshot` data source retrieves information about a specific Volume Snapshot in KakaoCloud.
-It provides details such as snapshot size, type, status, project information, and the source volume.
+The `kakaocloud_volume_snapshot` data source retrieves information about a specific Volume Snapshot in KakaoCloud.  
+It provides details such as snapshot size, type, status, project information, and the source volume.  
 
 Use this data source when you need to reference an existing Volume Snapshot in your Terraform configuration.
 

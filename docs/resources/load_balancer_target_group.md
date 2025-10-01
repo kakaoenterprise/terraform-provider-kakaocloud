@@ -3,15 +3,13 @@
 page_title: "kakaocloud_load_balancer_target_group Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_load_balancer_target_group resource allows you to create and manage target groups for KakaoCloud Load Balancers.
-  You can configure protocols, algorithms, health monitoring, and session persistence policies, as well as associate target groups with listeners and load balancers.
-  This resource provides detailed metadata and operational states, enabling efficient traffic distribution and backend management.
+  The kakaocloud_load_balancer_target_group resource allows you to create and manage target groups for KakaoCloud Load Balancers.You can configure protocols, algorithms, health monitoring, and session persistence policies, as well as associate target groups with listeners and load balancers.This resource provides detailed metadata and operational states, enabling efficient traffic distribution and backend management.
 ---
 
 # kakaocloud_load_balancer_target_group (Resource)
 
-The `kakaocloud_load_balancer_target_group` resource allows you to create and manage target groups for KakaoCloud Load Balancers.
-You can configure protocols, algorithms, health monitoring, and session persistence policies, as well as associate target groups with listeners and load balancers.
+The `kakaocloud_load_balancer_target_group` resource allows you to create and manage target groups for KakaoCloud Load Balancers.  
+You can configure protocols, algorithms, health monitoring, and session persistence policies, as well as associate target groups with listeners and load balancers.  
 This resource provides detailed metadata and operational states, enabling efficient traffic distribution and backend management.
 
 

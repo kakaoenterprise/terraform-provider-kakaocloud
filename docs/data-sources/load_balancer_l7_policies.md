@@ -22,15 +22,17 @@ description: |-
 
 # kakaocloud_load_balancer_l7_policies (Data Source)
 
-The `kakaocloud_load_balancer_l7_policies` data source allows you to retrieve information about Layer 7 (L7) policies configured for a specific Load Balancer listener in KakaoCloud.
+The `kakaocloud_load_balancer_l7_policies` data source allows you to retrieve information about Layer 7 (L7) policies configured for a specific Load Balancer listener in KakaoCloud.  
 
-This data source is useful when you need to:
-- List all L7 policies associated with a given load balancer and listener.
-- Filter policies by attributes such as position, action, operating status, or provisioning status.
-- Review detailed policy settings including redirects, priority, and associated L7 rules.
-- Dynamically reference policy attributes (e.g., IDs, names, rules) in your Terraform configurations without hardcoding values.
+This data source is useful when you need to:  
+- List all L7 policies associated with a given load balancer and listener.  
+- Filter policies by attributes such as position, action, operating status, or provisioning status.  
+- Review detailed policy settings including redirects, priority, and associated L7 rules.  
+- Dynamically reference policy attributes (e.g., IDs, names, rules) in your Terraform configurations without hardcoding values.  
+
 
 ## Available filters
+
 
 | Parameter             | Type                         | Description |
 |---------------------|------------------------------|-------------|

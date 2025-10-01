@@ -3,8 +3,7 @@
 page_title: "kakaocloud_security_groups Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_security_groups data source retrieves a list of Security Groups in KakaoCloud.
-  It supports filtering by attributes such as name, and provides details including group description, stateful property, associated project, and security group rules (ingress and egress).
+  The kakaocloud_security_groups data source retrieves a list of Security Groups in KakaoCloud.It supports filtering by attributes such as name, and provides details including group description, stateful property, associated project, and security group rules (ingress and egress).
   Use this data source when you need to:
   Reference multiple Security Groups in your Terraform configuration.Filter and inspect Security Group rules, including protocols, port ranges, and remote IPs or groups.
   Available filters
@@ -18,12 +17,12 @@ description: |-
 
 # kakaocloud_security_groups (Data Source)
 
-The `kakaocloud_security_groups` data source retrieves a list of Security Groups in KakaoCloud.
-It supports filtering by attributes such as name, and provides details including group description, stateful property, associated project, and security group rules (ingress and egress).
+The `kakaocloud_security_groups` data source retrieves a list of Security Groups in KakaoCloud.  
+It supports filtering by attributes such as name, and provides details including group description, stateful property, associated project, and security group rules (ingress and egress).  
 
 Use this data source when you need to:
-- Reference multiple Security Groups in your Terraform configuration.
-- Filter and inspect Security Group rules, including protocols, port ranges, and remote IPs or groups.
+- Reference multiple Security Groups in your Terraform configuration.  
+- Filter and inspect Security Group rules, including protocols, port ranges, and remote IPs or groups.  
 
 ## Available filters
 

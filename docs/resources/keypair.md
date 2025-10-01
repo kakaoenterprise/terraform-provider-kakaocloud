@@ -3,15 +3,13 @@
 page_title: "kakaocloud_keypair Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_keypair resource allows you to create and manage SSH key pairs in KakaoCloud.
-  Key pairs are used to securely access instances, and you can either import an existing public key or generate a new key pair.
-  This resource provides lifecycle management for key pairs, including metadata such as fingerprints and ownership details.
+  The kakaocloud_keypair resource allows you to create and manage SSH key pairs in KakaoCloud.Key pairs are used to securely access instances, and you can either import an existing public key or generate a new key pair.This resource provides lifecycle management for key pairs, including metadata such as fingerprints and ownership details.
 ---
 
 # kakaocloud_keypair (Resource)
 
-The `kakaocloud_keypair` resource allows you to create and manage SSH key pairs in KakaoCloud.
-Key pairs are used to securely access instances, and you can either import an existing public key or generate a new key pair.
+The `kakaocloud_keypair` resource allows you to create and manage SSH key pairs in KakaoCloud.  
+Key pairs are used to securely access instances, and you can either import an existing public key or generate a new key pair.  
 This resource provides lifecycle management for key pairs, including metadata such as fingerprints and ownership details.
 
 

@@ -28,13 +28,14 @@ description: |-
 
 # kakaocloud_load_balancer_target_groups (Data Source)
 
-The `kakaocloud_load_balancer_target_groups` data source retrieves information about Load Balancer target groups in KakaoCloud.
+The `kakaocloud_load_balancer_target_groups` data source retrieves information about Load Balancer target groups in KakaoCloud.  
 
-This data source is useful when you need to:
-- List all target groups in a given load balancer environment.
-- Filter target groups by attributes such as name, ID, VPC, subnet, or protocol.
-- Review configuration details including load balancing algorithm, health monitor settings, and session persistence.
-- Dynamically reference target group attributes (e.g., IDs, member counts, listener associations) in Terraform without hardcoding values.
+This data source is useful when you need to:  
+- List all target groups in a given load balancer environment.  
+- Filter target groups by attributes such as name, ID, VPC, subnet, or protocol.  
+- Review configuration details including load balancing algorithm, health monitor settings, and session persistence.  
+- Dynamically reference target group attributes (e.g., IDs, member counts, listener associations) in Terraform without hardcoding values.  
+
 
 ## Available filters
 

@@ -17,14 +17,15 @@ description: |-
 
 # kakaocloud_kubernetes_engine_images (Data Source)
 
-The `kakaocloud_kubernetes_engine_images` data source retrieves the list of available Kubernetes Engine images in KakaoCloud.
+The `kakaocloud_kubernetes_engine_images` data source retrieves the list of available Kubernetes Engine images in KakaoCloud.  
 
-This data source is useful when you need to:
-- Query the latest images available for Kubernetes clusters.
-- Filter images by attributes such as OS distribution, OS version, instance type, or Kubernetes version.
-- Identify whether an image supports GPU workloads.
-- Access detailed information including kernel version, key packages, and supported instance types.
-- Dynamically reference image attributes in Terraform configurations without hardcoding values.
+This data source is useful when you need to:  
+- Query the latest images available for Kubernetes clusters.  
+- Filter images by attributes such as OS distribution, OS version, instance type, or Kubernetes version.  
+- Identify whether an image supports GPU workloads.  
+- Access detailed information including kernel version, key packages, and supported instance types.  
+- Dynamically reference image attributes in Terraform configurations without hardcoding values.  
+
 
 ## Available filters
 

@@ -3,15 +3,13 @@
 page_title: "kakaocloud_beyond_load_balancer Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_beyond_load_balancer resource allows you to create and manage a Beyond Load Balancer high availability (HA) group in KakaoCloud.
-  This resource provides configuration options for attaching load balancers, defining access schemes, and associating with a specific VPC.
-  It also exposes detailed status, DNS, and networking information to help monitor and manage HA groups effectively.
+  The kakaocloud_beyond_load_balancer resource allows you to create and manage a Beyond Load Balancer high availability (HA) group in KakaoCloud.This resource provides configuration options for attaching load balancers, defining access schemes, and associating with a specific VPC.It also exposes detailed status, DNS, and networking information to help monitor and manage HA groups effectively.
 ---
 
 # kakaocloud_beyond_load_balancer (Resource)
 
-The `kakaocloud_beyond_load_balancer` resource allows you to create and manage a Beyond Load Balancer high availability (HA) group in KakaoCloud.
-This resource provides configuration options for attaching load balancers, defining access schemes, and associating with a specific VPC.
+The `kakaocloud_beyond_load_balancer` resource allows you to create and manage a Beyond Load Balancer high availability (HA) group in KakaoCloud.  
+This resource provides configuration options for attaching load balancers, defining access schemes, and associating with a specific VPC.  
 It also exposes detailed status, DNS, and networking information to help monitor and manage HA groups effectively.
 
 

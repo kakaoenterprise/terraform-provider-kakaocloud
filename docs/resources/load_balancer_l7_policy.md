@@ -3,15 +3,13 @@
 page_title: "kakaocloud_load_balancer_l7_policy Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_load_balancer_l7_policy resource allows you to create and manage Layer 7 (L7) policies for KakaoCloud Load Balancers.
-  You can define advanced traffic management rules such as URL redirects, path-based routing, or forwarding to specific target groups.
-  This resource helps implement flexible application-level routing policies to optimize traffic flow and user experience.
+  The kakaocloud_load_balancer_l7_policy resource allows you to create and manage Layer 7 (L7) policies for KakaoCloud Load Balancers.You can define advanced traffic management rules such as URL redirects, path-based routing, or forwarding to specific target groups.This resource helps implement flexible application-level routing policies to optimize traffic flow and user experience.
 ---
 
 # kakaocloud_load_balancer_l7_policy (Resource)
 
-The `kakaocloud_load_balancer_l7_policy` resource allows you to create and manage Layer 7 (L7) policies for KakaoCloud Load Balancers.
-You can define advanced traffic management rules such as URL redirects, path-based routing, or forwarding to specific target groups.
+The `kakaocloud_load_balancer_l7_policy` resource allows you to create and manage Layer 7 (L7) policies for KakaoCloud Load Balancers.  
+You can define advanced traffic management rules such as URL redirects, path-based routing, or forwarding to specific target groups.  
 This resource helps implement flexible application-level routing policies to optimize traffic flow and user experience.
 
 

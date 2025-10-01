@@ -19,7 +19,7 @@ terraform {
   required_providers {
     kakaocloud = {
       source  = "kakaoenterprise/kakaocloud"
-      version = "0.0.17"
+      version = "0.1.0"
     }
   }
 }
@@ -49,7 +49,7 @@ terraform {
   required_providers {
     kakaocloud = {
       source  = "kakaoenterprise/kakaocloud"
-      version = "0.0.17"
+      version = "0.1.0"
     }
   }
 }
@@ -71,7 +71,7 @@ terraform {
   required_providers {
     kakaocloud = {
       source  = "kakaoenterprise/kakaocloud"
-      version = "0.0.17"
+      version = "0.1.0"
     }
   }
 }

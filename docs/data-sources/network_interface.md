@@ -3,20 +3,19 @@
 page_title: "kakaocloud_network_interface Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_network_interface data source retrieves detailed information about a specific Network Interface in KakaoCloud.
-  It provides attributes such as private and public IP addresses, MAC address, associated security groups, allowed address pairs, and VPC/subnet information.
+  The kakaocloud_network_interface data source retrieves detailed information about a specific Network Interface in KakaoCloud.It provides attributes such as private and public IP addresses, MAC address, associated security groups, allowed address pairs, and VPC/subnet information.
   Use this data source when you need to:
   Reference an existing network interface in your Terraform configuration.Access networking details such as IPs, security groups, or VPC/subnet mappings without hardcoding values.Ensure dependent resources (e.g., instances, load balancers) are correctly attached to the intended network interface.
 ---
 
 # kakaocloud_network_interface (Data Source)
 
-The `kakaocloud_network_interface` data source retrieves detailed information about a specific Network Interface in KakaoCloud.
-It provides attributes such as private and public IP addresses, MAC address, associated security groups, allowed address pairs, and VPC/subnet information.
+The `kakaocloud_network_interface` data source retrieves detailed information about a specific Network Interface in KakaoCloud.  
+It provides attributes such as private and public IP addresses, MAC address, associated security groups, allowed address pairs, and VPC/subnet information.  
 
 Use this data source when you need to:
-- Reference an existing network interface in your Terraform configuration.
-- Access networking details such as IPs, security groups, or VPC/subnet mappings without hardcoding values.
+- Reference an existing network interface in your Terraform configuration.  
+- Access networking details such as IPs, security groups, or VPC/subnet mappings without hardcoding values.  
 - Ensure dependent resources (e.g., instances, load balancers) are correctly attached to the intended network interface.
 
 ## Example Usage

@@ -11,13 +11,13 @@ description: |-
 
 # kakaocloud_load_balancer_health_monitor (Data Source)
 
-The `kakaocloud_load_balancer_health_monitor` data source allows you to retrieve detailed information about a specific Load Balancer Health Monitor in KakaoCloud.
+The `kakaocloud_load_balancer_health_monitor` data source allows you to retrieve detailed information about a specific Load Balancer Health Monitor in KakaoCloud.  
 
-This data source is useful when you need to:
-- Reference an existing health monitor by its ID in your Terraform configuration.
-- Check configuration values such as interval (`delay`), timeout, retries, or HTTP request settings.
-- Verify the current operating or provisioning status of a health monitor.
-- Retrieve associations between a health monitor and its target groups.
+This data source is useful when you need to:  
+- Reference an existing health monitor by its ID in your Terraform configuration.  
+- Check configuration values such as interval (`delay`), timeout, retries, or HTTP request settings.  
+- Verify the current operating or provisioning status of a health monitor.  
+- Retrieve associations between a health monitor and its target groups.  
 
 By using this data source, you can ensure that your Terraform-managed infrastructure reflects the actual state and configuration of health monitors in KakaoCloud.
 

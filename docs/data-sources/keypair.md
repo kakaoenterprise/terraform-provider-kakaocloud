@@ -3,20 +3,19 @@
 page_title: "kakaocloud_keypair Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_keypair data source retrieves information about a specific key pair in KakaoCloud using its name.
-  It returns attributes such as the key pair ID, fingerprint, type, public key, creation time, and the user who owns the key pair.
+  The kakaocloud_keypair data source retrieves information about a specific key pair in KakaoCloud using its name.It returns attributes such as the key pair ID, fingerprint, type, public key, creation time, and the user who owns the key pair.
   Use this data source when you need to:
   Reference an existing key pair in your Terraform configuration without hardcoding its properties.Dynamically obtain the fingerprint or public key of a key pair for use in other resources.Validate that a key pair exists before attaching it to compute instances.
 ---
 
 # kakaocloud_keypair (Data Source)
 
-The `kakaocloud_keypair` data source retrieves information about a specific key pair in KakaoCloud using its name.
-It returns attributes such as the key pair ID, fingerprint, type, public key, creation time, and the user who owns the key pair.
+The `kakaocloud_keypair` data source retrieves information about a specific key pair in KakaoCloud using its name.  
+It returns attributes such as the key pair ID, fingerprint, type, public key, creation time, and the user who owns the key pair.  
 
 Use this data source when you need to:
-- Reference an existing key pair in your Terraform configuration without hardcoding its properties.
-- Dynamically obtain the fingerprint or public key of a key pair for use in other resources.
+- Reference an existing key pair in your Terraform configuration without hardcoding its properties.  
+- Dynamically obtain the fingerprint or public key of a key pair for use in other resources.  
 - Validate that a key pair exists before attaching it to compute instances.
 
 

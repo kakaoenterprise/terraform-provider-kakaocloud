@@ -3,21 +3,21 @@
 page_title: "kakaocloud_kubernetes_engine_clusters Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_kubernetes_engine_clusters data source retrieves a list of Kubernetes Engine clusters in KakaoCloud.
-  It returns details for each cluster, including network configuration, control plane endpoint, VPC settings, Kubernetes version, upgrade availability, and current status.
+  The kakaocloud_kubernetes_engine_clusters data source retrieves a list of Kubernetes Engine clusters in KakaoCloud.It returns details for each cluster, including network configuration, control plane endpoint, VPC settings, Kubernetes version, upgrade availability, and current status.
   Use this data source when you need to:
   Query multiple existing clusters dynamically instead of hardcoding cluster names or IDs.Validate cluster configurations (e.g., pod/service CIDRs, version details, upgrade availability) across projects.Reference existing clusters in other Terraform resources without duplicating their attributes.
 ---
 
 # kakaocloud_kubernetes_engine_clusters (Data Source)
 
-The `kakaocloud_kubernetes_engine_clusters` data source retrieves a list of Kubernetes Engine clusters in KakaoCloud.
-It returns details for each cluster, including network configuration, control plane endpoint, VPC settings, Kubernetes version, upgrade availability, and current status.
+The `kakaocloud_kubernetes_engine_clusters` data source retrieves a list of Kubernetes Engine clusters in KakaoCloud.  
+It returns details for each cluster, including network configuration, control plane endpoint, VPC settings, Kubernetes version, upgrade availability, and current status.  
 
 Use this data source when you need to:
-- Query multiple existing clusters dynamically instead of hardcoding cluster names or IDs.
-- Validate cluster configurations (e.g., pod/service CIDRs, version details, upgrade availability) across projects.
-- Reference existing clusters in other Terraform resources without duplicating their attributes.
+- Query multiple existing clusters dynamically instead of hardcoding cluster names or IDs.  
+- Validate cluster configurations (e.g., pod/service CIDRs, version details, upgrade availability) across projects.  
+- Reference existing clusters in other Terraform resources without duplicating their attributes.  
+
 
 <!-- ## Available filters 없음 -->
 

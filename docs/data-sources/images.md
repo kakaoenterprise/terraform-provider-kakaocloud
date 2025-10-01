@@ -3,8 +3,7 @@
 page_title: "kakaocloud_images Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_images data source retrieves a list of images available in KakaoCloud.
-  It supports filtering by attributes such as name and returns detailed information for each image, including operating system details, disk and RAM requirements, ownership, visibility, and status.
+  The kakaocloud_images data source retrieves a list of images available in KakaoCloud.It supports filtering by attributes such as name and returns detailed information for each image, including operating system details, disk and RAM requirements, ownership, visibility, and status.
   Use this data source when you need to:
   Query available images dynamically instead of hardcoding image IDs.Filter images by attributes (e.g., name, OS type) to select the appropriate image for your resources.Validate image properties such as minimum disk/RAM requirements before provisioning compute instances.
   Available filters
@@ -27,13 +26,14 @@ description: |-
 
 # kakaocloud_images (Data Source)
 
-The `kakaocloud_images` data source retrieves a list of images available in KakaoCloud.
-It supports filtering by attributes such as `name` and returns detailed information for each image, including operating system details, disk and RAM requirements, ownership, visibility, and status.
+The `kakaocloud_images` data source retrieves a list of images available in KakaoCloud.  
+It supports filtering by attributes such as `name` and returns detailed information for each image, including operating system details, disk and RAM requirements, ownership, visibility, and status.  
 
 Use this data source when you need to:
 - Query available images dynamically instead of hardcoding image IDs.
 - Filter images by attributes (e.g., name, OS type) to select the appropriate image for your resources.
 - Validate image properties such as minimum disk/RAM requirements before provisioning compute instances.
+
 
 ## Available filters
 

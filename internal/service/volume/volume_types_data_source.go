@@ -35,6 +35,7 @@ func (d *volumeTypesDataSource) Metadata(_ context.Context, req datasource.Metad
 }
 
 func (d *volumeTypesDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	desc := docs.Volume("VolumeTypeModel")
 	resp.Schema = schema.Schema{
 		Description: docs.GetDataSourceDescription("VolumeType"),
 		Attributes: map[string]schema.Attribute{
@@ -42,9 +43,18 @@ func (d *volumeTypesDataSource) Schema(ctx context.Context, _ datasource.SchemaR
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"id":          schema.StringAttribute{Computed: true},
-						"name":        schema.StringAttribute{Computed: true},
-						"description": schema.StringAttribute{Computed: true},
+						"id": schema.StringAttribute{
+							Computed:    true,
+							Description: desc.String("id"),
+						},
+						"name": schema.StringAttribute{
+							Computed:    true,
+							Description: desc.String("name"),
+						},
+						"description": schema.StringAttribute{
+							Computed:    true,
+							Description: desc.String("description"),
+						},
 					},
 				},
 			},

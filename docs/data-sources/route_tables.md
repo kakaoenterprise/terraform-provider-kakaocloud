@@ -3,8 +3,7 @@
 page_title: "kakaocloud_route_tables Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_route_tables data source retrieves a list of Route Tables in KakaoCloud.
-  It supports filtering by attributes such as name or ID, and provides details about associated VPCs, subnets, route entries, provisioning status, and whether each Route Table is the main table in its VPC.
+  The kakaocloud_route_tables data source retrieves a list of Route Tables in KakaoCloud.It supports filtering by attributes such as name or ID, and provides details about associated VPCs, subnets, route entries, provisioning status, and whether each Route Table is the main table in its VPC.
   Use this data source when you need to:
   Query and reference multiple Route Tables dynamically in your Terraform configuration.Retrieve routing information for multiple VPCs or subnets without hardcoding.
   Available filters
@@ -26,12 +25,12 @@ description: |-
 
 # kakaocloud_route_tables (Data Source)
 
-The `kakaocloud_route_tables` data source retrieves a list of Route Tables in KakaoCloud.
-It supports filtering by attributes such as name or ID, and provides details about associated VPCs, subnets, route entries, provisioning status, and whether each Route Table is the main table in its VPC.
+The `kakaocloud_route_tables` data source retrieves a list of Route Tables in KakaoCloud.  
+It supports filtering by attributes such as name or ID, and provides details about associated VPCs, subnets, route entries, provisioning status, and whether each Route Table is the main table in its VPC.  
 
 Use this data source when you need to:
-- Query and reference multiple Route Tables dynamically in your Terraform configuration.
-- Retrieve routing information for multiple VPCs or subnets without hardcoding.
+- Query and reference multiple Route Tables dynamically in your Terraform configuration.  
+- Retrieve routing information for multiple VPCs or subnets without hardcoding.  
 
 ## Available filters
 

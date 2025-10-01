@@ -3,15 +3,13 @@
 page_title: "kakaocloud_volume Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_volume resource allows you to create and manage block storage volumes in KakaoCloud.
-  You can define volume size, type, encryption options, and source (image, snapshot, or existing volume).
-  This resource also provides metadata and lifecycle details, such as bootability, mount points, and attachment information, enabling reliable storage management for instances.
+  The kakaocloud_volume resource allows you to create and manage block storage volumes in KakaoCloud.You can define volume size, type, encryption options, and source (image, snapshot, or existing volume).This resource also provides metadata and lifecycle details, such as bootability, mount points, and attachment information, enabling reliable storage management for instances.
 ---
 
 # kakaocloud_volume (Resource)
 
-The `kakaocloud_volume` resource allows you to create and manage block storage volumes in KakaoCloud.
-You can define volume size, type, encryption options, and source (image, snapshot, or existing volume).
+The `kakaocloud_volume` resource allows you to create and manage block storage volumes in KakaoCloud.  
+You can define volume size, type, encryption options, and source (image, snapshot, or existing volume).  
 This resource also provides metadata and lifecycle details, such as bootability, mount points, and attachment information, enabling reliable storage management for instances.
 
 ## Example Usage

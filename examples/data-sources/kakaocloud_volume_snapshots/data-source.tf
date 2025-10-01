@@ -32,7 +32,7 @@ data "kakaocloud_volume_snapshots" "filtered" {
     {
       name  = "is_dependent_snapshot"
       value = "false"  # true or false
-    }
+    },
     {
       name  = "schedule_id"
       value = "your-schedule-id"  # Replace with your schedule ID
@@ -40,7 +40,7 @@ data "kakaocloud_volume_snapshots" "filtered" {
     {
       name  = "parent_id"
       value = "your-parent-id"  # Replace with your parent ID
-    }
+    },
     {
       name  = "created_at"
       value = "2024-01-01T00:00:00Z"  # Replace with creation time (RFC3339 format)

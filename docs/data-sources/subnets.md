@@ -3,8 +3,7 @@
 page_title: "kakaocloud_subnets Data Source - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_subnets data source retrieves a list of Subnets in KakaoCloud.
-  It supports filtering by attributes such as name, and provides details including CIDR blocks, availability zones, project information, and associated route tables.
+  The kakaocloud_subnets data source retrieves a list of Subnets in KakaoCloud.It supports filtering by attributes such as name, and provides details including CIDR blocks, availability zones, project information, and associated route tables.
   Use this data source when you need to reference multiple existing Subnets in your Terraform configuration.
   Available filters
   | Filter          | Type                 | Description |
@@ -26,10 +25,11 @@ description: |-
 
 # kakaocloud_subnets (Data Source)
 
-The `kakaocloud_subnets` data source retrieves a list of Subnets in KakaoCloud.
-It supports filtering by attributes such as name, and provides details including CIDR blocks, availability zones, project information, and associated route tables.
+The `kakaocloud_subnets` data source retrieves a list of Subnets in KakaoCloud.  
+It supports filtering by attributes such as name, and provides details including CIDR blocks, availability zones, project information, and associated route tables.  
 
 Use this data source when you need to reference multiple existing Subnets in your Terraform configuration.
+
 
 ## Available filters
 

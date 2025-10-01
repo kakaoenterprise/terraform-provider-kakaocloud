@@ -10,11 +10,11 @@ description: |-
 
 # kakaocloud_kubernetes_engine_kubeconfig (Data Source)
 
-The `kakaocloud_kubernetes_engine_kubeconfig` data source retrieves the kubeconfig file for a specified Kubernetes Engine cluster in KakaoCloud.
+The `kakaocloud_kubernetes_engine_kubeconfig` data source retrieves the kubeconfig file for a specified Kubernetes Engine cluster in KakaoCloud.  
 
-This data source is useful when you need to:
-- Generate or download the kubeconfig for a cluster to authenticate with `kubectl` or other Kubernetes tools.
-- Access cluster connection details such as API server endpoints, certificate authority data, contexts, and users.
+This data source is useful when you need to:  
+- Generate or download the kubeconfig for a cluster to authenticate with `kubectl` or other Kubernetes tools.  
+- Access cluster connection details such as API server endpoints, certificate authority data, contexts, and users.  
 - Dynamically integrate kubeconfig information into Terraform-managed workflows without manually exporting credentials.
 
 

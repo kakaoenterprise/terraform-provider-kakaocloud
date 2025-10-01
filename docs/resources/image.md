@@ -3,15 +3,13 @@
 page_title: "kakaocloud_image Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_image resource allows you to create and manage custom images in KakaoCloud.
-  You can build images from existing volumes, define descriptions, and use them to launch instances across projects.
-  This resource also provides detailed metadata such as operating system information, disk and memory requirements, sharing status, and visibility settings, enabling flexible and secure image management.
+  The kakaocloud_image resource allows you to create and manage custom images in KakaoCloud.You can build images from existing volumes, define descriptions, and use them to launch instances across projects.This resource also provides detailed metadata such as operating system information, disk and memory requirements, sharing status, and visibility settings, enabling flexible and secure image management.
 ---
 
 # kakaocloud_image (Resource)
 
-The `kakaocloud_image` resource allows you to create and manage custom images in KakaoCloud.
-You can build images from existing volumes, define descriptions, and use them to launch instances across projects.
+The `kakaocloud_image` resource allows you to create and manage custom images in KakaoCloud.  
+You can build images from existing volumes, define descriptions, and use them to launch instances across projects.  
 This resource also provides detailed metadata such as operating system information, disk and memory requirements, sharing status, and visibility settings, enabling flexible and secure image management.
 
 

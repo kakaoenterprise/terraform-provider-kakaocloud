@@ -3,15 +3,13 @@
 page_title: "kakaocloud_route_table Resource - kakaocloud"
 subcategory: ""
 description: |-
-  The kakaocloud_route_table resource allows you to create and manage route tables in KakaoCloud.
-  You can define custom routes, associate them with subnets, and configure main route tables within a VPC.
-  This resource also provides detailed information on existing routes, associations, and provisioning status, ensuring flexible and reliable network routing management.
+  The kakaocloud_route_table resource allows you to create and manage route tables in KakaoCloud.You can define custom routes, associate them with subnets, and configure main route tables within a VPC.This resource also provides detailed information on existing routes, associations, and provisioning status, ensuring flexible and reliable network routing management.
 ---
 
 # kakaocloud_route_table (Resource)
 
-The `kakaocloud_route_table` resource allows you to create and manage route tables in KakaoCloud.
-You can define custom routes, associate them with subnets, and configure main route tables within a VPC.
+The `kakaocloud_route_table` resource allows you to create and manage route tables in KakaoCloud.  
+You can define custom routes, associate them with subnets, and configure main route tables within a VPC.  
 This resource also provides detailed information on existing routes, associations, and provisioning status, ensuring flexible and reliable network routing management.
 
 
