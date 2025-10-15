@@ -13,7 +13,7 @@ Thank you for your interest in contributing!
 - Open PRs against the `main` branch.  
 - Add/update tests and docs if needed.  
 - **You must sign the [CLA](https://cla-assistant.io/kakaoenterprise/terraform-provider-kakaocloud) before your PR can be merged.**  
-- For **Corporate CLA**, contact us at [oss@kakaoenterprise.com](mailto:oss@kakaoenterprise.com).  
+- For **Corporate CLA**, contact us at [kc-oss@kakaoenterprise.com](mailto:kc-oss@kakaoenterprise.com).  
 
 PRs cannot be merged unless the CLA is signed.
 
