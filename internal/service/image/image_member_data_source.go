@@ -87,6 +87,7 @@ func (d *imageMemberDataSource) Read(ctx context.Context, req datasource.ReadReq
 			return d.kc.ApiClient.ImageAPI.
 				ListImageSharedProjects(ctx, config.Id.ValueString()).
 				XAuthToken(d.kc.XAuthToken).
+				Limit(1000).
 				Execute()
 		},
 	)

@@ -168,6 +168,7 @@ func (r *loadBalancerTargetGroupMemberResource) Read(ctx context.Context, req re
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
 				ListTargetsInTargetGroup(ctx, state.TargetGroupId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
+				Limit(1000).
 				Execute()
 		},
 	)
@@ -340,6 +341,7 @@ func (r *loadBalancerTargetGroupMemberResource) Delete(ctx context.Context, req 
 			respModel, httpResp, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
 				ListTargetsInTargetGroup(ctx, state.TargetGroupId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
+				Limit(1000).
 				Execute()
 			if err != nil {
 				if httpResp != nil && httpResp.StatusCode == 404 {
@@ -420,6 +422,7 @@ func (r *loadBalancerTargetGroupMemberResource) pollTargetGroupMemberUntilStatus
 		respModel, _, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
 			ListTargetsInTargetGroup(ctx, targetGroupId).
 			XAuthToken(r.kc.XAuthToken).
+			Limit(1000).
 			Execute()
 		if err != nil {
 			lastErr = fmt.Errorf("failed to list targets in target group: %w", err)

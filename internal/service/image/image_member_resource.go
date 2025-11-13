@@ -80,6 +80,7 @@ func (r *imageMemberResource) Create(ctx context.Context, req resource.CreateReq
 			return r.kc.ApiClient.ImageAPI.
 				ListImageSharedProjects(ctx, imageId).
 				XAuthToken(r.kc.XAuthToken).
+				Limit(1000).
 				Execute()
 		},
 	)
@@ -149,6 +150,7 @@ func (r *imageMemberResource) Read(ctx context.Context, req resource.ReadRequest
 			return r.kc.ApiClient.ImageAPI.
 				ListImageSharedProjects(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
+				Limit(1000).
 				Execute()
 		},
 	)
@@ -369,6 +371,7 @@ func (r *imageMemberResource) pollUntilAllMembers(ctx context.Context, imageId s
 				return r.kc.ApiClient.ImageAPI.
 					ListImageSharedProjects(ctx, imageId).
 					XAuthToken(r.kc.XAuthToken).
+					Limit(1000).
 					Execute()
 			},
 		)
