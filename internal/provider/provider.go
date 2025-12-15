@@ -181,9 +181,11 @@ func (p *kakaocloudProvider) DataSources(_ context.Context) []func() datasource.
 		kubernetesengine.NewNodePoolsDataSource,
 		kubernetesengine.NewKubernetesImagesDataSource,
 		kubernetesengine.NewScheduledScalingDataSource,
+		kubernetesengine.NewScheduledScalingsDataSource,
 		kubernetesengine.NewClusterNodeDataSource,
 		kubernetesengine.NewKubernetesVersionsDataSource,
 		kubernetesengine.NewKubernetesKubeconfigDataSource,
+		kubernetesengine.NewClusterUpgradableVersionDataSource,
 	}
 }
 
@@ -219,6 +221,5 @@ func (p *kakaocloudProvider) Resources(_ context.Context) []func() resource.Reso
 		kubernetesengine.NewNodePoolResource,
 		kubernetesengine.NewClusterResource,
 		kubernetesengine.NewScheduledScalingResource,
-		kubernetesengine.NewClusterNodeResource,
 	}
 }

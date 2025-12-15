@@ -4,10 +4,16 @@ package loadbalancer
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
+	"terraform-provider-kakaocloud/internal/common"
+	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"golang.org/x/net/context"
 )
 
 func ToScheme(v string) (*loadbalancer.Scheme, error) {
@@ -114,4 +120,60 @@ func ToListenerProtocol(v string) (*loadbalancer.Protocol, error) {
 		}
 	}
 	return nil, fmt.Errorf("invalid Protocol: %s (allowed: %v)", v, loadbalancer.AllowedProtocolEnumValues)
+}
+
+func CheckLoadBalancerStatus(
+	ctx context.Context,
+	loadBalancerId string,
+	allowError bool,
+	r resource.Resource,
+	kc *common.KakaoCloudClient,
+	diags *diag.Diagnostics,
+) bool {
+	interval := 3 * time.Second
+	lbResult, ok := common.PollUntilResult(
+		ctx,
+		r,
+		interval,
+		"load balancer",
+		loadBalancerId,
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError, common.LoadBalancerProvisioningStatusDeleting},
+		diags,
+		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel, *http.Response, error) {
+			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, kc, diags,
+				func() (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelResponseLoadBalancerModel, *http.Response, error) {
+					return kc.ApiClient.LoadBalancerAPI.
+						GetLoadBalancer(ctx, loadBalancerId).
+						XAuthToken(kc.XAuthToken).
+						Execute()
+				},
+			)
+			if err != nil {
+				return nil, httpResp, err
+			}
+			return &respModel.LoadBalancer, httpResp, nil
+		},
+		func(lb *loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel) string {
+			return string(*lb.ProvisioningStatus.Get())
+		},
+	)
+	if !ok {
+		for _, d := range diags.Errors() {
+			if strings.Contains(d.Detail(), "context deadline exceeded") {
+				common.AddGeneralError(ctx, r, diags,
+					fmt.Sprintf("Load balancer %s did not reach one of the following states: '%v'.", loadBalancerId, []string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError}))
+				return false
+			}
+		}
+	}
+	if lbResult != nil && string(*lbResult.ProvisioningStatus.Get()) == common.LoadBalancerProvisioningStatusDeleting ||
+		!allowError && lbResult != nil && string(*lbResult.ProvisioningStatus.Get()) == common.LoadBalancerProvisioningStatusError {
+		common.AddGeneralError(ctx, r, diags,
+			fmt.Sprintf("Load balancer %s is in %v state", loadBalancerId, string(*lbResult.ProvisioningStatus.Get())))
+		return false
+	}
+	if diags.HasError() {
+		return false
+	}
+	return true
 }

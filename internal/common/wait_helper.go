@@ -17,6 +17,8 @@ func PollUntilResultWithTimeout[T any](
 	obj interface{},
 	interval time.Duration,
 	timeout *time.Duration,
+	targetName string,
+	targetId string,
 	targetStatuses []string,
 	respDiags *diag.Diagnostics,
 	fetch func(context.Context) (T, *http.Response, error),
@@ -60,7 +62,15 @@ func PollUntilResultWithTimeout[T any](
 						))
 						continue
 					}
-					AddGeneralError(ctx, obj, respDiags, fmt.Sprintf("Resource not found after %d retries (404)", maxRetries))
+					AddApiActionError(
+						ctx,
+						obj,
+						httpResp,
+						"PollForStatus",
+						err,
+						respDiags,
+						fmt.Sprintf("The requested %s '%s' does not exsist or is not accessible after %d retries. Please verify the resource exists.", targetName, targetId, maxRetries),
+					)
 					return zero, false
 				}
 
@@ -85,6 +95,8 @@ func PollUntilResult[T any](
 	ctx context.Context,
 	obj interface{},
 	interval time.Duration,
+	targetName string,
+	targetId string,
 	targetStatuses []string,
 	respDiags *diag.Diagnostics,
 	fetch func(context.Context) (T, *http.Response, error),
@@ -95,6 +107,8 @@ func PollUntilResult[T any](
 		obj,
 		interval,
 		nil,
+		targetName,
+		targetId,
 		targetStatuses,
 		respDiags,
 		fetch,

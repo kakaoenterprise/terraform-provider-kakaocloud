@@ -6,8 +6,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -55,7 +55,6 @@ func (r *loadBalancerL7PolicyResource) Metadata(_ context.Context, req resource.
 
 func (r *loadBalancerL7PolicyResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("LoadBalancerL7Policy"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			loadBalancerL7PolicyResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -90,32 +89,42 @@ func (r *loadBalancerL7PolicyResource) Create(ctx context.Context, req resource.
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
 	createReq := loadbalancer.CreateL7PolicyModel{
 		ListenerId: plan.ListenerId.ValueString(),
 		Action:     loadbalancer.L7PolicyAction(plan.Action.ValueString()),
 	}
 
-	if !plan.Name.IsNull() && !plan.Name.IsUnknown() {
+	if !plan.Name.IsNull() {
 		createReq.SetName(plan.Name.ValueString())
 	}
 
-	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
+	if !plan.Description.IsNull() {
 		createReq.SetDescription(plan.Description.ValueString())
 	}
 
 	if !plan.Position.IsNull() && !plan.Position.IsUnknown() {
-		createReq.SetPosition(int32(plan.Position.ValueInt64()))
+		ok := r.validatePosition(ctx, *loadBalancerId, plan.ListenerId.ValueString(), common.ActionC, plan.Position.ValueInt32(), &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+
+		createReq.SetPosition(plan.Position.ValueInt32())
 	}
 
-	if !plan.RedirectTargetGroupId.IsNull() && !plan.RedirectTargetGroupId.IsUnknown() {
+	if !plan.RedirectTargetGroupId.IsNull() {
 		createReq.SetRedirectTargetGroupId(plan.RedirectTargetGroupId.ValueString())
 	}
 
-	if !plan.RedirectUrl.IsNull() && !plan.RedirectUrl.IsUnknown() {
+	if !plan.RedirectUrl.IsNull() {
 		createReq.SetRedirectUrl(plan.RedirectUrl.ValueString())
 	}
 
-	if !plan.RedirectPrefix.IsNull() && !plan.RedirectPrefix.IsUnknown() {
+	if !plan.RedirectPrefix.IsNull() {
 		createReq.SetRedirectPrefix(plan.RedirectPrefix.ValueString())
 	}
 
@@ -139,7 +148,7 @@ func (r *loadBalancerL7PolicyResource) Create(ctx context.Context, req resource.
 	result, ok := r.pollL7PolicyUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{ProvisioningStatusActive, ProvisioningStatusError},
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 		&resp.Diagnostics,
 	)
 
@@ -147,14 +156,12 @@ func (r *loadBalancerL7PolicyResource) Create(ctx context.Context, req resource.
 		return
 	}
 
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
 
-	listenerIdFromPlan := plan.ListenerId
 	ok = mapLoadBalancerL7PolicyFromGetResponse(ctx, &plan.loadBalancerL7PolicyBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
-	plan.ListenerId = listenerIdFromPlan
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
@@ -195,27 +202,17 @@ func (r *loadBalancerL7PolicyResource) Read(ctx context.Context, req resource.Re
 
 	l7PolicyResult := respModel.L7Policy
 
-	listenerIdFromState := state.ListenerId
-
 	ok := mapLoadBalancerL7PolicyFromGetResponse(ctx, &state.loadBalancerL7PolicyBaseModel, &l7PolicyResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	if !listenerIdFromState.IsNull() && !listenerIdFromState.IsUnknown() {
-
-		state.ListenerId = listenerIdFromState
-	} else {
-
-		foundListenerId, err := r.findListenerIdByL7PolicyId(ctx, state.Id.ValueString())
-		if err != nil {
-
-			resp.Diagnostics.AddWarning(
-				"Could not determine listener_id",
-				fmt.Sprintf("Could not automatically determine listener_id for L7 policy %s. Please provide listener_id in your configuration.", state.Id.ValueString()),
-			)
+	if state.ListenerId.IsNull() {
+		foundListenerId, ok := r.findListenerIdByL7PolicyId(ctx, state.Id.ValueString(), &resp.Diagnostics)
+		if !ok {
+			return
 		} else {
-			state.ListenerId = types.StringValue(foundListenerId)
+			state.ListenerId = types.StringValue(*foundListenerId)
 		}
 	}
 
@@ -253,46 +250,40 @@ func (r *loadBalancerL7PolicyResource) Update(ctx context.Context, req resource.
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	editReq := loadbalancer.NewEditL7PolicyModel(loadbalancer.L7PolicyAction(plan.Action.ValueString()))
-
-	if !plan.Name.Equal(state.Name) {
-		editReq.SetName(plan.Name.ValueString())
-	}
-
-	if !plan.Description.Equal(state.Description) {
-		editReq.SetDescription(plan.Description.ValueString())
-	}
-
-	if !plan.Position.IsNull() && !plan.Position.IsUnknown() {
-
-		editReq.SetPosition(int32(plan.Position.ValueInt64()))
-	} else {
-
-		if !state.Position.IsNull() && !state.Position.IsUnknown() {
-			editReq.SetPosition(int32(state.Position.ValueInt64()))
-		}
+	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
 	}
 
 	action := plan.Action.ValueString()
 
-	switch action {
-	case "REDIRECT_TO_URL":
+	editReq := loadbalancer.NewEditL7PolicyModel(loadbalancer.L7PolicyAction(action))
 
+	if !plan.Name.IsNull() {
+		editReq.SetName(plan.Name.ValueString())
+	}
+
+	if !plan.Description.IsNull() {
+		editReq.SetDescription(plan.Description.ValueString())
+	}
+
+	if !plan.Position.IsNull() {
+		ok := r.validatePosition(ctx, *loadBalancerId, plan.ListenerId.ValueString(), common.ActionU, plan.Position.ValueInt32(), &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+
+		editReq.SetPosition(plan.Position.ValueInt32())
+	}
+
+	if !plan.RedirectUrl.IsNull() {
 		editReq.SetRedirectUrl(plan.RedirectUrl.ValueString())
-		editReq.SetRedirectTargetGroupIdNil()
-		editReq.SetRedirectPrefixNil()
-
-	case "REDIRECT_TO_POOL":
-
+	}
+	if !plan.RedirectTargetGroupId.IsNull() {
 		editReq.SetRedirectTargetGroupId(plan.RedirectTargetGroupId.ValueString())
-		editReq.SetRedirectUrlNil()
-		editReq.SetRedirectPrefixNil()
-
-	case "REDIRECT_PREFIX":
-
+	}
+	if !plan.RedirectPrefix.IsNull() {
 		editReq.SetRedirectPrefix(plan.RedirectPrefix.ValueString())
-		editReq.SetRedirectUrlNil()
-		editReq.SetRedirectTargetGroupIdNil()
 	}
 
 	body := *loadbalancer.NewBodyUpdateL7Policy(*editReq)
@@ -308,29 +299,27 @@ func (r *loadBalancerL7PolicyResource) Update(ctx context.Context, req resource.
 		return
 	}
 
+	time.Sleep(5 * time.Second)
+
 	result, ok := r.pollL7PolicyUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{ProvisioningStatusActive, ProvisioningStatusError},
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	listenerIdFromPlan := plan.ListenerId
-	rulesFromState := state.Rules
 	ok = mapLoadBalancerL7PolicyFromGetResponse(ctx, &plan.loadBalancerL7PolicyBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
-	plan.ListenerId = listenerIdFromPlan
-	plan.Rules = rulesFromState
 
 	plan.Timeouts = state.Timeouts
 	diags = resp.State.Set(ctx, &plan)
@@ -352,6 +341,20 @@ func (r *loadBalancerL7PolicyResource) Delete(ctx context.Context, req resource.
 	mutex := common.LockForID(*loadBalancerId)
 	mutex.Lock()
 	defer mutex.Unlock()
+
+	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
@@ -387,13 +390,19 @@ func (r *loadBalancerL7PolicyResource) pollL7PolicyUntilStatus(
 		ctx,
 		r,
 		5*time.Second,
+		"l7 policy",
+		l7PolicyId,
 		targetStatuses,
 		resp,
 		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyModelL7PolicyModel, *http.Response, error) {
-			respModel, httpResp, err := r.kc.ApiClient.LoadBalancerL7PoliciesAPI.
-				GetL7Policy(ctx, l7PolicyId).
-				XAuthToken(r.kc.XAuthToken).
-				Execute()
+			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
+				func() (*loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyModelResponseL7PolicyModel, *http.Response, error) {
+					return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.
+						GetL7Policy(ctx, l7PolicyId).
+						XAuthToken(r.kc.XAuthToken).
+						Execute()
+				},
+			)
 			if err != nil {
 				return nil, httpResp, err
 			}
@@ -405,33 +414,42 @@ func (r *loadBalancerL7PolicyResource) pollL7PolicyUntilStatus(
 	)
 }
 
-func (r *loadBalancerL7PolicyResource) findListenerIdByL7PolicyId(ctx context.Context, l7PolicyId string) (string, error) {
+func (r *loadBalancerL7PolicyResource) findListenerIdByL7PolicyId(ctx context.Context, l7PolicyId string, diags *diag.Diagnostics) (*string, bool) {
+	limit := int32(1000)
+	offset := int32(0)
 
-	listenersResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &diag.Diagnostics{},
-		func() (*loadbalancer.ListenerListModel, *http.Response, error) {
-			return r.kc.ApiClient.LoadBalancerListenerAPI.ListListeners(ctx).Limit(1000).XAuthToken(r.kc.XAuthToken).Execute()
-		},
-	)
+	for {
+		listenersResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
+			func() (*loadbalancer.ListenerListModel, *http.Response, error) {
+				return r.kc.ApiClient.LoadBalancerListenerAPI.ListListeners(ctx).Limit(limit).Offset(offset).
+					Protocol("HTTP").XAuthToken(r.kc.XAuthToken).Execute()
+			},
+		)
 
-	if err != nil {
-		return "", fmt.Errorf("failed to list listeners: %w", err)
-	}
+		if err != nil {
+			common.AddApiActionError(ctx, r, httpResp, "ListListeners", err, diags)
+			return nil, false
+		}
 
-	if httpResp != nil && httpResp.StatusCode != 200 {
-		return "", fmt.Errorf("failed to list listeners: HTTP %d", httpResp.StatusCode)
-	}
-
-	for _, listener := range listenersResp.Listeners {
-		if listener.L7Policies != nil {
-			for _, policy := range listener.L7Policies {
-				if policy.Id == l7PolicyId {
-					return listener.Id, nil
+		for _, listener := range listenersResp.Listeners {
+			if listener.L7Policies != nil {
+				for _, policy := range listener.L7Policies {
+					if policy.Id == l7PolicyId {
+						return &listener.Id, true
+					}
 				}
 			}
 		}
+
+		total := listenersResp.Pagination.Total
+		if *total <= limit+offset {
+			break
+		}
+		offset += limit
 	}
 
-	return "", fmt.Errorf("L7 policy %s not found in any listener", l7PolicyId)
+	common.AddGeneralError(ctx, r, diags, fmt.Sprintf("L7 policy %s not found in any listener", l7PolicyId))
+	return nil, false
 }
 
 func (r *loadBalancerL7PolicyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -439,16 +457,110 @@ func (r *loadBalancerL7PolicyResource) ImportState(ctx context.Context, req reso
 }
 
 func (r *loadBalancerL7PolicyResource) getLoadBalancerIdByListenerId(ctx context.Context, listenerId string, respDiags *diag.Diagnostics) (*string, bool) {
-	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelResponseListenerModel, *http.Response, error) {
-			return r.kc.ApiClient.LoadBalancerListenerAPI.GetListener(ctx, listenerId).
-				XAuthToken(r.kc.XAuthToken).Execute()
+	listenerResult, ok := common.PollUntilResult(
+		ctx,
+		r,
+		3*time.Second,
+		"listener",
+		listenerId,
+		[]string{"ok"},
+		respDiags,
+		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelListenerModel, *http.Response, error) {
+			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+				func() (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelResponseListenerModel, *http.Response, error) {
+					return r.kc.ApiClient.LoadBalancerListenerAPI.GetListener(ctx, listenerId).
+						XAuthToken(r.kc.XAuthToken).Execute()
+				},
+			)
+			if err != nil {
+				return nil, httpResp, err
+			}
+			return &respModel.Listener, httpResp, nil
+		},
+		func(v *loadbalancer.BnsLoadBalancerV1ApiGetListenerModelListenerModel) string {
+			return "ok"
 		},
 	)
-	if err != nil {
-		common.AddApiActionError(ctx, r, httpResp, "GetListener", err, respDiags)
+	if !ok {
 		return nil, false
 	}
 
-	return respModel.Listener.LoadBalancerId.Get(), true
+	return listenerResult.LoadBalancerId.Get(), ok
+}
+
+func (r *loadBalancerL7PolicyResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config loadBalancerL7PolicyResourceModel
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	action := config.Action.ValueString()
+
+	switch action {
+	case string(loadbalancer.L7POLICYACTION_REDIRECT_TO_URL):
+		if config.RedirectUrl.IsNull() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("'redirect_url' is required for action type '%v'.", action),
+			)
+		}
+		if !config.RedirectTargetGroupId.IsNull() || !config.RedirectPrefix.IsNull() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("'redirect_target_group_id' and 'redirect_prefix' must not be set for action type '%v'.", action),
+			)
+		}
+	case string(loadbalancer.L7POLICYACTION_REDIRECT_TO_POOL):
+		if config.RedirectTargetGroupId.IsNull() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("'redirect_target_group_id' is required for action type '%v'.", action),
+			)
+		}
+		if !config.RedirectUrl.IsNull() || !config.RedirectPrefix.IsNull() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("'redirect_url' and 'redirect_prefix' must not be set for action type '%v'.", action),
+			)
+		}
+	case string(loadbalancer.L7POLICYACTION_REDIRECT_PREFIX):
+		if config.RedirectPrefix.IsNull() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("'redirect_prefix' is required for action type '%v'.", action),
+			)
+		}
+		if !config.RedirectUrl.IsNull() || !config.RedirectTargetGroupId.IsNull() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("'redirect_url' and 'redirect_target_group_id' must not be set for action type '%v'.", action),
+			)
+		}
+	}
+}
+
+func (r *loadBalancerL7PolicyResource) validatePosition(ctx context.Context, lbId, listenerId, action string, position int32, respDiags *diag.Diagnostics) bool {
+	lbL7PoliciesResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+		func() (*loadbalancer.L7PolicyListModel, *http.Response, error) {
+			return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.ListL7Policies(
+				ctx,
+				lbId,
+				listenerId,
+			).Limit(1000).XAuthToken(r.kc.XAuthToken).Execute()
+		},
+	)
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "ListL7Policies", err, respDiags)
+		return false
+	}
+
+	availablePosition := int32(len(lbL7PoliciesResp.L7Policies))
+
+	if action == common.ActionC {
+		availablePosition = availablePosition + 1
+	}
+
+	if position > availablePosition {
+		common.AddValidationConfigError(ctx, r, respDiags,
+			"Invalid position. Position must be less than or equal to "+strconv.Itoa(int(availablePosition))+".")
+		return false
+	}
+
+	return true
 }

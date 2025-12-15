@@ -62,12 +62,12 @@ func mapLoadBalancerListenerBaseModel(
 			OperatingStatus:       utils.ConvertNullableString(policy.OperatingStatus),
 			ProjectId:             utils.ConvertNullableString(policy.ProjectId),
 			Action:                utils.ConvertNullableString(policy.Action),
-			Position:              utils.ConvertNullableInt32ToInt64(policy.Position),
+			Position:              utils.ConvertNullableInt32(policy.Position),
 			Rules:                 rules,
 			RedirectTargetGroupId: utils.ConvertNullableString(policy.RedirectTargetGroupId),
 			RedirectUrl:           utils.ConvertNullableString(policy.RedirectUrl),
 			RedirectPrefix:        utils.ConvertNullableString(policy.RedirectPrefix),
-			RedirectHttpCode:      utils.ConvertNullableInt32ToInt64(policy.RedirectHttpCode)}
+			RedirectHttpCode:      utils.ConvertNullableInt32(policy.RedirectHttpCode)}
 	})
 	diags.Append(l7PolicyDiags...)
 
@@ -90,8 +90,16 @@ func mapLoadBalancerListenerBaseModel(
 			return types.StringNull()
 		}
 		headerValues["x_forwarded_for"] = mapHeader("X-Forwarded-For")
-		headerValues["x_forwarded_proto"] = mapHeader("X-Forwarded-Proto")
-		headerValues["x_forwarded_port"] = mapHeader("X-Forwarded-Port")
+		if val, ok := src.InsertHeaders["X-Forwarded-Proto"]; ok && val.String != nil {
+			headerValues["x_forwarded_proto"] = types.StringValue(*val.String)
+		} else {
+			headerValues["x_forwarded_proto"] = types.StringValue("false")
+		}
+		if val, ok := src.InsertHeaders["X-Forwarded-Port"]; ok && val.String != nil {
+			headerValues["x_forwarded_port"] = types.StringValue(*val.String)
+		} else {
+			headerValues["x_forwarded_port"] = types.StringValue("false")
+		}
 
 		obj, d := types.ObjectValue(insertHeadersAttrTypes, headerValues)
 		diags.Append(d...)
@@ -120,8 +128,8 @@ func mapLoadBalancerListenerBaseModel(
 	}
 	base.AlpnProtocols = utils.ConvertNullableStringList(src.AlpnProtocols)
 	base.ProjectId = utils.ConvertNullableString(src.ProjectId)
-	base.ProtocolPort = utils.ConvertNullableInt32ToInt64(src.ProtocolPort)
-	base.ConnectionLimit = utils.ConvertNullableInt32ToInt64(src.ConnectionLimit)
+	base.ProtocolPort = utils.ConvertNullableInt32(src.ProtocolPort)
+	base.ConnectionLimit = utils.ConvertNullableInt32(src.ConnectionLimit)
 	base.LoadBalancerId = utils.ConvertNullableString(src.LoadBalancerId)
 	base.TlsCertificateId = utils.ConvertNullableString(src.TlsCertificateId)
 	base.ProvisioningStatus = utils.ConvertNullableString(src.ProvisioningStatus)
@@ -129,7 +137,7 @@ func mapLoadBalancerListenerBaseModel(
 
 	base.CreatedAt = utils.ConvertNullableTime(src.CreatedAt)
 	base.UpdatedAt = utils.ConvertNullableTime(src.UpdatedAt)
-	base.TimeoutClientData = utils.ConvertNullableInt32ToInt64(src.TimeoutClientData)
+	base.TimeoutClientData = utils.ConvertNullableInt32(src.TimeoutClientData)
 	base.DefaultTargetGroupName = utils.ConvertNullableString(src.DefaultTargetGroupName)
 	base.DefaultTargetGroupId = utils.ConvertNullableString(src.DefaultTargetGroupId)
 	base.LoadBalancerType = utils.ConvertNullableString(src.LoadBalancerType)

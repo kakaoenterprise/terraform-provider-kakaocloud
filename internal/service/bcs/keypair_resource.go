@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -37,7 +36,6 @@ func (r *keypairResource) Metadata(_ context.Context, req resource.MetadataReque
 
 func (r *keypairResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("Keypair"),
 		Attributes: MergeResourceSchemaAttributes(
 			keypairResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -92,8 +90,14 @@ func (r *keypairResource) Create(ctx context.Context, req resource.CreateRequest
 
 	pollInterval := 1 * time.Second
 	result, ok := common.PollUntilResultWithTimeout(
-		ctx, r, pollInterval, &timeout,
-		[]string{"found"}, &resp.Diagnostics,
+		ctx,
+		r,
+		pollInterval,
+		&timeout,
+		"keypair",
+		plan.Name.ValueString(),
+		[]string{"found"},
+		&resp.Diagnostics,
 		func(c context.Context) (*bcs.BcsInstanceV1ApiGetKeypairModelResponseKeypairModel, *http.Response, error) {
 			return r.kc.ApiClient.KeypairAPI.
 				GetKeypair(c, plan.Name.ValueString()).

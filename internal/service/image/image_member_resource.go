@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -45,7 +44,6 @@ func (r *imageMemberResource) ImportState(ctx context.Context, req resource.Impo
 
 func (r *imageMemberResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("ImageMember"),
 		Attributes: utils.MergeAttributes[schema.Attribute](
 			imageMemberResourceSchema,
 			map[string]schema.Attribute{

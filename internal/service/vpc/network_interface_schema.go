@@ -4,7 +4,6 @@ package vpc
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -18,16 +17,12 @@ import (
 )
 
 func getAllowedAddressPairResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_network_interface__model__AllowedAddressPairModel")
-
 	return map[string]rschema.Attribute{
 		"mac_address": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("mac_address"),
+			Computed: true,
 		},
 		"ip_address": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("ip_address"),
+			Required: true,
 			Validators: []validator.String{
 				common.IpOrCIDRValidator{},
 			},
@@ -36,87 +31,70 @@ func getAllowedAddressPairResourceSchema() map[string]rschema.Attribute {
 }
 
 func getSecurityGroupResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Vpc("SecurityGroupModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 		"name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 	}
 }
 
 func getNetworkInterfaceResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_network_interface__model__NetworkInterfaceModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"name": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("name"),
-			Validators:  common.NameValidator(63),
+			Required:   true,
+			Validators: common.NameValidator(63),
 		},
 		"status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"description": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("description"),
-			Validators:  common.DescriptionValidator(),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.DescriptionValidator(),
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"vpc_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"subnet_id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("subnet_id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"mac_address": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("mac_address"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"device_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("device_id"),
+			Computed: true,
 		},
 		"device_owner": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("device_owner"),
+			Computed: true,
 		},
 		"project_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_name"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
@@ -124,40 +102,34 @@ func getNetworkInterfaceResourceSchema() map[string]rschema.Attribute {
 		"secondary_ips": rschema.ListAttribute{
 			ElementType: types.StringType,
 			Computed:    true,
-			Description: desc.String("secondary_ips"),
 		},
 		"public_ip": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("public_ip"),
+			Computed: true,
 		},
 		"private_ip": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("private_ip"),
-			CustomType:  iptypes.IPAddressType{},
+			Optional:   true,
+			Computed:   true,
+			CustomType: iptypes.IPAddressType{},
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"is_network_interface_security_enabled": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_network_interface_security_enabled"),
+			Computed: true,
 			PlanModifiers: []planmodifier.Bool{
 				boolplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"allowed_address_pairs": rschema.SetNestedAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("allowed_address_pairs"),
+			Optional: true,
+			Computed: true,
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: allowedAddressPairResourceSchema,
 			},
 		},
 		"security_groups": rschema.SetNestedAttribute{
-			Required:    true,
-			Description: desc.String("security_groups"),
+			Required: true,
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
 			},
@@ -166,129 +138,99 @@ func getNetworkInterfaceResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }
 
 func getAllowedAddressPairDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_network_interface__model__AllowedAddressPairModel")
-
 	return map[string]dschema.Attribute{
 		"mac_address": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("mac_address"),
+			Computed: true,
 		},
 		"ip_address": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("ip_address"),
+			Computed: true,
 		},
 	}
 }
 
 func getSecurityGroupDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Vpc("SecurityGroupModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 	}
 }
 
 func getNetworkInterfaceDataSourceBaseSchema() map[string]dschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_network_interface__model__NetworkInterfaceModel")
-
 	return map[string]dschema.Attribute{
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("description"),
+			Optional: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"vpc_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_id"),
+			Computed: true,
 		},
 		"subnet_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_id"),
+			Computed: true,
 		},
 		"mac_address": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("mac_address"),
+			Computed: true,
 		},
 		"device_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("device_id"),
+			Computed: true,
 		},
 		"device_owner": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("device_owner"),
+			Computed: true,
 		},
 		"project_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_name"),
+			Computed: true,
 		},
 		"secondary_ips": dschema.ListAttribute{
 			ElementType: types.StringType,
 			Computed:    true,
-			Description: desc.String("secondary_ips"),
 		},
 		"public_ip": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("public_ip"),
+			Computed: true,
 		},
 		"private_ip": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("private_ip"),
-			CustomType:  iptypes.IPAddressType{},
+			Computed:   true,
+			CustomType: iptypes.IPAddressType{},
 		},
 		"is_network_interface_security_enabled": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_network_interface_security_enabled"),
+			Computed: true,
 		},
 		"allowed_address_pairs": dschema.SetNestedAttribute{
-			Computed:    true,
-			Description: desc.String("allowed_address_pairs"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: allowedAddressPairDataSourceSchema,
 			},
 		},
 		"security_groups": dschema.SetNestedAttribute{
-			Computed:    true,
-			Description: desc.String("security_groups"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: securityGroupDataSourceSchema,
 			},
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }

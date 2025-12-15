@@ -9,7 +9,6 @@ import (
 	"sort"
 	"sync"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -42,7 +41,6 @@ func (r *beyondLoadBalancerResource) Metadata(_ context.Context, req resource.Me
 
 func (r *beyondLoadBalancerResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("BeyondLoadBalancer"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			beyondLoadBalancerResourceSchema,
 			map[string]schema.Attribute{
@@ -82,51 +80,40 @@ func (r *beyondLoadBalancerResource) Create(ctx context.Context, req resource.Cr
 	}
 
 	var mutexes []*sync.Mutex
-	if !plan.AttachedLoadBalancers.IsNull() && !plan.AttachedLoadBalancers.IsUnknown() {
-		lbList, planDiags := r.convertSetToBlbLoadBalancerModel(ctx, plan.AttachedLoadBalancers)
-		resp.Diagnostics.Append(planDiags...)
-		if resp.Diagnostics.HasError() {
+	lbList, planDiags := r.convertSetToBlbLoadBalancerModel(ctx, plan.AttachedLoadBalancers)
+	resp.Diagnostics.Append(planDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	for _, lb := range lbList {
+		mutex := common.LockForID(lb.Id.ValueString())
+		mutex.Lock()
+		mutexes = append(mutexes, mutex)
+	}
+	defer func() {
+
+		for i := len(mutexes) - 1; i >= 0; i-- {
+			mutexes[i].Unlock()
+		}
+	}()
+
+	for _, lb := range lbList {
+		ok := CheckLoadBalancerStatus(ctx, lb.Id.ValueString(), false, r, r.kc, &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
-
-		for _, lb := range lbList {
-			mutex := common.LockForID(lb.Id.ValueString())
-			mutex.Lock()
-			mutexes = append(mutexes, mutex)
-		}
-		defer func() {
-
-			for i := len(mutexes) - 1; i >= 0; i-- {
-				mutexes[i].Unlock()
-			}
-		}()
-
-		for _, lb := range lbList {
-			lbResult, lbOk := r.pollLoadBalancerUntilStatus(
-				ctx,
-				lb.Id.ValueString(),
-				[]string{ProvisioningStatusActive, ProvisioningStatusError},
-				&resp.Diagnostics,
-			)
-			if !lbOk || resp.Diagnostics.HasError() {
-				return
-			}
-			if lbResult != nil && string(*lbResult.ProvisioningStatus.Get()) == ProvisioningStatusError {
-				resp.Diagnostics.AddError("Load Balancer Error", fmt.Sprintf("Load balancer %s is in error state", lb.Id.ValueString()))
-				return
-			}
-		}
-
-		var lbs []loadbalancer.BnsLoadBalancerV1ApiCreateHaGroupModelSubnetModel
-		for _, lb := range lbList {
-			tmpLb := loadbalancer.BnsLoadBalancerV1ApiCreateHaGroupModelSubnetModel{
-				LoadBalancerId:   lb.Id.ValueString(),
-				AvailabilityZone: loadbalancer.AvailabilityZone(lb.AvailabilityZone.ValueString()),
-			}
-			lbs = append(lbs, tmpLb)
-		}
-		createReq.SetSubnets(lbs)
 	}
+
+	var lbs []loadbalancer.BnsLoadBalancerV1ApiCreateHaGroupModelSubnetModel
+	for _, lb := range lbList {
+		tmpLb := loadbalancer.BnsLoadBalancerV1ApiCreateHaGroupModelSubnetModel{
+			LoadBalancerId:   lb.Id.ValueString(),
+			AvailabilityZone: loadbalancer.AvailabilityZone(lb.AvailabilityZone.ValueString()),
+		}
+		lbs = append(lbs, tmpLb)
+	}
+	createReq.SetSubnets(lbs)
 
 	body := *loadbalancer.NewBodyCreateHaGroup(createReq)
 
@@ -147,33 +134,17 @@ func (r *beyondLoadBalancerResource) Create(ctx context.Context, req resource.Cr
 	result, ok := r.pollBeyondLoadBalancerUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{ProvisioningStatusActive, ProvisioningStatusError},
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	if result != nil && result.LoadBalancers != nil {
-		for _, lb := range result.LoadBalancers {
-			lbResult, lbOk := r.pollLoadBalancerUntilStatus(
-				ctx,
-				lb.Id,
-				[]string{ProvisioningStatusActive, ProvisioningStatusError},
-				&resp.Diagnostics,
-			)
-			if !lbOk || resp.Diagnostics.HasError() {
-				return
-			}
-			if lbResult != nil && string(*lbResult.ProvisioningStatus.Get()) == ProvisioningStatusError {
-				resp.Diagnostics.AddError("Load Balancer Error", fmt.Sprintf("Load balancer %s is in error state", lb.Id))
-				return
-			}
-		}
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
-
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
-
 	ok = mapBeyondLoadBalancerBaseModel(ctx, &plan.beyondLoadBalancerBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
@@ -291,6 +262,9 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	var result *loadbalancer.BnsLoadBalancerV1ApiGetHaGroupModelBeyondLoadBalancerModel
+	var ok bool
+
 	if !plan.Description.Equal(state.Description) && !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		var editReq loadbalancer.EditBeyondLoadBalancerModel
 		editReq.SetDescription(plan.Description.ValueString())
@@ -311,35 +285,17 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 			return
 		}
 
-		result, ok := r.pollBeyondLoadBalancerUntilStatus(
+		result, ok = r.pollBeyondLoadBalancerUntilStatus(
 			ctx,
 			plan.Id.ValueString(),
-			[]string{ProvisioningStatusActive, ProvisioningStatusError},
+			[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 			&resp.Diagnostics,
 		)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
 
-		if result != nil && result.LoadBalancers != nil {
-			for _, lb := range result.LoadBalancers {
-				lbResult, lbOk := r.pollLoadBalancerUntilStatus(
-					ctx,
-					lb.Id,
-					[]string{ProvisioningStatusActive, ProvisioningStatusError},
-					&resp.Diagnostics,
-				)
-				if !lbOk || resp.Diagnostics.HasError() {
-					return
-				}
-				if lbResult != nil && string(*lbResult.ProvisioningStatus.Get()) == ProvisioningStatusError {
-					resp.Diagnostics.AddError("Load Balancer Error", fmt.Sprintf("Load balancer %s is in error state", lb.Id))
-					return
-				}
-			}
-		}
-
-		common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
+		common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -366,17 +322,8 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 		}()
 
 		for _, lb := range planList {
-			lbResult, lbOk := r.pollLoadBalancerUntilStatus(
-				ctx,
-				lb.Id.ValueString(),
-				[]string{ProvisioningStatusActive, ProvisioningStatusError},
-				&resp.Diagnostics,
-			)
-			if !lbOk || resp.Diagnostics.HasError() {
-				return
-			}
-			if lbResult != nil && string(*lbResult.ProvisioningStatus.Get()) == ProvisioningStatusError {
-				resp.Diagnostics.AddError("Load Balancer Error", fmt.Sprintf("Load balancer %s is in error state", lb.Id.ValueString()))
+			ok := CheckLoadBalancerStatus(ctx, lb.Id.ValueString(), false, r, r.kc, &resp.Diagnostics)
+			if !ok || resp.Diagnostics.HasError() {
 				return
 			}
 		}
@@ -385,40 +332,25 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 			return
 		}
 
-		result, ok := r.pollBeyondLoadBalancerUntilStatus(
+		result, ok = r.pollBeyondLoadBalancerUntilStatus(
 			ctx,
 			plan.Id.ValueString(),
-			[]string{ProvisioningStatusActive, ProvisioningStatusError},
+			[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 			&resp.Diagnostics,
 		)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
 
-		if result != nil && result.LoadBalancers != nil {
-			for _, lb := range result.LoadBalancers {
-				lbResult, lbOk := r.pollLoadBalancerUntilStatus(
-					ctx,
-					lb.Id,
-					[]string{ProvisioningStatusActive, ProvisioningStatusError},
-					&resp.Diagnostics,
-				)
-				if !lbOk || resp.Diagnostics.HasError() {
-					return
-				}
-				if lbResult != nil && string(*lbResult.ProvisioningStatus.Get()) == ProvisioningStatusError {
-					resp.Diagnostics.AddError("Load Balancer Error", fmt.Sprintf("Load balancer %s is in error state", lb.Id))
-					return
-				}
-			}
-		}
-
-		common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
-
-		ok = mapBeyondLoadBalancerBaseModel(ctx, &plan.beyondLoadBalancerBaseModel, result, &resp.Diagnostics)
-		if !ok || resp.Diagnostics.HasError() {
+		common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
 			return
 		}
+	}
+
+	ok = mapBeyondLoadBalancerBaseModel(ctx, &plan.beyondLoadBalancerBaseModel, result, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
 	}
 
 	diags = resp.State.Set(ctx, &plan)
@@ -514,6 +446,8 @@ func (r *beyondLoadBalancerResource) pollBeyondLoadBalancerUntilStatus(
 		ctx,
 		r,
 		2*time.Second,
+		"beyond load balancer",
+		blbId,
 		targetStatuses,
 		resp,
 		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetHaGroupModelBeyondLoadBalancerModel, *http.Response, error) {
@@ -546,6 +480,8 @@ func (r *beyondLoadBalancerResource) pollLoadBalancerUntilStatus(
 		ctx,
 		r,
 		5*time.Second,
+		"load balancer",
+		loadBalancerId,
 		targetStatuses,
 		resp,
 		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel, *http.Response, error) {

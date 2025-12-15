@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -37,7 +36,6 @@ func (d *instancesDataSource) Metadata(_ context.Context, req datasource.Metadat
 
 func (d *instancesDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("Instances"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -58,8 +56,7 @@ func (d *instancesDataSource) Schema(ctx context.Context, _ datasource.SchemaReq
 					Attributes: MergeDataSourceSchemaAttributes(
 						map[string]schema.Attribute{
 							"id": schema.StringAttribute{
-								Computed:    true,
-								Description: "Instance ID",
+								Computed: true,
 							},
 						},
 						instanceDataSourceSchemaAttributes,

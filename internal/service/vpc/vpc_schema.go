@@ -4,7 +4,6 @@ package vpc
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -16,277 +15,210 @@ import (
 )
 
 func getIgwDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_vpc__model__IgwModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"region": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("region"),
+			Computed: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"operating_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("operating_status"),
+			Computed: true,
 		},
 		"provisioning_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }
 
 func getDefaultRouteTableDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_vpc__model__RouteTableModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"provisioning_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }
 
 func getVpcDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_vpc__model__VpcModel")
-
 	return map[string]dschema.Attribute{
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"region": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("region"),
+			Computed: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"project_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_name"),
+			Computed: true,
 		},
 		"cidr_block": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("cidr_block"),
-			CustomType:  cidrtypes.IPPrefixType{},
+			Computed:   true,
+			CustomType: cidrtypes.IPPrefixType{},
 		},
 		"is_default": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_default"),
+			Computed: true,
 		},
 		"provisioning_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"is_enable_dns_support": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_enable_dns_support"),
+			Computed: true,
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"igw": dschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("igw"),
-			Attributes:  igwDataSourceSchema,
+			Computed:   true,
+			Attributes: igwDataSourceSchema,
 		},
 		"default_route_table": dschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("default_route_table"),
-			Attributes:  defaultRouteTableDataSourceSchema,
+			Computed:   true,
+			Attributes: defaultRouteTableDataSourceSchema,
 		},
 	}
 }
 
 func getIgwResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_vpc__model__IgwModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"description": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"region": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("region"),
+			Computed: true,
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"operating_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("operating_status"),
+			Computed: true,
 		},
 		"provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }
 
 func getDefaultRouteTableResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_vpc__model__RouteTableModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"description": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }
 
 func getSubnetResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Vpc("CreateSubnetModel")
-
 	return map[string]rschema.Attribute{
 		"cidr_block": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("cidr_block"),
-			CustomType:  cidrtypes.IPPrefixType{},
+			Required:   true,
+			CustomType: cidrtypes.IPPrefixType{},
 			Validators: []validator.String{
 				common.NewCIDRPrefixLengthValidator(20, 26),
 			},
 		},
 		"availability_zone": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("availability_zone"),
+			Required: true,
 		},
 	}
 }
 
 func getVpcResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_vpc__model__VpcModel")
-	createDesc := docs.Vpc("CreateVPCModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"name": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("name"),
-			Validators:  common.NameValidator(200),
+			Required:   true,
+			Validators: common.NameValidator(200),
 		},
 		"description": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"region": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("region"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"project_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_name"),
+			Computed: true,
 		},
 		"cidr_block": rschema.StringAttribute{
-			Required:    true,
-			Description: createDesc.String("cidr_block"),
-			CustomType:  cidrtypes.IPPrefixType{},
+			Required:   true,
+			CustomType: cidrtypes.IPPrefixType{},
 			Validators: []validator.String{
 				common.NewCIDRPrefixLengthValidator(16, 24),
 			},
@@ -295,38 +227,30 @@ func getVpcResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 		"is_default": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_default"),
+			Computed: true,
 		},
 		"provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"is_enable_dns_support": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_enable_dns_support"),
+			Computed: true,
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"igw": rschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("igw"),
-			Attributes:  igwResourceSchema,
+			Computed:   true,
+			Attributes: igwResourceSchema,
 		},
 		"default_route_table": rschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("default_route_table"),
-			Attributes:  defaultRouteTableResourceSchema,
+			Computed:   true,
+			Attributes: defaultRouteTableResourceSchema,
 		},
 		"subnet": rschema.SingleNestedAttribute{
-			Optional:    true,
-			Description: createDesc.String("subnet"),
+			Optional: true,
 			PlanModifiers: []planmodifier.Object{
 				objectplanmodifier.RequiresReplace(),
 			},

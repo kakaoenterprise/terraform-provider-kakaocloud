@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/jinzhu/copier"
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
@@ -51,7 +50,6 @@ func (d *loadBalancerFlavorsDataSource) Metadata(_ context.Context, req datasour
 
 func (d *loadBalancerFlavorsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("LoadBalancerFlavors"),
 		Attributes: map[string]schema.Attribute{
 			"flavors": schema.ListNestedAttribute{
 				Computed: true,
@@ -83,7 +81,7 @@ func (d *loadBalancerFlavorsDataSource) Read(ctx context.Context, req datasource
 	defer cancel()
 
 	lbfs, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (interface{}, *http.Response, error) {
+		func() (*loadbalancer.FlavorListModel, *http.Response, error) {
 			resp, httpResp, err := d.kc.ApiClient.LoadBalancerEtcAPI.ListLoadBalancerTypes(ctx).XAuthToken(d.kc.XAuthToken).Execute()
 			return resp, httpResp, err
 		},
@@ -94,16 +92,11 @@ func (d *loadBalancerFlavorsDataSource) Read(ctx context.Context, req datasource
 		return
 	}
 
-	lbfsTyped, ok := lbfs.(*loadbalancer.FlavorListModel)
-	if !ok {
-		resp.Diagnostics.AddError("Type assertion failed", "Failed to cast API response to expected type")
-		return
-	}
-
 	var lbfsResult []loadbalancer.FlavorModel
-	err = copier.Copy(&lbfsResult, &lbfsTyped.Flavors)
+	err = copier.Copy(&lbfsResult, &lbfs.Flavors)
 	if err != nil {
-		resp.Diagnostics.AddError("List 변환 실패", fmt.Sprintf("lbfsResult 변환 실패: %v", err))
+		common.AddGeneralError(ctx, d, &resp.Diagnostics,
+			fmt.Sprintf("Failed to convert lbfsResult: %v", err))
 		return
 	}
 

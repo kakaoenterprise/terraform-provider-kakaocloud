@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -55,7 +54,6 @@ func (r *loadBalancerListenerResource) Metadata(_ context.Context, req resource.
 
 func (r *loadBalancerListenerResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("LoadBalancerListener"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			listenerResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -77,14 +75,6 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	if !plan.SniContainerRefs.IsNull() && !plan.SniContainerRefs.IsUnknown() {
-		resp.Diagnostics.AddError(
-			"Invalid Configuration",
-			"sni_container_refs cannot be set during listener creation. Please create the listener first, then update it to add SNI container references.",
-		)
-		return
-	}
-
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -95,10 +85,15 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	ok := CheckLoadBalancerStatus(ctx, plan.LoadBalancerId.ValueString(), false, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
 	createReq := loadbalancer.CreateListener{
 		LoadBalancerId: plan.LoadBalancerId.ValueString(),
 		Protocol:       loadbalancer.Protocol(plan.Protocol.ValueString()),
-		ProtocolPort:   int32(plan.ProtocolPort.ValueInt64()),
+		ProtocolPort:   plan.ProtocolPort.ValueInt32(),
 	}
 
 	if !plan.TargetGroupId.IsNull() && !plan.TargetGroupId.IsUnknown() {
@@ -133,30 +128,32 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 	result, ok := r.pollListenerUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{ProvisioningStatusActive, ProvisioningStatusError},
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	finalResult, ok := r.updateListenerFields(ctx, plan.Id.ValueString(), &plan, resp)
+	finalResult, ok := r.updateListenerAttributes(ctx, &plan, nil, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 
 		return
 	}
 
-	ok = mapLoadBalancerListenerBaseModel(ctx, &plan.loadBalancerListenerBaseModel, finalResult, &resp.Diagnostics)
+	if finalResult != nil {
+		result = finalResult
+	}
+
+	ok = mapLoadBalancerListenerBaseModel(ctx, &plan.loadBalancerListenerBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
-
-	plan.TargetGroupId = utils.ConvertNullableString(finalResult.DefaultTargetGroupId)
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
@@ -201,8 +198,6 @@ func (r *loadBalancerListenerResource) Read(ctx context.Context, req resource.Re
 		return
 	}
 
-	state.TargetGroupId = utils.ConvertNullableString(loadBalancerListenerResult.DefaultTargetGroupId)
-
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -224,7 +219,7 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 		return
 	}
 
-	mutex := common.LockForID(state.LoadBalancerId.ValueString())
+	mutex := common.LockForID(plan.LoadBalancerId.ValueString())
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -236,127 +231,23 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	editReq := loadbalancer.EditListener{}
-
-	if !plan.DefaultTlsContainerRef.Equal(state.DefaultTlsContainerRef) {
-
-		if !plan.DefaultTlsContainerRef.IsNull() && !plan.DefaultTlsContainerRef.IsUnknown() && plan.DefaultTlsContainerRef.ValueString() != "" {
-			editReq.SetDefaultTlsContainerRef(plan.DefaultTlsContainerRef.ValueString())
-		}
-	}
-
-	if !plan.SniContainerRefs.Equal(state.SniContainerRefs) {
-		var sniRefs []string
-		diags := plan.SniContainerRefs.ElementsAs(ctx, &sniRefs, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		editReq.SetSniContainerRefs(sniRefs)
-	}
-	if !plan.ConnectionLimit.Equal(state.ConnectionLimit) {
-		editReq.SetConnectionLimit(int32(plan.ConnectionLimit.ValueInt64()))
-	}
-	if !plan.TargetGroupId.Equal(state.TargetGroupId) {
-
-		if !plan.TargetGroupId.IsNull() && !plan.TargetGroupId.IsUnknown() && plan.TargetGroupId.ValueString() != "" {
-			editReq.SetTargetGroupId(plan.TargetGroupId.ValueString())
-		}
-	}
-	if !plan.TlsMinVersion.Equal(state.TlsMinVersion) {
-		tlsVersionEnum := loadbalancer.TLSVersion(plan.TlsMinVersion.ValueString())
-		editReq.SetTlsMinVersion(tlsVersionEnum)
-	}
-
-	if !plan.TimeoutClientData.Equal(state.TimeoutClientData) {
-
-		if !plan.TimeoutClientData.IsNull() && !plan.TimeoutClientData.IsUnknown() {
-			editReq.SetTimeoutClientData(int32(plan.TimeoutClientData.ValueInt64()))
-		}
-	} else {
-
-		currentValue := state.TimeoutClientData.ValueInt64()
-		if currentValue < 1000 {
-			editReq.SetTimeoutClientData(1000)
-		} else {
-			editReq.SetTimeoutClientData(int32(currentValue))
-		}
-	}
-
-	if !plan.InsertHeaders.Equal(state.InsertHeaders) {
-
-		sdkHeaders := &loadbalancer.InsertHeaderModel{}
-
-		if !plan.InsertHeaders.IsNull() && !plan.InsertHeaders.IsUnknown() {
-
-			attrs := plan.InsertHeaders.Attributes()
-			xForwardedFor := attrs["x_forwarded_for"].(types.String)
-			xForwardedProto := attrs["x_forwarded_proto"].(types.String)
-			xForwardedPort := attrs["x_forwarded_port"].(types.String)
-
-			if !xForwardedFor.IsNull() {
-				enumVal := loadbalancer.XForwardedFor(xForwardedFor.ValueString())
-				sdkHeaders.XForwardedFor = *loadbalancer.NewNullableXForwardedFor(&enumVal)
-			}
-			if !xForwardedProto.IsNull() {
-				enumVal := loadbalancer.XForwardedProto(xForwardedProto.ValueString())
-				sdkHeaders.XForwardedProto = *loadbalancer.NewNullableXForwardedProto(&enumVal)
-			}
-			if !xForwardedPort.IsNull() {
-				enumVal := loadbalancer.XForwardedPort(xForwardedPort.ValueString())
-				sdkHeaders.XForwardedPort = *loadbalancer.NewNullableXForwardedPort(&enumVal)
-			}
-		}
-
-		editReq.InsertHeaders = *loadbalancer.NewNullableInsertHeaderModel(sdkHeaders)
-	}
-
-	body := *loadbalancer.NewBodyUpdateListener(editReq)
-
-	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (interface{}, *http.Response, error) {
-			return r.kc.ApiClient.LoadBalancerListenerAPI.UpdateListener(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateListener(body).Execute()
-		},
-	)
-
-	if err != nil {
-		common.AddApiActionError(ctx, r, httpResp, "UpdateListener", err, &resp.Diagnostics)
-		return
-	}
-
-	result, ok := r.pollListenerUntilStatus(
-		ctx,
-		plan.Id.ValueString(),
-		[]string{ProvisioningStatusActive, ProvisioningStatusError},
-		&resp.Diagnostics,
-	)
+	ok := CheckLoadBalancerStatus(ctx, plan.LoadBalancerId.ValueString(), true, r, r.kc, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
+	result, ok := r.updateListenerAttributes(ctx, &plan, &state, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+
 		return
 	}
 
-	state.DefaultTlsContainerRef = plan.DefaultTlsContainerRef
-	state.SniContainerRefs = plan.SniContainerRefs
-	state.TlsMinVersion = plan.TlsMinVersion
-
-	ok = mapLoadBalancerListenerBaseModel(ctx, &state.loadBalancerListenerBaseModel, result, &resp.Diagnostics)
+	ok = mapLoadBalancerListenerBaseModel(ctx, &plan.loadBalancerListenerBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	if !plan.TargetGroupId.IsNull() && !plan.TargetGroupId.IsUnknown() {
-		state.TargetGroupId = plan.TargetGroupId
-	} else {
-
-		state.TargetGroupId = utils.ConvertNullableString(result.DefaultTargetGroupId)
-	}
-
-	state.Timeouts = plan.Timeouts
-	diags = resp.State.Set(ctx, &state)
+	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -371,6 +262,11 @@ func (r *loadBalancerListenerResource) Delete(ctx context.Context, req resource.
 	mutex := common.LockForID(state.LoadBalancerId.ValueString())
 	mutex.Lock()
 	defer mutex.Unlock()
+
+	ok := CheckLoadBalancerStatus(ctx, state.LoadBalancerId.ValueString(), true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
@@ -406,13 +302,16 @@ func (r *loadBalancerListenerResource) pollListenerUntilStatus(
 		ctx,
 		r,
 		5*time.Second,
+		"listener",
+		listenerId,
 		targetStatuses,
 		resp,
 		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelListenerModel, *http.Response, error) {
-			respModel, httpResp, err := r.kc.ApiClient.LoadBalancerListenerAPI.
-				GetListener(ctx, listenerId).
-				XAuthToken(r.kc.XAuthToken).
-				Execute()
+			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
+				func() (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelResponseListenerModel, *http.Response, error) {
+					return r.kc.ApiClient.LoadBalancerListenerAPI.GetListener(ctx, listenerId).XAuthToken(r.kc.XAuthToken).Execute()
+				},
+			)
 			if err != nil {
 				return nil, httpResp, err
 			}
@@ -424,89 +323,118 @@ func (r *loadBalancerListenerResource) pollListenerUntilStatus(
 	)
 }
 
-func (r *loadBalancerListenerResource) updateListenerFields(
+func (r *loadBalancerListenerResource) updateListenerAttributes(
 	ctx context.Context,
-	listenerId string,
-	plan *loadBalancerListenerResourceModel,
-	resp *resource.CreateResponse,
+	plan, state *loadBalancerListenerResourceModel,
+	diag *diag.Diagnostics,
 ) (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelListenerModel, bool) {
-
 	needsUpdate := false
 	editReq := loadbalancer.EditListener{}
 
-	if !plan.TimeoutClientData.IsNull() && !plan.TimeoutClientData.IsUnknown() {
-		editReq.SetTimeoutClientData(int32(plan.TimeoutClientData.ValueInt64()))
+	if state != nil && !plan.DefaultTlsContainerRef.Equal(state.DefaultTlsContainerRef) {
+		if !plan.DefaultTlsContainerRef.IsNull() {
+			editReq.SetDefaultTlsContainerRef(plan.DefaultTlsContainerRef.ValueString())
+		}
 		needsUpdate = true
 	}
 
-	if !plan.ConnectionLimit.IsNull() && !plan.ConnectionLimit.IsUnknown() {
-		editReq.SetConnectionLimit(int32(plan.ConnectionLimit.ValueInt64()))
+	if state == nil || !plan.SniContainerRefs.Equal(state.SniContainerRefs) {
+		if !plan.SniContainerRefs.IsNull() {
+			var sniRefs []string
+			diags := plan.SniContainerRefs.ElementsAs(ctx, &sniRefs, false)
+			diag.Append(diags...)
+			if diag.HasError() {
+				return nil, false
+			}
+			editReq.SetSniContainerRefs(sniRefs)
+			needsUpdate = true
+		}
+	}
+
+	if state == nil || !plan.ConnectionLimit.Equal(state.ConnectionLimit) {
+		if !plan.ConnectionLimit.IsNull() && !plan.ConnectionLimit.IsUnknown() {
+			editReq.SetConnectionLimit(plan.ConnectionLimit.ValueInt32())
+			needsUpdate = true
+		}
+	}
+
+	if state != nil && !plan.TargetGroupId.Equal(state.TargetGroupId) && !plan.TargetGroupId.Equal(state.DefaultTargetGroupId) {
+		if !plan.TargetGroupId.IsNull() {
+			editReq.SetTargetGroupId(plan.TargetGroupId.ValueString())
+		} else {
+			editReq.SetTargetGroupIdNil()
+		}
 		needsUpdate = true
 	}
 
-	if !plan.InsertHeaders.IsNull() && !plan.InsertHeaders.IsUnknown() {
+	if state != nil && !plan.TlsMinVersion.Equal(state.TlsMinVersion) {
+		tlsVersionEnum := loadbalancer.TLSVersion(plan.TlsMinVersion.ValueString())
+		editReq.SetTlsMinVersion(tlsVersionEnum)
+		needsUpdate = true
+	}
 
+	if state == nil || !plan.TimeoutClientData.Equal(state.TimeoutClientData) {
+		if !plan.TimeoutClientData.IsNull() && !plan.TimeoutClientData.IsUnknown() {
+			editReq.SetTimeoutClientData(plan.TimeoutClientData.ValueInt32())
+			needsUpdate = true
+		}
+	}
+
+	if state == nil || !plan.InsertHeaders.Equal(state.InsertHeaders) {
 		sdkHeaders := &loadbalancer.InsertHeaderModel{}
-		attrs := plan.InsertHeaders.Attributes()
-		xForwardedFor := attrs["x_forwarded_for"].(types.String)
-		xForwardedProto := attrs["x_forwarded_proto"].(types.String)
-		xForwardedPort := attrs["x_forwarded_port"].(types.String)
 
-		if !xForwardedFor.IsNull() {
-			enumVal := loadbalancer.XForwardedFor(xForwardedFor.ValueString())
-			sdkHeaders.XForwardedFor = *loadbalancer.NewNullableXForwardedFor(&enumVal)
-		}
-		if !xForwardedProto.IsNull() {
-			enumVal := loadbalancer.XForwardedProto(xForwardedProto.ValueString())
-			sdkHeaders.XForwardedProto = *loadbalancer.NewNullableXForwardedProto(&enumVal)
-		}
-		if !xForwardedPort.IsNull() {
-			enumVal := loadbalancer.XForwardedPort(xForwardedPort.ValueString())
-			sdkHeaders.XForwardedPort = *loadbalancer.NewNullableXForwardedPort(&enumVal)
-		}
+		if !plan.InsertHeaders.IsNull() && !plan.InsertHeaders.IsUnknown() {
+			attrs := plan.InsertHeaders.Attributes()
+			xForwardedFor := attrs["x_forwarded_for"].(types.String)
+			xForwardedProto := attrs["x_forwarded_proto"].(types.String)
+			xForwardedPort := attrs["x_forwarded_port"].(types.String)
 
-		editReq.InsertHeaders = *loadbalancer.NewNullableInsertHeaderModel(sdkHeaders)
-		needsUpdate = true
+			if !xForwardedFor.IsNull() && !xForwardedFor.IsUnknown() {
+				enumVal := loadbalancer.XForwardedFor(xForwardedFor.ValueString())
+				sdkHeaders.XForwardedFor = *loadbalancer.NewNullableXForwardedFor(&enumVal)
+			}
+			if !xForwardedProto.IsNull() && !xForwardedProto.IsUnknown() {
+				enumVal := loadbalancer.XForwardedProto(xForwardedProto.ValueString())
+				sdkHeaders.XForwardedProto = *loadbalancer.NewNullableXForwardedProto(&enumVal)
+			}
+			if !xForwardedPort.IsNull() && !xForwardedPort.IsUnknown() {
+				enumVal := loadbalancer.XForwardedPort(xForwardedPort.ValueString())
+				sdkHeaders.XForwardedPort = *loadbalancer.NewNullableXForwardedPort(&enumVal)
+			}
+			editReq.InsertHeaders = *loadbalancer.NewNullableInsertHeaderModel(sdkHeaders)
+			needsUpdate = true
+		}
 	}
 
-	if !plan.SniContainerRefs.IsNull() && !plan.SniContainerRefs.IsUnknown() {
-		var sniRefs []string
-		diags := plan.SniContainerRefs.ElementsAs(ctx, &sniRefs, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return nil, false
-		}
-		editReq.SetSniContainerRefs(sniRefs)
-		needsUpdate = true
-	}
+	if needsUpdate {
+		body := *loadbalancer.NewBodyUpdateListener(editReq)
 
-	if !needsUpdate {
-
-		respModel, _, err := r.kc.ApiClient.LoadBalancerListenerAPI.GetListener(ctx, listenerId).
-			XAuthToken(r.kc.XAuthToken).Execute()
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
+			func() (interface{}, *http.Response, error) {
+				return r.kc.ApiClient.LoadBalancerListenerAPI.UpdateListener(ctx, plan.Id.ValueString()).
+					XAuthToken(r.kc.XAuthToken).BodyUpdateListener(body).Execute()
+			},
+		)
 		if err != nil {
-			resp.Diagnostics.AddError("GetListener", fmt.Sprintf("Failed to get listener: %v", err))
+			common.AddApiActionError(ctx, r, httpResp, "UpdateListener", err, diag)
 			return nil, false
 		}
-		return &respModel.Listener, true
+
+		time.Sleep(5 * time.Second)
 	}
 
-	body := *loadbalancer.NewBodyUpdateListener(editReq)
-
-	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (interface{}, *http.Response, error) {
-			return r.kc.ApiClient.LoadBalancerListenerAPI.UpdateListener(ctx, listenerId).XAuthToken(r.kc.XAuthToken).BodyUpdateListener(body).Execute()
-		},
+	result, ok := r.pollListenerUntilStatus(
+		ctx,
+		plan.Id.ValueString(),
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
+		diag,
 	)
-
-	if err != nil {
-		common.AddApiActionError(ctx, r, httpResp, "UpdateListener", err, &resp.Diagnostics)
+	if !ok || diag.HasError() {
 		return nil, false
 	}
 
-	result, ok := r.pollListenerUntilStatus(ctx, listenerId,
-		[]string{ProvisioningStatusActive, ProvisioningStatusError}, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, diag)
+	if diag.HasError() {
 		return nil, false
 	}
 
@@ -515,4 +443,37 @@ func (r *loadBalancerListenerResource) updateListenerFields(
 
 func (r *loadBalancerListenerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+func (r *loadBalancerListenerResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config loadBalancerListenerResourceModel
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if config.Protocol.IsUnknown() {
+		return
+	}
+
+	if config.Protocol.ValueString() == string(loadbalancer.PROTOCOL_TERMINATED_HTTPS) {
+		if config.DefaultTlsContainerRef.IsNull() || config.TlsMinVersion.IsNull() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				"tls_min_version and default_tls_container_ref must be provided for TERMINATED_HTTPS protocol.")
+		}
+	} else {
+		if !config.DefaultTlsContainerRef.IsNull() || !config.TlsMinVersion.IsNull() || !config.SniContainerRefs.IsNull() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				"tls_min_version and default_tls_container_ref and sni_container_refs must only be specified when using the TERMINATED_HTTPS protocol.")
+		}
+	}
+
+	if config.Protocol.ValueString() != string(loadbalancer.PROTOCOL_HTTP) &&
+		config.Protocol.ValueString() != string(loadbalancer.PROTOCOL_TERMINATED_HTTPS) {
+		if !config.InsertHeaders.IsNull() && !config.InsertHeaders.IsUnknown() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				"insert_headers can only be specified when using the HTTP or TERMINATED_HTTPS protocol.")
+		}
+	}
 }

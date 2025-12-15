@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -41,7 +40,6 @@ func (r *vpcResource) Metadata(_ context.Context, req resource.MetadataRequest, 
 
 func (r *vpcResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("Vpc"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			vpcResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -106,6 +104,8 @@ func (r *vpcResource) Create(ctx context.Context, req resource.CreateRequest, re
 		ctx,
 		r,
 		10*time.Second,
+		"vpc",
+		plan.Id.ValueString(),
 		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError},
 		&resp.Diagnostics,
 		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetVpcModelVpcModel, *http.Response, error) {
@@ -330,7 +330,7 @@ func (r *vpcResource) ValidateConfig(ctx context.Context, req resource.ValidateC
 	}
 
 	r.validateAvailabilityZoneConfig(ctx, config, resp)
-	r.validateSubnetCidrBlockConfig(ctx, config, resp)
+	r.validateSubnetCidrBlockConfig(ctx, config, &resp.Diagnostics)
 }
 
 func (r *vpcResource) validateAvailabilityZoneConfig(ctx context.Context, config vpcResourceModel, resp *resource.ValidateConfigResponse) {
@@ -350,15 +350,18 @@ func (r *vpcResource) validateAvailabilityZoneConfig(ctx context.Context, config
 	}
 }
 
-func (r *vpcResource) validateSubnetCidrBlockConfig(ctx context.Context, config vpcResourceModel, resp *resource.ValidateConfigResponse) {
+func (r *vpcResource) validateSubnetCidrBlockConfig(ctx context.Context, config vpcResourceModel, respDiags *diag.Diagnostics) {
 	if !config.Subnet.IsNull() {
 		var subnetModel vpcSubnetModel
 		diags := config.Subnet.As(ctx, &subnetModel, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
+		respDiags.Append(diags...)
+		if respDiags.HasError() {
 			return
 		}
-		common.SubnetValidator(subnetModel.CidrBlock.ValueString(), config.CidrBlock.ValueString(), &resp.Diagnostics)
+
+		if !config.CidrBlock.IsUnknown() && !subnetModel.CidrBlock.IsUnknown() {
+			common.CidrContainValidator(subnetModel.CidrBlock.ValueString(), config.CidrBlock.ValueString(), "subnet", "vpc", respDiags)
+		}
 	}
 }
 
@@ -401,7 +404,9 @@ func checkVpcStatus(
 		ctx,
 		r,
 		interval,
-		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError},
+		"vpc",
+		vpcId,
+		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError, common.VpcProvisioningStatusDeleting},
 		respDiags,
 		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetVpcModelVpcModel, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, kc, respDiags,
@@ -428,9 +433,9 @@ func checkVpcStatus(
 		return false
 	}
 	status := *result.ProvisioningStatus.Get()
-	if status == common.VpcProvisioningStatusError {
+	if status != common.VpcProvisioningStatusActive {
 		common.AddGeneralError(ctx, r, respDiags,
-			fmt.Sprintf("VPC status is '%v'.", common.VpcProvisioningStatusActive),
+			fmt.Sprintf("VPC status is '%v'.", status),
 		)
 	}
 	if respDiags.HasError() {

@@ -15,13 +15,12 @@ type loadBalancerL7PolicyBaseModel struct {
 	Id                    types.String `tfsdk:"id"`
 	Name                  types.String `tfsdk:"name"`
 	Description           types.String `tfsdk:"description"`
-	ListenerId            types.String `tfsdk:"listener_id"`
 	Action                types.String `tfsdk:"action"`
-	Position              types.Int64  `tfsdk:"position"`
+	Position              types.Int32  `tfsdk:"position"`
 	RedirectTargetGroupId types.String `tfsdk:"redirect_target_group_id"`
 	RedirectUrl           types.String `tfsdk:"redirect_url"`
 	RedirectPrefix        types.String `tfsdk:"redirect_prefix"`
-	RedirectHttpCode      types.Int64  `tfsdk:"redirect_http_code"`
+	RedirectHttpCode      types.Int32  `tfsdk:"redirect_http_code"`
 	ProvisioningStatus    types.String `tfsdk:"provisioning_status"`
 	OperatingStatus       types.String `tfsdk:"operating_status"`
 	ProjectId             types.String `tfsdk:"project_id"`
@@ -30,7 +29,8 @@ type loadBalancerL7PolicyBaseModel struct {
 
 type loadBalancerL7PolicyResourceModel struct {
 	loadBalancerL7PolicyBaseModel
-	Timeouts resourceTimeouts.Value `tfsdk:"timeouts"`
+	ListenerId types.String           `tfsdk:"listener_id"`
+	Timeouts   resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
 type loadBalancerL7PolicyDataSourceModel struct {
@@ -51,11 +51,11 @@ type loadBalancerListenerL7PolicyModel struct {
 	Name                  types.String `tfsdk:"name"`
 	Description           types.String `tfsdk:"description"`
 	Action                types.String `tfsdk:"action"`
-	Position              types.Int64  `tfsdk:"position"`
+	Position              types.Int32  `tfsdk:"position"`
 	RedirectTargetGroupId types.String `tfsdk:"redirect_target_group_id"`
 	RedirectUrl           types.String `tfsdk:"redirect_url"`
 	RedirectPrefix        types.String `tfsdk:"redirect_prefix"`
-	RedirectHttpCode      types.Int64  `tfsdk:"redirect_http_code"`
+	RedirectHttpCode      types.Int32  `tfsdk:"redirect_http_code"`
 	ProvisioningStatus    types.String `tfsdk:"provisioning_status"`
 	OperatingStatus       types.String `tfsdk:"operating_status"`
 	ProjectId             types.String `tfsdk:"project_id"`
@@ -70,10 +70,10 @@ var loadBalancerListenerL7PolicyAttrType = map[string]attr.Type{
 	"operating_status":         types.StringType,
 	"project_id":               types.StringType,
 	"action":                   types.StringType,
-	"position":                 types.Int64Type,
+	"position":                 types.Int32Type,
 	"rules":                    types.ListType{ElemType: types.ObjectType{AttrTypes: loadBalancerListenerL7PolicyRuleAttrType}},
 	"redirect_target_group_id": types.StringType,
 	"redirect_url":             types.StringType,
 	"redirect_prefix":          types.StringType,
-	"redirect_http_code":       types.Int64Type,
+	"redirect_http_code":       types.Int32Type,
 }

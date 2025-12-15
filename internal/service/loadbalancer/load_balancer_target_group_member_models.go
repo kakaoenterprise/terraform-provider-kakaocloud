@@ -28,10 +28,10 @@ type loadBalancerTargetGroupMemberBaseModel struct {
 	Id                 types.String `tfsdk:"id"`
 	Name               types.String `tfsdk:"name"`
 	Address            types.String `tfsdk:"address"`
-	ProtocolPort       types.Int64  `tfsdk:"protocol_port"`
+	ProtocolPort       types.Int32  `tfsdk:"protocol_port"`
 	SubnetId           types.String `tfsdk:"subnet_id"`
-	Weight             types.Int64  `tfsdk:"weight"`
-	MonitorPort        types.Int64  `tfsdk:"monitor_port"`
+	Weight             types.Int32  `tfsdk:"weight"`
+	MonitorPort        types.Int32  `tfsdk:"monitor_port"`
 	OperatingStatus    types.String `tfsdk:"operating_status"`
 	ProvisioningStatus types.String `tfsdk:"provisioning_status"`
 	IsBackup           types.Bool   `tfsdk:"is_backup"`
@@ -54,14 +54,10 @@ type loadBalancerTargetGroupMemberResourceModel struct {
 }
 
 type loadBalancerTargetGroupMemberListDataSourceModel struct {
-	TargetGroupId types.String                                   `tfsdk:"target_group_id"`
-	Filter        []common.FilterModel                           `tfsdk:"filter"`
-	Members       []loadBalancerTargetGroupMemberListMemberModel `tfsdk:"members"`
-	Timeouts      datasourceTimeouts.Value                       `tfsdk:"timeouts"`
-}
-
-type loadBalancerTargetGroupMemberListMemberModel struct {
-	loadBalancerTargetGroupMemberBaseModel
+	TargetGroupId types.String                             `tfsdk:"target_group_id"`
+	Filter        []common.FilterModel                     `tfsdk:"filter"`
+	Members       []loadBalancerTargetGroupMemberBaseModel `tfsdk:"members"`
+	Timeouts      datasourceTimeouts.Value                 `tfsdk:"timeouts"`
 }
 
 var loadBalancerTargetGroupMemberSubnetAttrType = map[string]attr.Type{
@@ -75,27 +71,4 @@ var loadBalancerTargetGroupMemberSubnetAttrType = map[string]attr.Type{
 var loadBalancerTargetGroupMemberSecurityGroupAttrType = map[string]attr.Type{
 	"id":   types.StringType,
 	"name": types.StringType,
-}
-
-var loadBalancerTargetGroupMemberAttrType = map[string]attr.Type{
-	"id":                   types.StringType,
-	"target_group_id":      types.StringType,
-	"name":                 types.StringType,
-	"address":              types.StringType,
-	"protocol_port":        types.Int64Type,
-	"subnet_id":            types.StringType,
-	"weight":               types.Int64Type,
-	"monitor_port":         types.Int64Type,
-	"operating_status":     types.StringType,
-	"provisioning_status":  types.StringType,
-	"is_backup":            types.BoolType,
-	"project_id":           types.StringType,
-	"created_at":           types.StringType,
-	"updated_at":           types.StringType,
-	"network_interface_id": types.StringType,
-	"instance_id":          types.StringType,
-	"instance_name":        types.StringType,
-	"vpc_id":               types.StringType,
-	"subnet":               types.ObjectType{AttrTypes: loadBalancerTargetGroupMemberSubnetAttrType},
-	"security_groups":      types.ListType{ElemType: types.ObjectType{AttrTypes: loadBalancerTargetGroupMemberSecurityGroupAttrType}},
 }

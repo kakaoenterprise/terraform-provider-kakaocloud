@@ -9,11 +9,11 @@ const (
 	DefaultReadTimeout    = 30 * time.Minute
 	DefaultUpdateTimeout  = 30 * time.Minute
 	DefaultDeleteTimeout  = 30 * time.Minute
-	DefaultPollingTimeout = 10 * time.Second
+	DefaultPollingTimeout = 1 * time.Minute
 
-	LongCreateTimeout = 600 * time.Minute
-	LongUpdateTimeout = 300 * time.Minute
-	LongDeleteTimeout = 300 * time.Minute
+	LongCreateTimeout = 24 * time.Hour
+	LongUpdateTimeout = 10 * time.Hour
+	LongDeleteTimeout = 10 * time.Hour
 )
 
 const (
@@ -57,19 +57,54 @@ const (
 	VolumeStatusInUse        = "in_use"
 	VolumeStatusError        = "error"
 	VolumeStatusErrorRestore = "error_restoring"
+	VolumeStatusReserved     = "reserved"
+	VolumeStatusDeleting     = "deleting"
 )
 
 const (
 	VolumeSnapshotStatusAvailable = "available"
 	VolumeSnapshotStatusError     = "error"
+	VolumeSnapshotStatusDeleting  = "deleting"
 )
 
 const (
-	VpcProvisioningStatusActive = "ACTIVE"
-	VpcProvisioningStatusError  = "ERROR"
+	VpcProvisioningStatusActive   = "ACTIVE"
+	VpcProvisioningStatusError    = "ERROR"
+	VpcProvisioningStatusDeleting = "PENDING_DELETE"
 )
 
 const (
 	NetworkInterfaceStatusAvailable = "available"
 	NetworkInterfaceStatusInUse     = "in_use"
+)
+
+const (
+	PublicIpAvailable = "available"
+	PublicIpInUse     = "in_use"
+	PublicIpAttaching = "attaching"
+)
+
+const (
+	SecurityGroupAvailable = "ACTIVE"
+	SecurityGroupCreating  = "CREATING"
+	SecurityGroupDeleting  = "DELETING"
+	SecurityGroupError     = "ERROR"
+)
+
+const (
+	ImageStatusActive = "active"
+)
+
+const (
+	LoadBalancerProvisioningStatusActive   = "ACTIVE"
+	LoadBalancerProvisioningStatusError    = "ERROR"
+	LoadBalancerProvisioningStatusDeleted  = "DELETED"
+	LoadBalancerProvisioningStatusDeleting = "PENDING_DELETE"
+)
+
+const (
+	ClusterStatusProvisioned  = "Provisioned"
+	ClusterStatusProvisioning = "Provisioning"
+	ClusterStatusFailed       = "Failed"
+	ClusterStatusDeleting     = "Deleting"
 )

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -68,7 +67,6 @@ func (r *clusterNodeResource) Metadata(ctx context.Context, req resource.Metadat
 
 func (r *clusterNodeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("KubernetesEngineClusterNode"),
 		Attributes: MergeResourceSchemaAttributes(
 			nodeResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -135,6 +133,8 @@ func (r *clusterNodeResource) Create(ctx context.Context, req resource.CreateReq
 			ctx,
 			r,
 			2*time.Second,
+			"cluster",
+			cluster,
 			[]string{"done"},
 			&resp.Diagnostics,
 			func(ctx context.Context) (pollResult, *http.Response, error) {
@@ -203,7 +203,13 @@ func (r *clusterNodeResource) Create(ctx context.Context, req resource.CreateReq
 		}
 
 		_, ok := common.PollUntilResult(
-			ctx, r, 2*time.Second, []string{"done"}, &resp.Diagnostics,
+			ctx,
+			r,
+			2*time.Second,
+			"cluster",
+			cluster,
+			[]string{"done"},
+			&resp.Diagnostics,
 			func(ctx context.Context) (bool, *http.Response, error) {
 				modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 					func() (*kubernetesengine.GetK8sClusterNodesResponseModel, *http.Response, error) {

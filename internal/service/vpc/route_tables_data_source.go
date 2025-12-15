@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -36,7 +35,6 @@ func (d *routeTablesDataSource) Metadata(_ context.Context, req datasource.Metad
 
 func (d *routeTablesDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("RouteTables"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -57,8 +55,7 @@ func (d *routeTablesDataSource) Schema(ctx context.Context, _ datasource.SchemaR
 					Attributes: MergeDataSourceSchemaAttributes(
 						map[string]schema.Attribute{
 							"id": schema.StringAttribute{
-								Computed:    true,
-								Description: "Route Table ID",
+								Computed: true,
 							},
 						},
 						routeTableDataSourceSchemaAttributes,
@@ -179,7 +176,7 @@ func (d *routeTablesDataSource) Read(ctx context.Context, req datasource.ReadReq
 	err = copier.Copy(&routeTableResult, &routeTableResp.VpcRouteTables)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
-			fmt.Sprintf("routeTableResult transform fail: %v", err))
+			fmt.Sprintf("Failed to convert routeTableResult: %v", err))
 		return
 	}
 

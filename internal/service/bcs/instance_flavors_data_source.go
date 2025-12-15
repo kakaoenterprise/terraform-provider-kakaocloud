@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -37,7 +36,6 @@ func (d *instanceFlavorsDataSource) Metadata(_ context.Context, req datasource.M
 
 func (d *instanceFlavorsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("InstanceFlavors"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -58,8 +56,7 @@ func (d *instanceFlavorsDataSource) Schema(ctx context.Context, _ datasource.Sch
 					Attributes: MergeDataSourceSchemaAttributes(
 						map[string]schema.Attribute{
 							"id": schema.StringAttribute{
-								Computed:    true,
-								Description: "Flavor ID",
+								Computed: true,
 							},
 						},
 						instanceFlavorDataSourceSchemaAttributes,
@@ -180,7 +177,8 @@ func (d *instanceFlavorsDataSource) Read(ctx context.Context, req datasource.Rea
 	var instanceFlavorResult []bcs.BcsInstanceV1ApiGetInstanceTypeModelFlavorModel
 	err = copier.Copy(&instanceFlavorResult, &flavorResp.Flavors)
 	if err != nil {
-		resp.Diagnostics.AddError("List 변환 실패", fmt.Sprintf("instanceFlavorResult 변환 실패: %v", err))
+		common.AddGeneralError(ctx, d, &resp.Diagnostics,
+			fmt.Sprintf("Failed to convert instanceFlavorResult: %v", err))
 		return
 	}
 

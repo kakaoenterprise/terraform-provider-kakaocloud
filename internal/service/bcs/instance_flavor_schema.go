@@ -3,122 +3,91 @@
 package bcs
 
 import (
-	"terraform-provider-kakaocloud/internal/docs"
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func getInstanceFlavorSchema() map[string]schema.Attribute {
-	desc := docs.Bcs("bcs_instance__v1__api__get_instance_type__model__FlavorModel")
-	descList := docs.Bcs("bcs_instance__v1__api__list_instances__model__InstanceFlavorModel")
-
 	return map[string]schema.Attribute{
 		"name": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"vcpus": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("vcpus"),
+			Computed: true,
 		},
 		"description": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"is_burstable": schema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_burstable"),
+			Computed: true,
 		},
 		"architecture": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("architecture"),
+			Computed: true,
 		},
 		"manufacturer": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("manufacturer"),
+			Computed: true,
 		},
 		"group": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("group"),
+			Computed: true,
 		},
 		"instance_type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_type"),
+			Computed: true,
 		},
 		"processor": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("processor"),
+			Computed: true,
 		},
 		"memory_mb": schema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("memory_mb"),
+			Computed: true,
 		},
 		"created_at": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"availability_zone": schema.ListAttribute{
 			Computed:    true,
 			ElementType: types.StringType,
-			Description: desc.String("availability_zone"),
 		},
 		"available": schema.MapAttribute{
 			ElementType: types.Int32Type,
 			Computed:    true,
-			Description: desc.String("available"),
 		},
 		"instance_family": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_family"),
+			Computed: true,
 		},
 		"instance_size": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_size"),
+			Computed: true,
 		},
 		"disk_type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("disk_type"),
+			Computed: true,
 		},
 		"root_gb": schema.Int32Attribute{
-			Computed:    true,
-			Description: descList.String("root_gb"),
+			Computed: true,
 		},
 		"os_distro": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_distro"),
+			Computed: true,
 		},
 		"hw_count": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("hw_count"),
+			Computed: true,
 		},
 		"hw_type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("hw_type"),
+			Computed: true,
 		},
 		"hw_name": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("hw_name"),
+			Computed: true,
 		},
 		"maximum_network_interfaces": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("maximum_network_interfaces"),
+			Computed: true,
 		},
 		"is_hyper_threading_disabled": schema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_hyper_threading_disabled"),
+			Computed: true,
 		},
 		"is_hyper_threading_supported": schema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_hyper_threading_supported"),
+			Computed: true,
 		},
 		"is_hyper_threading_disable_supported": schema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_hyper_threading_disable_supported"),
+			Computed: true,
 		},
 	}
 }

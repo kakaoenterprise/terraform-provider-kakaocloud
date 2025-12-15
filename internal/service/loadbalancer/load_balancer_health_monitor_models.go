@@ -16,10 +16,10 @@ type loadBalancerHealthMonitorBaseModel struct {
 	Id                 types.String `tfsdk:"id"`
 	Name               types.String `tfsdk:"name"`
 	Type               types.String `tfsdk:"type"`
-	Delay              types.Int64  `tfsdk:"delay"`
-	Timeout            types.Int64  `tfsdk:"timeout"`
-	MaxRetries         types.Int64  `tfsdk:"max_retries"`
-	MaxRetriesDown     types.Int64  `tfsdk:"max_retries_down"`
+	Delay              types.Int32  `tfsdk:"delay"`
+	Timeout            types.Int32  `tfsdk:"timeout"`
+	MaxRetries         types.Int32  `tfsdk:"max_retries"`
+	MaxRetriesDown     types.Int32  `tfsdk:"max_retries_down"`
 	HttpMethod         types.String `tfsdk:"http_method"`
 	HttpVersion        types.String `tfsdk:"http_version"`
 	UrlPath            types.String `tfsdk:"url_path"`

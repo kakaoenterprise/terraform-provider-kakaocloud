@@ -3,62 +3,46 @@
 package loadbalancer
 
 import (
-	"terraform-provider-kakaocloud/internal/docs"
-
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 )
 
 func getLoadBalancerSecretContentTypeSchema() map[string]dschema.Attribute {
-	desc := docs.Loadbalancer("ContentType")
-
 	return map[string]dschema.Attribute{
 		"default": dschema.StringAttribute{
-			Description: desc.String("default"),
-			Computed:    true,
+			Computed: true,
 		},
 	}
 }
 
 func getLoadBalancerSecretBaseSchema() map[string]dschema.Attribute {
-	desc := docs.Loadbalancer("bns_load_balancer__v1__api__list_tls_certificates__model__SecretModel")
-
 	return map[string]dschema.Attribute{
 		"created_at": dschema.StringAttribute{
-			Description: desc.String("created_at"),
-			Computed:    true,
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Description: desc.String("updated_at"),
-			Computed:    true,
+			Computed: true,
 		},
 		"status": dschema.StringAttribute{
-			Description: desc.String("status"),
-			Computed:    true,
+			Computed: true,
 		},
 		"name": dschema.StringAttribute{
-			Description: desc.String("name"),
-			Computed:    true,
+			Computed: true,
 		},
 		"secret_type": dschema.StringAttribute{
-			Description: desc.String("secret_type"),
-			Computed:    true,
+			Computed: true,
 		},
 		"expiration": dschema.StringAttribute{
-			Description: desc.String("expiration"),
-			Computed:    true,
+			Computed: true,
 		},
 		"creator_id": dschema.StringAttribute{
-			Description: desc.String("creator_id"),
-			Computed:    true,
+			Computed: true,
 		},
 		"content_types": dschema.SingleNestedAttribute{
-			Description: desc.String("content_types"),
-			Computed:    true,
-			Attributes:  getLoadBalancerSecretContentTypeSchema(),
+			Computed:   true,
+			Attributes: getLoadBalancerSecretContentTypeSchema(),
 		},
 		"secret_ref": dschema.StringAttribute{
-			Description: desc.String("secret_ref"),
-			Computed:    true,
+			Computed: true,
 		},
 	}
 }

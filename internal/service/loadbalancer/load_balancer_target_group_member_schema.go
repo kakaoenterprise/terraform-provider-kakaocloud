@@ -5,13 +5,12 @@ package loadbalancer
 import (
 	"regexp"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -23,139 +22,110 @@ var (
 		regexp.MustCompile(`^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$`),
 		"must be a valid IPv4 address",
 	)
-	weightValidator = int64validator.Between(0, 256)
+	weightValidator = int32validator.Between(0, 256)
 )
 
 func getBaseMemberAttributes() map[string]rschema.Attribute {
-	desc := docs.Loadbalancer("bns_load_balancer__v1__api__add_target__model__TargetGroupMemberModel")
-	listDesc := docs.Loadbalancer("bns_load_balancer__v1__api__list_targets_in_target_group__model__TargetGroupMemberModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("name"),
-			Validators:  common.NameValidator(255),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.NameValidator(255),
 		},
 		"address": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("address"),
-			Validators:  []validator.String{ipv4Validator},
+			Required:   true,
+			Validators: []validator.String{ipv4Validator},
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
-		"protocol_port": rschema.Int64Attribute{
-			Required:    true,
-			Description: desc.String("protocol_port"),
-			Validators:  common.PortValidator(),
-			PlanModifiers: []planmodifier.Int64{
-				int64planmodifier.RequiresReplace(),
+		"protocol_port": rschema.Int32Attribute{
+			Required:   true,
+			Validators: common.PortValidator(),
+			PlanModifiers: []planmodifier.Int32{
+				int32planmodifier.RequiresReplace(),
 			},
 		},
 		"subnet_id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("subnet_id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
-		"weight": rschema.Int64Attribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("weight"),
-			Validators:  []validator.Int64{weightValidator},
+		"weight": rschema.Int32Attribute{
+			Optional:   true,
+			Computed:   true,
+			Validators: []validator.Int32{weightValidator},
 		},
-		"monitor_port": rschema.Int64Attribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("monitor_port"),
-			Validators:  common.PortValidator(),
+		"monitor_port": rschema.Int32Attribute{
+			Optional:   true,
+			Computed:   true,
+			Validators: common.PortValidator(),
 		},
 		"operating_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("operating_status"),
+			Computed: true,
 		},
 		"provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"is_backup": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_backup"),
+			Computed: true,
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"network_interface_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: listDesc.String("network_interface_id"),
+			Computed: true,
 		},
 		"instance_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: listDesc.String("instance_id"),
+			Computed: true,
 		},
 		"instance_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: listDesc.String("instance_name"),
+			Computed: true,
 		},
 		"vpc_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: listDesc.String("vpc_id"),
+			Computed: true,
 		},
 		"subnet": rschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: listDesc.String("subnet"),
+			Computed: true,
 			Attributes: map[string]rschema.Attribute{
 				"id": rschema.StringAttribute{
-					Computed:    true,
-					Description: docs.Loadbalancer("HealthCheckSubnetModel").String("id"),
+					Computed: true,
 				},
 				"name": rschema.StringAttribute{
-					Computed:    true,
-					Description: docs.Loadbalancer("HealthCheckSubnetModel").String("name"),
+					Computed: true,
 				},
 				"cidr_block": rschema.StringAttribute{
-					Computed:    true,
-					Description: docs.Loadbalancer("HealthCheckSubnetModel").String("cidr_block"),
+					Computed: true,
 				},
 				"availability_zone": rschema.StringAttribute{
-					Computed:    true,
-					Description: docs.Loadbalancer("HealthCheckSubnetModel").String("availability_zone"),
+					Computed: true,
 				},
 				"health_check_ips": rschema.ListAttribute{
 					Computed:    true,
-					Description: docs.Loadbalancer("HealthCheckSubnetModel").String("health_check_ips"),
 					ElementType: types.StringType,
 				},
 			},
 		},
 		"security_groups": rschema.ListNestedAttribute{
-			Computed:    true,
-			Description: listDesc.String("security_groups"),
+			Computed: true,
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: map[string]rschema.Attribute{
 					"id": rschema.StringAttribute{
-						Computed:    true,
-						Description: docs.Loadbalancer("SecurityGroupModel").String("id"),
+						Computed: true,
 					},
 					"name": rschema.StringAttribute{
-						Computed:    true,
-						Description: docs.Loadbalancer("SecurityGroupModel").String("name"),
+						Computed: true,
 					},
 				},
 			},
@@ -165,14 +135,12 @@ func getBaseMemberAttributes() map[string]rschema.Attribute {
 
 func getLoadBalancerTargetGroupMemberResourceSchema() map[string]rschema.Attribute {
 	baseAttrs := getBaseMemberAttributes()
-	desc := docs.Loadbalancer("bns_load_balancer__v1__api__list_targets_in_target_group__model__TargetGroupMemberModel")
 
 	return map[string]rschema.Attribute{
 		"id": baseAttrs["id"],
 		"target_group_id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("target_group_id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
@@ -199,122 +167,93 @@ func getLoadBalancerTargetGroupMemberResourceSchema() map[string]rschema.Attribu
 }
 
 func getLoadBalancerTargetGroupMemberDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Loadbalancer("bns_load_balancer__v1__api__list_targets_in_target_group__model__TargetGroupMemberModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 		"target_group_id": dschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("target_group_id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"address": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("ip_address"),
+			Computed: true,
 		},
-		"protocol_port": dschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("protocol_port"),
+		"protocol_port": dschema.Int32Attribute{
+			Computed: true,
 		},
 		"subnet_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_id"),
+			Computed: true,
 		},
-		"weight": dschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("weight"),
+		"weight": dschema.Int32Attribute{
+			Computed: true,
 		},
-		"monitor_port": dschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("monitor_port"),
+		"monitor_port": dschema.Int32Attribute{
+			Computed: true,
 		},
 		"operating_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("operating_status"),
+			Computed: true,
 		},
 		"provisioning_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"is_backup": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_backup"),
+			Computed: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"network_interface_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("network_interface_id"),
+			Computed: true,
 		},
 		"instance_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_id"),
+			Computed: true,
 		},
 		"instance_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_name"),
+			Computed: true,
 		},
 		"vpc_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_id"),
+			Computed: true,
 		},
 		"subnet": dschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("subnet"),
+			Computed: true,
 			Attributes: map[string]dschema.Attribute{
 				"id": dschema.StringAttribute{
-					Computed:    true,
-					Description: docs.Loadbalancer("HealthCheckSubnetModel").String("id"),
+					Computed: true,
 				},
 				"name": dschema.StringAttribute{
-					Computed:    true,
-					Description: docs.Loadbalancer("HealthCheckSubnetModel").String("name"),
+					Computed: true,
 				},
 				"cidr_block": dschema.StringAttribute{
-					Computed:    true,
-					Description: docs.Loadbalancer("HealthCheckSubnetModel").String("cidr_block"),
+					Computed: true,
 				},
 				"availability_zone": dschema.StringAttribute{
-					Computed:    true,
-					Description: docs.Loadbalancer("HealthCheckSubnetModel").String("availability_zone"),
+					Computed: true,
 				},
 				"health_check_ips": dschema.ListAttribute{
 					Computed:    true,
-					Description: docs.Loadbalancer("HealthCheckSubnetModel").String("health_check_ips"),
 					ElementType: types.StringType,
 				},
 			},
 		},
 		"security_groups": dschema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("security_groups"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: map[string]dschema.Attribute{
 					"id": dschema.StringAttribute{
-						Computed:    true,
-						Description: docs.Loadbalancer("SecurityGroupModel").String("id"),
+						Computed: true,
 					},
 					"name": dschema.StringAttribute{
-						Computed:    true,
-						Description: docs.Loadbalancer("SecurityGroupModel").String("name"),
+						Computed: true,
 					},
 				},
 			},
@@ -323,130 +262,99 @@ func getLoadBalancerTargetGroupMemberDataSourceSchema() map[string]dschema.Attri
 }
 
 func getLoadBalancerTargetGroupMemberListDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Loadbalancer("bns_load_balancer__v1__api__list_targets_in_target_group__model__TargetGroupMemberModel")
-
 	return map[string]dschema.Attribute{
 		"target_group_id": dschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("target_group_id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 		"members": dschema.ListNestedAttribute{
-			Computed:    true,
-			Description: docs.Loadbalancer("bns_load_balancer__v1__api__create_target_group__model__TargetGroupModel").String("members"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: map[string]dschema.Attribute{
 					"id": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("id"),
+						Computed: true,
 					},
 					"target_group_id": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("target_group_id"),
+						Computed: true,
 					},
 					"name": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("name"),
+						Computed: true,
 					},
 					"address": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("ip_address"),
+						Computed: true,
 					},
-					"protocol_port": dschema.Int64Attribute{
-						Computed:    true,
-						Description: desc.String("protocol_port"),
+					"protocol_port": dschema.Int32Attribute{
+						Computed: true,
 					},
 					"subnet_id": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("subnet_id"),
+						Computed: true,
 					},
-					"weight": dschema.Int64Attribute{
-						Computed:    true,
-						Description: desc.String("weight"),
+					"weight": dschema.Int32Attribute{
+						Computed: true,
 					},
-					"monitor_port": dschema.Int64Attribute{
-						Computed:    true,
-						Description: desc.String("monitor_port"),
+					"monitor_port": dschema.Int32Attribute{
+						Computed: true,
 					},
 					"operating_status": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("operating_status"),
+						Computed: true,
 					},
 					"provisioning_status": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("provisioning_status"),
+						Computed: true,
 					},
 					"is_backup": dschema.BoolAttribute{
-						Computed:    true,
-						Description: desc.String("is_backup"),
+						Computed: true,
 					},
 					"project_id": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("project_id"),
+						Computed: true,
 					},
 					"created_at": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("created_at"),
+						Computed: true,
 					},
 					"updated_at": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("updated_at"),
+						Computed: true,
 					},
 					"network_interface_id": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("network_interface_id"),
+						Computed: true,
 					},
 					"instance_id": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("instance_id"),
+						Computed: true,
 					},
 					"instance_name": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("instance_name"),
+						Computed: true,
 					},
 					"vpc_id": dschema.StringAttribute{
-						Computed:    true,
-						Description: desc.String("vpc_id"),
+						Computed: true,
 					},
 					"subnet": dschema.SingleNestedAttribute{
-						Computed:    true,
-						Description: desc.String("subnet"),
+						Computed: true,
 						Attributes: map[string]dschema.Attribute{
 							"id": dschema.StringAttribute{
-								Computed:    true,
-								Description: docs.Loadbalancer("HealthCheckSubnetModel").String("id"),
+								Computed: true,
 							},
 							"name": dschema.StringAttribute{
-								Computed:    true,
-								Description: docs.Loadbalancer("HealthCheckSubnetModel").String("name"),
+								Computed: true,
 							},
 							"cidr_block": dschema.StringAttribute{
-								Computed:    true,
-								Description: docs.Loadbalancer("HealthCheckSubnetModel").String("cidr_block"),
+								Computed: true,
 							},
 							"availability_zone": dschema.StringAttribute{
-								Computed:    true,
-								Description: docs.Loadbalancer("HealthCheckSubnetModel").String("availability_zone"),
+								Computed: true,
 							},
 							"health_check_ips": dschema.ListAttribute{
 								Computed:    true,
-								Description: docs.Loadbalancer("HealthCheckSubnetModel").String("health_check_ips"),
 								ElementType: types.StringType,
 							},
 						},
 					},
 					"security_groups": dschema.ListNestedAttribute{
-						Computed:    true,
-						Description: desc.String("security_groups"),
+						Computed: true,
 						NestedObject: dschema.NestedAttributeObject{
 							Attributes: map[string]dschema.Attribute{
 								"id": dschema.StringAttribute{
-									Computed:    true,
-									Description: docs.Loadbalancer("SecurityGroupModel").String("id"),
+									Computed: true,
 								},
 								"name": dschema.StringAttribute{
-									Computed:    true,
-									Description: docs.Loadbalancer("SecurityGroupModel").String("name"),
+									Computed: true,
 								},
 							},
 						},

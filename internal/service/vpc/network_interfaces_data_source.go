@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -36,7 +35,6 @@ func (d *networkInterfacesDataSource) Metadata(_ context.Context, req datasource
 
 func (d *networkInterfacesDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("NetworkInterfaces"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -57,8 +55,7 @@ func (d *networkInterfacesDataSource) Schema(ctx context.Context, _ datasource.S
 					Attributes: MergeDataSourceSchemaAttributes(
 						map[string]schema.Attribute{
 							"id": schema.StringAttribute{
-								Computed:    true,
-								Description: "Network Interface ID",
+								Computed: true,
 							},
 						},
 						networkInterfaceDataSourceBaseSchema,
@@ -179,7 +176,7 @@ func (d *networkInterfacesDataSource) Read(ctx context.Context, req datasource.R
 	err = copier.Copy(&networkInterfaceResult, &networkInterfaceResp.NetworkInterfaces)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
-			fmt.Sprintf("networkInterfaceResult transform fail: %v", err))
+			fmt.Sprintf("Failed to convert networkInterfaceResult: %v", err))
 		return
 	}
 

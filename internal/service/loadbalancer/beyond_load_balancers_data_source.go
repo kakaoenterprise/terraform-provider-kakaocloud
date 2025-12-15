@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/jinzhu/copier"
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
@@ -39,7 +38,6 @@ func (d *beyondLoadBalancersDataSource) Metadata(_ context.Context, req datasour
 
 func (d *beyondLoadBalancersDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("BeyondLoadBalancers"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -60,8 +58,7 @@ func (d *beyondLoadBalancersDataSource) Schema(ctx context.Context, _ datasource
 					Attributes: utils.MergeDataSourceSchemaAttributes(
 						map[string]schema.Attribute{
 							"id": schema.StringAttribute{
-								Computed:    true,
-								Description: "beyond load balancer ID",
+								Computed: true,
 							},
 						},
 						beyondLoadBalancerDatasourceSchema,
@@ -195,7 +192,7 @@ func (d *beyondLoadBalancersDataSource) Read(ctx context.Context, req datasource
 	err = copier.Copy(&blbsResult, &blbResp.BeyondLoadBalancers)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
-			fmt.Sprintf("lblsResult transform fail: %v", err))
+			fmt.Sprintf("Failed to convert lblsResult: %v", err))
 		return
 	}
 

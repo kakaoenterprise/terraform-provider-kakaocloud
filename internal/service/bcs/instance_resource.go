@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"sort"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -43,7 +42,6 @@ func (r *instanceResource) Metadata(_ context.Context, req resource.MetadataRequ
 
 func (r *instanceResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("Instance"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			instanceResourceSchemaAttributes,
 			map[string]schema.Attribute{

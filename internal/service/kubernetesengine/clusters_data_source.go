@@ -5,10 +5,8 @@ package kubernetesengine
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -53,7 +51,6 @@ func (d *clustersDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *clustersDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("KubernetesEngineClusters"),
 		Attributes: map[string]schema.Attribute{
 			"clusters": schema.ListNestedAttribute{
 				Computed: true,
@@ -61,8 +58,8 @@ func (d *clustersDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 					Attributes: MergeAttributes[schema.Attribute](
 						map[string]schema.Attribute{
 							"name": schema.StringAttribute{
-								Computed:    true,
-								Description: "쿠버네티스 클러스터 Name",
+								Computed:   true,
+								Validators: common.NameValidator(20),
 							},
 						},
 						clusterDataSourceAttributes,
@@ -98,19 +95,8 @@ func (d *clustersDataSource) Read(ctx context.Context, req datasource.ReadReques
 			return d.kc.ApiClient.ClustersAPI.ListClusters(ctx).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
-
 	if err != nil {
-		resp.Diagnostics.AddError("API 호출 실패", fmt.Sprintf("GetClusters 실패: %v", err))
-		if httpResp != nil {
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-
-				}
-			}(httpResp.Body)
-			body, _ := io.ReadAll(httpResp.Body)
-			resp.Diagnostics.AddWarning("HTTP 응답", string(body))
-		}
+		common.AddApiActionError(ctx, d, httpResp, "ListClusters", err, &resp.Diagnostics)
 		return
 	}
 

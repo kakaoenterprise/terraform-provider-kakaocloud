@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"terraform-provider-kakaocloud/internal/docs"
+	"terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/jinzhu/copier"
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
@@ -53,7 +53,6 @@ func (d *loadBalancerListenersDataSource) Configure(_ context.Context, req datas
 
 func (d *loadBalancerListenersDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("LoadBalancerListeners"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -71,7 +70,14 @@ func (d *loadBalancerListenersDataSource) Schema(ctx context.Context, _ datasour
 			"listeners": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: listenerDataSourceSchemaAttributes,
+					Attributes: utils.MergeDataSourceSchemaAttributes(
+						map[string]schema.Attribute{
+							"id": schema.StringAttribute{
+								Computed: true,
+							},
+						},
+						listenerDataSourceSchemaAttributes,
+					),
 				},
 			},
 			"timeouts": timeouts.Attributes(ctx),
@@ -192,7 +198,8 @@ func (d *loadBalancerListenersDataSource) Read(ctx context.Context, req datasour
 	var lblsResult []loadbalancer.BnsLoadBalancerV1ApiGetListenerModelListenerModel
 	err = copier.Copy(&lblsResult, &lblResp.Listeners)
 	if err != nil {
-		resp.Diagnostics.AddError("List 변환 실패", fmt.Sprintf("lblsResult 변환 실패: %v", err))
+		common.AddGeneralError(ctx, d, &resp.Diagnostics,
+			fmt.Sprintf("Failed to convert lblsResult: %v", err))
 		return
 	}
 

@@ -4,7 +4,6 @@ package image
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -16,9 +15,8 @@ import (
 func getImageMemberResourceSchema() map[string]rschema.Attribute {
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Required:    true,
-			Description: "Unique ID of the image",
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 		"members": rschema.ListNestedAttribute{
 			Computed: true,
@@ -29,7 +27,6 @@ func getImageMemberResourceSchema() map[string]rschema.Attribute {
 		"shared_member_ids": rschema.SetAttribute{
 			Required:    true,
 			ElementType: types.StringType,
-			Description: "Image shared member ID List",
 			Validators: []validator.Set{
 				setvalidator.ValueStringsAre(common.UuidNoHyphenValidator()...),
 			},
@@ -38,32 +35,24 @@ func getImageMemberResourceSchema() map[string]rschema.Attribute {
 }
 
 func getImageMembersResourceAttributes() map[string]rschema.Attribute {
-	desc := docs.Image("bcs_image__v1__api__add_image_share__model__ImageMemberModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"image_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("image_id"),
+			Computed: true,
 		},
 		"status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"is_shared": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_shared"),
+			Computed: true,
 		},
 	}
 }
@@ -71,9 +60,8 @@ func getImageMembersResourceAttributes() map[string]rschema.Attribute {
 func getImageMemberDataSourceSchema() map[string]dschema.Attribute {
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Required:    true,
-			Description: "Unique ID of the image",
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 		"members": dschema.ListNestedAttribute{
 			Computed: true,
@@ -85,32 +73,24 @@ func getImageMemberDataSourceSchema() map[string]dschema.Attribute {
 }
 
 func getImageMembersDataSourceAttributes() map[string]dschema.Attribute {
-	desc := docs.Image("bcs_image__v1__api__add_image_share__model__ImageMemberModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"image_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("image_id"),
+			Computed: true,
 		},
 		"status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"is_shared": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_shared"),
+			Computed: true,
 		},
 	}
 }

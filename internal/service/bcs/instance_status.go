@@ -233,6 +233,8 @@ func (r *instanceResource) pollInstanceUntilStatus(
 		ctx,
 		r,
 		2*time.Second,
+		"instance",
+		instanceId,
 		targetStatuses,
 		diag,
 		func(ctx context.Context) (*bcs.BcsInstanceV1ApiGetInstanceModelInstanceModel, *http.Response, error) {

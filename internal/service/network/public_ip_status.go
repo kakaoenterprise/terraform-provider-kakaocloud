@@ -22,6 +22,8 @@ func (r *publicIpResource) pollPublicIpUtilsStatus(
 		ctx,
 		r,
 		10*time.Second,
+		"public ip",
+		publicIpId,
 		targetStatuses,
 		resp,
 		func(ctx context.Context) (*network.BnsNetworkV1ApiGetPublicIpModelFloatingIpModel, *http.Response, error) {

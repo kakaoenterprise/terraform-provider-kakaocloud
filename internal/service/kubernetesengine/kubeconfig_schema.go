@@ -9,8 +9,7 @@ import (
 
 var kubernetesKubeconfigDataSourceSchemaAttributes = map[string]schema.Attribute{
 	"cluster_name": schema.StringAttribute{
-		Required:    true,
-		Description: "Target cluster name.",
+		Required: true,
 	},
 
 	"kubeconfig_yaml": schema.StringAttribute{

@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"terraform-provider-kakaocloud/internal/common"
 
@@ -37,7 +36,6 @@ func (d *loadBalancerL7PolicyRuleDataSource) Metadata(_ context.Context, req dat
 
 func (d *loadBalancerL7PolicyRuleDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("LoadBalancerL7PolicyRule"),
 		Attributes: utils.MergeDataSourceSchemaAttributes(
 			loadBalancerL7PolicyRuleDataSourceSchema,
 			map[string]schema.Attribute{
@@ -92,7 +90,7 @@ func (d *loadBalancerL7PolicyRuleDataSource) Read(ctx context.Context, req datas
 		return
 	}
 
-	ok := mapLoadBalancerL7PolicyRuleDataSourceFromGetRuleResponse(ctx, &config, &ruleResp.L7Rule, config.L7PolicyId.ValueString(), &resp.Diagnostics)
+	ok := mapLoadBalancerL7PolicyRuleBaseModel(&config.loadBalancerL7PolicyRuleBaseModel, &ruleResp.L7Rule, config.L7PolicyId.ValueString(), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

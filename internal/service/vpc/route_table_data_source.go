@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -35,13 +34,11 @@ func (d *routeTableDataSource) Metadata(_ context.Context, req datasource.Metada
 
 func (d *routeTableDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("RouteTable"),
 		Attributes: MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
-					Required:    true,
-					Description: "Route Table ID",
-					Validators:  common.UuidValidator(),
+					Required:   true,
+					Validators: common.UuidValidator(),
 				},
 				"timeouts": timeouts.Attributes(ctx),
 			},

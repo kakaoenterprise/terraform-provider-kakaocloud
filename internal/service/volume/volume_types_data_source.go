@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -31,29 +30,24 @@ type volumeTypesDataSource struct {
 }
 
 func (d *volumeTypesDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_volume_type"
+	resp.TypeName = req.ProviderTypeName + "_volume_types"
 }
 
 func (d *volumeTypesDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	desc := docs.Volume("VolumeTypeModel")
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("VolumeType"),
 		Attributes: map[string]schema.Attribute{
 			"volume_types": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
-							Computed:    true,
-							Description: desc.String("id"),
+							Computed: true,
 						},
 						"name": schema.StringAttribute{
-							Computed:    true,
-							Description: desc.String("name"),
+							Computed: true,
 						},
 						"description": schema.StringAttribute{
-							Computed:    true,
-							Description: desc.String("description"),
+							Computed: true,
 						},
 					},
 				},

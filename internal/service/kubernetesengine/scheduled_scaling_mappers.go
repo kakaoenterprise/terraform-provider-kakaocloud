@@ -17,10 +17,14 @@ import (
 
 func mapScheduledScalingBaseModel(
 	ctx context.Context,
+	clusterName, nodePoolName string,
 	base *scheduledScalingBaseModel,
 	scheduledScalingResult *kubernetesengine.ScheduledScaleResponseModel,
 	respDiags *diag.Diagnostics,
 ) bool {
+	base.ClusterName = types.StringValue(clusterName)
+	base.NodePoolName = types.StringValue(nodePoolName)
+
 	base.CreatedAt = types.StringValue(scheduledScalingResult.CreatedAt.Format(time.RFC3339))
 	base.DesiredNodes = types.Int32Value(scheduledScalingResult.DesiredNodes)
 	base.Name = types.StringValue(scheduledScalingResult.Name)

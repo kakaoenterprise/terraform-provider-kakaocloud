@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -36,7 +35,6 @@ func (d *volumesDataSource) Metadata(_ context.Context, req datasource.MetadataR
 
 func (d *volumesDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("Volumes"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -57,8 +55,7 @@ func (d *volumesDataSource) Schema(ctx context.Context, _ datasource.SchemaReque
 					Attributes: MergeDataSourceSchemaAttributes(
 						map[string]schema.Attribute{
 							"id": schema.StringAttribute{
-								Computed:    true,
-								Description: "Volume ID",
+								Computed: true,
 							},
 						},
 						volumeDataSourceSchemaAttributes,

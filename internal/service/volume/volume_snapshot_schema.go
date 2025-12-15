@@ -4,7 +4,6 @@ package volume
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -14,144 +13,111 @@ import (
 )
 
 func getVolumeSnapshotDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Volume("bcs_volume__v1__api__get_snapshot__model__VolumeSnapshotModel")
-
 	return map[string]dschema.Attribute{
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"size": dschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("size"),
+			Computed: true,
 		},
 		"real_size": dschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("real_size"),
+			Computed: true,
 		},
 		"status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"volume_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("volume_id"),
+			Computed: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"parent_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("parent_id"),
+			Computed: true,
 		},
 		"user_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("user_id"),
+			Computed: true,
 		},
 		"is_incremental": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_incremental"),
+			Computed: true,
 		},
 		"is_dependent_snapshot": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_dependent_snapshot"),
+			Computed: true,
 		},
 		"schedule_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("schedule_id"),
+			Computed: true,
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }
 
 func getVolumeSnapshotResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Volume("bcs_volume__v1__api__get_snapshot__model__VolumeSnapshotModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"name": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("name"),
-			Validators:  common.NameValidator(250),
+			Required:   true,
+			Validators: common.NameValidator(250),
 		},
 		"description": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("description"),
-			Validators:  common.DescriptionValidator(),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.DescriptionValidator(),
 		},
 		"size": rschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("size"),
+			Computed: true,
 		},
 		"real_size": rschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("real_size"),
+			Computed: true,
 		},
 		"status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"volume_id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("volume_id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"parent_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("parent_id"),
+			Computed: true,
 		},
 		"user_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("user_id"),
+			Computed: true,
 		},
 		"is_incremental": rschema.BoolAttribute{
-			Required:    true,
-			Description: desc.String("is_incremental"),
+			Required: true,
 			PlanModifiers: []planmodifier.Bool{
 				boolplanmodifier.RequiresReplace(),
 			},
 		},
 		"is_dependent_snapshot": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_dependent_snapshot"),
+			Computed: true,
 		},
 		"schedule_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("schedule_id"),
+			Computed: true,
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }

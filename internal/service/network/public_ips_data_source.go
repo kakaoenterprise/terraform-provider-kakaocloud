@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -54,7 +53,6 @@ func (d *publicIpsDataSource) Metadata(_ context.Context, req datasource.Metadat
 
 func (d *publicIpsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("PublicIps"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -75,8 +73,7 @@ func (d *publicIpsDataSource) Schema(ctx context.Context, _ datasource.SchemaReq
 					Attributes: MergeAttributes[schema.Attribute](
 						map[string]schema.Attribute{
 							"id": schema.StringAttribute{
-								Computed:    true,
-								Description: "Public IP ID",
+								Computed: true,
 							},
 						},
 						publicIpDataSourceSchemaAttributes,

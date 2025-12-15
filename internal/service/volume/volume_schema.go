@@ -4,7 +4,6 @@ package volume
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -14,239 +13,182 @@ import (
 )
 
 func getImageMetadataDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Volume("bcs_volume__v1__api__get_volume__model__ImageMetaData")
-
 	return map[string]dschema.Attribute{
 		"container_format": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("container_format"),
+			Computed: true,
 		},
 		"disk_format": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("disk_format"),
+			Computed: true,
 		},
 		"image_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("image_id"),
+			Computed: true,
 		},
 		"image_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("image_name"),
+			Computed: true,
 		},
 		"min_disk": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("min_disk"),
+			Computed: true,
 		},
 		"os_type": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_type"),
+			Computed: true,
 		},
 		"min_ram": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("min_ram"),
+			Computed: true,
 		},
 		"size": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("size"),
+			Computed: true,
 		},
 	}
 }
 
 func getVolumeDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Volume("bcs_volume__v1__api__get_volume__model__VolumeModel")
-
 	return map[string]dschema.Attribute{
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"availability_zone": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("availability_zone"),
+			Computed: true,
 		},
 		"status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"mount_point": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("mount_point"),
+			Computed: true,
 		},
 		"volume_type": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("volume_type"),
+			Computed: true,
 		},
 		"size": dschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("size"),
+			Computed: true,
 		},
 		"is_root": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_root"),
+			Computed: true,
 		},
 		"is_encrypted": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_encrypted"),
+			Computed: true,
 		},
 		"is_bootable": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_bootable"),
+			Computed: true,
 		},
 		"type": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("type"),
+			Computed: true,
 		},
 		"user_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("user_id"),
+			Computed: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"attach_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("attach_status"),
+			Computed: true,
 		},
 		"launched_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("launched_at"),
+			Computed: true,
 		},
 		"encryption_key_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("encryption_key_id"),
+			Computed: true,
 		},
 		"previous_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("previous_status"),
+			Computed: true,
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"instance_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_id"),
+			Computed: true,
 		},
 		"instance_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_name"),
+			Computed: true,
 		},
 		"image_metadata": dschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("image_metadata"),
-			Attributes:  imageMetadataDataSourceSchema,
+			Computed:   true,
+			Attributes: imageMetadataDataSourceSchema,
 		},
 		"metadata": dschema.MapAttribute{
 			ElementType: types.StringType,
 			Computed:    true,
-			Description: desc.String("metadata"),
 		},
 	}
 }
 
 func getImageMetadataResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Volume("bcs_volume__v1__api__get_volume__model__ImageMetaData")
-
 	return map[string]rschema.Attribute{
 		"container_format": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("container_format"),
+			Computed: true,
 		},
 		"disk_format": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("disk_format"),
+			Computed: true,
 		},
 		"image_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("image_id"),
+			Computed: true,
 		},
 		"image_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("image_name"),
+			Computed: true,
 		},
 		"min_disk": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("min_disk"),
+			Computed: true,
 		},
 		"os_type": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_type"),
+			Computed: true,
 		},
 		"min_ram": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("min_ram"),
+			Computed: true,
 		},
 		"size": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("size"),
+			Computed: true,
 		},
 	}
 }
 
 func getVolumeResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Volume("bcs_volume__v1__api__get_volume__model__VolumeModel")
-	createDesc := docs.Volume("CreateVolumeModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Description: desc.String("id"),
-			Computed:    true,
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"name": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("name"),
-			Validators:  common.NameValidator(250),
+			Required:   true,
+			Validators: common.NameValidator(250),
 		},
 		"description": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("description"),
-			Validators:  common.DescriptionValidator(),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.DescriptionValidator(),
 		},
 		"availability_zone": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("availability_zone"),
+			Required: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"mount_point": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("mount_point"),
+			Computed: true,
 		},
 		"volume_type_id": rschema.StringAttribute{
-			Optional:    true,
-			Description: createDesc.String("volume_type_id"),
-			Validators:  common.UuidValidator(),
+			Optional:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"volume_type": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("volume_type"),
+			Computed: true,
 		},
 		"size": rschema.Int32Attribute{
-			Optional:    true,
-			Computed:    true,
-			Description: createDesc.String("size"),
-			Validators:  common.VolumeSizeValidator(),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.VolumeSizeValidator(),
 			PlanModifiers: []planmodifier.Int32{
 				common.PreventShrinkModifier[int32]{
 					TypeName:        "Volume Size",
@@ -255,100 +197,79 @@ func getVolumeResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 		"is_root": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_root"),
+			Computed: true,
 		},
 		"is_encrypted": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_encrypted"),
+			Computed: true,
 		},
 		"is_bootable": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_bootable"),
+			Computed: true,
 		},
 		"type": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("type"),
+			Computed: true,
 		},
 		"user_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("user_id"),
+			Computed: true,
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"attach_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("attach_status"),
+			Computed: true,
 		},
 		"launched_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("launched_at"),
+			Computed: true,
 		},
 		"encryption_key_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("encryption_key_id"),
+			Computed: true,
 		},
 		"previous_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("previous_status"),
+			Computed: true,
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"instance_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_id"),
+			Computed: true,
 		},
 		"instance_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_name"),
+			Computed: true,
 		},
 		"image_id": rschema.StringAttribute{
-			Optional:    true,
-			Description: createDesc.String("image_id"),
-			Validators:  common.UuidValidator(),
+			Optional:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"volume_snapshot_id": rschema.StringAttribute{
-			Optional:    true,
-			Description: createDesc.String("source_volume_id"),
-			Validators:  common.UuidValidator(),
+			Optional:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
-
 		"source_volume_id": rschema.StringAttribute{
-			Optional:    true,
-			Description: createDesc.String("source_volume_id"),
-			Validators:  common.UuidValidator(),
+			Optional:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"image_metadata": rschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("image_metadata"),
-			Attributes:  imageMetadataResourceSchema,
+			Computed:   true,
+			Attributes: imageMetadataResourceSchema,
 		},
 		"metadata": rschema.MapAttribute{
 			ElementType: types.StringType,
 			Computed:    true,
-			Description: desc.String("metadata"),
 		},
 		"encryption_secret_id": rschema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("encryption_secret_id"),
-			Validators:  common.UuidValidator(),
+			Optional:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},

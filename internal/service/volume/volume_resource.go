@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -40,7 +39,6 @@ func (r *volumeResource) Metadata(_ context.Context, req resource.MetadataReques
 
 func (r *volumeResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("Volume"),
 		Attributes: MergeResourceSchemaAttributes(
 			volumeResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -77,35 +75,21 @@ func (r *volumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	result, ok := common.PollUntilResult(
-		ctx,
-		r,
-		2*time.Second,
-		[]string{common.VolumeStatusAvailable, common.VolumeStatusError, common.VolumeStatusErrorRestore},
-		&resp.Diagnostics,
-		func(ctx context.Context) (*volume.BcsVolumeV1ApiGetVolumeModelVolumeModel, *http.Response, error) {
-			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-				func() (*volume.BcsVolumeV1ApiGetVolumeModelResponseVolumeModel, *http.Response, error) {
-					return r.kc.ApiClient.VolumeAPI.
-						GetVolume(ctx, plan.Id.ValueString()).
-						XAuthToken(r.kc.XAuthToken).
-						Execute()
-				},
-			)
-			if err != nil {
-				return nil, httpResp, err
-			}
-			return &respModel.Volume, httpResp, nil
-		},
-		func(v *volume.BcsVolumeV1ApiGetVolumeModelVolumeModel) string {
-			return *v.Status.Get()
-		},
-	)
+	result, ok := CheckVolumeStatus(ctx, r.kc, r, plan.Id.ValueString(), StatusesReadyGetOrUpdateForSize, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	common.CheckResourceAvailableStatus(ctx, r, result.Status.Get(), []string{common.VolumeStatusAvailable}, &resp.Diagnostics)
+	if !plan.VolumeSnapshotId.IsNull() && !plan.VolumeSnapshotId.IsUnknown() {
+		currentSize := result.Size.Get()
+		if !plan.Size.IsNull() && !plan.Size.IsUnknown() && plan.Size.ValueInt32() > *currentSize {
+			if ok := r.UpdateVolumeSize(ctx, r.kc, plan.Id.ValueString(), plan.Size.ValueInt32(), &resp.Diagnostics); !ok {
+				return
+			}
+			newSize := plan.Size.ValueInt32()
+			result.Size.Set(&newSize)
+		}
+	}
 
 	ok = mapVolumeBaseModel(ctx, &plan.volumeBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
@@ -191,12 +175,30 @@ func (r *volumeResource) Update(ctx context.Context, req resource.UpdateRequest,
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	if plan.Name != state.Name || plan.Description != state.Description {
+	sizeChanged := !plan.Size.IsNull() &&
+		!plan.Size.IsUnknown() &&
+		!plan.Size.Equal(state.Size)
+
+	var requiredStatuses []string
+	if sizeChanged {
+		requiredStatuses = StatusesReadyGetOrUpdateForSize
+	} else {
+		requiredStatuses = StatusesReadyForNameDesc
+	}
+
+	_, ok := CheckVolumeStatus(ctx, r.kc, r, plan.Id.ValueString(), requiredStatuses, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	if plan.Name != state.Name || (!plan.Description.IsUnknown() && plan.Description != state.Description) {
 		editReq := volume.EditVolumeModel{
 			Name: plan.Name.ValueString(),
 		}
-		if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
+		if !plan.Description.IsNull() {
 			editReq.SetDescription(plan.Description.ValueString())
+		} else {
+			editReq.SetDescriptionNil()
 		}
 
 		body := *volume.NewBodyUpdateVolume(editReq)
@@ -252,6 +254,11 @@ func (r *volumeResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	_, ok := CheckVolumeStatus(ctx, r.kc, r, state.Id.ValueString(), StatusesReadyToDelete, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
@@ -314,7 +321,7 @@ func (r *volumeResource) createVolumeFromBody(ctx context.Context, plan *volumeR
 		AvailabilityZone: volume.AvailabilityZone(plan.AvailabilityZone.ValueString()),
 	}
 
-	if !plan.VolumeTypeId.IsNull() && !plan.VolumeTypeId.IsUnknown() {
+	if !plan.VolumeTypeId.IsNull() {
 		createReq.SetVolumeTypeId(plan.VolumeTypeId.ValueString())
 	}
 
@@ -322,12 +329,16 @@ func (r *volumeResource) createVolumeFromBody(ctx context.Context, plan *volumeR
 		createReq.SetDescription(plan.Description.ValueString())
 	}
 
-	if !plan.EncryptionSecretId.IsNull() && !plan.EncryptionSecretId.IsUnknown() {
+	if !plan.EncryptionSecretId.IsNull() {
 		createReq.SetEncryptionSecretId(plan.EncryptionSecretId.ValueString())
 	}
 
-	if !plan.ImageId.IsNull() && !plan.ImageId.IsUnknown() {
+	if !plan.ImageId.IsNull() {
 		createReq.SetImageId(plan.ImageId.ValueString())
+	}
+
+	if !plan.SourceVolumeId.IsNull() {
+		createReq.SetSourceVolumeId(plan.SourceVolumeId.ValueString())
 	}
 
 	body := volume.BodyCreateVolume{
@@ -349,12 +360,26 @@ func (r *volumeResource) createVolumeFromBody(ctx context.Context, plan *volumeR
 }
 
 func (r *volumeResource) restoreVolumeFromSnapshot(ctx context.Context, plan *volumeResourceModel, resp *resource.CreateResponse) {
+	snapshotResult, ok := CheckVolumeSnapshotStatus(ctx, r.kc, r, plan.VolumeSnapshotId.ValueString(), false, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !plan.Size.IsNull() && !plan.Size.IsUnknown() {
+		snapshotSize := snapshotResult.Size.Get()
+		if snapshotSize != nil && int32(*snapshotSize) > plan.Size.ValueInt32() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("Invalid size: cannot be smaller than the snapshot volume size: %d", *snapshotSize))
+			return
+		}
+	}
+
 	restoreReq := volume.RequestRestoreVolumeSnapshotModel{
 		Name:             plan.Name.ValueString(),
 		AvailabilityZone: volume.AvailabilityZone(plan.AvailabilityZone.ValueString()),
 	}
 
-	if !plan.VolumeTypeId.IsNull() && !plan.VolumeTypeId.IsUnknown() {
+	if !plan.VolumeTypeId.IsNull() {
 		restoreReq.SetVolumeTypeId(plan.VolumeTypeId.ValueString())
 	}
 
@@ -420,11 +445,7 @@ func (r *volumeResource) validateVolumeConfig(ctx context.Context, config volume
 		common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 			"'size' must be set when 'volume_snapshot_id' is not provided.")
 	}
-	if !config.VolumeSnapshotId.IsNull() && !config.Size.IsNull() {
-		common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
-			"'size' cannot be set when 'volume_snapshot_id' is provided. The size is determined by the snapshot.")
-	}
-	if !config.VolumeSnapshotId.IsNull() && !config.Description.IsNull() {
+	if !config.VolumeSnapshotId.IsNull() && !(config.Description.IsNull() || config.Description.IsUnknown()) {
 		common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 			"'description' is determined by the snapshot, when 'volume_snapshot_id' is provided.")
 	}

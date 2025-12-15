@@ -6,8 +6,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -38,7 +38,6 @@ func (r *volumeSnapshotResource) Metadata(_ context.Context, req resource.Metada
 
 func (r *volumeSnapshotResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("VolumeSnapshot"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			volumeSnapshotResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -78,8 +77,7 @@ func (r *volumeSnapshotResource) Create(ctx context.Context, req resource.Create
 	body := volume.BodyCreateSnapshot{
 		Snapshot: createReq,
 	}
-
-	ok := r.checkVolumeStatus(ctx, plan.VolumeId.ValueString(), resp)
+	_, ok := CheckVolumeStatus(ctx, r.kc, r, plan.VolumeId.ValueString(), StatusesReadyGetOrUpdateForSize, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -97,35 +95,10 @@ func (r *volumeSnapshotResource) Create(ctx context.Context, req resource.Create
 
 	plan.Id = types.StringValue(respModel.Snapshot.Id)
 
-	result, ok := common.PollUntilResult(
-		ctx,
-		r,
-		2*time.Second,
-		[]string{common.VolumeSnapshotStatusAvailable, common.VolumeSnapshotStatusError},
-		&resp.Diagnostics,
-		func(ctx context.Context) (*volume.BcsVolumeV1ApiGetSnapshotModelVolumeSnapshotModel, *http.Response, error) {
-			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-				func() (*volume.BcsVolumeV1ApiGetSnapshotModelResponseVolumeSnapshotModel, *http.Response, error) {
-					return r.kc.ApiClient.VolumeSnapshotAPI.
-						GetSnapshot(ctx, plan.Id.ValueString()).
-						XAuthToken(r.kc.XAuthToken).
-						Execute()
-				},
-			)
-			if err != nil {
-				return nil, httpResp, err
-			}
-			return &respModel.Snapshot, httpResp, nil
-		},
-		func(v *volume.BcsVolumeV1ApiGetSnapshotModelVolumeSnapshotModel) string {
-			return *v.Status.Get()
-		},
-	)
+	result, ok := CheckVolumeSnapshotStatus(ctx, r.kc, r, plan.Id.ValueString(), false, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
-
-	common.CheckResourceAvailableStatus(ctx, r, result.Status.Get(), []string{common.VolumeSnapshotStatusAvailable}, &resp.Diagnostics)
 
 	ok = mapVolumeSnapshotBaseModel(&plan.volumeSnapshotBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
@@ -211,18 +184,26 @@ func (r *volumeSnapshotResource) Update(ctx context.Context, req resource.Update
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	if !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) {
+	_, ok := CheckVolumeSnapshotStatus(ctx, r.kc, r, plan.Id.ValueString(), true, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !plan.Name.Equal(state.Name) ||
+		(!plan.Description.IsNull() && !plan.Description.IsUnknown() && !plan.Description.Equal(state.Description)) {
 		editReq := volume.EditVolumeSnapshotModel{}
 		if !plan.Name.Equal(state.Name) {
 			editReq.SetName(plan.Name.ValueString())
+			state.Name = plan.Name
 		}
 		if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 			editReq.SetDescription(plan.Description.ValueString())
+			state.Description = plan.Description
 		}
 
 		body := *volume.NewBodyUpdateSnapshot(editReq)
 
-		respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (*volume.BcsVolumeV1ApiUpdateSnapshotModelResponseVolumeSnapshotModel, *http.Response, error) {
 				return r.kc.ApiClient.VolumeSnapshotAPI.UpdateSnapshot(ctx, plan.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
@@ -234,9 +215,6 @@ func (r *volumeSnapshotResource) Update(ctx context.Context, req resource.Update
 			common.AddApiActionError(ctx, r, httpResp, "UpdateSnapshot", err, &resp.Diagnostics)
 			return
 		}
-
-		state.Name = types.StringValue(respModel.Snapshot.Name)
-		state.Description = plan.Description
 	}
 
 	diags = resp.State.Set(ctx, &state)
@@ -263,6 +241,11 @@ func (r *volumeSnapshotResource) Delete(ctx context.Context, req resource.Delete
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	_, ok := CheckVolumeSnapshotStatus(ctx, r.kc, r, state.Id.ValueString(), true, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
@@ -322,14 +305,14 @@ func (r *volumeSnapshotResource) checkVolumeStatus(
 	volumeId string,
 	resp *resource.CreateResponse,
 ) bool {
-	timeout := common.DefaultPollingTimeout
 	interval := 1 * time.Second
-	_, ok := common.PollUntilResultWithTimeout(
+	result, ok := common.PollUntilResult(
 		ctx,
 		r,
 		interval,
-		&timeout,
-		[]string{common.VolumeStatusAvailable, common.VolumeStatusInUse},
+		"volume",
+		volumeId,
+		[]string{common.VolumeStatusAvailable, common.VolumeStatusInUse, common.VolumeStatusError, common.VolumeStatusErrorRestore, common.VolumeStatusDeleting},
 		&resp.Diagnostics,
 		func(ctx context.Context) (*volume.BcsVolumeV1ApiGetVolumeModelVolumeModel, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
@@ -350,10 +333,15 @@ func (r *volumeSnapshotResource) checkVolumeStatus(
 		},
 	)
 	if !ok {
-		common.AddGeneralError(ctx, r, &resp.Diagnostics,
-			fmt.Sprintf("Volume did not reach one of the following states: '%v'.", []string{common.VolumeStatusAvailable, common.VolumeStatusInUse}))
-		return false
+		for _, d := range resp.Diagnostics.Errors() {
+			if strings.Contains(d.Detail(), "context deadline exceeded") {
+				common.AddGeneralError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("Volume did not reach one of the following states: '%v'.", []string{common.VolumeStatusAvailable, common.VolumeStatusInUse}))
+				return false
+			}
+		}
 	}
+	common.CheckResourceAvailableStatus(ctx, r, result.Status.Get(), []string{common.VolumeStatusAvailable, common.VolumeStatusInUse}, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return false
 	}

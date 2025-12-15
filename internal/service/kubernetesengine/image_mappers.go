@@ -3,18 +3,13 @@
 package kubernetesengine
 
 import (
-	"context"
-
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
 )
 
 func (d *kubernetesImagesDataSource) mapImages(
-	ctx context.Context,
 	base *imageBaseModel,
 	imageResult *kubernetesengine.ImageResponseModel,
-	respDiags *diag.Diagnostics,
 ) bool {
 	base.Architecture = types.StringValue(imageResult.Architecture)
 	base.IsGpuType = types.BoolValue(imageResult.IsGpuType)

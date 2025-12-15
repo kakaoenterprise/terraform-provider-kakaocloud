@@ -3,8 +3,11 @@
 package network
 
 import (
-	"terraform-provider-kakaocloud/internal/docs"
+	"terraform-provider-kakaocloud/internal/common"
 
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -16,28 +19,21 @@ import (
 )
 
 func getSecurityGroupRuleInlineResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Network("bns_network__v1__api__get_security_group__model__SecurityGroupRuleModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"remote_group_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("remote_group_name"),
+			Computed: true,
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"direction": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("direction"),
+			Required: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(
 					string(network.SECURITYGROUPRULEDIRECTION_INGRESS),
@@ -46,8 +42,7 @@ func getSecurityGroupRuleInlineResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 		"protocol": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("protocol"),
+			Required: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(
 					string(network.SECURITYGROUPRULEPROTOCOL_TCP),
@@ -57,170 +52,146 @@ func getSecurityGroupRuleInlineResourceSchema() map[string]rschema.Attribute {
 				),
 			},
 		},
-		"port_range_min": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("port_range_min"),
+		"port_range_min": rschema.Int32Attribute{
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int32{
+				int32validator.Between(1, 65535),
+			},
 		},
-		"port_range_max": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("port_range_max"),
+		"port_range_max": rschema.Int32Attribute{
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int32{
+				int32validator.Between(1, 65535),
+			},
 		},
 		"remote_ip_prefix": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("remote_ip_prefix"),
+			Optional:   true,
+			Computed:   true,
+			CustomType: cidrtypes.IPPrefixType{},
 		},
 		"remote_group_id": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("remote_group_id"),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.UuidValidator(),
 		},
 		"description": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("description"),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.DescriptionValidatorWithMaxLength(50),
 		},
 	}
 }
 
 func getSecurityGroupResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Network("bns_network__v1__api__get_security_group__model__SecurityGroupModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"name": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("name"),
+			Required:   true,
+			Validators: common.NameValidator(250),
 		},
 		"description": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("description"),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.DescriptionValidator(),
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"project_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_name"),
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
-			},
+			Computed: true,
 		},
 		"is_stateful": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_stateful"),
+			Computed: true,
 			PlanModifiers: []planmodifier.Bool{
 				boolplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"rules": rschema.SetNestedAttribute{
-			Optional:    true,
-			Description: desc.String("rules"),
+			Optional: true,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+			},
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: securityGroupRuleInlineResourceSchema,
 			},
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }
 
 func getSecurityGroupRuleDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Network("bns_network__v1__api__get_security_group__model__SecurityGroupRuleModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"remote_group_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("remote_group_id"),
+			Computed: true,
 		},
 		"remote_group_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("remote_group_name"),
+			Computed: true,
 		},
 		"direction": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("direction"),
+			Computed: true,
 		},
 		"protocol": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("protocol"),
+			Computed: true,
 		},
-		"port_range_min": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("port_range_min"),
+		"port_range_min": dschema.Int32Attribute{
+			Computed: true,
 		},
-		"port_range_max": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("port_range_max"),
+		"port_range_max": dschema.Int32Attribute{
+			Computed: true,
 		},
 		"remote_ip_prefix": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("remote_ip_prefix"),
+			Computed:   true,
+			CustomType: cidrtypes.IPPrefixType{},
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }
 
 func getSecurityGroupDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Network("bns_network__v1__api__get_security_group__model__SecurityGroupModel")
-
 	return map[string]dschema.Attribute{
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"project_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_name"),
+			Computed: true,
 		},
 		"is_stateful": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_stateful"),
+			Computed: true,
 		},
 		"rules": dschema.SetNestedAttribute{
 			Computed: true,
@@ -229,12 +200,10 @@ func getSecurityGroupDataSourceSchema() map[string]dschema.Attribute {
 			},
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }

@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -43,7 +42,6 @@ func (r *routeTableResource) Metadata(_ context.Context, req resource.MetadataRe
 
 func (r *routeTableResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("RouteTable"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			routeTableResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -248,7 +246,7 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	if !plan.IsMain.IsNull() || !plan.IsMain.IsUnknown() {
+	if !plan.IsMain.IsNull() && !plan.IsMain.IsUnknown() {
 		if plan.IsMain.ValueBool() && !state.IsMain.ValueBool() {
 			r.setMainRouteTable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
 			if resp.Diagnostics.HasError() {
@@ -294,7 +292,7 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 		&resp.Diagnostics,
 	)
 
-	if !plan.IsMain.IsNull() || !plan.IsMain.IsUnknown() {
+	if !plan.IsMain.IsNull() && !plan.IsMain.IsUnknown() {
 		isMain := plan.IsMain.ValueBool()
 		result.IsMain.Set(&isMain)
 	}
@@ -521,6 +519,8 @@ func (r *routeTableResource) pollRouteTableUntilStatus(
 		ctx,
 		r,
 		2*time.Second,
+		"route table",
+		routeTableId,
 		targetStatuses,
 		resp,
 		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetRouteTableModelRouteTableModel, *http.Response, error) {

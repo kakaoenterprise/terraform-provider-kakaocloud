@@ -8,6 +8,7 @@ const (
 	AvailabilityZoneKr2a = "kr-central-2-a"
 	AvailabilityZoneKr2b = "kr-central-2-b"
 	AvailabilityZoneKr2c = "kr-central-2-c"
+	AvailabilityZoneKr2d = "kr-central-2-d"
 )
 
 var zoneMatrix = map[string]map[string][]string{
@@ -15,7 +16,7 @@ var zoneMatrix = map[string]map[string][]string{
 		RegionKR2: {AvailabilityZoneKr2a, AvailabilityZoneKr2b},
 	},
 	ServiceRealmPublic: {
-		RegionKR2: {AvailabilityZoneKr2a, AvailabilityZoneKr2b, AvailabilityZoneKr2c},
+		RegionKR2: {AvailabilityZoneKr2a, AvailabilityZoneKr2b, AvailabilityZoneKr2c, AvailabilityZoneKr2d},
 	},
 	ServiceRealmGov: {
 		RegionKR1: {AvailabilityZoneKr1a, AvailabilityZoneKr1b},

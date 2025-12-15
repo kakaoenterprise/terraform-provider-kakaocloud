@@ -3,58 +3,43 @@
 package kubernetesengine
 
 import (
-	"terraform-provider-kakaocloud/internal/docs"
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 )
 
 func getKubernetesImageDataSourceSchema() map[string]schema.Attribute {
-	desc := docs.Kubernetesengine("ImageResponseModel")
-
 	return map[string]schema.Attribute{
 		"architecture": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("architecture"),
+			Computed: true,
 		},
 		"is_gpu_type": schema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_gpu_type"),
+			Computed: true,
 		},
 		"id": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"instance_type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_type"),
+			Computed: true,
 		},
 		"k8s_version": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("k8s_version"),
+			Computed: true,
 		},
 		"kernel_version": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("kernel_version"),
+			Computed: true,
 		},
 		"key_package": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("key_package"),
+			Computed: true,
 		},
 		"name": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"os_distro": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_distro"),
+			Computed: true,
 		},
 		"os_type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_type"),
+			Computed: true,
 		},
 		"os_version": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_version"),
+			Computed: true,
 		},
 	}
 }

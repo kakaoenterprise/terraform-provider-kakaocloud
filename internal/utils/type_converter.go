@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -63,6 +64,13 @@ func ConvertNullableTime(n Nullable[time.Time]) types.String {
 	return types.StringValue(n.Get().Format(time.RFC3339))
 }
 
+func ConvertNullableIPPrefix(n Nullable[string]) cidrtypes.IPPrefix {
+	if !n.IsSet() || n.Get() == nil {
+		return cidrtypes.NewIPPrefixNull()
+	}
+	return cidrtypes.NewIPPrefixValue(*n.Get())
+}
+
 func ConvertObjectFromModel[T any](
 	ctx context.Context,
 	n Nullable[T],
@@ -75,7 +83,7 @@ func ConvertObjectFromModel[T any](
 	return types.ObjectValueFrom(ctx, attrTypes, build(*n.Get()))
 }
 
-func ConvertnonNullableObjectFromModel[T any](
+func ConvertNonNullableObjectFromModel[T any](
 	ctx context.Context,
 	n T,
 	attrTypes map[string]attr.Type,

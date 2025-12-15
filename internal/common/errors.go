@@ -20,29 +20,42 @@ type apiError struct {
 	} `json:"error"`
 }
 
-func AddApiActionError(ctx context.Context, obj interface{}, resp *http.Response, apiName string, err error, diags *diag.Diagnostics) {
+func AddApiActionError(
+	ctx context.Context,
+	obj interface{},
+	resp *http.Response,
+	apiName string,
+	err error,
+	diags *diag.Diagnostics,
+	message ...string,
+) {
 	typeName, tfObjectType := ExtractTypeMetadata(ctx, obj)
 	action := GetCallerMethodName()
 
 	var parsed apiError
 	var errorMsg string
-	if resp != nil && resp.Body != nil {
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
-			}
-		}(resp.Body)
-		if body, readErr := io.ReadAll(resp.Body); readErr == nil {
-			if marshalErr := json.Unmarshal(body, &parsed); marshalErr != nil {
-				errorMsg = marshalErr.Error()
+
+	if len(message) > 0 && message[0] != "" {
+		errorMsg = message[0]
+	} else {
+		if resp != nil && resp.Body != nil {
+			defer func(Body io.ReadCloser) {
+				err := Body.Close()
+				if err != nil {
+				}
+			}(resp.Body)
+			if body, readErr := io.ReadAll(resp.Body); readErr == nil {
+				if marshalErr := json.Unmarshal(body, &parsed); marshalErr != nil {
+					errorMsg = marshalErr.Error()
+				} else {
+					errorMsg = parsed.Error.Message
+				}
 			} else {
-				errorMsg = parsed.Error.Message
+				errorMsg = readErr.Error()
 			}
 		} else {
-			errorMsg = readErr.Error()
+			errorMsg = "no response body"
 		}
-	} else {
-		errorMsg = "no response body"
 	}
 
 	fullMessage := fmt.Sprintf("Could not %s %s (API: %s): %s\n%s", action, typeName, apiName, err.Error(), errorMsg)
@@ -83,4 +96,9 @@ func AddInvalidParamEnum[T ~string](diags *diag.Diagnostics, param string, allow
 			strings.Join(allowedStrs, ", "),
 		),
 	)
+}
+
+func AddImportFormatError(ctx context.Context, obj interface{}, diags *diag.Diagnostics, errorMsg string) {
+	typeName, _ := ExtractTypeMetadata(ctx, obj)
+	diags.AddError(fmt.Sprintf("Invalid import ID format : %s", typeName), errorMsg)
 }

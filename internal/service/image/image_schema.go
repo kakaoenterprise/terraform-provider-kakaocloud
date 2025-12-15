@@ -4,7 +4,6 @@ package image
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -16,132 +15,110 @@ import (
 )
 
 func getImageResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Image("bcs_image__v1__api__get_image__model__ImageModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"name": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("name"),
-			Validators:  common.NameValidator(250),
+			Required:   true,
+			Validators: common.NameValidator(250),
 		},
 		"description": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("description"),
-			Validators:  common.DescriptionValidator(),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.DescriptionValidator(),
 		},
 		"volume_id": rschema.StringAttribute{
-			Optional:    true,
-			Description: docs.ParameterDescription("volume", "get_volume", "path_volume_id"),
-			Validators:  common.UuidValidator(),
+			Optional:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"size": rschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("size"),
+			Computed: true,
 			PlanModifiers: []planmodifier.Int64{
 				int64planmodifier.UseStateForUnknown(),
 			},
 		},
 		"status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"owner": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("owner"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"visibility": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("visibility"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"is_shared": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_shared"),
+			Computed: true,
 		},
 		"disk_format": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("disk_format"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"container_format": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("container_format"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"min_disk": rschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("min_disk"),
+			Computed: true,
 			PlanModifiers: []planmodifier.Int32{
 				int32planmodifier.UseStateForUnknown(),
 			},
 		},
 		"min_ram": rschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("min_ram"),
+			Computed: true,
 			PlanModifiers: []planmodifier.Int32{
 				int32planmodifier.UseStateForUnknown(),
 			},
 		},
 		"virtual_size": rschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("virtual_size"),
+			Computed: true,
 			PlanModifiers: []planmodifier.Int64{
 				int64planmodifier.UseStateForUnknown(),
 			},
 		},
 		"instance_type": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_type"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"image_member_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("image_member_status"),
+			Computed: true,
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"os_info": rschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("os_info"),
-			Attributes:  getImageOsInfoResourceSchemaAttributes(),
+			Computed:   true,
+			Attributes: getImageOsInfoResourceSchemaAttributes(),
 			PlanModifiers: []planmodifier.Object{
 				objectplanmodifier.UseStateForUnknown(),
 			},
@@ -150,139 +127,104 @@ func getImageResourceSchema() map[string]rschema.Attribute {
 }
 
 func getImageDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Image("bcs_image__v1__api__get_image__model__ImageModel")
-
 	return map[string]dschema.Attribute{
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"size": dschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("size"),
+			Computed: true,
 		},
 		"status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"owner": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("owner"),
+			Computed: true,
 		},
 		"visibility": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("visibility"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"is_shared": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_shared"),
+			Computed: true,
 		},
 		"disk_format": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("disk_format"),
+			Computed: true,
 		},
 		"container_format": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("container_format"),
+			Computed: true,
 		},
 		"min_disk": dschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("min_disk"),
+			Computed: true,
 		},
 		"min_ram": dschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("min_ram"),
+			Computed: true,
 		},
 		"virtual_size": dschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("virtual_size"),
+			Computed: true,
 		},
 		"instance_type": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_type"),
+			Computed: true,
 		},
 		"image_member_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("image_member_status"),
+			Computed: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"os_info": dschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("os_info"),
-			Attributes:  getImageOsInfoSchemaAttributes(),
+			Computed:   true,
+			Attributes: getImageOsInfoSchemaAttributes(),
 		},
 	}
 }
 
 func getImageOsInfoResourceSchemaAttributes() map[string]rschema.Attribute {
-	desc := docs.Image("bcs_image__v1__api__get_image__model__OsInfoModel")
-
 	return map[string]rschema.Attribute{
 		"type": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("type"),
+			Computed: true,
 		},
 		"distro": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("distro"),
+			Computed: true,
 		},
 		"architecture": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("architecture"),
+			Computed: true,
 		},
 		"admin_user": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("admin_user"),
+			Computed: true,
 		},
 		"is_hidden": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_hidden"),
+			Computed: true,
 		},
 	}
 }
 
 func getImageOsInfoSchemaAttributes() map[string]dschema.Attribute {
-	desc := docs.Image("bcs_image__v1__api__get_image__model__OsInfoModel")
-
 	return map[string]dschema.Attribute{
 		"type": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("type"),
+			Computed: true,
 		},
 		"distro": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("distro"),
+			Computed: true,
 		},
 		"architecture": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("architecture"),
+			Computed: true,
 		},
 		"admin_user": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("admin_user"),
+			Computed: true,
 		},
 		"is_hidden": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_hidden"),
+			Computed: true,
 		},
 	}
 }
 
 var imageResourceSchemaAttributes = getImageResourceSchema()
 var imageDataSourceSchemaAttributes = getImageDataSourceSchema()
-var imageOsInfoSchemaAttributes = getImageOsInfoSchemaAttributes()

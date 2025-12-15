@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -55,7 +54,6 @@ func (d *kubernetesImagesDataSource) Metadata(ctx context.Context, req datasourc
 
 func (d *kubernetesImagesDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("KubernetesEngineImages"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -76,8 +74,7 @@ func (d *kubernetesImagesDataSource) Schema(ctx context.Context, req datasource.
 					Attributes: MergeDataSourceSchemaAttributes(
 						map[string]schema.Attribute{
 							"id": schema.StringAttribute{
-								Computed:    true,
-								Description: "Image ID",
+								Computed: true,
 							},
 						},
 						kubernetesImageDataSourceSchemaAttributes,
@@ -163,7 +160,7 @@ func (d *kubernetesImagesDataSource) Read(ctx context.Context, req datasource.Re
 
 	for _, v := range imageResp.Images {
 		var tmpImage imageBaseModel
-		ok := d.mapImages(ctx, &tmpImage, &v, &resp.Diagnostics)
+		ok := d.mapImages(&tmpImage, &v)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

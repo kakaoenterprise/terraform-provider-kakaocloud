@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -39,7 +38,6 @@ func (r *subnetResource) Metadata(_ context.Context, req resource.MetadataReques
 
 func (r *subnetResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("Subnet"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			subnetResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -102,6 +100,8 @@ func (r *subnetResource) Create(ctx context.Context, req resource.CreateRequest,
 		ctx,
 		r,
 		5*time.Second,
+		"subnet",
+		plan.Id.ValueString(),
 		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError},
 		&resp.Diagnostics,
 		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetSubnetModelSubnetModel, *http.Response, error) {
@@ -440,6 +440,8 @@ func (r *subnetResource) setAssociation(
 		ctx,
 		r,
 		5*time.Second,
+		"subnet",
+		plan.Id.ValueString(),
 		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError},
 		respDiags,
 		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetSubnetModelSubnetModel, *http.Response, error) {
@@ -483,6 +485,8 @@ func checkSubnetStatus(
 		ctx,
 		r,
 		interval,
+		"subnet",
+		subnetId,
 		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError},
 		respDiags,
 		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetSubnetModelSubnetModel, *http.Response, error) {

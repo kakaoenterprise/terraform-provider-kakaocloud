@@ -45,13 +45,6 @@ type loadBalancerL7PolicyRuleResourceModel struct {
 }
 
 type loadBalancerL7PolicyRulesDataSourceModel struct {
-	Id         types.String                        `tfsdk:"id"`
-	L7Rules    []loadBalancerL7PolicyRuleBaseModel `tfsdk:"l7_rules"`
-	RulesCount types.Int64                         `tfsdk:"rules_count"`
-	Timeouts   datasourceTimeouts.Value            `tfsdk:"timeouts"`
-}
-
-type loadBalancerL7PolicyRuleListDataSourceModel struct {
 	Id       types.String                        `tfsdk:"id"`
 	L7Rules  []loadBalancerL7PolicyRuleBaseModel `tfsdk:"l7_rules"`
 	Timeouts datasourceTimeouts.Value            `tfsdk:"timeouts"`

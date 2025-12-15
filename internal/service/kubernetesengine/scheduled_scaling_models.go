@@ -10,6 +10,8 @@ import (
 )
 
 type scheduledScalingBaseModel struct {
+	ClusterName  types.String `tfsdk:"cluster_name"`
+	NodePoolName types.String `tfsdk:"node_pool_name"`
 	CreatedAt    types.String `tfsdk:"created_at"`
 	DesiredNodes types.Int32  `tfsdk:"desired_nodes"`
 	Name         types.String `tfsdk:"name"`
@@ -21,12 +23,6 @@ type scheduledScalingBaseModel struct {
 
 type scheduledScalingStatusModel struct {
 	Histories types.List `tfsdk:"histories"`
-}
-
-type scheduledScalingHistoryModel struct {
-	Description  types.String `tfsdk:"description"`
-	OccurredTime types.String `tfsdk:"occurred_time"`
-	State        types.String `tfsdk:"state"`
 }
 
 var scheduledScalingHistoryAttrTypes = map[string]attr.Type{
@@ -41,17 +37,7 @@ var scheduledScalingStatusAttrTypes = map[string]attr.Type{
 	},
 }
 
-var scheduledScalingBaseAttrTypes = map[string]attr.Type{
-	"created_at":    types.StringType,
-	"desired_nodes": types.Int32Type,
-	"name":          types.StringType,
-	"schedule":      types.StringType,
-	"schedule_type": types.StringType,
-	"start_time":    types.StringType,
-	"status":        types.ObjectType{AttrTypes: scheduledScalingStatusAttrTypes},
-}
-
-type scheduledScalingDataSourceModel struct {
+type scheduledScalingsDataSourceModel struct {
 	ScheduledScaling []scheduledScalingBaseModel `tfsdk:"scheduled_scaling"`
 	ClusterName      types.String                `tfsdk:"cluster_name"`
 	NodePoolName     types.String                `tfsdk:"node_pool_name"`
@@ -60,7 +46,10 @@ type scheduledScalingDataSourceModel struct {
 
 type scheduledScalingResourceModel struct {
 	scheduledScalingBaseModel
-	ClusterName  types.String           `tfsdk:"cluster_name"`
-	NodePoolName types.String           `tfsdk:"node_pool_name"`
-	Timeouts     resourceTimeouts.Value `tfsdk:"timeouts"`
+	Timeouts resourceTimeouts.Value `tfsdk:"timeouts"`
+}
+
+type scheduledScalingDataSourceModel struct {
+	scheduledScalingBaseModel
+	Timeouts datasourceTimeouts.Value `tfsdk:"timeouts"`
 }

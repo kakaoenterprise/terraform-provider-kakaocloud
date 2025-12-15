@@ -8,11 +8,11 @@ import (
 	"net/http"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -39,16 +39,14 @@ func (r *scheduledScalingResource) ValidateConfig(ctx context.Context, req resou
 		return
 	}
 
-	r.validateScheduleRequirement(config, resp)
+	r.validateScheduleRequirement(ctx, config, resp)
 }
 
 func (r *scheduledScalingResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	parts := strings.SplitN(req.ID, "/", 3)
 	if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
-		resp.Diagnostics.AddError(
-			"Invalid import ID",
-			"Expected <cluster_name>/<node_pool_name>/<name>.",
-		)
+		common.AddImportFormatError(ctx, r, &resp.Diagnostics,
+			"Expected import ID in the format: cluster_name/node_pool_name/name")
 		return
 	}
 
@@ -56,13 +54,13 @@ func (r *scheduledScalingResource) ImportState(ctx context.Context, req resource
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("node_pool_name"), parts[1])...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), parts[2])...)
 }
-func (r *scheduledScalingResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+
+func (r *scheduledScalingResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_kubernetes_engine_scheduled_scaling"
 }
 
-func (r *scheduledScalingResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *scheduledScalingResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("KubernetesEngineScheduledScaling"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			scheduledScalingResourceSchema,
 			map[string]schema.Attribute{
@@ -78,14 +76,8 @@ type scheduleLookup struct {
 }
 
 func (r *scheduledScalingResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan, config scheduledScalingResourceModel
+	var plan scheduledScalingResourceModel
 	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	diags = req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -100,22 +92,32 @@ func (r *scheduledScalingResource) Create(ctx context.Context, req resource.Crea
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	clusterName := plan.ClusterName.ValueString()
+	nodePoolName := plan.NodePoolName.ValueString()
+
+	mutex := common.LockForID(fmt.Sprintf("%s/%s", clusterName, nodePoolName))
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	var ok bool
+	_, ok = r.checkNodePoolReadyAndGetResult(ctx, clusterName, nodePoolName, &resp.Diagnostics)
+	if !ok {
+		return
+	}
+
 	createReq := kubernetesengine.ScheduleRequestModel{
 		Name:         plan.Name.ValueString(),
 		ScheduleType: kubernetesengine.SchedulingType(plan.ScheduleType.ValueString()),
 		DesiredNodes: plan.DesiredNodes.ValueInt32(),
 		StartTime:    stripSecondsForAPI(plan.StartTime.ValueString()),
 	}
-	if !plan.Schedule.IsNull() && !plan.Schedule.IsUnknown() && plan.Schedule.ValueString() != "" {
+	if !plan.Schedule.IsNull() {
 		createReq.SetSchedule(plan.Schedule.ValueString())
 	}
 
 	body := kubernetesengine.CreateK8sClusterNodePoolScalingScheduleRequestModel{
 		ScheduledScaling: createReq,
 	}
-
-	clusterName := plan.ClusterName.ValueString()
-	nodePoolName := plan.NodePoolName.ValueString()
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
@@ -135,6 +137,8 @@ func (r *scheduledScalingResource) Create(ctx context.Context, req resource.Crea
 		ctx,
 		r,
 		2*time.Second,
+		"scheduled scaling",
+		plan.Name.ValueString(),
 		[]string{"found"},
 		&resp.Diagnostics,
 		func(ctx context.Context) (scheduleLookup, *http.Response, error) {
@@ -172,7 +176,7 @@ func (r *scheduledScalingResource) Create(ctx context.Context, req resource.Crea
 
 	created := result.Item
 
-	ok = mapScheduledScalingBaseModel(ctx, &plan.scheduledScalingBaseModel, created, &resp.Diagnostics)
+	ok = mapScheduledScalingBaseModel(ctx, clusterName, nodePoolName, &plan.scheduledScalingBaseModel, created, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -233,7 +237,7 @@ func (r *scheduledScalingResource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	ok := mapScheduledScalingBaseModel(ctx, &state.scheduledScalingBaseModel, found, &resp.Diagnostics)
+	ok := mapScheduledScalingBaseModel(ctx, clusterName, nodePoolName, &state.scheduledScalingBaseModel, found, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -245,7 +249,7 @@ func (r *scheduledScalingResource) Read(ctx context.Context, req resource.ReadRe
 	}
 }
 
-func (r *scheduledScalingResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *scheduledScalingResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	resp.Diagnostics.AddError(
 		"Update Not Supported",
 		"This resource does not support update. Please recreate the resource if needed.",
@@ -318,7 +322,7 @@ func (r *scheduledScalingResource) Delete(ctx context.Context, req resource.Dele
 	resp.State.RemoveResource(ctx)
 }
 
-func (r *scheduledScalingResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *scheduledScalingResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -344,31 +348,51 @@ func stripSecondsForAPI(val string) string {
 }
 
 func (r *scheduledScalingResource) validateScheduleRequirement(
+	ctx context.Context,
 	config scheduledScalingResourceModel,
 	resp *resource.ValidateConfigResponse,
 ) {
-	if resp.Diagnostics.HasError() {
+	if config.ScheduleType.IsUnknown() {
 		return
 	}
 
-	if !config.ScheduleType.IsNull() && !config.ScheduleType.IsUnknown() &&
-		config.ScheduleType.ValueString() == "cron" {
-
-		if config.Schedule.IsNull() || config.Schedule.IsUnknown() || config.Schedule.ValueString() == "" {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("schedule"),
-				"Missing schedule for cron",
-				"When scheduling_type is 'cron', 'schedule' must be provided.",
-			)
+	if config.ScheduleType.ValueString() == string(kubernetesengine.SCHEDULINGTYPE_CRON) {
+		if config.Schedule.IsNull() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				"When 'scheduling_type' is 'cron', 'schedule' must be provided.")
 		}
-		return
+	} else {
+		if !config.Schedule.IsNull() {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				"'schedule' is only used when scheduling_type is 'cron'.")
+		}
 	}
+}
 
-	if !config.Schedule.IsNull() && !config.Schedule.IsUnknown() && config.Schedule.ValueString() != "" {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("schedule"),
-			"Ignored schedule",
-			"schedule is only used when scheduling_type is 'cron'. The value will be ignored.",
-		)
+func (r *scheduledScalingResource) checkNodePoolReadyAndGetResult(
+	ctx context.Context,
+	clusterName, nodePoolName string,
+	diags *diag.Diagnostics,
+) (*kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel, bool) {
+	result, ok := waitNodePool(
+		ctx,
+		r.kc,
+		r,
+		clusterName,
+		nodePoolName,
+		NodePoolStatusesReadyOrFailed,
+		diags,
+	)
+	if !ok || diags.HasError() {
+		return nil, false
 	}
+	status := string(result.Status.Phase)
+	common.CheckResourceAvailableStatus(ctx, r, &status,
+		[]string{string(kubernetesengine.NODEPOOLSTATUS_RUNNING),
+			string(kubernetesengine.NODEPOOLSTATUS_RUNNING__SCHEDULING_DISABLE)},
+		diags)
+	if diags.HasError() {
+		return nil, false
+	}
+	return result, true
 }

@@ -67,7 +67,7 @@ func completeConfig(config *Config) error {
 		return fmt.Errorf("application_credential_secret is required")
 	}
 
-	if config.Region.IsUnknown() || config.ServiceRealm.IsNull() {
+	if config.ServiceRealm.IsUnknown() || config.ServiceRealm.IsNull() {
 		config.ServiceRealm = types.StringValue("public")
 	}
 	if config.Region.IsUnknown() || config.Region.IsNull() {

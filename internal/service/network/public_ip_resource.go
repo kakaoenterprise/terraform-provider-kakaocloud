@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 
 	"time"
@@ -59,7 +58,6 @@ func (r *publicIpResource) Metadata(_ context.Context, req resource.MetadataRequ
 
 func (r *publicIpResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("PublicIp"),
 		Attributes: utils.MergeAttributes[schema.Attribute](
 			publicIpResourceSchema,
 			map[string]schema.Attribute{
@@ -108,7 +106,7 @@ func (r *publicIpResource) Create(ctx context.Context, req resource.CreateReques
 	_, ok := r.pollPublicIpUtilsStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{PublicIpAvailable},
+		[]string{common.PublicIpAvailable},
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
@@ -136,7 +134,7 @@ func (r *publicIpResource) Create(ctx context.Context, req resource.CreateReques
 		_, ok = r.pollPublicIpUtilsStatus(
 			ctx,
 			plan.Id.ValueString(),
-			[]string{PublicIpInUse},
+			[]string{common.PublicIpInUse},
 			&resp.Diagnostics,
 		)
 
@@ -295,7 +293,7 @@ func (r *publicIpResource) Update(ctx context.Context, req resource.UpdateReques
 			_, ok := r.pollPublicIpUtilsStatus(
 				ctx,
 				publicIpId,
-				[]string{PublicIpAvailable},
+				[]string{common.PublicIpAvailable},
 				&resp.Diagnostics,
 			)
 			if !ok || resp.Diagnostics.HasError() {
@@ -323,7 +321,7 @@ func (r *publicIpResource) Update(ctx context.Context, req resource.UpdateReques
 			_, ok := r.pollPublicIpUtilsStatus(
 				ctx,
 				plan.Id.ValueString(),
-				[]string{PublicIpInUse},
+				[]string{common.PublicIpInUse},
 				&resp.Diagnostics,
 			)
 			if !ok || resp.Diagnostics.HasError() {
@@ -399,7 +397,7 @@ func (r *publicIpResource) Delete(ctx context.Context, req resource.DeleteReques
 		_, ok := r.pollPublicIpUtilsStatus(
 			ctx,
 			publicIpId,
-			[]string{PublicIpAvailable},
+			[]string{common.PublicIpAvailable},
 			&resp.Diagnostics,
 		)
 

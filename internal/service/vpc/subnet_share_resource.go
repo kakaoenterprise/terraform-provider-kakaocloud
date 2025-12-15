@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -41,7 +40,6 @@ func (r *subnetShareResource) Metadata(_ context.Context, req resource.MetadataR
 
 func (r *subnetShareResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("SubnetShare"),
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Required:   true,
@@ -49,17 +47,14 @@ func (r *subnetShareResource) Schema(ctx context.Context, _ resource.SchemaReque
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				Description: "Subnet ID",
 			},
 			"projects": schema.ListAttribute{
 				Computed:    true,
 				ElementType: types.StringType,
-				Description: "List of shared Project IDs for the Subnet",
 			},
 			"project_ids": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "List of Project IDs requesting subnet sharing",
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
 					setvalidator.ValueStringsAre(common.UuidNoHyphenValidator()...),

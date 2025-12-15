@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
+	"terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/jinzhu/copier"
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
@@ -49,7 +50,6 @@ func (d *loadBalancerTargetGroupsDataSource) Metadata(_ context.Context, req dat
 
 func (d *loadBalancerTargetGroupsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("LoadBalancerTargetGroups"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -65,10 +65,16 @@ func (d *loadBalancerTargetGroupsDataSource) Schema(ctx context.Context, _ datas
 				},
 			},
 			"target_groups": schema.ListNestedAttribute{
-				Computed:    true,
-				Description: "List of target groups",
+				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: loadBalancerTargetGroupDataSourceSchemaAttributes,
+					Attributes: utils.MergeDataSourceSchemaAttributes(
+						map[string]schema.Attribute{
+							"id": schema.StringAttribute{
+								Computed: true,
+							},
+						},
+						loadBalancerTargetGroupDataSourceSchemaAttributes,
+					),
 				},
 			},
 			"timeouts": timeouts.Attributes(ctx),
@@ -178,9 +184,17 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 		return
 	}
 
-	for _, v := range respModel.TargetGroups {
+	var targetGroupResult []loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupModelTargetGroupModel
+	err = copier.Copy(&targetGroupResult, &respModel.TargetGroups)
+	if err != nil {
+		common.AddGeneralError(ctx, d, &resp.Diagnostics,
+			fmt.Sprintf("Failed to convert targetGroupResult: %v", err))
+		return
+	}
+
+	for _, v := range targetGroupResult {
 		var tmpTargetGroup loadBalancerTargetGroupBaseModel
-		ok := mapLoadBalancerTargetGroupSingleFromListResponse(ctx, &tmpTargetGroup, &v, &resp.Diagnostics)
+		ok := mapLoadBalancerTargetGroupFromGetResponse(ctx, &tmpTargetGroup, &v, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

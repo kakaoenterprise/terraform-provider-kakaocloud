@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -50,7 +49,6 @@ func (d *loadBalancerL7PolicyDataSource) Metadata(_ context.Context, req datasou
 
 func (d *loadBalancerL7PolicyDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("LoadBalancerL7Policy"),
 		Attributes: utils.MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
@@ -90,21 +88,13 @@ func (d *loadBalancerL7PolicyDataSource) Read(ctx context.Context, req datasourc
 		},
 	)
 
-	if httpResp != nil && httpResp.StatusCode == 404 {
-		resp.Diagnostics.AddError(
-			"L7 Policy Not Found",
-			fmt.Sprintf("L7 policy with ID %s was not found.", data.Id.ValueString()),
-		)
-		return
-	}
-
 	if err != nil {
 		common.AddApiActionError(ctx, d, httpResp, "GetL7Policy", err, &resp.Diagnostics)
 		return
 	}
 
 	l7PolicyResult := respModel.L7Policy
-	ok := mapLoadBalancerL7PolicyDataSourceFromGetResponse(ctx, &data.loadBalancerL7PolicyBaseModel, &l7PolicyResult, &resp.Diagnostics)
+	ok := mapLoadBalancerL7PolicyFromGetResponse(ctx, &data.loadBalancerL7PolicyBaseModel, &l7PolicyResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

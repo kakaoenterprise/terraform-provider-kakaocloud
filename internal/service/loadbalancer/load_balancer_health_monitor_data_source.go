@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"terraform-provider-kakaocloud/internal/utils"
 
@@ -51,7 +50,6 @@ func (d *loadBalancerHealthMonitorDataSource) Metadata(_ context.Context, req da
 
 func (d *loadBalancerHealthMonitorDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("LoadBalancerHealthMonitor"),
 		Attributes: utils.MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
@@ -82,23 +80,12 @@ func (d *loadBalancerHealthMonitorDataSource) Read(ctx context.Context, req data
 		},
 	)
 
-	if httpResp != nil && httpResp.StatusCode == 404 {
-		resp.Diagnostics.AddError(
-			"Health Monitor Not Found",
-			fmt.Sprintf("Health monitor with ID %s was not found.", data.Id.ValueString()),
-		)
-		return
-	}
-
 	if err != nil {
 		common.AddApiActionError(ctx, d, httpResp, "GetHealthMonitor", err, &resp.Diagnostics)
 		return
 	}
 
-	ok := mapHealthMonitorFromGetResponse(ctx, &data.loadBalancerHealthMonitorBaseModel, &healthMonitor.HealthMonitor, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
-		return
-	}
+	mapHealthMonitorFromGetResponse(&data.loadBalancerHealthMonitorBaseModel, &healthMonitor.HealthMonitor)
 
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)

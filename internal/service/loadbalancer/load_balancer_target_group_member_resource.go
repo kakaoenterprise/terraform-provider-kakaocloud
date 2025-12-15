@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -39,7 +38,6 @@ func (r *loadBalancerTargetGroupMemberResource) Metadata(_ context.Context, req 
 
 func (r *loadBalancerTargetGroupMemberResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("LoadBalancerTargetGroupMember"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			loadBalancerTargetGroupMemberResourceSchema,
 			map[string]schema.Attribute{
@@ -91,10 +89,12 @@ func (r *loadBalancerTargetGroupMemberResource) Create(ctx context.Context, req 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	createReq := mapLoadBalancerTargetGroupMemberToCreateRequest(ctx, &plan, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
+	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
+
+	createReq := mapLoadBalancerTargetGroupMemberToCreateRequest(&plan)
 
 	body := loadbalancer.NewBodyAddTarget(*createReq)
 
@@ -117,27 +117,19 @@ func (r *loadBalancerTargetGroupMemberResource) Create(ctx context.Context, req 
 		ctx,
 		plan.TargetGroupId.ValueString(),
 		respModel.Member.Id,
-		[]string{ProvisioningStatusActive, ProvisioningStatusError},
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	if result.ProvisioningStatus.IsSet() && result.ProvisioningStatus.Get() != nil && string(*result.ProvisioningStatus.Get()) == "ERROR" {
-		resp.Diagnostics.AddError(
-			"Target Group Member Creation Failed",
-			"The target group member creation failed and is in ERROR state",
-		)
-		return
-	}
-
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	ok = mapLoadBalancerTargetGroupMemberFromGetResponse(ctx, &plan, result, &resp.Diagnostics)
+	ok = mapLoadBalancerTargetGroupMemberFromGetResponse(&plan, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -196,7 +188,7 @@ func (r *loadBalancerTargetGroupMemberResource) Read(ctx context.Context, req re
 		return
 	}
 
-	ok := mapLoadBalancerTargetGroupMemberFromGetResponse(ctx, &state, foundMember, &resp.Diagnostics)
+	ok := mapLoadBalancerTargetGroupMemberFromGetResponse(&state, foundMember, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -236,9 +228,27 @@ func (r *loadBalancerTargetGroupMemberResource) Update(ctx context.Context, req 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	updateReq := mapLoadBalancerTargetGroupMemberToUpdateRequest(ctx, &plan, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
+	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
 		return
+	}
+
+	updateReq := loadbalancer.NewBnsLoadBalancerV1ApiUpdateTargetModelEditTargetGroupMember()
+
+	if !plan.Name.Equal(state.Name) {
+		if !plan.Name.IsNull() && !plan.Name.IsUnknown() {
+			updateReq.SetName(plan.Name.ValueString())
+		} else {
+			updateReq.SetNameNil()
+		}
+	}
+
+	if !plan.Weight.Equal(state.Weight) && !plan.Weight.IsNull() && !plan.Weight.IsUnknown() {
+		updateReq.SetWeight(plan.Weight.ValueInt32())
+	}
+
+	if !plan.MonitorPort.Equal(state.MonitorPort) && !plan.MonitorPort.IsNull() && !plan.MonitorPort.IsUnknown() {
+		updateReq.SetMonitorPort(plan.MonitorPort.ValueInt32())
 	}
 
 	body := loadbalancer.NewBodyUpdateTarget(*updateReq)
@@ -258,31 +268,25 @@ func (r *loadBalancerTargetGroupMemberResource) Update(ctx context.Context, req 
 		return
 	}
 
+	time.Sleep(5 * time.Second)
+
 	result, ok := r.pollTargetGroupMemberUntilStatus(
 		ctx,
 		state.TargetGroupId.ValueString(),
 		state.Id.ValueString(),
-		[]string{ProvisioningStatusActive, ProvisioningStatusError},
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	if result.ProvisioningStatus.IsSet() && result.ProvisioningStatus.Get() != nil && string(*result.ProvisioningStatus.Get()) == "ERROR" {
-		resp.Diagnostics.AddError(
-			"Target Group Member Update Failed",
-			"The target group member update failed and is in ERROR state",
-		)
-		return
-	}
-
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	ok = mapLoadBalancerTargetGroupMemberFromGetResponse(ctx, &plan, result, &resp.Diagnostics)
+	ok = mapLoadBalancerTargetGroupMemberFromGetResponse(&plan, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -315,6 +319,11 @@ func (r *loadBalancerTargetGroupMemberResource) Delete(ctx context.Context, req 
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
@@ -362,20 +371,15 @@ func (r *loadBalancerTargetGroupMemberResource) Delete(ctx context.Context, req 
 
 func (r *loadBalancerTargetGroupMemberResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
-	parts := strings.Split(req.ID, ":")
+	parts := strings.Split(req.ID, "/")
 	if len(parts) != 2 {
-		resp.Diagnostics.AddError(
-			"Invalid Import ID",
-			"Import ID must be in the format: target_group_id:member_id",
-		)
+		common.AddImportFormatError(ctx, r, &resp.Diagnostics,
+			"Expected import ID in the format: target_group_id/member_id")
 		return
 	}
 
-	targetGroupId := parts[0]
-	memberId := parts[1]
-
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_group_id"), targetGroupId)...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), memberId)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_group_id"), parts[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), parts[1])...)
 }
 
 func (r *loadBalancerTargetGroupMemberResource) getLoadBalancerIdByTargetGroupId(ctx context.Context, targetGroupId string, respDiags *diag.Diagnostics) (*string, bool) {

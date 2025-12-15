@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -56,7 +55,6 @@ func (r *loadBalancerResource) Metadata(_ context.Context, req resource.Metadata
 
 func (r *loadBalancerResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("LoadBalancer"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			loadBalancerResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -84,14 +82,8 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	if err := r.checkLoadBalancerNameExists(ctx, plan.Name.ValueString(), "", &resp.Diagnostics); err != nil {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("name"),
-			"Load Balancer Name Conflict",
-			fmt.Sprintf("A load balancer with name '%s' already exists. Please choose a different name.", plan.Name.ValueString()),
-		)
-		return
-	}
+	var result *loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel
+	var ok bool
 
 	createReq := loadbalancer.CreateLoadBalancerModel{
 		Name:             plan.Name.ValueString(),
@@ -118,102 +110,31 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 
 	plan.Id = types.StringValue(lb.LoadBalancer.Id)
 
-	result, ok := r.pollLoadBalancerUntilStatus(
+	result, ok = r.pollLoadBalancerUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{ProvisioningStatusActive, ProvisioningStatusError},
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
-
-	ok = mapLoadBalancer(ctx, &plan.loadBalancerBaseModel, result, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	if !plan.AccessLogs.IsNull() && !plan.AccessLogs.IsUnknown() {
-
-		var accessLog accessLogModel
-		diags := plan.AccessLogs.As(ctx, &accessLog, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
+		result, ok = r.updateLoadBalancerAccessLogs(ctx, &plan, &resp.Diagnostics)
+		if !ok {
 			return
 		}
+	}
 
-		if accessLog.Bucket.IsNull() || accessLog.Bucket.IsUnknown() || accessLog.Bucket.ValueString() == "" {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("access_logs").AtName("bucket"),
-				"Missing Required Field",
-				"Bucket is required for access logs configuration",
-			)
-			return
-		}
-
-		if accessLog.AccessKey.IsNull() || accessLog.AccessKey.IsUnknown() || accessLog.AccessKey.ValueString() == "" {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("access_logs").AtName("access_key"),
-				"Missing Required Field",
-				"Access key is required for access logs configuration",
-			)
-			return
-		}
-
-		if accessLog.SecretKey.IsNull() || accessLog.SecretKey.IsUnknown() || accessLog.SecretKey.ValueString() == "" {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("access_logs").AtName("secret_key"),
-				"Missing Required Field",
-				"Secret key is required for access logs configuration",
-			)
-			return
-		}
-
-		accessLogReq := loadbalancer.EditLoadBalancerAccessLogModel{
-			Bucket:    accessLog.Bucket.ValueString(),
-			AccessKey: accessLog.AccessKey.ValueString(),
-			SecretKey: accessLog.SecretKey.ValueString(),
-		}
-
-		body := loadbalancer.NewBodyUpdateAccessLog()
-		body.SetAccessLogs(accessLogReq)
-
-		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateAccessLogModelResponseLoadBalancerModel, *http.Response, error) {
-				return r.kc.ApiClient.LoadBalancerAPI.UpdateAccessLog(ctx, plan.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateAccessLog(*body).Execute()
-			},
-		)
-
-		if err != nil {
-			common.AddApiActionError(ctx, r, httpResp, "UpdateLoadBalancerAccessLog", err, &resp.Diagnostics)
-			return
-		}
-
-		finalResult, ok := r.pollLoadBalancerUntilStatus(
-			ctx,
-			plan.Id.ValueString(),
-			[]string{ProvisioningStatusActive, ProvisioningStatusError},
-			&resp.Diagnostics,
-		)
-		if !ok || resp.Diagnostics.HasError() {
-			return
-		}
-
-		common.CheckResourceAvailableStatus(ctx, r, (*string)(finalResult.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		ok = mapLoadBalancer(ctx, &plan.loadBalancerBaseModel, finalResult, &resp.Diagnostics)
-		if !ok || resp.Diagnostics.HasError() {
-			return
-		}
-
-	} else {
-
-		plan.AccessLogs = types.ObjectNull(accessLogAttrType)
+	ok = mapLoadBalancer(ctx, &plan.loadBalancerBaseModel, result, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
 	}
 
 	diags = resp.State.Set(ctx, plan)
@@ -261,15 +182,11 @@ func (r *loadBalancerResource) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	preservedAccessLogs := state.AccessLogs
-
 	loadBalancerResult := respModel.LoadBalancer
 	ok := mapLoadBalancer(ctx, &state.loadBalancerBaseModel, &loadBalancerResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
-
-	state.AccessLogs = preservedAccessLogs
 
 	if state.FlavorId.IsNull() {
 		lbfs, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
@@ -312,33 +229,32 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
+	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	var result *loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel
+	var ok bool
+
+	mutex := common.LockForID(plan.Id.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	ok = CheckLoadBalancerStatus(ctx, plan.Id.ValueString(), true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
 	if !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) {
-
-		if !plan.Name.Equal(state.Name) {
-			if err := r.checkLoadBalancerNameExists(ctx, plan.Name.ValueString(), state.Id.ValueString(), &resp.Diagnostics); err != nil {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("name"),
-					"Load Balancer Name Conflict",
-					fmt.Sprintf("A load balancer with name '%s' already exists. Please choose a different name.", plan.Name.ValueString()),
-				)
-				return
-			}
-		}
-
-		timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		ctx, cancel := context.WithTimeout(ctx, timeout)
-		defer cancel()
 
 		editReq := loadbalancer.EditLoadBalancerModel{}
 
 		if !plan.Name.Equal(state.Name) {
-			if !plan.Name.IsNull() && !plan.Name.IsUnknown() {
-				editReq.SetName(plan.Name.ValueString())
-			}
+			editReq.SetName(plan.Name.ValueString())
 		}
 
 		if !plan.Description.Equal(state.Description) {
@@ -367,149 +283,37 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 			return
 		}
 
-		result, ok := r.pollLoadBalancerUntilStatus(
+		result, ok = r.pollLoadBalancerUntilStatus(
 			ctx,
 			state.Id.ValueString(),
-			[]string{ProvisioningStatusActive, ProvisioningStatusError},
+			[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 			&resp.Diagnostics,
 		)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
 
-		common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
+		common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		ok = mapLoadBalancer(ctx, &state.loadBalancerBaseModel, result, &resp.Diagnostics)
-		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
 	}
 
 	if !plan.AccessLogs.Equal(state.AccessLogs) {
-		if !plan.AccessLogs.IsNull() && !plan.AccessLogs.IsUnknown() {
-
-			var accessLog accessLogModel
-			diags := plan.AccessLogs.As(ctx, &accessLog, basetypes.ObjectAsOptions{})
-			resp.Diagnostics.Append(diags...)
-			if resp.Diagnostics.HasError() {
-				return
-			}
-
-			if accessLog.Bucket.IsNull() || accessLog.Bucket.IsUnknown() || accessLog.Bucket.ValueString() == "" {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("access_logs").AtName("bucket"),
-					"Missing Required Field",
-					"Bucket is required for access logs configuration",
-				)
-				return
-			}
-
-			if accessLog.AccessKey.IsNull() || accessLog.AccessKey.IsUnknown() || accessLog.AccessKey.ValueString() == "" {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("access_logs").AtName("access_key"),
-					"Missing Required Field",
-					"Access key is required for access logs configuration",
-				)
-				return
-			}
-
-			if accessLog.SecretKey.IsNull() || accessLog.SecretKey.IsUnknown() || accessLog.SecretKey.ValueString() == "" {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("access_logs").AtName("secret_key"),
-					"Missing Required Field",
-					"Secret key is required for access logs configuration",
-				)
-				return
-			}
-
-			accessLogReq := loadbalancer.EditLoadBalancerAccessLogModel{
-				Bucket:    accessLog.Bucket.ValueString(),
-				AccessKey: accessLog.AccessKey.ValueString(),
-				SecretKey: accessLog.SecretKey.ValueString(),
-			}
-
-			body := loadbalancer.NewBodyUpdateAccessLog()
-			body.SetAccessLogs(accessLogReq)
-
-			_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-				func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateAccessLogModelResponseLoadBalancerModel, *http.Response, error) {
-					return r.kc.ApiClient.LoadBalancerAPI.UpdateAccessLog(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateAccessLog(*body).Execute()
-				},
-			)
-
-			if err != nil {
-				common.AddApiActionError(ctx, r, httpResp, "UpdateLoadBalancerAccessLog", err, &resp.Diagnostics)
-				return
-			}
-
-			result, ok := r.pollLoadBalancerUntilStatus(
-				ctx,
-				state.Id.ValueString(),
-				[]string{ProvisioningStatusActive, ProvisioningStatusError},
-				&resp.Diagnostics,
-			)
-			if !ok || resp.Diagnostics.HasError() {
-				return
-			}
-
-			common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
-			if resp.Diagnostics.HasError() {
-				return
-			}
-
-			ok = mapLoadBalancer(ctx, &state.loadBalancerBaseModel, result, &resp.Diagnostics)
-			if !ok || resp.Diagnostics.HasError() {
-				return
-			}
-
-			state.AccessLogs = plan.AccessLogs
-		} else if plan.AccessLogs.IsNull() {
-
-			body := loadbalancer.NewBodyUpdateAccessLog()
-			body.SetAccessLogsNil()
-
-			_, _, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-				func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateAccessLogModelResponseLoadBalancerModel, *http.Response, error) {
-					return r.kc.ApiClient.LoadBalancerAPI.UpdateAccessLog(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateAccessLog(*body).Execute()
-				},
-			)
-
-			if err != nil {
-				common.AddApiActionError(ctx, r, nil, "UpdateAccessLog", err, &resp.Diagnostics)
-				return
-			} else {
-
-				result, ok := r.pollLoadBalancerUntilStatus(
-					ctx,
-					state.Id.ValueString(),
-					[]string{ProvisioningStatusActive, ProvisioningStatusError},
-					&resp.Diagnostics,
-				)
-				if !ok || resp.Diagnostics.HasError() {
-					return
-				}
-
-				common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
-				if resp.Diagnostics.HasError() {
-					return
-				}
-
-				ok = mapLoadBalancer(ctx, &state.loadBalancerBaseModel, result, &resp.Diagnostics)
-				if !ok || resp.Diagnostics.HasError() {
-					return
-				}
-			}
-
-			state.AccessLogs = plan.AccessLogs
+		result, ok = r.updateLoadBalancerAccessLogs(ctx, &plan, &resp.Diagnostics)
+		if !ok {
+			return
 		}
-
 	}
 
-	state.Timeouts = plan.Timeouts
-	diags = resp.State.Set(ctx, &state)
+	if result != nil {
+		ok = mapLoadBalancer(ctx, &plan.loadBalancerBaseModel, result, &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
+	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -518,6 +322,15 @@ func (r *loadBalancerResource) Delete(ctx context.Context, req resource.DeleteRe
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	mutex := common.LockForID(state.Id.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	ok := CheckLoadBalancerStatus(ctx, state.Id.ValueString(), true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -558,13 +371,19 @@ func (r *loadBalancerResource) pollLoadBalancerUntilStatus(
 		ctx,
 		r,
 		5*time.Second,
+		"load balancer",
+		loadBalancerId,
 		targetStatuses,
 		resp,
 		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel, *http.Response, error) {
-			respModel, httpResp, err := r.kc.ApiClient.LoadBalancerAPI.
-				GetLoadBalancer(ctx, loadBalancerId).
-				XAuthToken(r.kc.XAuthToken).
-				Execute()
+			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
+				func() (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelResponseLoadBalancerModel, *http.Response, error) {
+					return r.kc.ApiClient.LoadBalancerAPI.
+						GetLoadBalancer(ctx, loadBalancerId).
+						XAuthToken(r.kc.XAuthToken).
+						Execute()
+				},
+			)
 			if err != nil {
 				return nil, httpResp, err
 			}
@@ -576,30 +395,81 @@ func (r *loadBalancerResource) pollLoadBalancerUntilStatus(
 	)
 }
 
+func (r *loadBalancerResource) updateLoadBalancerAccessLogs(
+	ctx context.Context,
+	plan *loadBalancerResourceModel,
+	diag *diag.Diagnostics,
+) (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel, bool) {
+	var accessLog accessLogModel
+	body := loadbalancer.NewBodyUpdateAccessLog()
+
+	if plan.AccessLogs.IsNull() {
+		body.SetAccessLogsNil()
+	} else {
+		diags := plan.AccessLogs.As(ctx, &accessLog, basetypes.ObjectAsOptions{})
+		diag.Append(diags...)
+		if diag.HasError() {
+			return nil, false
+		}
+
+		accessLogReq := loadbalancer.EditLoadBalancerAccessLogModel{
+			Bucket:    accessLog.Bucket.ValueString(),
+			AccessKey: accessLog.AccessKey.ValueString(),
+			SecretKey: accessLog.SecretKey.ValueString(),
+		}
+
+		body.SetAccessLogs(accessLogReq)
+	}
+
+	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
+		func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateAccessLogModelResponseLoadBalancerModel, *http.Response, error) {
+			return r.kc.ApiClient.LoadBalancerAPI.UpdateAccessLog(ctx, plan.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateAccessLog(*body).Execute()
+		},
+	)
+
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "UpdateLoadBalancerAccessLog", err, diag)
+		return nil, false
+	}
+
+	result, ok := r.pollLoadBalancerUntilStatus(
+		ctx,
+		plan.Id.ValueString(),
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
+		diag,
+	)
+	if !ok || diag.HasError() {
+		return nil, false
+	}
+
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, diag)
+	if diag.HasError() {
+		return nil, false
+	}
+
+	return result, true
+}
+
 func (r *loadBalancerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (r *loadBalancerResource) checkLoadBalancerNameExists(ctx context.Context, name string, currentId string, diags *diag.Diagnostics) error {
+func (r *loadBalancerResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config loadBalancerResourceModel
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	lbs, _, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
-		func() (*loadbalancer.LoadBalancerListModel, *http.Response, error) {
-			return r.kc.ApiClient.LoadBalancerAPI.ListLoadBalancers(ctx).XAuthToken(r.kc.XAuthToken).Execute()
-		},
+	r.validateAvailabilityZoneConfig(config, resp)
+}
+
+func (r *loadBalancerResource) validateAvailabilityZoneConfig(config loadBalancerResourceModel, resp *resource.ValidateConfigResponse) {
+	common.ValidateAvailabilityZone(
+		path.Root("availability_zone"),
+		config.AvailabilityZone,
+		r.kc,
+		&resp.Diagnostics,
 	)
-	if err != nil {
-		return err
-	}
-
-	for _, lb := range lbs.LoadBalancers {
-		if lb.Name.IsSet() && *lb.Name.Get() == name {
-
-			if currentId != "" && lb.Id == currentId {
-				continue
-			}
-			return fmt.Errorf("load balancer with name '%s' already exists", name)
-		}
-	}
-
-	return nil
 }

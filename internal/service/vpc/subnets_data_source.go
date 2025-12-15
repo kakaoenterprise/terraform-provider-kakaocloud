@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -38,7 +37,6 @@ func (d *subnetsDataSource) Metadata(_ context.Context, req datasource.MetadataR
 
 func (d *subnetsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("Subnets"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -59,8 +57,7 @@ func (d *subnetsDataSource) Schema(ctx context.Context, _ datasource.SchemaReque
 					Attributes: MergeDataSourceSchemaAttributes(
 						map[string]schema.Attribute{
 							"id": schema.StringAttribute{
-								Computed:    true,
-								Description: "Subnet ID",
+								Computed: true,
 							},
 						},
 						subnetDataSourceSchemaAttributes,
@@ -193,7 +190,7 @@ func (d *subnetsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	err = copier.Copy(&subnetsResult, &subnetResp.Subnets)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
-			fmt.Sprintf("subnetsResult transform fail: %v", err))
+			fmt.Sprintf("Failed to convert subnetsResult: %v", err))
 		return
 	}
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -31,12 +30,10 @@ func (d *loadBalancerTargetGroupMembersDataSource) Metadata(_ context.Context, r
 
 func (d *loadBalancerTargetGroupMembersDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("LoadBalancerTargetGroupMembers"),
 		Attributes: map[string]schema.Attribute{
 			"target_group_id": schema.StringAttribute{
-				Required:    true,
-				Description: "The ID of the target group to list members for",
-				Validators:  common.UuidValidator(),
+				Required:   true,
+				Validators: common.UuidValidator(),
 			},
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -182,17 +179,12 @@ func (d *loadBalancerTargetGroupMembersDataSource) Read(ctx context.Context, req
 		},
 	)
 
-	if httpResp != nil && httpResp.StatusCode == 404 {
-		resp.Diagnostics.AddError("Target Group Not Found", "The specified target group was not found")
-		return
-	}
-
 	if err != nil {
 		common.AddApiActionError(ctx, d, httpResp, "ListTargetsInTargetGroup", err, &resp.Diagnostics)
 		return
 	}
 
-	ok := mapLoadBalancerTargetGroupMemberListFromGetResponse(ctx, &data, respModel, &resp.Diagnostics)
+	ok := mapLoadBalancerTargetGroupMemberListFromGetResponse(&data, respModel, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

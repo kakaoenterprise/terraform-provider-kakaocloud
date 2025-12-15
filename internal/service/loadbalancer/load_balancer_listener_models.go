@@ -20,8 +20,8 @@ type loadBalancerListenerBaseModel struct {
 	TlsVersions            types.List   `tfsdk:"tls_versions"`
 	AlpnProtocols          types.List   `tfsdk:"alpn_protocols"`
 	ProjectId              types.String `tfsdk:"project_id"`
-	ProtocolPort           types.Int64  `tfsdk:"protocol_port"`
-	ConnectionLimit        types.Int64  `tfsdk:"connection_limit"`
+	ProtocolPort           types.Int32  `tfsdk:"protocol_port"`
+	ConnectionLimit        types.Int32  `tfsdk:"connection_limit"`
 	LoadBalancerId         types.String `tfsdk:"load_balancer_id"`
 	TlsCertificateId       types.String `tfsdk:"tls_certificate_id"`
 	ProvisioningStatus     types.String `tfsdk:"provisioning_status"`
@@ -29,7 +29,7 @@ type loadBalancerListenerBaseModel struct {
 	InsertHeaders          types.Object `tfsdk:"insert_headers"`
 	CreatedAt              types.String `tfsdk:"created_at"`
 	UpdatedAt              types.String `tfsdk:"updated_at"`
-	TimeoutClientData      types.Int64  `tfsdk:"timeout_client_data"`
+	TimeoutClientData      types.Int32  `tfsdk:"timeout_client_data"`
 	DefaultTargetGroupName types.String `tfsdk:"default_target_group_name"`
 	DefaultTargetGroupId   types.String `tfsdk:"default_target_group_id"`
 	LoadBalancerType       types.String `tfsdk:"load_balancer_type"`

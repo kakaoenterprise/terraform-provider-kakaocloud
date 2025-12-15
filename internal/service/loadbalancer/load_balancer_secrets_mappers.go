@@ -19,7 +19,7 @@ func mapLoadBalancerSecretsBaseModel(
 	diags *diag.Diagnostics,
 ) bool {
 
-	contentTypes, lbDiags := utils.ConvertnonNullableObjectFromModel(ctx, src.ContentTypes, lbSecretsContentTypeAttrType, func(lb loadbalancer.ContentType) any {
+	contentTypes, lbDiags := utils.ConvertNonNullableObjectFromModel(ctx, src.ContentTypes, lbSecretsContentTypeAttrType, func(lb loadbalancer.ContentType) any {
 		return ContentTypeModel{
 			Default: types.StringValue(lb.Default),
 		}

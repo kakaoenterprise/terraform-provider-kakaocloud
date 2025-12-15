@@ -3,139 +3,65 @@
 package loadbalancer
 
 import (
-	"context"
+	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-func mapHealthMonitorToCreateRequest(ctx context.Context, model *loadBalancerHealthMonitorResourceModel) (*loadbalancer.CreateHealthMonitor, diag.Diagnostics) {
-	var diags diag.Diagnostics
+func mapHealthMonitorToCreateRequest(model *loadBalancerHealthMonitorResourceModel) *loadbalancer.CreateHealthMonitor {
 
 	healthMonitor := &loadbalancer.CreateHealthMonitor{
-		Delay:          int32(model.Delay.ValueInt64()),
-		MaxRetries:     int32(model.MaxRetries.ValueInt64()),
-		MaxRetriesDown: int32(model.MaxRetriesDown.ValueInt64()),
+		Delay:          model.Delay.ValueInt32(),
+		MaxRetries:     model.MaxRetries.ValueInt32(),
+		MaxRetriesDown: model.MaxRetriesDown.ValueInt32(),
 		TargetGroupId:  model.TargetGroupId.ValueString(),
-		Timeout:        int32(model.Timeout.ValueInt64()),
+		Timeout:        model.Timeout.ValueInt32(),
 		Type:           loadbalancer.HealthMonitorType(model.Type.ValueString()),
 	}
 
-	if !model.HttpMethod.IsNull() && !model.HttpMethod.IsUnknown() {
+	if !model.HttpMethod.IsNull() {
 		httpMethod := loadbalancer.HealthMonitorMethod(model.HttpMethod.ValueString())
 		healthMonitor.HttpMethod = *loadbalancer.NewNullableHealthMonitorMethod(&httpMethod)
 	}
 
-	if !model.HttpVersion.IsNull() && !model.HttpVersion.IsUnknown() {
+	if !model.HttpVersion.IsNull() {
 		httpVersion := loadbalancer.HealthMonitorHttpVersion(model.HttpVersion.ValueString())
 		healthMonitor.HttpVersion = *loadbalancer.NewNullableHealthMonitorHttpVersion(&httpVersion)
 	}
 
-	if !model.UrlPath.IsNull() && !model.UrlPath.IsUnknown() {
+	if !model.UrlPath.IsNull() {
 		urlPath := model.UrlPath.ValueString()
 		healthMonitor.UrlPath = *loadbalancer.NewNullableString(&urlPath)
 	}
 
-	if !model.ExpectedCodes.IsNull() && !model.ExpectedCodes.IsUnknown() {
+	if !model.ExpectedCodes.IsNull() {
 		expectedCodes := model.ExpectedCodes.ValueString()
 		healthMonitor.ExpectedCodes = *loadbalancer.NewNullableString(&expectedCodes)
 	}
 
-	return healthMonitor, diags
+	return healthMonitor
 }
 
-func mapHealthMonitorToUpdateRequest(ctx context.Context, model *loadBalancerHealthMonitorResourceModel) (*loadbalancer.EditHealthMonitor, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	delay := int32(model.Delay.ValueInt64())
-	maxRetries := int32(model.MaxRetries.ValueInt64())
-	maxRetriesDown := int32(model.MaxRetriesDown.ValueInt64())
-	timeout := int32(model.Timeout.ValueInt64())
-
-	healthMonitor := &loadbalancer.EditHealthMonitor{
-		Delay:          *loadbalancer.NewNullableInt32(&delay),
-		MaxRetries:     *loadbalancer.NewNullableInt32(&maxRetries),
-		MaxRetriesDown: *loadbalancer.NewNullableInt32(&maxRetriesDown),
-		Timeout:        *loadbalancer.NewNullableInt32(&timeout),
-	}
-
-	if !model.HttpMethod.IsNull() && !model.HttpMethod.IsUnknown() {
-		httpMethod := loadbalancer.HealthMonitorMethod(model.HttpMethod.ValueString())
-		healthMonitor.HttpMethod = &httpMethod
-	}
-
-	if !model.HttpVersion.IsNull() && !model.HttpVersion.IsUnknown() {
-		httpVersion := loadbalancer.HealthMonitorHttpVersion(model.HttpVersion.ValueString())
-		healthMonitor.HttpVersion = &httpVersion
-	}
-
-	if !model.UrlPath.IsNull() && !model.UrlPath.IsUnknown() {
-		urlPath := model.UrlPath.ValueString()
-		healthMonitor.UrlPath = *loadbalancer.NewNullableString(&urlPath)
-	}
-
-	if !model.ExpectedCodes.IsNull() && !model.ExpectedCodes.IsUnknown() {
-		expectedCodes := model.ExpectedCodes.ValueString()
-		healthMonitor.ExpectedCodes = &expectedCodes
-	}
-
-	return healthMonitor, diags
-}
-
-func mapHealthMonitorFromGetResponse(ctx context.Context, model *loadBalancerHealthMonitorBaseModel, apiModel *loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupHealthMonitorModelHealthMonitorModel, diags *diag.Diagnostics) bool {
-	model.Id = types.StringValue(apiModel.Id)
-
-	if apiModel.Name == "" {
-
-		if !model.Name.IsNull() && !model.Name.IsUnknown() {
-
-		} else {
-			model.Name = types.StringValue("")
-		}
-	} else {
-		model.Name = types.StringValue(apiModel.Name)
-	}
+func mapHealthMonitorFromGetResponse(model *loadBalancerHealthMonitorBaseModel, apiModel *loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupHealthMonitorModelHealthMonitorModel) {
+	model.Name = types.StringValue(apiModel.Name)
 	model.Type = types.StringValue(string(apiModel.Type))
-	model.Delay = types.Int64Value(int64(apiModel.Delay))
-	model.Timeout = types.Int64Value(int64(apiModel.Timeout))
-	model.MaxRetries = types.Int64Value(int64(apiModel.MaxRetries))
-	model.MaxRetriesDown = types.Int64Value(int64(apiModel.MaxRetriesDown))
+	model.Delay = types.Int32Value(apiModel.Delay)
+	model.Timeout = types.Int32Value(apiModel.Timeout)
+	model.MaxRetries = types.Int32Value(apiModel.MaxRetries)
+	model.MaxRetriesDown = types.Int32Value(apiModel.MaxRetriesDown)
 	model.ProjectId = types.StringValue(apiModel.ProjectId)
 	model.ProvisioningStatus = types.StringValue(string(apiModel.ProvisioningStatus))
 	model.OperatingStatus = types.StringValue(string(apiModel.OperatingStatus))
 	model.CreatedAt = types.StringValue(apiModel.CreatedAt.Format(time.RFC3339))
-	if apiModel.UpdatedAt.IsSet() && apiModel.UpdatedAt.Get() != nil {
-		model.UpdatedAt = types.StringValue(apiModel.UpdatedAt.Get().Format(time.RFC3339))
-	} else {
-		model.UpdatedAt = types.StringNull()
-	}
+	model.UpdatedAt = utils.ConvertNullableTime(apiModel.UpdatedAt)
 
-	if apiModel.HttpMethod.IsSet() && apiModel.HttpMethod.Get() != nil {
-		model.HttpMethod = types.StringValue(string(*apiModel.HttpMethod.Get()))
-	} else {
-		model.HttpMethod = types.StringNull()
-	}
-
-	if apiModel.HttpVersion.IsSet() && apiModel.HttpVersion.Get() != nil {
-		model.HttpVersion = types.StringValue(string(*apiModel.HttpVersion.Get()))
-	} else {
-		model.HttpVersion = types.StringNull()
-	}
-
-	if apiModel.UrlPath.IsSet() && apiModel.UrlPath.Get() != nil {
-		model.UrlPath = types.StringValue(*apiModel.UrlPath.Get())
-	} else {
-		model.UrlPath = types.StringNull()
-	}
-
-	if apiModel.ExpectedCodes.IsSet() && apiModel.ExpectedCodes.Get() != nil {
-		model.ExpectedCodes = types.StringValue(*apiModel.ExpectedCodes.Get())
-	} else {
-		model.ExpectedCodes = types.StringNull()
-	}
+	model.HttpMethod = utils.ConvertNullableString(apiModel.HttpMethod)
+	model.HttpVersion = utils.ConvertNullableString(apiModel.HttpVersion)
+	model.UrlPath = utils.ConvertNullableString(apiModel.UrlPath)
+	model.ExpectedCodes = utils.ConvertNullableString(apiModel.ExpectedCodes)
 
 	if len(apiModel.TargetGroups) > 0 {
 
@@ -159,6 +85,4 @@ func mapHealthMonitorFromGetResponse(ctx context.Context, model *loadBalancerHea
 		model.TargetGroupId = types.StringNull()
 		model.TargetGroups = types.ListNull(types.ObjectType{AttrTypes: map[string]attr.Type{"id": types.StringType}})
 	}
-
-	return true
 }

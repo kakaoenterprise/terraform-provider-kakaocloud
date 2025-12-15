@@ -4,257 +4,211 @@ package loadbalancer
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func getAccessLogsResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Loadbalancer("AccessLogsModel")
-
 	return map[string]rschema.Attribute{
 		"bucket": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("bucket"),
+			Required: true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+			},
 		},
 		"access_key": rschema.StringAttribute{
-			Required:    true,
-			Sensitive:   true,
-			Description: desc.String("access_key"),
+			Required:  true,
+			Sensitive: true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+			},
 		},
 		"secret_key": rschema.StringAttribute{
-			Required:    true,
-			Sensitive:   true,
-			Description: desc.String("secret_key"),
+			Required:  true,
+			Sensitive: true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+			},
 		},
 	}
 }
 
 func getLoadBalancerResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Loadbalancer("bns_load_balancer__v1__api__create_load_balancer__model__LoadBalancerModel")
-	getDesc := docs.Loadbalancer("bns_load_balancer__v1__api__get_load_balancer__model__LoadBalancerModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"name": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("name"),
-			Validators:  common.NameValidator(250),
+			Required:   true,
+			Validators: common.NameValidator(250),
 		},
 		"description": rschema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("description"),
-			Validators:  common.DescriptionValidator(),
+			Optional:   true,
+			Validators: common.DescriptionValidator(),
 		},
 		"subnet_id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("subnet_id"),
+			Required:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"availability_zone": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("availability_zone"),
+			Required: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"flavor_id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("flavor_id"),
+			Required:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 
 		"type": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("type"),
+			Computed: true,
 		},
 		"listener_ids": rschema.ListAttribute{
 			ElementType: types.StringType,
 			Computed:    true,
-			Description: getDesc.String("listener_ids"),
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("project_id"),
+			Computed: true,
 		},
 		"provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("provisioning_status"),
+			Computed: true,
 		},
 		"operating_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("operating_status"),
+			Computed: true,
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("updated_at"),
+			Computed: true,
 		},
 		"access_logs": rschema.SingleNestedAttribute{
-			Optional:    true,
-			Description: getDesc.String("access_logs"),
-			Attributes:  getAccessLogsResourceSchema(),
+			Optional:   true,
+			Attributes: getAccessLogsResourceSchema(),
 		},
 		"beyond_load_balancer_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("beyond_load_balancer_id"),
+			Computed: true,
 		},
 		"beyond_load_balancer_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("beyond_load_balancer_name"),
+			Computed: true,
 		},
 		"beyond_load_balancer_dns_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("beyond_load_balancer_dns_name"),
+			Computed: true,
 		},
 		"target_group_count": rschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("target_group_count"),
+			Computed: true,
 		},
 		"listener_count": rschema.Int64Attribute{
-			Computed:    true,
-			Description: getDesc.String("listener_count"),
+			Computed: true,
 		},
 		"private_vip": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("private_vip"),
+			Computed: true,
 		},
 		"public_vip": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("public_vip"),
+			Computed: true,
 		},
 		"subnet_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("subnet_name"),
+			Computed: true,
 		},
 		"subnet_cidr_block": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("subnet_cidr_block"),
+			Computed: true,
 		},
 		"vpc_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("vpc_id"),
+			Computed: true,
 		},
 		"vpc_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("vpc_name"),
+			Computed: true,
 		},
 	}
 }
 
 func getLoadBalancerDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Loadbalancer("bns_load_balancer__v1__api__get_load_balancer__model__LoadBalancerModel")
-
 	return map[string]dschema.Attribute{
 		"name": dschema.StringAttribute{
-			Description: desc.String("name"),
-			Computed:    true,
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Description: desc.String("description"),
-			Computed:    true,
+			Computed: true,
 		},
 		"type": dschema.StringAttribute{
-			Description: desc.String("type"),
-			Computed:    true,
+			Computed: true,
 		},
 		"listener_ids": dschema.ListAttribute{
-			Description: desc.String("listener_ids"),
 			ElementType: types.StringType,
 			Computed:    true,
 		},
 		"project_id": dschema.StringAttribute{
-			Description: desc.String("project_id"),
-			Computed:    true,
+			Computed: true,
 		},
 		"provisioning_status": dschema.StringAttribute{
-			Description: desc.String("provisioning_status"),
-			Computed:    true,
+			Computed: true,
 		},
 		"operating_status": dschema.StringAttribute{
-			Description: desc.String("operating_status"),
-			Computed:    true,
+			Computed: true,
 		},
 		"created_at": dschema.StringAttribute{
-			Description: desc.String("created_at"),
-			Computed:    true,
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Description: desc.String("updated_at"),
-			Computed:    true,
+			Computed: true,
 		},
 		"availability_zone": dschema.StringAttribute{
-			Description: desc.String("availability_zone"),
-			Computed:    true,
+			Computed: true,
 		},
 		"access_logs": dschema.StringAttribute{
-			Description: desc.String("access_logs"),
-			Computed:    true,
+			Computed: true,
 		},
 		"beyond_load_balancer_id": dschema.StringAttribute{
-			Description: desc.String("beyond_load_balancer_id"),
-			Computed:    true,
+			Computed: true,
 		},
 		"beyond_load_balancer_name": dschema.StringAttribute{
-			Description: desc.String("beyond_load_balancer_name"),
-			Computed:    true,
+			Computed: true,
 		},
 		"beyond_load_balancer_dns_name": dschema.StringAttribute{
-			Description: desc.String("beyond_load_balancer_dns_name"),
-			Computed:    true,
+			Computed: true,
 		},
 		"target_group_count": dschema.Int64Attribute{
-			Description: desc.String("target_group_count"),
-			Computed:    true,
+			Computed: true,
 		},
 		"listener_count": dschema.Int64Attribute{
-			Description: desc.String("listener_count"),
-			Computed:    true,
+			Computed: true,
 		},
 		"private_vip": dschema.StringAttribute{
-			Description: desc.String("private_vip"),
-			Computed:    true,
+			Computed: true,
 		},
 		"public_vip": dschema.StringAttribute{
-			Description: desc.String("public_vip"),
-			Computed:    true,
+			Computed: true,
 		},
 		"subnet_name": dschema.StringAttribute{
-			Description: desc.String("subnet_name"),
-			Computed:    true,
+			Computed: true,
 		},
 		"subnet_cidr_block": dschema.StringAttribute{
-			Description: desc.String("subnet_cidr_block"),
-			Computed:    true,
+			Computed: true,
 		},
 		"vpc_id": dschema.StringAttribute{
-			Description: desc.String("vpc_id"),
-			Computed:    true,
+			Computed: true,
 		},
 		"vpc_name": dschema.StringAttribute{
-			Description: desc.String("vpc_name"),
-			Computed:    true,
+			Computed: true,
 		},
 		"subnet_id": dschema.StringAttribute{
-			Description: desc.String("subnet_id"),
-			Computed:    true,
+			Computed: true,
 		},
 	}
 }

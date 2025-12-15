@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/jinzhu/copier"
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
@@ -51,7 +50,6 @@ func (d *loadBalancerSecretsDataSource) Metadata(_ context.Context, req datasour
 
 func (d *loadBalancerSecretsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("LoadBalancerSecrets"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -143,7 +141,8 @@ func (d *loadBalancerSecretsDataSource) Read(ctx context.Context, req datasource
 	var lbssResult []loadbalancer.BnsLoadBalancerV1ApiListTlsCertificatesModelSecretModel
 	err = copier.Copy(&lbssResult, &lbsResp.Secrets)
 	if err != nil {
-		resp.Diagnostics.AddError("List 변환 실패", fmt.Sprintf("lbssResult 변환 실패: %v", err))
+		common.AddGeneralError(ctx, d, &resp.Diagnostics,
+			fmt.Sprintf("Failed to convert lbssResult: %v", err))
 		return
 	}
 

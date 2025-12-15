@@ -4,179 +4,143 @@ package kubernetesengine
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/float32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
 )
 
 func getNodePoolDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Kubernetesengine("kubernetes_engine__v1__api__get_node_pool__model__NodePoolResponseModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
-		},
-		"cluster_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("cluster_name"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"flavor_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("flavor_id"),
+			Computed: true,
 		},
 		"volume_size": dschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("volume_size"),
+			Computed: true,
 		},
 		"node_count": dschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("node_count"),
+			Computed: true,
 		},
 		"ssh_key_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("ssh_key_name"),
+			Computed: true,
 		},
 		"is_hyper_threading": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_hyper_threading"),
+			Computed: true,
 		},
 		"security_groups": dschema.SetAttribute{
 			Computed:    true,
 			ElementType: types.StringType,
-			Description: desc.String("security_groups"),
 		},
 		"labels": dschema.SetNestedAttribute{
-			Computed:    true,
-			Description: desc.String("labels"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: getNodePoolLabelDataSourceSchemaAttributes(),
 			},
 		},
 		"taints": dschema.SetNestedAttribute{
-			Computed:    true,
-			Description: desc.String("taints"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: getNodePoolTaintDataSourceSchemaAttributes(),
 			},
 		},
 		"user_data": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("user_data"),
+			Computed: true,
 		},
 		"vpc_info": dschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_info"),
-			Attributes:  getNodePoolVpcInfoDataSourceSchemaAttributes(),
+			Computed:   true,
+			Attributes: getNodePoolVpcInfoDataSourceSchemaAttributes(),
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"failure_message": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("failure_message"),
+			Computed: true,
 		},
 		"is_gpu": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_gpu"),
+			Computed: true,
 		},
 		"is_bare_metal": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_bare_metal"),
+			Computed: true,
 		},
 		"is_upgradable": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_upgradable"),
+			Computed: true,
 		},
 		"flavor": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("flavor"),
+			Computed: true,
 		},
 		"status": dschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
-			Attributes:  getNodePoolStatusDataSourceSchemaAttributes(),
+			Computed:   true,
+			Attributes: getNodePoolStatusDataSourceSchemaAttributes(),
 		},
 		"image": dschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("image"),
-			Attributes:  getNodePoolImageDataSourceSchemaAttributes(),
+			Computed:   true,
+			Attributes: getNodePoolImageDataSourceSchemaAttributes(),
 		},
 		"version": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("version"),
+			Computed: true,
 		},
 		"is_cordon": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_cordon"),
+			Computed: true,
 		},
 		"autoscaling": dschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("autoscaling"),
-			Attributes:  getNodePoolAutoscalingDataSourceSchemaAttributes(),
+			Computed:   true,
+			Attributes: getNodePoolAutoscalingDataSourceSchemaAttributes(),
 		},
 	}
 }
 
 func getNodePoolLabelDataSourceSchemaAttributes() map[string]dschema.Attribute {
-	desc := docs.Kubernetesengine("LabelInfoResponseModel")
-
 	return map[string]dschema.Attribute{
 		"key": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("key"),
+			Computed: true,
 		},
 		"value": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("value"),
+			Computed: true,
 		},
 	}
 }
 
 func getNodePoolTaintDataSourceSchemaAttributes() map[string]dschema.Attribute {
-	desc := docs.Kubernetesengine("TaintInfoResponseModel")
-
 	return map[string]dschema.Attribute{
 		"key": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("key"),
+			Computed: true,
 		},
 		"value": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("value"),
+			Computed: true,
 		},
 		"effect": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("effect"),
+			Computed: true,
 		},
 	}
 }
 
 func getNodePoolVpcInfoDataSourceSchemaAttributes() map[string]dschema.Attribute {
-	desc := docs.Kubernetesengine("kubernetes_engine__v1__api__get_node_pool__model__VpcInfoResponseModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"subnets": dschema.SetNestedAttribute{
-			Computed:    true,
-			Description: desc.String("subnets"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: getNodePoolSubnetDataSourceSchemaAttributes(),
 			},
@@ -185,205 +149,148 @@ func getNodePoolVpcInfoDataSourceSchemaAttributes() map[string]dschema.Attribute
 }
 
 func getNodePoolSubnetDataSourceSchemaAttributes() map[string]dschema.Attribute {
-	desc := docs.Kubernetesengine("kubernetes_engine__v1__api__get_node_pool__model__SubnetResponseModel")
-
 	return map[string]dschema.Attribute{
 		"availability_zone": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("availability_zone"),
+			Computed: true,
 		},
 		"cidr_block": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("cidr_block"),
+			Computed: true,
 		},
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 	}
 }
 
 func getNodePoolStatusDataSourceSchemaAttributes() map[string]dschema.Attribute {
-	desc := docs.Kubernetesengine("kubernetes_engine__v1__api__get_node_pool__model__StatusInfoResponseModel")
-
 	return map[string]dschema.Attribute{
 		"phase": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("phase"),
+			Computed: true,
 		},
 		"available_nodes": dschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("available_nodes"),
+			Computed: true,
 		},
 		"unavailable_nodes": dschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("unavailable_nodes"),
+			Computed: true,
 		},
 	}
 }
 
 func getNodePoolImageDataSourceSchemaAttributes() map[string]dschema.Attribute {
-	desc := docs.Kubernetesengine("ImageResponseModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"architecture": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("architecture"),
+			Computed: true,
 		},
 		"is_gpu_type": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_gpu_type"),
+			Computed: true,
 		},
 		"instance_type": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_type"),
+			Computed: true,
 		},
 		"kernel_version": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("kernel_version"),
+			Computed: true,
 		},
 		"key_package": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("key_package"),
+			Computed: true,
 		},
 		"os_distro": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_distro"),
+			Computed: true,
 		},
 		"os_type": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_type"),
+			Computed: true,
 		},
 		"os_version": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_version"),
+			Computed: true,
 		},
 	}
 }
 
 func getNodePoolAutoscalingDataSourceSchemaAttributes() map[string]dschema.Attribute {
-	desc := docs.Kubernetesengine("NodePoolScalingResourceRequestModel")
-
 	return map[string]dschema.Attribute{
 		"is_autoscaler_enable": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_autoscaler_enable"),
+			Computed: true,
 		},
 		"autoscaler_desired_node_count": dschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("autoscaler_desired_node_count"),
+			Computed: true,
 		},
 		"autoscaler_max_node_count": dschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("autoscaler_max_node_count"),
+			Computed: true,
 		},
 		"autoscaler_min_node_count": dschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("autoscaler_min_node_count"),
+			Computed: true,
 		},
 		"autoscaler_scale_down_unneeded_time": dschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("autoscaler_scale_down_unneeded_time"),
+			Computed: true,
 		},
 		"autoscaler_scale_down_unready_time": dschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("autoscaler_scale_down_unready_time"),
+			Computed: true,
 		},
 		"autoscaler_scale_down_threshold": dschema.Float32Attribute{
-			Computed:    true,
-			Description: desc.String("autoscaler_scale_down_threshold"),
+			Computed: true,
 		},
 	}
 }
 
 func getNodePoolResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Kubernetesengine("kubernetes_engine__v1__api__get_node_pool__model__NodePoolResponseModel")
-	createDesc := docs.Kubernetesengine("kubernetes_engine__v1__api__create_node_pool__model__NodePoolRequestModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
-			},
+			Computed: true,
 		},
 		"cluster_name": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("cluster_name"),
+			Required:   true,
+			Validators: common.NameValidator(20),
 			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"name": rschema.StringAttribute{
-			Required:    true,
-			Description: createDesc.String("name"),
-			Validators:  common.NameValidator(200),
+			Required:   true,
+			Validators: common.NameValidator(20),
 			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"description": rschema.StringAttribute{
-			Optional:      true,
-			Computed:      true,
-			Validators:    common.DescriptionValidator(),
-			Default:       stringdefault.StaticString(""),
-			Description:   createDesc.String("description"),
-			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Optional:   true,
+			Computed:   true,
+			Validators: common.DescriptionValidatorWithMaxLength(60),
 		},
 		"flavor_id": rschema.StringAttribute{
-			Required:    true,
-			Description: createDesc.String("flavor_id"),
+			Required:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"volume_size": rschema.Int32Attribute{
-			Optional:    true,
-			Computed:    true,
-			Description: createDesc.String("volume_size"),
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int32{
+				int32validator.Between(30, 5120),
+			},
 			PlanModifiers: []planmodifier.Int32{
 				int32planmodifier.UseStateForUnknown(),
 				int32planmodifier.RequiresReplace(),
 			},
 		},
 		"node_count": rschema.Int32Attribute{
-			Optional:      true,
-			Computed:      true,
-			Description:   createDesc.String("node_count"),
-			PlanModifiers: []planmodifier.Int32{int32planmodifier.UseStateForUnknown()},
+			Computed: true,
 		},
 		"ssh_key_name": rschema.StringAttribute{
-			Required:    true,
-			Description: createDesc.String("ssh_key_name"),
+			Required: true,
 			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
-				stringplanmodifier.RequiresReplace(),
-			},
-		},
-		"image_id": rschema.StringAttribute{
-			Required:    true,
-			Description: createDesc.String("image_id"),
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"is_hyper_threading": rschema.BoolAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: createDesc.String("is_hyper_threading"),
+			Optional: true,
+			Computed: true,
 			PlanModifiers: []planmodifier.Bool{
 				boolplanmodifier.UseStateForUnknown(),
 				boolplanmodifier.RequiresReplace(),
@@ -392,149 +299,179 @@ func getNodePoolResourceSchema() map[string]rschema.Attribute {
 		"security_groups": rschema.SetAttribute{
 			Computed:    true,
 			ElementType: types.StringType,
-			Description: createDesc.String("security_groups"),
-		},
-		"request_security_groups": rschema.SetAttribute{
-			Optional:    true,
-			ElementType: types.StringType,
-			Description: createDesc.String("security_groups"),
 		},
 		"labels": rschema.SetNestedAttribute{
-			Optional:      true,
-			Computed:      true,
-			Description:   createDesc.String("labels"),
-			PlanModifiers: []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
+			Optional: true,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+			},
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: getNodePoolLabelResourceSchemaAttributes(),
 			},
 		},
 		"taints": rschema.SetNestedAttribute{
-			Optional:      true,
-			Computed:      true,
-			Description:   createDesc.String("taints"),
-			PlanModifiers: []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
+			Optional: true,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+			},
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: getNodePoolTaintResourceSchemaAttributes(),
 			},
+			PlanModifiers: []planmodifier.Set{
+				setplanmodifier.RequiresReplace(),
+			},
 		},
 		"user_data": rschema.StringAttribute{
-			Optional:    true,
-			Description: createDesc.String("user_data"),
+			Optional: true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+			},
 		},
 		"vpc_info": rschema.SingleNestedAttribute{
 			Required:      true,
-			Description:   createDesc.String("vpc_info"),
 			PlanModifiers: []planmodifier.Object{objectplanmodifier.RequiresReplace()},
 			Attributes:    getNodePoolVpcInfoResourceSchemaAttributes(),
+		},
+		"autoscaling": rschema.SingleNestedAttribute{
+			Optional:   true,
+			Computed:   true,
+			Attributes: getNodePoolAutoscalingResourceSchemaAttributes(),
+			Default: objectdefault.StaticValue(
+				types.ObjectValueMust(
+					map[string]attr.Type{
+						"is_autoscaler_enable":                types.BoolType,
+						"autoscaler_desired_node_count":       types.Int32Type,
+						"autoscaler_max_node_count":           types.Int32Type,
+						"autoscaler_min_node_count":           types.Int32Type,
+						"autoscaler_scale_down_unneeded_time": types.Int32Type,
+						"autoscaler_scale_down_unready_time":  types.Int32Type,
+						"autoscaler_scale_down_threshold":     types.Float32Type,
+					},
+					map[string]attr.Value{
+						"is_autoscaler_enable":                types.BoolValue(false),
+						"autoscaler_desired_node_count":       types.Int32Null(),
+						"autoscaler_max_node_count":           types.Int32Null(),
+						"autoscaler_min_node_count":           types.Int32Null(),
+						"autoscaler_scale_down_unneeded_time": types.Int32Null(),
+						"autoscaler_scale_down_unready_time":  types.Int32Null(),
+						"autoscaler_scale_down_threshold":     types.Float32Null(),
+					},
+				),
+			),
+		},
+
+		"image_id": rschema.StringAttribute{
+			Required:   true,
+			Validators: common.UuidValidator(),
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
+		},
+		"request_security_groups": rschema.SetAttribute{
+			Optional:    true,
+			ElementType: types.StringType,
+			Validators: []validator.Set{
+				setvalidator.ValueStringsAre(common.UuidValidator()...),
+			},
+		},
+		"request_node_count": rschema.Int32Attribute{
+			Optional: true,
+			Validators: []validator.Int32{
+				int32validator.Between(0, 100),
+			},
+		},
+		"minor_version": rschema.StringAttribute{
+			Optional:   true,
+			Computed:   true,
+			Validators: common.MajorMinorVersionValidator(),
 		},
 
 		"created_at": rschema.StringAttribute{
 			Computed:      true,
-			Description:   desc.String("created_at"),
 			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"failure_message": rschema.StringAttribute{
-			Computed:      true,
-			Description:   desc.String("failure_message"),
-			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Computed: true,
 		},
 		"is_gpu": rschema.BoolAttribute{
 			Computed:      true,
-			Description:   desc.String("is_gpu"),
 			PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 		},
 		"is_bare_metal": rschema.BoolAttribute{
 			Computed:      true,
-			Description:   desc.String("is_bare_metal"),
 			PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 		},
 		"is_upgradable": rschema.BoolAttribute{
-			Computed:      true,
-			Description:   desc.String("is_upgradable"),
-			PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
+			Computed: true,
 		},
 		"flavor": rschema.StringAttribute{
-			Computed:      true,
-			Description:   desc.String("flavor"),
-			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Computed: true,
 		},
 		"status": rschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 
 			Attributes: getNodePoolStatusResourceSchemaAttributes(),
 		},
 		"image": rschema.SingleNestedAttribute{
-			Computed:      true,
-			Description:   desc.String("image"),
-			PlanModifiers: []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
-			Attributes:    getNodePoolImageResourceSchemaAttributes(),
+			Computed:   true,
+			Attributes: getNodePoolImageResourceSchemaAttributes(),
 		},
 		"version": rschema.StringAttribute{
-			Computed:      true,
-			Description:   desc.String("version"),
-			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Computed: true,
 		},
 		"is_cordon": rschema.BoolAttribute{
-			Computed:      true,
-			Description:   desc.String("is_cordon"),
-			PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
-		},
-		"autoscaling": rschema.SingleNestedAttribute{
-			Optional:      true,
-			Computed:      true,
-			Description:   desc.String("autoscaling"),
-			PlanModifiers: []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
-			Attributes:    getNodePoolAutoscalingResourceSchemaAttributes(),
+			Computed: true,
 		},
 	}
 }
 
 func getNodePoolLabelResourceSchemaAttributes() map[string]rschema.Attribute {
-	desc := docs.Kubernetesengine("LabelRequestModel")
-
 	return map[string]rschema.Attribute{
 		"key": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("key"),
+			Required:   true,
+			Validators: common.K8sKeyValidator(60),
 		},
 		"value": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("value"),
+			Required:   true,
+			Validators: common.K8sValueValidator(63),
 		},
 	}
 }
 
 func getNodePoolTaintResourceSchemaAttributes() map[string]rschema.Attribute {
-	desc := docs.Kubernetesengine("TaintRequestModel")
-
 	return map[string]rschema.Attribute{
 		"key": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("key"),
+			Required:   true,
+			Validators: common.K8sKeyValidator(253),
 		},
 		"value": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("value"),
+			Required:   true,
+			Validators: common.K8sValueValidator(63),
 		},
 		"effect": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("effect"),
+			Required: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf(
+					string(kubernetesengine.NODEPOOLTAINTEFFECT_NO_EXECUTE),
+					string(kubernetesengine.NODEPOOLTAINTEFFECT_NO_SCHEDULE),
+					string(kubernetesengine.NODEPOOLTAINTEFFECT_PREFER_NO_SCHEDULE),
+				),
+			},
 		},
 	}
 }
 
 func getNodePoolVpcInfoResourceSchemaAttributes() map[string]rschema.Attribute {
-	desc := docs.Kubernetesengine("VpcInfoRequestModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("id"),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 		"subnets": rschema.SetNestedAttribute{
-			Required:    true,
-			Description: desc.String("subnets"),
+			Required: true,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+			},
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: getNodePoolSubnetResourceSchemaAttributes(),
 			},
@@ -543,121 +480,109 @@ func getNodePoolVpcInfoResourceSchemaAttributes() map[string]rschema.Attribute {
 }
 
 func getNodePoolSubnetResourceSchemaAttributes() map[string]rschema.Attribute {
-	desc := docs.Kubernetesengine("kubernetes_engine__v1__api__get_node_pool__model__SubnetResponseModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("id"),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 		"availability_zone": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("availability_zone"),
+			Computed: true,
 		},
 		"cidr_block": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("cidr_block"),
+			Computed: true,
 		},
 	}
 }
 
 func getNodePoolStatusResourceSchemaAttributes() map[string]rschema.Attribute {
-	desc := docs.Kubernetesengine("kubernetes_engine__v1__api__get_node_pool__model__StatusInfoResponseModel")
-
 	return map[string]rschema.Attribute{
 		"phase": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("phase"),
+			Computed: true,
 		},
 		"available_nodes": rschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("available_nodes"),
+			Computed: true,
 		},
 		"unavailable_nodes": rschema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("unavailable_nodes"),
+			Computed: true,
 		},
 	}
 }
 
 func getNodePoolImageResourceSchemaAttributes() map[string]rschema.Attribute {
-	desc := docs.Kubernetesengine("ImageResponseModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"architecture": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("architecture"),
+			Computed: true,
 		},
 		"is_gpu_type": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_gpu_type"),
+			Computed: true,
 		},
 		"instance_type": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_type"),
+			Computed: true,
 		},
 		"kernel_version": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("kernel_version"),
+			Computed: true,
 		},
 		"key_package": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("key_package"),
+			Computed: true,
 		},
 		"os_distro": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_distro"),
+			Computed: true,
 		},
 		"os_type": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_type"),
+			Computed: true,
 		},
 		"os_version": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_version"),
+			Computed: true,
 		},
 	}
 }
 
 func getNodePoolAutoscalingResourceSchemaAttributes() map[string]rschema.Attribute {
-	desc := docs.Kubernetesengine("NodePoolScalingResourceRequestModel")
-
 	return map[string]rschema.Attribute{
 		"is_autoscaler_enable": rschema.BoolAttribute{
-			Optional:    true,
-			Description: desc.String("is_autoscaler_enable"),
+			Required: true,
 		},
 		"autoscaler_desired_node_count": rschema.Int32Attribute{
-			Optional:    true,
-			Description: desc.String("autoscaler_desired_node_count"),
+			Optional: true,
+			Validators: []validator.Int32{
+				int32validator.Between(0, 100),
+			},
 		},
 		"autoscaler_max_node_count": rschema.Int32Attribute{
-			Optional:    true,
-			Description: desc.String("autoscaler_max_node_count"),
+			Optional: true,
+			Validators: []validator.Int32{
+				int32validator.Between(0, 100),
+			},
 		},
 		"autoscaler_min_node_count": rschema.Int32Attribute{
-			Optional:    true,
-			Description: desc.String("autoscaler_min_node_count"),
+			Optional: true,
+			Validators: []validator.Int32{
+				int32validator.Between(0, 100),
+			},
 		},
 		"autoscaler_scale_down_unneeded_time": rschema.Int32Attribute{
-			Optional:    true,
-			Description: desc.String("autoscaler_scale_down_unneeded_time"),
+			Optional: true,
+			Validators: []validator.Int32{
+				int32validator.Between(1, 86400),
+			},
 		},
 		"autoscaler_scale_down_unready_time": rschema.Int32Attribute{
-			Optional:    true,
-			Description: desc.String("autoscaler_scale_down_unready_time"),
+			Optional: true,
+			Validators: []validator.Int32{
+				int32validator.Between(1, 86400),
+			},
 		},
 		"autoscaler_scale_down_threshold": rschema.Float32Attribute{
-			Optional:    true,
-			Description: desc.String("autoscaler_scale_down_threshold"),
+			Optional: true,
+			Validators: []validator.Float32{
+				float32validator.Between(0.01, 1.0),
+			},
 		},
 	}
 }

@@ -4,59 +4,47 @@ package kubernetesengine
 
 import (
 	"regexp"
-	"terraform-provider-kakaocloud/internal/docs"
+	"terraform-provider-kakaocloud/internal/common"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
 )
 
 func getScheduledScalingDataSourceSchema() map[string]schema.Attribute {
-	desc := docs.Kubernetesengine("ScheduledScaleResponseModel")
-
 	return map[string]schema.Attribute{
 		"created_at": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"desired_nodes": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("desired_nodes"),
+			Computed: true,
 		},
 		"schedule": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("schedule"),
+			Computed: true,
 		},
 		"schedule_type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("scheduling_type"),
+			Computed: true,
 		},
 		"start_time": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("start_time"),
+			Computed: true,
 		},
 		"status": schema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
-			Attributes:  getScheduledScalingStatusDataSourceSchemaAttributes(),
+			Computed:   true,
+			Attributes: getScheduledScalingStatusDataSourceSchemaAttributes(),
 		},
 	}
 }
 
 func getScheduledScalingStatusDataSourceSchemaAttributes() map[string]schema.Attribute {
-	desc := docs.Kubernetesengine("ScalingStatusResponseModel")
-
 	return map[string]schema.Attribute{
 		"histories": schema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("histories"),
+			Computed: true,
 			NestedObject: schema.NestedAttributeObject{
 				Attributes: getScheduledScalingHistoryDataSourceSchemaAttributes(),
 			},
@@ -65,58 +53,43 @@ func getScheduledScalingStatusDataSourceSchemaAttributes() map[string]schema.Att
 }
 
 func getScheduledScalingHistoryDataSourceSchemaAttributes() map[string]schema.Attribute {
-	desc := docs.Kubernetesengine("ScalingHistoryResponseModel")
-
 	return map[string]schema.Attribute{
 		"description": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"occurred_time": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("occurred_time"),
+			Computed: true,
 		},
 		"state": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("state"),
+			Computed: true,
 		},
 	}
 }
 
 func getScheduledScalingResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Kubernetesengine("ScheduledScaleResponseModel")
-
 	return map[string]rschema.Attribute{
 		"cluster_name": rschema.StringAttribute{
-			Required:    true,
-			Description: docs.ParameterDescription("kubernetesengine", "create_node_pool_scheduled_scaling", "path_cluster_name"),
-			Validators: []validator.String{
-				stringvalidator.LengthBetween(4, 20),
-			},
+			Required:   true,
+			Validators: common.NameValidator(20),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"node_pool_name": rschema.StringAttribute{
-			Required:    true,
-			Description: docs.ParameterDescription("kubernetesengine", "create_node_pool_scheduled_scaling", "path_node_pool_name"),
-			Validators: []validator.String{
-				stringvalidator.LengthBetween(4, 20),
-			},
+			Required:   true,
+			Validators: common.NameValidator(20),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"desired_nodes": rschema.Int32Attribute{
-			Required:    true,
-			Description: desc.String("desired_nodes"),
+			Required: true,
 			Validators: []validator.Int32{
 				int32validator.Between(0, 100),
 			},
@@ -125,35 +98,33 @@ func getScheduledScalingResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 		"name": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("name"),
-			Validators: []validator.String{
-				stringvalidator.LengthBetween(4, 20),
-			},
+			Required:   true,
+			Validators: common.NameValidator(20),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"schedule": rschema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("schedule"),
+			Optional:   true,
+			Validators: common.CronScheduleValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"schedule_type": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("schedule_type"),
+			Required: true,
 			Validators: []validator.String{
-				stringvalidator.OneOf("cron", "once"),
+				stringvalidator.OneOf(
+					string(kubernetesengine.SCHEDULINGTYPE_ONCE),
+					string(kubernetesengine.SCHEDULINGTYPE_CRON),
+				),
 			},
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"start_time": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("start_time"),
+			Required: true,
 			Validators: []validator.String{
 				stringvalidator.RegexMatches(
 					regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00Z$`),
@@ -165,26 +136,16 @@ func getScheduledScalingResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 		"status": rschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
-			PlanModifiers: []planmodifier.Object{
-				objectplanmodifier.UseStateForUnknown(),
-			},
+			Computed:   true,
 			Attributes: getScheduledScalingStatusResourceSchemaAttributes(),
 		},
 	}
 }
 
 func getScheduledScalingStatusResourceSchemaAttributes() map[string]rschema.Attribute {
-	desc := docs.Kubernetesengine("ScalingStatusResponseModel")
-
 	return map[string]rschema.Attribute{
 		"histories": rschema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("histories"),
-			PlanModifiers: []planmodifier.List{
-				listplanmodifier.UseStateForUnknown(),
-			},
+			Computed: true,
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: getScheduledScalingHistoryResourceSchemaAttributes(),
 			},
@@ -193,29 +154,15 @@ func getScheduledScalingStatusResourceSchemaAttributes() map[string]rschema.Attr
 }
 
 func getScheduledScalingHistoryResourceSchemaAttributes() map[string]rschema.Attribute {
-	desc := docs.Kubernetesengine("ScalingHistoryResponseModel")
-
 	return map[string]rschema.Attribute{
 		"description": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
-			},
+			Computed: true,
 		},
 		"occurred_time": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("occurred_time"),
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
-			},
+			Computed: true,
 		},
 		"state": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("state"),
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
-			},
+			Computed: true,
 		},
 	}
 }

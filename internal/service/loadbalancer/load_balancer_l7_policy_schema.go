@@ -4,107 +4,83 @@ package loadbalancer
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
 func getL7PolicyResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Loadbalancer("bns_load_balancer__v1__api__create_l7_policy__model__L7PolicyModel")
-	getDesc := docs.Loadbalancer("bns_load_balancer__v1__api__get_l7_policy__model__l7PolicyModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"name": rschema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("name"),
-			Validators:  common.NameValidator(255),
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
-			},
+			Optional:   true,
+			Validators: common.NameValidator(255),
 		},
 		"description": rschema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("description"),
-			Validators:  common.DescriptionValidator(),
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
-			},
+			Optional:   true,
+			Validators: common.DescriptionValidator(),
 		},
 		"listener_id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("listener_id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"action": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("action"),
+			Required: true,
 			Validators: []validator.String{
-				stringvalidator.OneOf("REDIRECT_PREFIX", "REDIRECT_TO_POOL", "REDIRECT_TO_URL"),
+				stringvalidator.OneOf(
+					string(loadbalancer.L7POLICYACTION_REDIRECT_PREFIX),
+					string(loadbalancer.L7POLICYACTION_REDIRECT_TO_POOL),
+					string(loadbalancer.L7POLICYACTION_REDIRECT_TO_URL),
+				),
 			},
 		},
-		"position": rschema.Int64Attribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("position"),
-			Validators: []validator.Int64{
-				int64validator.Between(1, 1000),
+		"position": rschema.Int32Attribute{
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int32{
+				int32validator.AtLeast(1),
 			},
 		},
 		"redirect_target_group_id": rschema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("redirect_target_group_id"),
-			Validators:  common.UuidValidator(),
+			Optional:   true,
+			Validators: common.UuidValidator(),
 		},
 		"redirect_url": rschema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("redirect_url"),
-			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
-			},
+			Optional:   true,
+			Validators: common.UrlValidator(),
 		},
 		"redirect_prefix": rschema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("redirect_prefix"),
+			Optional:   true,
+			Validators: common.UrlValidator(),
 		},
-		"redirect_http_code": rschema.Int64Attribute{
-			Computed:    true,
-			Description: getDesc.String("redirect_http_code"),
+		"redirect_http_code": rschema.Int32Attribute{
+			Computed: true,
 		},
 		"provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"operating_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("operating_status"),
+			Computed: true,
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"rules": rschema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("rules"),
-			PlanModifiers: []planmodifier.List{
-				listplanmodifier.UseStateForUnknown(),
-			},
+			Computed: true,
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: getL7PolicyRuleSchemaAttributes(),
 			},
@@ -113,115 +89,74 @@ func getL7PolicyResourceSchema() map[string]rschema.Attribute {
 }
 
 func getL7PolicyRuleSchemaAttributes() map[string]rschema.Attribute {
-	ruleDesc := docs.Loadbalancer("bns_load_balancer__v1__api__create_l7_policy__model__RuleModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("id"),
+			Computed: true,
 		},
 		"type": rschema.StringAttribute{
-			Required:    true,
-			Description: ruleDesc.String("type"),
-			Validators: []validator.String{
-				stringvalidator.OneOf("PATH", "HEADER", "HOST_NAME", "FILE_TYPE", "COOKIE"),
-			},
+			Computed: true,
 		},
 		"compare_type": rschema.StringAttribute{
-			Required:    true,
-			Description: ruleDesc.String("compare_type"),
-			Validators: []validator.String{
-				stringvalidator.OneOf("EQUAL_TO", "STARTS_WITH", "ENDS_WITH", "CONTAINS"),
-			},
+			Computed: true,
 		},
 		"key": rschema.StringAttribute{
-			Optional:    true,
-			Description: ruleDesc.String("key"),
+			Computed: true,
 		},
 		"value": rschema.StringAttribute{
-			Required:    true,
-			Description: ruleDesc.String("value"),
+			Computed: true,
 		},
 		"is_inverted": rschema.BoolAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: ruleDesc.String("is_inverted"),
+			Computed: true,
 		},
 		"provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("provisioning_status"),
+			Computed: true,
 		},
 		"operating_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("operating_status"),
+			Computed: true,
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("project_id"),
+			Computed: true,
 		},
 	}
 }
 
 func getL7PolicyDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Loadbalancer("bns_load_balancer__v1__api__create_l7_policy__model__L7PolicyModel")
-	getDesc := docs.Loadbalancer("bns_load_balancer__v1__api__get_l7_policy__model__l7PolicyModel")
-
 	return map[string]dschema.Attribute{
-		"id": dschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("id"),
-		},
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
-		},
-		"listener_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("listener_id"),
+			Computed: true,
 		},
 		"action": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("action"),
+			Computed: true,
 		},
-		"position": dschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("position"),
+		"position": dschema.Int32Attribute{
+			Computed: true,
 		},
 		"redirect_target_group_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("redirect_target_group_id"),
+			Computed: true,
 		},
 		"redirect_url": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("redirect_url"),
+			Computed: true,
 		},
 		"redirect_prefix": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("redirect_prefix"),
+			Computed: true,
 		},
-		"redirect_http_code": dschema.Int64Attribute{
-			Computed:    true,
-			Description: getDesc.String("redirect_http_code"),
+		"redirect_http_code": dschema.Int32Attribute{
+			Computed: true,
 		},
 		"provisioning_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"operating_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("operating_status"),
+			Computed: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"rules": dschema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("rules"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: getL7PolicyRuleDataSourceSchemaAttributes(),
 			},
@@ -230,44 +165,33 @@ func getL7PolicyDataSourceSchema() map[string]dschema.Attribute {
 }
 
 func getL7PolicyRuleDataSourceSchemaAttributes() map[string]dschema.Attribute {
-	ruleDesc := docs.Loadbalancer("bns_load_balancer__v1__api__create_l7_policy__model__RuleModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("id"),
+			Computed: true,
 		},
 		"type": dschema.StringAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("type"),
+			Computed: true,
 		},
 		"compare_type": dschema.StringAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("compare_type"),
+			Computed: true,
 		},
 		"key": dschema.StringAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("key"),
+			Computed: true,
 		},
 		"value": dschema.StringAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("value"),
+			Computed: true,
 		},
 		"is_inverted": dschema.BoolAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("is_inverted"),
+			Computed: true,
 		},
 		"provisioning_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("provisioning_status"),
+			Computed: true,
 		},
 		"operating_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("operating_status"),
+			Computed: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: ruleDesc.String("project_id"),
+			Computed: true,
 		},
 	}
 }

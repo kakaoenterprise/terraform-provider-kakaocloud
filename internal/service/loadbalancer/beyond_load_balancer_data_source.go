@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -35,13 +34,11 @@ func (d *beyondLoadBalancerDataSource) Metadata(_ context.Context, req datasourc
 
 func (d *beyondLoadBalancerDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("BeyondLoadBalancer"),
 		Attributes: utils.MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
-					Required:    true,
-					Description: "beyond load balancer ID",
-					Validators:  common.UuidValidator(),
+					Required:   true,
+					Validators: common.UuidValidator(),
 				},
 				"timeouts": timeouts.Attributes(ctx),
 			},

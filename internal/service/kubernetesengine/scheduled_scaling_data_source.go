@@ -7,14 +7,11 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
 )
 
@@ -48,38 +45,29 @@ func (d *scheduledScalingDataSource) Configure(ctx context.Context, req datasour
 }
 
 func (d *scheduledScalingDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_kubernetes_engine_scheduled_scalings"
+	resp.TypeName = req.ProviderTypeName + "_kubernetes_engine_scheduled_scaling"
 }
 
 func (d *scheduledScalingDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("KubernetesEngineScheduledScalings"),
-		Attributes: map[string]schema.Attribute{
-			"cluster_name": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Cluster name (path parameter).",
-			},
-			"node_pool_name": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Node pool name (path parameter).",
-			},
-			"scheduled_scaling": schema.ListNestedAttribute{
-				Computed: true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: utils.MergeDataSourceSchemaAttributes(
-						map[string]schema.Attribute{
-							"name": schema.StringAttribute{
-								Computed: true,
-							},
-						},
-						scheduledScalingDataSourceSchemaAttributes,
-					),
+		Attributes: utils.MergeAttributes[schema.Attribute](
+			map[string]schema.Attribute{
+				"cluster_name": schema.StringAttribute{
+					Required:   true,
+					Validators: common.NameValidator(20),
 				},
+				"node_pool_name": schema.StringAttribute{
+					Required:   true,
+					Validators: common.NameValidator(20),
+				},
+				"name": schema.StringAttribute{
+					Required:   true,
+					Validators: common.NameValidator(20),
+				},
+				"timeouts": timeouts.Attributes(ctx),
 			},
-			"timeouts": timeouts.Attributes(ctx),
-		},
+			scheduledScalingDataSourceSchemaAttributes,
+		),
 	}
 }
 func (d *scheduledScalingDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -101,31 +89,14 @@ func (d *scheduledScalingDataSource) Read(ctx context.Context, req datasource.Re
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	if config.ClusterName.IsNull() || config.ClusterName.IsUnknown() || config.ClusterName.ValueString() == "" {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("cluster_name"),
-			"Missing required argument",
-			"'cluster_name' must be provided.",
-		)
-	}
-	if config.NodePoolName.IsNull() || config.NodePoolName.IsUnknown() || config.NodePoolName.ValueString() == "" {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("node_pool_name"),
-			"Missing required argument",
-			"'node_pool_name' must be provided.",
-		)
-	}
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	clusterName := config.ClusterName.ValueString()
 	nodePoolName := config.NodePoolName.ValueString()
-	scheduledScalingApi := d.kc.ApiClient.ScalingAPI.ListNodePoolScheduledScalings(ctx, clusterName, nodePoolName)
+	scheduleName := config.Name.ValueString()
 
 	modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (*kubernetesengine.GetK8sClusterNodePoolScalingScheduleResponseModel, *http.Response, error) {
-			return scheduledScalingApi.XAuthToken(d.kc.XAuthToken).Execute()
+			return d.kc.ApiClient.ScalingAPI.ListNodePoolScheduledScalings(ctx, clusterName, nodePoolName).
+				XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
 
@@ -134,18 +105,23 @@ func (d *scheduledScalingDataSource) Read(ctx context.Context, req datasource.Re
 		return
 	}
 
-	for _, v := range modelResp.ScheduledScaling {
-		var tmpScheduledScaling scheduledScalingBaseModel
-		ok := mapScheduledScalingBaseModel(ctx, &tmpScheduledScaling, &v, &resp.Diagnostics)
-		if !ok || resp.Diagnostics.HasError() {
-			return
+	var found *kubernetesengine.ScheduledScaleResponseModel
+	for i := range modelResp.ScheduledScaling {
+		if modelResp.ScheduledScaling[i].Name == scheduleName {
+			found = &modelResp.ScheduledScaling[i]
+			break
 		}
-
-		config.ScheduledScaling = append(config.ScheduledScaling, tmpScheduledScaling)
+	}
+	if found == nil {
+		common.AddGeneralError(ctx, d, &resp.Diagnostics,
+			fmt.Sprintf("The specified scheduled scaling does not exist: '%v'", scheduleName))
+		return
 	}
 
-	config.ClusterName = types.StringValue(clusterName)
-	config.NodePoolName = types.StringValue(nodePoolName)
+	ok := mapScheduledScalingBaseModel(ctx, clusterName, nodePoolName, &config.scheduledScalingBaseModel, found, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
 	respDiags := resp.State.Set(ctx, &config)
 	resp.Diagnostics.Append(respDiags...)

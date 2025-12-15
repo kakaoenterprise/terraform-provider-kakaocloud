@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -55,16 +54,10 @@ func (r *loadBalancerHealthMonitorResource) Metadata(_ context.Context, req reso
 
 func (r *loadBalancerHealthMonitorResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("LoadBalancerHealthMonitor"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			loadBalancerHealthMonitorResourceSchema,
 			map[string]schema.Attribute{
-				"timeouts": timeouts.Attributes(ctx, timeouts.Opts{
-					Create: true,
-					Read:   true,
-					Update: true,
-					Delete: true,
-				}),
+				"timeouts": timeouts.AttributesAll(ctx),
 			},
 		),
 	}
@@ -95,11 +88,12 @@ func (r *loadBalancerHealthMonitorResource) Create(ctx context.Context, req reso
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	createReq, diags := mapHealthMonitorToCreateRequest(ctx, &plan)
-	if diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
+
+	createReq := mapHealthMonitorToCreateRequest(&plan)
 
 	body := *loadbalancer.NewBodyCreateHealthMonitor(*createReq)
 
@@ -119,19 +113,16 @@ func (r *loadBalancerHealthMonitorResource) Create(ctx context.Context, req reso
 	result, ok := r.pollHealthMonitorUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{ProvisioningStatusActive, ProvisioningStatusError},
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(&result.ProvisioningStatus), []string{ProvisioningStatusActive}, &resp.Diagnostics)
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(&result.ProvisioningStatus), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
 
-	ok = mapHealthMonitorFromGetResponse(ctx, &plan.loadBalancerHealthMonitorBaseModel, result, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
-		return
-	}
+	mapHealthMonitorFromGetResponse(&plan.loadBalancerHealthMonitorBaseModel, result)
 
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -173,10 +164,7 @@ func (r *loadBalancerHealthMonitorResource) Read(ctx context.Context, req resour
 		return
 	}
 
-	ok := mapHealthMonitorFromGetResponse(ctx, &state.loadBalancerHealthMonitorBaseModel, &healthMonitor.HealthMonitor, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
-		return
-	}
+	mapHealthMonitorFromGetResponse(&state.loadBalancerHealthMonitorBaseModel, &healthMonitor.HealthMonitor)
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -213,20 +201,49 @@ func (r *loadBalancerHealthMonitorResource) Update(ctx context.Context, req reso
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	updateReq, diags := mapHealthMonitorToUpdateRequest(ctx, &plan)
-	if diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	body := loadbalancer.BodyUpdateHealthMonitor{HealthMonitor: *updateReq}
+	updateReq := loadbalancer.NewEditHealthMonitor()
+
+	if !plan.Delay.Equal(state.Delay) {
+		updateReq.SetDelay(plan.Delay.ValueInt32())
+	}
+	if !plan.MaxRetries.Equal(state.MaxRetries) {
+		updateReq.SetMaxRetries(plan.MaxRetries.ValueInt32())
+	}
+	if !plan.MaxRetriesDown.Equal(state.MaxRetriesDown) {
+		updateReq.SetMaxRetriesDown(plan.MaxRetriesDown.ValueInt32())
+	}
+	if !plan.Timeout.Equal(state.Timeout) {
+		updateReq.SetTimeout(plan.Timeout.ValueInt32())
+	}
+
+	if !plan.HttpMethod.Equal(state.HttpMethod) && !plan.HttpMethod.IsNull() {
+		httpMethod := loadbalancer.HealthMonitorMethod(plan.HttpMethod.ValueString())
+		updateReq.SetHttpMethod(httpMethod)
+	}
+	if !plan.HttpVersion.Equal(state.HttpVersion) && !plan.HttpVersion.IsNull() {
+		httpVersion := loadbalancer.HealthMonitorHttpVersion(plan.HttpVersion.ValueString())
+		updateReq.SetHttpVersion(httpVersion)
+	}
+	if !plan.UrlPath.Equal(state.UrlPath) && !plan.UrlPath.IsNull() {
+		updateReq.SetUrlPath(plan.UrlPath.ValueString())
+	}
+	if !plan.ExpectedCodes.Equal(state.ExpectedCodes) && !plan.ExpectedCodes.IsNull() {
+		updateReq.SetExpectedCodes(plan.ExpectedCodes.ValueString())
+	}
+
+	body := loadbalancer.NewBodyUpdateHealthMonitor(*updateReq)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateHealthMonitorModelResponseHealthMonitorModel, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
 				UpdateHealthMonitor(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				BodyUpdateHealthMonitor(body).
+				BodyUpdateHealthMonitor(*body).
 				Execute()
 		},
 	)
@@ -236,11 +253,15 @@ func (r *loadBalancerHealthMonitorResource) Update(ctx context.Context, req reso
 		return
 	}
 
+	time.Sleep(5 * time.Second)
+
 	result, ok := common.PollUntilResult(
 		ctx,
 		r,
 		5*time.Second,
-		[]string{ProvisioningStatusActive, ProvisioningStatusError},
+		"target group health monitor",
+		state.Id.ValueString(),
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 		&resp.Diagnostics,
 		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupHealthMonitorModelHealthMonitorModel, *http.Response, error) {
 			getResp, httpResp, err := r.kc.ApiClient.LoadBalancerTargetGroupAPI.
@@ -258,10 +279,7 @@ func (r *loadBalancerHealthMonitorResource) Update(ctx context.Context, req reso
 		return
 	}
 
-	ok = mapHealthMonitorFromGetResponse(ctx, &plan.loadBalancerHealthMonitorBaseModel, result, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
-		return
-	}
+	mapHealthMonitorFromGetResponse(&plan.loadBalancerHealthMonitorBaseModel, result)
 
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -291,6 +309,11 @@ func (r *loadBalancerHealthMonitorResource) Delete(ctx context.Context, req reso
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (struct{}, *http.Response, error) {
@@ -329,6 +352,8 @@ func (r *loadBalancerHealthMonitorResource) pollHealthMonitorUntilStatus(
 		ctx,
 		r,
 		2*time.Second,
+		"target group health monitor",
+		healthMonitorId,
 		targetStatuses,
 		resp,
 		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupHealthMonitorModelHealthMonitorModel, *http.Response, error) {
@@ -364,4 +389,68 @@ func (r *loadBalancerHealthMonitorResource) getLoadBalancerIdByTargetGroupId(ctx
 	}
 
 	return respModel.TargetGroup.LoadBalancerId.Get(), true
+}
+
+func (r *loadBalancerHealthMonitorResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config loadBalancerHealthMonitorResourceModel
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !config.Delay.IsUnknown() && !config.Timeout.IsUnknown() &&
+		config.Delay.ValueInt32() <= config.Timeout.ValueInt32() {
+		common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+			fmt.Sprintf("'delay' must be greater than 'timeout'.: %d <= %d", config.Delay.ValueInt32(), config.Timeout.ValueInt32()),
+		)
+	}
+
+	if config.Type.ValueString() == string(loadbalancer.HEALTHMONITORTYPE_HTTP) ||
+		config.Type.ValueString() == string(loadbalancer.HEALTHMONITORTYPE_HTTPS) {
+
+		var missingFields []string
+
+		if config.HttpMethod.IsNull() {
+			missingFields = append(missingFields, "'http_method'")
+		}
+		if config.HttpVersion.IsNull() {
+			missingFields = append(missingFields, "'http_version'")
+		}
+		if config.UrlPath.IsNull() {
+			missingFields = append(missingFields, "'url_path'")
+		}
+		if config.ExpectedCodes.IsNull() {
+			missingFields = append(missingFields, "'expected_codes'")
+		}
+
+		if len(missingFields) > 0 {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("Missing required attributes for type '%s': %v",
+					config.Type.ValueString(), missingFields),
+			)
+		}
+	} else {
+		var unnecessaryFields []string
+
+		if !config.HttpMethod.IsNull() {
+			unnecessaryFields = append(unnecessaryFields, "'http_method'")
+		}
+		if !config.HttpVersion.IsNull() {
+			unnecessaryFields = append(unnecessaryFields, "'http_version'")
+		}
+		if !config.UrlPath.IsNull() {
+			unnecessaryFields = append(unnecessaryFields, "'url_path'")
+		}
+		if !config.ExpectedCodes.IsNull() {
+			unnecessaryFields = append(unnecessaryFields, "'expected_codes'")
+		}
+
+		if len(unnecessaryFields) > 0 {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				fmt.Sprintf("The following attributes must not be set for type '%s': %v",
+					config.Type.ValueString(), unnecessaryFields),
+			)
+		}
+	}
 }

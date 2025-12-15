@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -52,13 +51,11 @@ func (d *securityGroupDataSource) Metadata(_ context.Context, req datasource.Met
 
 func (d *securityGroupDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("SecurityGroup"),
 		Attributes: MergeAttributes[schema.Attribute](
 			map[string]schema.Attribute{
 				"id": schema.StringAttribute{
-					Required:    true,
-					Description: "Security Group ID",
-					Validators:  common.UuidValidator(),
+					Required:   true,
+					Validators: common.UuidValidator(),
 				},
 				"timeouts": timeouts.Attributes(ctx),
 			},

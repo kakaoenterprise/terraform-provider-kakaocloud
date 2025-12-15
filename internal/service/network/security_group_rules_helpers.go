@@ -4,12 +4,17 @@ package network
 
 import (
 	"context"
+
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func expandSecurityGroupRules(ctx context.Context, ruleList types.Set) ([]securityGroupRuleModel, diag.Diagnostics) {
 	var rules []securityGroupRuleModel
-	diags := ruleList.ElementsAs(ctx, &rules, false)
+
+	diags := diag.Diagnostics{}
+	if !ruleList.IsNull() {
+		diags = ruleList.ElementsAs(ctx, &rules, false)
+	}
 	return rules, diags
 }

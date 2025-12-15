@@ -7,21 +7,15 @@ import (
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-
-	"terraform-provider-kakaocloud/internal/docs"
-)
-
-var (
-	keypairDesc = docs.Bcs("bcs_instance__v1__api__get_keypair__model__KeypairModel")
 )
 
 var keypairDataSourceSchemaAttributes = map[string]dschema.Attribute{
-	"id":          dschema.StringAttribute{Computed: true, Description: keypairDesc.String("id")},
-	"user_id":     dschema.StringAttribute{Computed: true, Description: keypairDesc.String("user_id")},
-	"fingerprint": dschema.StringAttribute{Computed: true, Description: keypairDesc.String("fingerprint")},
-	"public_key":  dschema.StringAttribute{Computed: true, Description: keypairDesc.String("public_key")},
-	"type":        dschema.StringAttribute{Computed: true, Description: keypairDesc.String("type")},
-	"created_at":  dschema.StringAttribute{Computed: true, Description: keypairDesc.String("created_at")},
+	"id":          dschema.StringAttribute{Computed: true},
+	"user_id":     dschema.StringAttribute{Computed: true},
+	"fingerprint": dschema.StringAttribute{Computed: true},
+	"public_key":  dschema.StringAttribute{Computed: true},
+	"type":        dschema.StringAttribute{Computed: true},
+	"created_at":  dschema.StringAttribute{Computed: true},
 }
 
 var keypairResourceSchemaAttributes = map[string]rschema.Attribute{
@@ -30,14 +24,12 @@ var keypairResourceSchemaAttributes = map[string]rschema.Attribute{
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.UseStateForUnknown(),
 		},
-		Description: keypairDesc.String("id"),
 	},
 	"name": rschema.StringAttribute{
 		Required: true,
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.RequiresReplace(),
 		},
-		Description: keypairDesc.String("name"),
 	},
 	"public_key": rschema.StringAttribute{
 		Optional: true,
@@ -45,7 +37,6 @@ var keypairResourceSchemaAttributes = map[string]rschema.Attribute{
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.RequiresReplace(),
 		},
-		Description: keypairDesc.String("public_key"),
 	},
 	"private_key": rschema.StringAttribute{
 		Computed:  true,
@@ -53,22 +44,17 @@ var keypairResourceSchemaAttributes = map[string]rschema.Attribute{
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.UseStateForUnknown(),
 		},
-		Description: docs.Description("bcs", "bcs_instance__v1__api__create_keypair__model__KeypairModel", "private_key"),
 	},
 	"fingerprint": rschema.StringAttribute{
-		Computed:    true,
-		Description: keypairDesc.String("fingerprint"),
+		Computed: true,
 	},
 	"user_id": rschema.StringAttribute{
-		Computed:    true,
-		Description: keypairDesc.String("user_id"),
+		Computed: true,
 	},
 	"type": rschema.StringAttribute{
-		Computed:    true,
-		Description: keypairDesc.String("type"),
+		Computed: true,
 	},
 	"created_at": rschema.StringAttribute{
-		Computed:    true,
-		Description: keypairDesc.String("created_at"),
+		Computed: true,
 	},
 }

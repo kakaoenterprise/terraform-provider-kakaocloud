@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -23,21 +22,13 @@ var (
 	_ resource.ResourceWithConfigure      = &clusterResource{}
 	_ resource.ResourceWithImportState    = &clusterResource{}
 	_ resource.ResourceWithValidateConfig = &clusterResource{}
+	_ resource.ResourceWithModifyPlan     = &clusterResource{}
 )
 
 func NewClusterResource() resource.Resource { return &clusterResource{} }
 
 type clusterResource struct {
 	kc *common.KakaoCloudClient
-}
-
-func (r *clusterResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config clusterResourceModel
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 }
 
 func (r *clusterResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -50,7 +41,6 @@ func (r *clusterResource) Metadata(ctx context.Context, req resource.MetadataReq
 
 func (r *clusterResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("KubernetesEngineCluster"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			clusterResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -61,14 +51,8 @@ func (r *clusterResource) Schema(ctx context.Context, req resource.SchemaRequest
 }
 
 func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan, config clusterResourceModel
+	var plan clusterResourceModel
 	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	diags = req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -124,24 +108,22 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 
 	createReq.SetVpcInfo(reqVpcInfo)
 
-	if !plan.Network.IsNull() && !plan.Network.IsUnknown() {
-		var targetNetwork targetNetworkModel
-		diags = plan.Network.As(ctx, &targetNetwork, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		n := kubernetesengine.ClusterNetworkRequestModel{}
-		n.SetCni(kubernetesengine.ClusterNetworkCNI(targetNetwork.Cni.ValueString()))
-		if !targetNetwork.ServiceCidr.IsNull() && !targetNetwork.ServiceCidr.IsUnknown() {
-			n.SetServiceCidr(targetNetwork.ServiceCidr.ValueString())
-		}
-		if !targetNetwork.PodCidr.IsNull() && !targetNetwork.PodCidr.IsUnknown() {
-			n.SetPodCidr(targetNetwork.PodCidr.ValueString())
-		}
-		createReq.SetNetwork(n)
+	var targetNetwork targetNetworkModel
+	diags = plan.Network.As(ctx, &targetNetwork, basetypes.ObjectAsOptions{})
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
+
+	n := kubernetesengine.ClusterNetworkRequestModel{}
+	n.SetCni(kubernetesengine.ClusterNetworkCNI(targetNetwork.Cni.ValueString()))
+	if !targetNetwork.ServiceCidr.IsNull() && !targetNetwork.ServiceCidr.IsUnknown() {
+		n.SetServiceCidr(targetNetwork.ServiceCidr.ValueString())
+	}
+	if !targetNetwork.PodCidr.IsNull() && !targetNetwork.PodCidr.IsUnknown() {
+		n.SetPodCidr(targetNetwork.PodCidr.ValueString())
+	}
+	createReq.SetNetwork(n)
 
 	body := kubernetesengine.CreateK8sClusterRequestModel{Cluster: createReq}
 
@@ -160,7 +142,7 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 	result, ok := r.pollClusterUtilStatus(
 		ctx,
 		plan.Name.ValueString(),
-		[]string{ClusterStatusProvisioned, ClusterStatusFailed},
+		[]string{common.ClusterStatusProvisioned, common.ClusterStatusFailed, common.ClusterStatusDeleting},
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
@@ -168,7 +150,10 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	status := string(result.Status.Phase)
-	common.CheckResourceAvailableStatus(ctx, r, &status, []string{ClusterStatusProvisioned}, &resp.Diagnostics)
+	common.CheckResourceAvailableStatus(ctx, r, &status, []string{common.ClusterStatusProvisioned}, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	ok = mapClusterBaseModel(ctx, &plan.ClusterBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
@@ -255,11 +240,25 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	if !plan.Description.Equal(state.Description) {
+	result, ok := r.pollClusterUtilStatus(
+		ctx,
+		plan.Name.ValueString(),
+		[]string{common.ClusterStatusProvisioned, common.ClusterStatusFailed, common.ClusterStatusDeleting},
+		&resp.Diagnostics,
+	)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	status := string(result.Status.Phase)
+	common.CheckResourceAvailableStatus(ctx, r, &status, []string{common.ClusterStatusProvisioned}, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !plan.Description.Equal(state.Description) && !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		editReq := kubernetesengine.KubernetesEngineV1ApiUpdateClusterModelClusterRequestModel{}
-		if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
-			editReq.SetDescription(plan.Description.ValueString())
-		}
+		editReq.SetDescription(plan.Description.ValueString())
 
 		body := *kubernetesengine.NewUpdateK8sClusterRequestModel(editReq)
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
@@ -277,20 +276,53 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 		}
 	}
 
-	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*kubernetesengine.GetK8sClusterResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.ClustersAPI.
-				GetCluster(ctx, state.Name.ValueString()).
-				XAuthToken(r.kc.XAuthToken).Execute()
-		},
-	)
-	if err != nil {
-		common.AddApiActionError(ctx, r, httpResp, "GetCluster", err, &resp.Diagnostics)
+	var planVer OmtInfoModel
+	diags = plan.Version.As(ctx, &planVer, basetypes.ObjectAsOptions{})
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	result := respModel.Cluster
-	ok := mapClusterBaseModel(ctx, &state.ClusterBaseModel, &result, &resp.Diagnostics)
+	var stateVer OmtInfoModel
+	diags = state.Version.As(ctx, &stateVer, basetypes.ObjectAsOptions{})
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !planVer.MinorVersion.Equal(stateVer.MinorVersion) {
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+			func() (interface{}, *http.Response, error) {
+				return r.kc.ApiClient.ClustersAPI.UpgradeCluster(ctx, plan.Name.ValueString()).
+					XAuthToken(r.kc.XAuthToken).
+					Execute()
+			},
+		)
+		if err != nil {
+			common.AddApiActionError(ctx, r, httpResp, "UpgradeCluster", err, &resp.Diagnostics)
+			return
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+
+	result, ok = r.pollClusterUtilStatus(
+		ctx,
+		plan.Name.ValueString(),
+		[]string{common.ClusterStatusProvisioned, common.ClusterStatusFailed, common.ClusterStatusDeleting},
+		&resp.Diagnostics,
+	)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	status = string(result.Status.Phase)
+	common.CheckResourceAvailableStatus(ctx, r, &status, []string{common.ClusterStatusProvisioned}, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	ok = mapClusterBaseModel(ctx, &state.ClusterBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -374,4 +406,103 @@ func (r *clusterResource) Configure(ctx context.Context, req resource.ConfigureR
 	}
 
 	r.kc = client
+}
+
+func (r *clusterResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config clusterResourceModel
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var targetNetwork targetNetworkModel
+	diags = config.Network.As(ctx, &targetNetwork, basetypes.ObjectAsOptions{})
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var podCidr, serviceCidr *string
+	if !targetNetwork.PodCidr.IsNull() && !targetNetwork.PodCidr.IsUnknown() {
+		podCidr = targetNetwork.PodCidr.ValueStringPointer()
+	}
+	if !targetNetwork.ServiceCidr.IsNull() && !targetNetwork.ServiceCidr.IsUnknown() {
+		serviceCidr = targetNetwork.ServiceCidr.ValueStringPointer()
+	}
+
+	if podCidr == nil && serviceCidr == nil {
+		return
+	}
+
+	privateRanges := []string{
+		"10.0.0.0/8",
+		"172.16.0.0/12",
+		"192.168.0.0/16",
+	}
+
+	if podCidr != nil {
+		common.CidrContainListValidator(*podCidr, privateRanges, "pod_cidr", "Private Network", &resp.Diagnostics)
+	}
+	if serviceCidr != nil {
+		common.CidrContainListValidator(*serviceCidr, privateRanges, "service_cidr", "Private Network", &resp.Diagnostics)
+	}
+	if podCidr != nil && serviceCidr != nil {
+		common.CidrOverlapValidator(*podCidr, *serviceCidr, "pod_cidr", "service_cidr", &resp.Diagnostics)
+	}
+}
+
+func (r *clusterResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	var plan, state *clusterResourceModel
+
+	planDiags := req.Plan.Get(ctx, &plan)
+	stateDiags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(planDiags...)
+	resp.Diagnostics.Append(stateDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	if req.State.Raw.IsNull() && !req.Plan.Raw.IsNull() {
+		return
+	}
+
+	if !req.State.Raw.IsNull() && !req.Plan.Raw.IsNull() {
+		var planVer OmtInfoModel
+		diags := plan.Version.As(ctx, &planVer, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		var stateVer OmtInfoModel
+		diags = state.Version.As(ctx, &stateVer, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		if !planVer.MinorVersion.Equal(stateVer.MinorVersion) {
+			common.MajorMinorVersionNotDecreasingValidator(planVer.MinorVersion.ValueString(), stateVer.MinorVersion.ValueString(), &resp.Diagnostics)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			if !state.IsUpgradable.ValueBool() {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("The version cannot be upgraded. current state version: '%v'", stateVer.MinorVersion.ValueString()))
+				return
+			}
+			if !planVer.MinorVersion.Equal(stateVer.NextVersion) {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("Upgrade to the requested version is not supported. The available version for upgrade is '%v'.", stateVer.NextVersion.ValueString()),
+				)
+				return
+			}
+		}
+	}
 }

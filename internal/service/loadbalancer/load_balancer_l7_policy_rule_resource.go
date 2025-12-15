@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -41,7 +40,6 @@ func (r *loadBalancerL7PolicyRuleResource) Metadata(_ context.Context, req resou
 
 func (r *loadBalancerL7PolicyRuleResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("LoadBalancerL7PolicyRule"),
 		Attributes: utils.MergeResourceSchemaAttributes(
 			loadBalancerL7PolicyRuleResourceSchema,
 			map[string]schema.Attribute{
@@ -69,7 +67,7 @@ func (r *loadBalancerL7PolicyRuleResource) Configure(_ context.Context, req reso
 }
 
 func (r *loadBalancerL7PolicyRuleResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	ValidateL7PolicyRuleConfig(ctx, req, resp)
+	r.validateL7PolicyRuleConfig(ctx, req, resp)
 }
 
 func (r *loadBalancerL7PolicyRuleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -81,7 +79,7 @@ func (r *loadBalancerL7PolicyRuleResource) Create(ctx context.Context, req resou
 		return
 	}
 
-	loadBalancerId, ok := r.getLoadBalancerIdByL7PolicyId(ctx, plan.L7PolicyId.ValueString(), &resp.Diagnostics)
+	loadBalancerId, ok := r.findLoadBalancerIdByL7PolicyId(ctx, plan.L7PolicyId.ValueString(), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -98,7 +96,23 @@ func (r *loadBalancerL7PolicyRuleResource) Create(ctx context.Context, req resou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	createReq := mapLoadBalancerL7PolicyRuleToCreateRequest(plan)
+	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	createReq := loadbalancer.CreateL7PolicyRuleModel{
+		Type:        loadbalancer.L7RuleType(plan.Type.ValueString()),
+		CompareType: loadbalancer.L7RuleCompareType(plan.CompareType.ValueString()),
+		Value:       plan.Value.ValueString(),
+	}
+
+	if !plan.Key.IsNull() {
+		createReq.SetKey(plan.Key.ValueString())
+	}
+	if !plan.IsInverted.IsNull() {
+		createReq.SetIsInverted(plan.IsInverted.ValueBool())
+	}
 
 	createResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiAddL7PolicyRuleModelResponseL7PolicyRuleModel, *http.Response, error) {
@@ -116,8 +130,8 @@ func (r *loadBalancerL7PolicyRuleResource) Create(ctx context.Context, req resou
 	result, ok := r.pollL7PolicyRuleUntilStatus(
 		ctx,
 		plan.L7PolicyId.ValueString(),
-		createResp.L7Rule.Id,
-		[]string{ProvisioningStatusActive, ProvisioningStatusError},
+		plan.Id.ValueString(),
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 		&resp.Diagnostics,
 	)
 
@@ -125,9 +139,9 @@ func (r *loadBalancerL7PolicyRuleResource) Create(ctx context.Context, req resou
 		return
 	}
 
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.L7Rule.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.L7Rule.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
 
-	ok = mapLoadBalancerL7PolicyRuleBaseModel(ctx, &plan.loadBalancerL7PolicyRuleBaseModel, &result.L7Rule, plan.L7PolicyId.ValueString(), &resp.Diagnostics)
+	ok = mapLoadBalancerL7PolicyRuleBaseModel(&plan.loadBalancerL7PolicyRuleBaseModel, &result.L7Rule, plan.L7PolicyId.ValueString(), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -169,7 +183,10 @@ func (r *loadBalancerL7PolicyRuleResource) Read(ctx context.Context, req resourc
 		return
 	}
 
-	state = mapLoadBalancerL7PolicyRuleFromGetResponse(getResp.L7Rule, state.L7PolicyId.ValueString(), state.Timeouts)
+	ok := mapLoadBalancerL7PolicyRuleBaseModel(&state.loadBalancerL7PolicyRuleBaseModel, &getResp.L7Rule, state.L7PolicyId.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -190,7 +207,7 @@ func (r *loadBalancerL7PolicyRuleResource) Update(ctx context.Context, req resou
 		return
 	}
 
-	loadBalancerId, ok := r.getLoadBalancerIdByL7PolicyId(ctx, state.L7PolicyId.ValueString(), &resp.Diagnostics)
+	loadBalancerId, ok := r.findLoadBalancerIdByL7PolicyId(ctx, state.L7PolicyId.ValueString(), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -207,7 +224,23 @@ func (r *loadBalancerL7PolicyRuleResource) Update(ctx context.Context, req resou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	updateReq := mapLoadBalancerL7PolicyRuleToUpdateRequest(plan)
+	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	updateReq := loadbalancer.EditL7PolicyRuleModel{
+		Type:        loadbalancer.L7RuleType(plan.Type.ValueString()),
+		CompareType: loadbalancer.L7RuleCompareType(plan.CompareType.ValueString()),
+		Value:       plan.Value.ValueString(),
+	}
+
+	if !plan.Key.IsNull() {
+		updateReq.SetKey(plan.Key.ValueString())
+	}
+	if !plan.IsInverted.IsNull() {
+		updateReq.SetIsInverted(plan.IsInverted.ValueBool())
+	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateL7PolicyRuleModelResponseL7PolicyRuleModel, *http.Response, error) {
@@ -220,23 +253,25 @@ func (r *loadBalancerL7PolicyRuleResource) Update(ctx context.Context, req resou
 		return
 	}
 
+	time.Sleep(5 * time.Second)
+
 	result, ok := r.pollL7PolicyRuleUntilStatus(
 		ctx,
 		state.L7PolicyId.ValueString(),
 		state.Id.ValueString(),
-		[]string{ProvisioningStatusActive, ProvisioningStatusError},
+		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.L7Rule.ProvisioningStatus.Get()), []string{ProvisioningStatusActive}, &resp.Diagnostics)
+	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.L7Rule.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	ok = mapLoadBalancerL7PolicyRuleBaseModel(ctx, &plan.loadBalancerL7PolicyRuleBaseModel, &result.L7Rule, state.L7PolicyId.ValueString(), &resp.Diagnostics)
+	ok = mapLoadBalancerL7PolicyRuleBaseModel(&plan.loadBalancerL7PolicyRuleBaseModel, &result.L7Rule, state.L7PolicyId.ValueString(), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -255,7 +290,7 @@ func (r *loadBalancerL7PolicyRuleResource) Delete(ctx context.Context, req resou
 		return
 	}
 
-	loadBalancerId, ok := r.getLoadBalancerIdByL7PolicyId(ctx, state.L7PolicyId.ValueString(), &resp.Diagnostics)
+	loadBalancerId, ok := r.findLoadBalancerIdByL7PolicyId(ctx, state.L7PolicyId.ValueString(), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -271,6 +306,11 @@ func (r *loadBalancerL7PolicyRuleResource) Delete(ctx context.Context, req resou
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
@@ -304,12 +344,10 @@ func (r *loadBalancerL7PolicyRuleResource) Delete(ctx context.Context, req resou
 
 func (r *loadBalancerL7PolicyRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
-	parts := strings.Split(req.ID, ",")
+	parts := strings.Split(req.ID, "/")
 	if len(parts) != 2 {
-		resp.Diagnostics.AddError(
-			"Invalid import ID",
-			"Import ID must be in the format: l7_policy_id,rule_id",
-		)
+		common.AddImportFormatError(ctx, r, &resp.Diagnostics,
+			"Expected import ID in the format: l7_policy_id/rule_id")
 		return
 	}
 
@@ -317,50 +355,30 @@ func (r *loadBalancerL7PolicyRuleResource) ImportState(ctx context.Context, req 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), parts[1])...)
 }
 
-func (r *loadBalancerL7PolicyRuleResource) getLoadBalancerIdByL7PolicyId(ctx context.Context, l7PolicyId string, respDiags *diag.Diagnostics) (*string, bool) {
+func (r *loadBalancerL7PolicyRuleResource) findLoadBalancerIdByL7PolicyId(ctx context.Context, l7PolicyId string, diags *diag.Diagnostics) (*string, bool) {
 
-	listenerId, err := r.findListenerIdByL7PolicyId(ctx, l7PolicyId)
-	if err != nil {
-		respDiags.AddError("Could not find listener for L7 policy", fmt.Sprintf("Failed to find listener for L7 policy %s: %v", l7PolicyId, err))
-		return nil, false
-	}
-
-	listenerResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelResponseListenerModel, *http.Response, error) {
-			return r.kc.ApiClient.LoadBalancerListenerAPI.GetListener(ctx, listenerId).
-				XAuthToken(r.kc.XAuthToken).Execute()
-		},
-	)
-	if err != nil {
-		common.AddApiActionError(ctx, r, httpResp, "GetListener", err, respDiags)
-		return nil, false
-	}
-
-	return listenerResp.Listener.LoadBalancerId.Get(), true
-}
-
-func (r *loadBalancerL7PolicyRuleResource) findListenerIdByL7PolicyId(ctx context.Context, l7PolicyId string) (string, error) {
-
-	listenersResp, _, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &diag.Diagnostics{},
+	listenersResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
 		func() (*loadbalancer.ListenerListModel, *http.Response, error) {
-			return r.kc.ApiClient.LoadBalancerListenerAPI.ListListeners(ctx).Limit(1000).XAuthToken(r.kc.XAuthToken).Execute()
+			return r.kc.ApiClient.LoadBalancerListenerAPI.ListListeners(ctx).Limit(1000).Protocol("HTTP").XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
 	if err != nil {
-		return "", fmt.Errorf("failed to list listeners: %w", err)
+		common.AddApiActionError(ctx, r, httpResp, "ListListeners", err, diags)
+		return nil, false
 	}
 
 	for _, listener := range listenersResp.Listeners {
 		if listener.L7Policies != nil {
 			for _, policy := range listener.L7Policies {
 				if policy.Id == l7PolicyId {
-					return listener.Id, nil
+					return listener.LoadBalancerId.Get(), true
 				}
 			}
 		}
 	}
 
-	return "", fmt.Errorf("L7 policy %s not found in any listener", l7PolicyId)
+	common.AddGeneralError(ctx, r, diags, fmt.Sprintf("L7 policy %s not found in any listener", l7PolicyId))
+	return nil, false
 }
 
 func (r *loadBalancerL7PolicyRuleResource) pollL7PolicyRuleUntilStatus(
@@ -373,13 +391,19 @@ func (r *loadBalancerL7PolicyRuleResource) pollL7PolicyRuleUntilStatus(
 		ctx,
 		r,
 		2*time.Second,
+		"l7 policy rule",
+		ruleId,
 		targetStatuses,
 		diags,
 		func(ctx context.Context) (*loadbalancer.Responsel7PolicyRuleModel, *http.Response, error) {
-			resp, httpResp, err := r.kc.ApiClient.LoadBalancerL7PoliciesAPI.
-				GetL7PolicyRule(ctx, l7PolicyId, ruleId).
-				XAuthToken(r.kc.XAuthToken).
-				Execute()
+			resp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
+				func() (*loadbalancer.Responsel7PolicyRuleModel, *http.Response, error) {
+					return r.kc.ApiClient.LoadBalancerL7PoliciesAPI.
+						GetL7PolicyRule(ctx, l7PolicyId, ruleId).
+						XAuthToken(r.kc.XAuthToken).
+						Execute()
+				},
+			)
 			if err != nil {
 				return nil, httpResp, err
 			}

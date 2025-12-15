@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -37,7 +36,6 @@ func (d *volumeSnapshotsDataSource) Metadata(_ context.Context, req datasource.M
 
 func (d *volumeSnapshotsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("VolumeSnapshots"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -58,8 +56,7 @@ func (d *volumeSnapshotsDataSource) Schema(ctx context.Context, _ datasource.Sch
 					Attributes: MergeDataSourceSchemaAttributes(
 						map[string]schema.Attribute{
 							"id": schema.StringAttribute{
-								Computed:    true,
-								Description: "Volume Snapshot ID",
+								Computed: true,
 							},
 						},
 						volumeSnapshotDataSourceSchemaAttributes,
@@ -177,7 +174,8 @@ func (d *volumeSnapshotsDataSource) Read(ctx context.Context, req datasource.Rea
 	var volumesSnapshotsResult []volume.BcsVolumeV1ApiGetSnapshotModelVolumeSnapshotModel
 	err = copier.Copy(&volumesSnapshotsResult, &volumesSnapshotResp.Snapshots)
 	if err != nil {
-		resp.Diagnostics.AddError("List 변환 실패", fmt.Sprintf("volumesSnapshotsResult 변환 실패: %v", err))
+		common.AddGeneralError(ctx, d, &resp.Diagnostics,
+			fmt.Sprintf("Failed to convert volumesSnapshotsResult: %v", err))
 		return
 	}
 

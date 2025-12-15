@@ -4,7 +4,6 @@ package vpc
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
@@ -18,232 +17,176 @@ import (
 )
 
 func getAssociationDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_route_table__model__AssociationModel")
 
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"provisioning_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"vpc_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_id"),
+			Computed: true,
 		},
 		"vpc_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_name"),
+			Computed: true,
 		},
 		"subnet_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_id"),
+			Computed: true,
 		},
 		"subnet_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_name"),
+			Computed: true,
 		},
 		"subnet_cidr_block": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_cidr_block"),
+			Computed: true,
 		},
 		"availability_zone": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("availability_zone"),
+			Computed: true,
 		},
 	}
 }
 
 func getRouteDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_route_table__model__RouteModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"destination": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("destination"),
+			Computed: true,
 		},
 		"provisioning_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"target_type": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("target_type"),
+			Computed: true,
 		},
 		"target_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("target_name"),
+			Computed: true,
 		},
 		"is_local_route": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_local_route"),
+			Computed: true,
 		},
 		"target_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("target_id"),
+			Computed: true,
 		},
 	}
 }
 
 func getRouteTableDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_route_table__model__RouteTableModel")
-
 	return map[string]dschema.Attribute{
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"associations": dschema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("associations"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: associationDataSourceSchema,
 			},
 		},
 		"routes": dschema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("routes"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: routeDataSourceSchema,
 			},
 		},
 		"vpc_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_id"),
+			Computed: true,
 		},
 		"provisioning_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"vpc_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_name"),
+			Computed: true,
 		},
 		"vpc_provisioning_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_provisioning_status"),
+			Computed: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"project_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_name"),
+			Computed: true,
 		},
 		"is_main": dschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_main"),
+			Computed: true,
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }
 
 func getAssociationResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_route_table__model__AssociationModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"vpc_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_id"),
+			Computed: true,
 		},
 		"vpc_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_name"),
+			Computed: true,
 		},
 		"subnet_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_id"),
+			Computed: true,
 		},
 		"subnet_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_name"),
+			Computed: true,
 		},
 		"subnet_cidr_block": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_cidr_block"),
+			Computed: true,
 		},
 		"availability_zone": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("availability_zone"),
+			Computed: true,
 		},
 	}
 }
 
 func getRouteResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_route_table__model__RouteModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"destination": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("destination"),
-			CustomType:  cidrtypes.IPPrefixType{},
+			Required:   true,
+			CustomType: cidrtypes.IPPrefixType{},
 		},
 		"provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"target_type": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("target_type"),
+			Required: true,
 		},
 		"target_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("target_name"),
+			Computed: true,
 		},
 		"is_local_route": rschema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_local_route"),
+			Computed: true,
 		},
 		"target_id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("target_id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 	}
 }
 
 func getRequestRouteResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_route_table__model__RouteModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"destination": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("destination"),
-			CustomType:  cidrtypes.IPPrefixType{},
+			Required:   true,
+			CustomType: cidrtypes.IPPrefixType{},
 		},
 		"target_type": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("target_type"),
+			Required: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(
 					string(vpc.ROUTETABLEROUTETYPE_INSTANCE),
@@ -253,82 +196,67 @@ func getRequestRouteResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 		"target_id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("target_id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 	}
 }
 
 func getRouteTableResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Vpc("bns_vpc__v1__api__get_route_table__model__RouteTableModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"name": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("name"),
-			Validators:  common.NameValidator(200),
+			Required:   true,
+			Validators: common.NameValidator(200),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"associations": rschema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("associations"),
+			Computed: true,
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: associationResourceSchema,
 			},
 		},
 		"routes": rschema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("routes"),
+			Computed: true,
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: routeResourceSchema,
 			},
 		},
 		"vpc_id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("vpc_id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"vpc_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_name"),
+			Computed: true,
 		},
 		"vpc_provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_provisioning_status"),
+			Computed: true,
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"project_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_name"),
+			Computed: true,
 		},
 		"is_main": rschema.BoolAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("is_main"),
+			Optional: true,
+			Computed: true,
 		},
 		"request_routes": rschema.ListNestedAttribute{
-			Optional:    true,
-			Description: desc.String("routes"),
+			Optional: true,
 			Validators: []validator.List{
 				listvalidator.SizeAtLeast(1),
 			},
@@ -337,12 +265,10 @@ func getRouteTableResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }

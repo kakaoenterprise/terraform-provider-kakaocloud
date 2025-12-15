@@ -4,37 +4,42 @@ package loadbalancer
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
 func getInsertHeadersResourceSchema() map[string]rschema.Attribute {
 	return map[string]rschema.Attribute{
 		"x_forwarded_for": rschema.StringAttribute{
-			Description: "Configures the X-Forwarded-For header.",
-			Optional:    true,
-			Computed:    true,
+			Optional: true,
+			Computed: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf("true", "false", "remove"),
+			},
 		},
 		"x_forwarded_proto": rschema.StringAttribute{
-			Description: "Configures the X-Forwarded-Proto header.",
-			Optional:    true,
-			Computed:    true,
+			Optional: true,
+			Computed: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf("true", "false"),
+			},
 		},
 		"x_forwarded_port": rschema.StringAttribute{
-			Description: "Configures the X-Forwarded-Port header.",
-			Optional:    true,
-			Computed:    true,
+			Optional: true,
+			Computed: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf("true", "false"),
+			},
 		},
 	}
 }
@@ -42,191 +47,149 @@ func getInsertHeadersResourceSchema() map[string]rschema.Attribute {
 func getInsertHeadersDataSourceSchema() map[string]dschema.Attribute {
 	return map[string]dschema.Attribute{
 		"x_forwarded_for": dschema.StringAttribute{
-			Description: "Indicates if the X-Forwarded-For header is inserted.",
-			Computed:    true,
+			Computed: true,
 		},
 		"x_forwarded_proto": dschema.StringAttribute{
-			Description: "Indicates if the X-Forwarded-Proto header is inserted.",
-			Computed:    true,
+			Computed: true,
 		},
 		"x_forwarded_port": dschema.StringAttribute{
-			Description: "Indicates if the X-Forwarded-Port header is inserted.",
-			Computed:    true,
+			Computed: true,
 		},
 	}
 }
 
 func getListenerResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Loadbalancer("bns_load_balancer__v1__api__create_listener__model__ListenerModel")
-	getDesc := docs.Loadbalancer("bns_load_balancer__v1__api__get_listener__model__ListenerModel")
-	createDesc := docs.Loadbalancer("CreateListener")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
-			Validators:  common.NameValidator(255),
+			Computed: true,
 		},
 		"description": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
-			Validators:  common.DescriptionValidator(),
+			Computed: true,
 		},
 		"protocol": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("protocol"),
-			Validators:  common.ProtocolValidator(),
+			Required:   true,
+			Validators: common.ProtocolValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"is_enabled": rschema.BoolAttribute{
-			Computed:    true,
-			Description: getDesc.String("is_enabled"),
-			PlanModifiers: []planmodifier.Bool{
-				boolplanmodifier.UseStateForUnknown(),
-			},
+			Computed: true,
 		},
 		"tls_ciphers": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("tls_ciphers"),
+			Computed: true,
 		},
 		"tls_versions": rschema.ListAttribute{
 			ElementType: types.StringType,
 			Computed:    true,
-			Description: desc.String("tls_versions"),
 		},
 		"alpn_protocols": rschema.ListAttribute{
 			ElementType: types.StringType,
 			Computed:    true,
-			Description: desc.String("alpn_protocols"),
 			PlanModifiers: []planmodifier.List{
 				listplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
-		},
-		"protocol_port": rschema.Int64Attribute{
-			Required:    true,
-			Description: desc.String("protocol_port"),
-			Validators:  common.PortValidator(),
-			PlanModifiers: []planmodifier.Int64{
-				int64planmodifier.RequiresReplace(),
+			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
-		"connection_limit": rschema.Int64Attribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("connection_limit"),
-			Validators:  common.ConnectionLimitValidator(),
-			PlanModifiers: []planmodifier.Int64{
-				int64planmodifier.UseStateForUnknown(),
+		"protocol_port": rschema.Int32Attribute{
+			Required:   true,
+			Validators: common.PortValidator(),
+			PlanModifiers: []planmodifier.Int32{
+				int32planmodifier.RequiresReplace(),
 			},
+		},
+		"connection_limit": rschema.Int32Attribute{
+			Optional:   true,
+			Computed:   true,
+			Validators: common.ConnectionLimitValidator(),
 		},
 		"load_balancer_id": rschema.StringAttribute{
-			Required:    true,
-			Description: getDesc.String("load_balancer_id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"tls_certificate_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("tls_certificate_id"),
-			Validators:  common.UuidValidator(),
+			Computed: true,
 		},
 		"provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"operating_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("operating_status"),
+			Computed: true,
 		},
 		"insert_headers": rschema.SingleNestedAttribute{
-			Description: desc.String("insert_headers"),
-			Optional:    true,
-			Computed:    true,
-			Attributes:  getInsertHeadersResourceSchema(),
-			PlanModifiers: []planmodifier.Object{
-				objectplanmodifier.UseStateForUnknown(),
-			},
+			Optional:   true,
+			Computed:   true,
+			Attributes: getInsertHeadersResourceSchema(),
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
-		"timeout_client_data": rschema.Int64Attribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("timeout_client_data"),
-			Validators: []validator.Int64{
-				int64validator.AtLeast(1000),
-				int64validator.AtMost(4000000),
-			},
-			PlanModifiers: []planmodifier.Int64{
-				int64planmodifier.UseStateForUnknown(),
+		"timeout_client_data": rschema.Int32Attribute{
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int32{
+				int32validator.AtLeast(1000),
+				int32validator.AtMost(4000000),
 			},
 		},
 		"default_target_group_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("default_target_group_id"),
-			Validators:  common.UuidValidator(),
+			Computed: true,
 		},
 		"default_target_group_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("default_target_group_name"),
+			Computed: true,
 		},
 		"load_balancer_type": rschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("load_balancer_type"),
+			Computed: true,
 		},
 		"sni_container_refs": rschema.ListAttribute{
 			ElementType: types.StringType,
 			Optional:    true,
-			Description: desc.String("sni_container_refs"),
 		},
 		"default_tls_container_ref": rschema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("default_tls_container_ref"),
-		},
-		"target_group_id": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: docs.ParameterDescription("loadbalancer", "get_target_group", "path_target_group_id"),
-			Validators:  common.UuidValidator(),
-			PlanModifiers: []planmodifier.String{
-				common.NewPreserveStateWhenNotSet(),
+			Optional: true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
 			},
 		},
+		"target_group_id": rschema.StringAttribute{
+			Optional:   true,
+			Validators: common.UuidValidator(),
+		},
 		"tls_min_version": rschema.StringAttribute{
-			Optional:    true,
-			Description: createDesc.String("tls_min_version"),
+			Optional: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf(
+					string(loadbalancer.TLSVERSION_TLSV1),
+					string(loadbalancer.TLSVERSION_TLSV1_1),
+					string(loadbalancer.TLSVERSION_TLSV1_2),
+				),
+			},
 		},
 		"secrets": rschema.ListNestedAttribute{
-			Computed:    true,
-			Description: getDesc.String("secrets"),
+			Computed: true,
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: getListenerSecretSchema(),
 			},
 		},
 		"l7_policies": rschema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("l7_policies"),
+			Computed: true,
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: getListenerL7PolicySchema(),
 			},
@@ -235,133 +198,99 @@ func getListenerResourceSchema() map[string]rschema.Attribute {
 }
 
 func getListenerSecretSchema() map[string]rschema.Attribute {
-	secretDesc := docs.Loadbalancer("bns_load_balancer__v1__api__get_listener__model__SecretModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: secretDesc.String("id"),
+			Computed: true,
 		},
 		"name": rschema.StringAttribute{
-			Computed:    true,
-			Description: secretDesc.String("name"),
+			Computed: true,
 		},
 		"expiration": rschema.StringAttribute{
-			Computed:    true,
-			Description: secretDesc.String("expiration"),
+			Computed: true,
 		},
 		"status": rschema.StringAttribute{
-			Computed:    true,
-			Description: secretDesc.String("status"),
+			Computed: true,
 		},
 		"secret_type": rschema.StringAttribute{
-			Computed:    true,
-			Description: secretDesc.String("secret_type"),
+			Computed: true,
 		},
 		"is_default": rschema.BoolAttribute{
-			Computed:    true,
-			Description: secretDesc.String("is_default"),
+			Computed: true,
 		},
 		"creator_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: secretDesc.String("creator_id"),
+			Computed: true,
 		},
 	}
 }
 
 func getListenerL7PolicySchema() map[string]rschema.Attribute {
-	policyDesc := docs.Loadbalancer("bns_load_balancer__v1__api__get_l7_policy__model__l7PolicyModel")
-	ruleDesc := docs.Loadbalancer("bns_load_balancer__v1__api__get_listener__model__RuleModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("id"),
+			Computed: true,
 		},
 		"name": rschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("name"),
+			Computed: true,
 		},
 		"description": rschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("description"),
+			Computed: true,
 		},
 		"provisioning_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("provisioning_status"),
+			Computed: true,
 		},
 		"operating_status": rschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("operating_status"),
+			Computed: true,
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("project_id"),
+			Computed: true,
 		},
 		"action": rschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("action"),
+			Computed: true,
 		},
-		"position": rschema.Int64Attribute{
-			Computed:    true,
-			Description: policyDesc.String("position"),
+		"position": rschema.Int32Attribute{
+			Computed: true,
 		},
 		"redirect_target_group_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("redirect_target_group_id"),
+			Computed: true,
 		},
 		"redirect_url": rschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("redirect_url"),
+			Computed: true,
 		},
 		"redirect_prefix": rschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("redirect_prefix"),
+			Computed: true,
 		},
-		"redirect_http_code": rschema.Int64Attribute{
-			Computed:    true,
-			Description: policyDesc.String("redirect_http_code"),
+		"redirect_http_code": rschema.Int32Attribute{
+			Computed: true,
 		},
 		"rules": rschema.ListNestedAttribute{
-			Computed:    true,
-			Description: policyDesc.String("rules"),
+			Computed: true,
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: map[string]rschema.Attribute{
 					"id": rschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("id"),
+						Computed: true,
 					},
 					"compare_type": rschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("compare_type"),
+						Computed: true,
 					},
 					"is_inverted": rschema.BoolAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("is_inverted"),
+						Computed: true,
 					},
 					"key": rschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("key"),
+						Computed: true,
 					},
 					"value": rschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("value"),
+						Computed: true,
 					},
 					"provisioning_status": rschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("provisioning_status"),
+						Computed: true,
 					},
 					"operating_status": rschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("operating_status"),
+						Computed: true,
 					},
 					"project_id": rschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("project_id"),
+						Computed: true,
 					},
 					"type": rschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("type"),
+						Computed: true,
 					},
 				},
 			},
@@ -370,111 +299,81 @@ func getListenerL7PolicySchema() map[string]rschema.Attribute {
 }
 
 func getListenerDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Loadbalancer("bns_load_balancer__v1__api__create_listener__model__ListenerModel")
-	getDesc := docs.Loadbalancer("bns_load_balancer__v1__api__get_listener__model__ListenerModel")
-
 	return map[string]dschema.Attribute{
-		"id": dschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("id"),
-		},
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"protocol": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("protocol"),
+			Computed: true,
 		},
 		"is_enabled": dschema.BoolAttribute{
-			Computed:    true,
-			Description: getDesc.String("is_enabled"),
+			Computed: true,
 		},
 		"tls_ciphers": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("tls_ciphers"),
+			Computed: true,
 		},
 		"tls_versions": dschema.ListAttribute{
 			ElementType: types.StringType,
 			Computed:    true,
-			Description: desc.String("tls_versions"),
 		},
 		"alpn_protocols": dschema.ListAttribute{
 			ElementType: types.StringType,
 			Computed:    true,
-			Description: desc.String("alpn_protocols"),
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
-		"protocol_port": dschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("protocol_port"),
+		"protocol_port": dschema.Int32Attribute{
+			Computed: true,
 		},
-		"connection_limit": dschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("connection_limit"),
+		"connection_limit": dschema.Int32Attribute{
+			Computed: true,
 		},
 		"load_balancer_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("load_balancer_id"),
+			Computed: true,
 		},
 		"tls_certificate_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("tls_certificate_id"),
+			Computed: true,
 		},
 		"provisioning_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("provisioning_status"),
+			Computed: true,
 		},
 		"operating_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("operating_status"),
+			Computed: true,
 		},
 		"insert_headers": dschema.SingleNestedAttribute{
-			Attributes:  getInsertHeadersDataSourceSchema(),
-			Computed:    true,
-			Description: desc.String("insert_headers"),
+			Attributes: getInsertHeadersDataSourceSchema(),
+			Computed:   true,
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
-		"timeout_client_data": dschema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("timeout_client_data"),
+		"timeout_client_data": dschema.Int32Attribute{
+			Computed: true,
 		},
 		"default_target_group_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("default_target_group_name"),
+			Computed: true,
 		},
 		"default_target_group_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("default_target_group_id"),
+			Computed: true,
 		},
 		"load_balancer_type": dschema.StringAttribute{
-			Computed:    true,
-			Description: getDesc.String("load_balancer_type"),
+			Computed: true,
 		},
 		"secrets": dschema.ListNestedAttribute{
-			Computed:    true,
-			Description: getDesc.String("secrets"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: getListenerSecretDataSourceSchema(),
 			},
 		},
 		"l7_policies": dschema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("l7_policies"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: getListenerL7PolicyDataSourceSchema(),
 			},
@@ -483,133 +382,99 @@ func getListenerDataSourceSchema() map[string]dschema.Attribute {
 }
 
 func getListenerSecretDataSourceSchema() map[string]dschema.Attribute {
-	secretDesc := docs.Loadbalancer("bns_load_balancer__v1__api__get_listener__model__SecretModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: secretDesc.String("id"),
+			Computed: true,
 		},
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: secretDesc.String("name"),
+			Computed: true,
 		},
 		"expiration": dschema.StringAttribute{
-			Computed:    true,
-			Description: secretDesc.String("expiration"),
+			Computed: true,
 		},
 		"status": dschema.StringAttribute{
-			Computed:    true,
-			Description: secretDesc.String("status"),
+			Computed: true,
 		},
 		"secret_type": dschema.StringAttribute{
-			Computed:    true,
-			Description: secretDesc.String("secret_type"),
+			Computed: true,
 		},
 		"is_default": dschema.BoolAttribute{
-			Computed:    true,
-			Description: secretDesc.String("is_default"),
+			Computed: true,
 		},
 		"creator_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: secretDesc.String("creator_id"),
+			Computed: true,
 		},
 	}
 }
 
 func getListenerL7PolicyDataSourceSchema() map[string]dschema.Attribute {
-	policyDesc := docs.Loadbalancer("bns_load_balancer__v1__api__get_l7_policy__model__l7PolicyModel")
-	ruleDesc := docs.Loadbalancer("bns_load_balancer__v1__api__get_listener__model__RuleModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("id"),
+			Computed: true,
 		},
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("name"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("description"),
+			Computed: true,
 		},
 		"provisioning_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("provisioning_status"),
+			Computed: true,
 		},
 		"operating_status": dschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("operating_status"),
+			Computed: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("project_id"),
+			Computed: true,
 		},
 		"action": dschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("action"),
+			Computed: true,
 		},
-		"position": dschema.Int64Attribute{
-			Computed:    true,
-			Description: policyDesc.String("position"),
+		"position": dschema.Int32Attribute{
+			Computed: true,
 		},
 		"redirect_target_group_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("redirect_target_group_id"),
+			Computed: true,
 		},
 		"redirect_url": dschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("redirect_url"),
+			Computed: true,
 		},
 		"redirect_prefix": dschema.StringAttribute{
-			Computed:    true,
-			Description: policyDesc.String("redirect_prefix"),
+			Computed: true,
 		},
-		"redirect_http_code": dschema.Int64Attribute{
-			Computed:    true,
-			Description: policyDesc.String("redirect_http_code"),
+		"redirect_http_code": dschema.Int32Attribute{
+			Computed: true,
 		},
 		"rules": dschema.ListNestedAttribute{
-			Computed:    true,
-			Description: policyDesc.String("rules"),
+			Computed: true,
 			NestedObject: dschema.NestedAttributeObject{
 				Attributes: map[string]dschema.Attribute{
 					"id": dschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("id"),
+						Computed: true,
 					},
 					"compare_type": dschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("compare_type"),
+						Computed: true,
 					},
 					"is_inverted": dschema.BoolAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("is_inverted"),
+						Computed: true,
 					},
 					"key": dschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("key"),
+						Computed: true,
 					},
 					"value": dschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("value"),
+						Computed: true,
 					},
 					"provisioning_status": dschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("provisioning_status"),
+						Computed: true,
 					},
 					"operating_status": dschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("operating_status"),
+						Computed: true,
 					},
 					"project_id": dschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("project_id"),
+						Computed: true,
 					},
 					"type": dschema.StringAttribute{
-						Computed:    true,
-						Description: ruleDesc.String("type"),
+						Computed: true,
 					},
 				},
 			},

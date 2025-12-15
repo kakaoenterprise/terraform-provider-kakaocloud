@@ -42,14 +42,11 @@ type NodePoolBaseModel struct {
 	SshKeyName       types.String `tfsdk:"ssh_key_name"`
 	UserData         types.String `tfsdk:"user_data"`
 	VpcInfo          types.Object `tfsdk:"vpc_info"`
-	ImageId          types.String `tfsdk:"image_id"`
 	IsHyperThreading types.Bool   `tfsdk:"is_hyper_threading"`
 
 	SecurityGroups types.Set `tfsdk:"security_groups"`
-
-	RequestSecurityGroups types.Set `tfsdk:"request_security_groups"`
-	Labels                types.Set `tfsdk:"labels"`
-	Taints                types.Set `tfsdk:"taints"`
+	Labels         types.Set `tfsdk:"labels"`
+	Taints         types.Set `tfsdk:"taints"`
 
 	CreatedAt      types.String `tfsdk:"created_at"`
 	FailureMessage types.String `tfsdk:"failure_message"`
@@ -66,50 +63,21 @@ type NodePoolBaseModel struct {
 
 type NodePoolResourceModel struct {
 	NodePoolBaseModel
-	Timeouts resourceTimeouts.Value `tfsdk:"timeouts"`
-}
-
-type NodePoolBaseModelDS struct {
-	Id          types.String `tfsdk:"id"`
-	ClusterName types.String `tfsdk:"cluster_name"`
-	Name        types.String `tfsdk:"name"`
-
-	Description types.String `tfsdk:"description"`
-	FlavorId    types.String `tfsdk:"flavor_id"`
-	VolumeSize  types.Int32  `tfsdk:"volume_size"`
-	NodeCount   types.Int32  `tfsdk:"node_count"`
-	SshKeyName  types.String `tfsdk:"ssh_key_name"`
-	UserData    types.String `tfsdk:"user_data"`
-	VpcInfo     types.Object `tfsdk:"vpc_info"`
-
-	IsHyperThreading types.Bool `tfsdk:"is_hyper_threading"`
-
-	SecurityGroups types.Set `tfsdk:"security_groups"`
-
-	Labels types.Set `tfsdk:"labels"`
-	Taints types.Set `tfsdk:"taints"`
-
-	CreatedAt      types.String `tfsdk:"created_at"`
-	FailureMessage types.String `tfsdk:"failure_message"`
-	IsGpu          types.Bool   `tfsdk:"is_gpu"`
-	IsBareMetal    types.Bool   `tfsdk:"is_bare_metal"`
-	IsUpgradable   types.Bool   `tfsdk:"is_upgradable"`
-	Flavor         types.String `tfsdk:"flavor"`
-	Status         types.Object `tfsdk:"status"`
-	Image          types.Object `tfsdk:"image"`
-	Version        types.String `tfsdk:"version"`
-	IsCordon       types.Bool   `tfsdk:"is_cordon"`
-	Autoscaling    types.Object `tfsdk:"autoscaling"`
+	ImageId               types.String           `tfsdk:"image_id"`
+	RequestNodeCount      types.Int32            `tfsdk:"request_node_count"`
+	MinorVersion          types.String           `tfsdk:"minor_version"`
+	RequestSecurityGroups types.Set              `tfsdk:"request_security_groups"`
+	Timeouts              resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
 type nodePoolDataSourceModel struct {
-	NodePoolBaseModelDS
+	NodePoolBaseModel
 	Timeouts datasourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
 type nodePoolsDataSourceModel struct {
 	ClusterName types.String             `tfsdk:"cluster_name"`
-	NodePools   []NodePoolBaseModelDS    `tfsdk:"node_pools"`
+	NodePools   []NodePoolBaseModel      `tfsdk:"node_pools"`
 	Timeouts    datasourceTimeouts.Value `tfsdk:"timeouts"`
 }
 

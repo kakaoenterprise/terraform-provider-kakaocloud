@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -50,13 +49,18 @@ func (d *nodePoolDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *nodePoolDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("KubernetesEngineNodePool"),
 		Attributes: MergeAttributes[schema.Attribute](
 			nodePoolDataSourceAttributes,
 			map[string]schema.Attribute{
-				"cluster_name": schema.StringAttribute{Required: true, Description: "클러스터 이름"},
-				"name":         schema.StringAttribute{Required: true, Description: "노드 풀 이름"},
-				"timeouts":     timeouts.Attributes(ctx),
+				"cluster_name": schema.StringAttribute{
+					Required:   true,
+					Validators: common.NameValidator(20),
+				},
+				"name": schema.StringAttribute{
+					Required:   true,
+					Validators: common.NameValidator(20),
+				},
+				"timeouts": timeouts.Attributes(ctx),
 			},
 		),
 	}
@@ -104,7 +108,7 @@ func (d *nodePoolDataSource) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	result := respModel.NodePool
-	ok := mapNodePoolFromResponseDS(ctx, &config.NodePoolBaseModelDS, &result, &resp.Diagnostics)
+	ok := mapNodePoolFromResponse(ctx, &config.NodePoolBaseModel, &result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

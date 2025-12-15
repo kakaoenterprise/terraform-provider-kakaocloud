@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -69,7 +68,6 @@ func (r *imageResource) ImportState(ctx context.Context, req resource.ImportStat
 
 func (r *imageResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("Image"),
 		Attributes: MergeResourceSchemaAttributes(
 			imageResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -93,7 +91,7 @@ func (r *imageResource) Create(ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
-	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
+	timeout, diags := plan.Timeouts.Create(ctx, common.LongCreateTimeout)
 
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -131,7 +129,7 @@ func (r *imageResource) Create(ctx context.Context, req resource.CreateRequest, 
 	result, ok := r.pollImageUtilsStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{ImageStatusActive},
+		[]string{common.ImageStatusActive},
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {

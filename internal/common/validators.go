@@ -8,25 +8,26 @@ import (
 	"net"
 	"net/netip"
 	"regexp"
+	"strconv"
 	"strings"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
 func isSetString(v types.String) bool { return !(v.IsNull() || v.IsUnknown()) }
 func isSetList(v types.List) bool     { return !(v.IsNull() || v.IsUnknown()) }
 
 func ValidateFiltersExclusiveValue(
-	ctx context.Context,
+	_ context.Context,
 	filters []ExtendedFilterModel,
 	rootAttrName string,
 	respDiags *diag.Diagnostics,
@@ -78,7 +79,7 @@ func (m PreventShrinkModifier[T]) MarkdownDescription(ctx context.Context) strin
 }
 
 func (m PreventShrinkModifier[T]) PlanModifyInt32(
-	ctx context.Context,
+	_ context.Context,
 	req planmodifier.Int32Request,
 	resp *planmodifier.Int32Response,
 ) {
@@ -127,6 +128,26 @@ func NameValidator(maxLength int) []validator.String {
 	}
 }
 
+func K8sKeyValidator(maxLength int) []validator.String {
+	return []validator.String{
+		stringvalidator.LengthBetween(1, maxLength),
+		stringvalidator.RegexMatches(
+			regexp.MustCompile(`^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?(?:/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?)?$`),
+			"Key contains invalid characters",
+		),
+	}
+}
+
+func K8sValueValidator(maxLength int) []validator.String {
+	return []validator.String{
+		stringvalidator.LengthBetween(1, maxLength),
+		stringvalidator.RegexMatches(
+			regexp.MustCompile(`^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$`),
+			"Value contains invalid characters",
+		),
+	}
+}
+
 type nameNoDoubleSymbolValidator struct{}
 
 func (v nameNoDoubleSymbolValidator) Description(_ context.Context) string {
@@ -137,7 +158,7 @@ func (v nameNoDoubleSymbolValidator) MarkdownDescription(_ context.Context) stri
 	return "Name must not contain `--`, `__`, `-_`, or `_-`"
 }
 
-func (v nameNoDoubleSymbolValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+func (v nameNoDoubleSymbolValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
 	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
 		return
 	}
@@ -151,14 +172,18 @@ func (v nameNoDoubleSymbolValidator) ValidateString(ctx context.Context, req val
 	}
 }
 
-func DescriptionValidator() []validator.String {
+func DescriptionValidatorWithMaxLength(maxLength int) []validator.String {
 	return []validator.String{
-		stringvalidator.UTF8LengthAtMost(100),
+		stringvalidator.UTF8LengthAtMost(maxLength),
 		stringvalidator.RegexMatches(
-			regexp.MustCompile(`^[a-zA-Z0-9ㄱ-ㅎ가-힣 .,!?()\[\]{}:;\"'@#%&*+=_/\\|<>~\-]*$`),
+			regexp.MustCompile(`^[a-zA-Z0-9ㄱ-ㅎ가-힣 .,!?()\[\]{}:;"'@#%&*+=_/\\|<>~\-]*$`),
 			"Description contains invalid characters",
 		),
 	}
+}
+
+func DescriptionValidator() []validator.String {
+	return DescriptionValidatorWithMaxLength(100)
 }
 
 func VolumeSizeValidator() []validator.Int32 {
@@ -167,22 +192,67 @@ func VolumeSizeValidator() []validator.Int32 {
 	}
 }
 
-func SubnetValidator(subnet, parent string, diags *diag.Diagnostics) {
-	subnetPrefix, err := netip.ParsePrefix(subnet)
+func CidrContainValidator(child, parent, childName, parentName string, diags *diag.Diagnostics) {
+	childPrefix, err := netip.ParsePrefix(child)
 	if err != nil {
 		diags.AddError("Invalid Configuration",
-			fmt.Sprintf("Subnet cidr_block is not valid."))
+			fmt.Sprintf("'%v' cidr_block is not valid.", childName))
 	}
 
 	parentPrefix, err := netip.ParsePrefix(parent)
 	if err != nil {
 		diags.AddError("Invalid Configuration",
-			fmt.Sprintf("Cidr_block is not valid."))
+			fmt.Sprintf("'%v' cidr_block is not valid.", parentName))
 	}
 
-	if !parentPrefix.Contains(subnetPrefix.Masked().Addr()) || subnetPrefix.Bits() <= parentPrefix.Bits() {
+	if !parentPrefix.Contains(childPrefix.Masked().Addr()) || childPrefix.Bits() <= parentPrefix.Bits() {
 		diags.AddError("Invalid Configuration",
-			fmt.Sprintf("Subnet cidr_block is not within parent."))
+			fmt.Sprintf("'%v' cidr_block is not within '%v' cidr_block.", childName, parentName))
+	}
+}
+
+func CidrContainListValidator(child string, parents []string, childName, parentName string, diags *diag.Diagnostics) {
+	childPrefix, err := netip.ParsePrefix(child)
+	if err != nil {
+		diags.AddError("Invalid Configuration",
+			fmt.Sprintf("'%v' cidr_block is not valid.", childName))
+		return
+	}
+
+	isContained := false
+	for _, parent := range parents {
+		parentPrefix, err := netip.ParsePrefix(parent)
+		if err != nil {
+			continue
+		}
+		if parentPrefix.Contains(childPrefix.Masked().Addr()) && childPrefix.Bits() >= parentPrefix.Bits() {
+			isContained = true
+			break
+		}
+	}
+
+	if !isContained {
+		diags.AddError("Invalid Configuration",
+			fmt.Sprintf("'%v' cidr_block is not within any of the allowed %v CIDR ranges: %v", childName, parentName, parents))
+	}
+}
+
+func CidrOverlapValidator(child, parent, childName, parentName string, diags *diag.Diagnostics) {
+	childPrefix, err := netip.ParsePrefix(child)
+	if err != nil {
+		diags.AddError("Invalid Configuration",
+			fmt.Sprintf("'%v' cidr_block is not valid.", childName))
+	}
+
+	parentPrefix, err := netip.ParsePrefix(parent)
+	if err != nil {
+		diags.AddError("Invalid Configuration",
+			fmt.Sprintf("'%v' cidr_block is not valid.", parentName))
+	}
+
+	if childPrefix.Overlaps(parentPrefix) {
+		diags.AddError("Invalid Configuration",
+			fmt.Sprintf("'%s' cidr_block overlaps with '%s' cidr_block.", childName, parentName))
 	}
 }
 
@@ -238,7 +308,7 @@ func (v IpOrCIDRValidator) MarkdownDescription(_ context.Context) string {
 	return "Must be a valid IPv4 address or CIDR, like `192.168.1.1` or `192.168.1.0/24`"
 }
 
-func (v IpOrCIDRValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+func (v IpOrCIDRValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
 	val := req.ConfigValue.ValueString()
 	if val == "" {
 		return
@@ -254,15 +324,29 @@ func (v IpOrCIDRValidator) ValidateString(ctx context.Context, req validator.Str
 	}
 }
 
-func PortValidator() []validator.Int64 {
-	return []validator.Int64{
-		int64validator.Between(1, 65535),
+func PortValidator() []validator.Int32 {
+	return []validator.Int32{
+		int32validator.Between(1, 65535),
 	}
 }
 
 func ProtocolValidator() []validator.String {
 	return []validator.String{
-		stringvalidator.OneOf("HTTP", "TCP", "UDP", "TERMINATED_HTTPS"),
+		stringvalidator.OneOf(
+			string(loadbalancer.PROTOCOL_HTTP),
+			string(loadbalancer.PROTOCOL_TCP),
+			string(loadbalancer.PROTOCOL_UDP),
+			string(loadbalancer.PROTOCOL_TERMINATED_HTTPS),
+		),
+	}
+}
+
+func CronScheduleValidator() []validator.String {
+	return []validator.String{
+		stringvalidator.RegexMatches(
+			regexp.MustCompile(`^([0-5]?\d)\s([0-1]?\d|2[0-3])\s(?:\*\s\*\s\*|\*\s\*\s[0-7]|(?:[1-9]|[12]\d|3[01])\s\*\s\*)$`),
+			"Must be a valid cron expression with format: 'minute hour day-of-month/day-of-week'",
+		),
 	}
 }
 
@@ -315,11 +399,11 @@ func ValidateAvailabilityZone(
 	}
 }
 
-func ConnectionLimitValidator() []validator.Int64 {
-	return []validator.Int64{
-		int64validator.Any(
-			int64validator.OneOf(-1),
-			int64validator.Between(1, 2147483647),
+func ConnectionLimitValidator() []validator.Int32 {
+	return []validator.Int32{
+		int32validator.Any(
+			int32validator.OneOf(-1),
+			int32validator.Between(1, 2147483647),
 		),
 	}
 }
@@ -334,7 +418,7 @@ func (v IPv4OrIPv6Validator) MarkdownDescription(_ context.Context) string {
 	return "Must be a valid IPv4 or IPv6 address, like `192.168.1.1` or `2001:db8::1`"
 }
 
-func (v IPv4OrIPv6Validator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+func (v IPv4OrIPv6Validator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
 	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
 		return
 	}
@@ -359,15 +443,15 @@ func NewIPv4OrIPv6Validator() validator.String {
 
 type PreserveStateWhenNotSet struct{}
 
-func (p PreserveStateWhenNotSet) Description(ctx context.Context) string {
+func (p PreserveStateWhenNotSet) Description(_ context.Context) string {
 	return "Preserves the state value when the field is not set in the configuration"
 }
 
-func (p PreserveStateWhenNotSet) MarkdownDescription(ctx context.Context) string {
+func (p PreserveStateWhenNotSet) MarkdownDescription(_ context.Context) string {
 	return "Preserves the state value when the field is not set in the configuration"
 }
 
-func (p PreserveStateWhenNotSet) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+func (p PreserveStateWhenNotSet) PlanModifyString(_ context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 
 	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
 		if !req.StateValue.IsNull() && !req.StateValue.IsUnknown() {
@@ -378,4 +462,57 @@ func (p PreserveStateWhenNotSet) PlanModifyString(ctx context.Context, req planm
 
 func NewPreserveStateWhenNotSet() planmodifier.String {
 	return PreserveStateWhenNotSet{}
+}
+
+func UrlValidator() []validator.String {
+	return []validator.String{
+		stringvalidator.LengthBetween(4, 247),
+		stringvalidator.RegexMatches(
+			regexp.MustCompile(`^https?://[A-Za-z0-9.-]+(/[A-Za-z0-9/_-]*)?$`),
+			"Must be a valid URL (http, https) without query string.",
+		),
+	}
+}
+
+func MajorMinorVersionValidator() []validator.String {
+	return []validator.String{
+		stringvalidator.RegexMatches(
+			regexp.MustCompile(`^\d+\.\d+$`),
+			"Only major.minor version format is allowed (e.g. '1.0', '1.30')",
+		),
+	}
+}
+
+func MajorMinorVersionNotDecreasingValidator(planVer, stateVer string, diags *diag.Diagnostics) {
+	parse := func(v string) (int, int, error) {
+		parts := strings.Split(v, ".")
+		if len(parts) != 2 {
+			return 0, 0, fmt.Errorf("invalid minor version: %s", v)
+		}
+		major, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return 0, 0, err
+		}
+		minor, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return 0, 0, err
+		}
+		return major, minor, nil
+	}
+
+	majorState, minorState, err := parse(stateVer)
+	if err != nil {
+		diags.AddError("Invalid Configuration",
+			fmt.Sprintf("'%v' state version is not valid.", stateVer))
+	}
+	majorPlan, minorPlan, err := parse(planVer)
+	if err != nil {
+		diags.AddError("Invalid Configuration",
+			fmt.Sprintf("'%v' config version is not valid.", planVer))
+	}
+
+	if majorState > majorPlan || (majorState == majorPlan && minorState > minorPlan) {
+		diags.AddError("Invalid Configuration",
+			fmt.Sprintf("Cannot set version lower than the current state. current state version: '%v'", stateVer))
+	}
 }

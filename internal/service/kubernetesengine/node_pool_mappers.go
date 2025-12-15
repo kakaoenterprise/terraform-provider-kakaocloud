@@ -4,6 +4,8 @@ package kubernetesengine
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	. "terraform-provider-kakaocloud/internal/utils"
@@ -19,7 +21,6 @@ func mapNodePoolFromResponse(
 	dst *NodePoolBaseModel,
 	src *kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel,
 	diags *diag.Diagnostics,
-	userSGsHint ...[]string,
 ) bool {
 
 	dst.Id = types.StringValue(src.Id)
@@ -32,7 +33,6 @@ func mapNodePoolFromResponse(
 	dst.FlavorId = types.StringValue(src.FlavorId)
 	dst.Flavor = types.StringValue(src.Flavor)
 	dst.SshKeyName = types.StringValue(src.SshKeyName)
-	dst.ImageId = types.StringValue(src.Image.Id)
 	dst.IsGpu = types.BoolValue(src.IsGpu)
 	dst.IsBareMetal = types.BoolValue(src.IsBareMetal)
 	dst.IsUpgradable = types.BoolValue(src.IsUpgradable)
@@ -56,18 +56,26 @@ func mapNodePoolFromResponse(
 		return false
 	}
 
-	labelsVal, lDiag := buildLabelsSet(ctx, src.Labels)
-	diags.Append(lDiag...)
-	dst.Labels = labelsVal
-	if diags.HasError() {
-		return false
+	if len(src.Labels) > 0 {
+		labelsVal, lDiag := buildLabelsSet(src.Labels)
+		diags.Append(lDiag...)
+		if diags.HasError() {
+			return false
+		}
+		dst.Labels = labelsVal
+	} else {
+		dst.Labels = types.SetNull(types.ObjectType{AttrTypes: nodePoolLabelAttrTypes})
 	}
 
-	taintsVal, tDiag := buildTaintsSet(ctx, src.Taints)
-	diags.Append(tDiag...)
-	dst.Taints = taintsVal
-	if diags.HasError() {
-		return false
+	if len(src.Taints) > 0 {
+		taintsVal, tDiag := buildTaintsSet(src.Taints)
+		diags.Append(tDiag...)
+		if diags.HasError() {
+			return false
+		}
+		dst.Taints = taintsVal
+	} else {
+		dst.Taints = types.SetNull(types.ObjectType{AttrTypes: nodePoolTaintAttrTypes})
 	}
 
 	setVal, d1 := types.SetValueFrom(ctx, types.StringType, src.SecurityGroups)
@@ -97,84 +105,22 @@ func mapNodePoolFromResponse(
 	return true
 }
 
-func mapNodePoolFromResponseDS(
+func (r *nodePoolResource) mapNodePoolResource(
 	ctx context.Context,
-	dst *NodePoolBaseModelDS,
+	dst *NodePoolResourceModel,
 	src *kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel,
 	diags *diag.Diagnostics,
-	userSGsHint ...[]string,
 ) bool {
-
-	dst.Id = types.StringValue(src.Id)
-	dst.Name = types.StringValue(src.Name)
-	dst.ClusterName = types.StringValue(src.ClusterName)
-	dst.Description = types.StringValue(src.Description)
-	dst.CreatedAt = types.StringValue(src.CreatedAt.Format(time.RFC3339))
-	dst.FailureMessage = ConvertNullableString(src.FailureMessage)
-	dst.NodeCount = types.Int32Value(src.NodeCount)
-	dst.FlavorId = types.StringValue(src.FlavorId)
-	dst.Flavor = types.StringValue(src.Flavor)
-	dst.SshKeyName = types.StringValue(src.SshKeyName)
-
-	dst.IsGpu = types.BoolValue(src.IsGpu)
-	dst.IsBareMetal = types.BoolValue(src.IsBareMetal)
-	dst.IsUpgradable = types.BoolValue(src.IsUpgradable)
-	dst.Version = types.StringValue(src.Version)
-	dst.VolumeSize = types.Int32Value(src.VolumeSize)
-	dst.IsCordon = types.BoolValue(src.IsCordon)
-	dst.IsHyperThreading = types.BoolValue(src.IsHyperThreading)
-	dst.UserData = ConvertNullableString(src.UserData)
-
-	statusVal, statusDiag := buildNodePoolStatus(ctx, src.Status)
-	diags.Append(statusDiag...)
-	dst.Status = statusVal
-	if diags.HasError() {
+	ok := mapNodePoolFromResponse(ctx, &dst.NodePoolBaseModel, src, diags)
+	if !ok {
 		return false
 	}
 
-	imageVal, imageDiag := buildImageInfo(ctx, src.Image)
-	diags.Append(imageDiag...)
-	dst.Image = imageVal
-	if diags.HasError() {
-		return false
-	}
-
-	labelsVal, lDiag := buildLabelsSet(ctx, src.Labels)
-	diags.Append(lDiag...)
-	dst.Labels = labelsVal
-	if diags.HasError() {
-		return false
-	}
-
-	taintsVal, tDiag := buildTaintsSet(ctx, src.Taints)
-	diags.Append(tDiag...)
-	dst.Taints = taintsVal
-	if diags.HasError() {
-		return false
-	}
-
-	setVal, d1 := types.SetValueFrom(ctx, types.StringType, src.SecurityGroups)
-	diags.Append(d1...)
-	dst.SecurityGroups = setVal
-	if diags.HasError() {
-		return false
-	}
-
-	vpcVal, vpcDiags := buildVpcInfo(ctx, src.VpcInfo)
-	diags.Append(vpcDiags...)
-	dst.VpcInfo = vpcVal
-
-	if diags.HasError() {
-		return false
-	}
-
-	a := src.Autoscaling
-	autoscalingVal, autoDiag := buildAutoscaling(ctx, a)
-
-	diags.Append(autoDiag...)
-	dst.Autoscaling = autoscalingVal
-	if diags.HasError() {
-		return false
+	verParts := strings.Split(src.Version, ".")
+	if len(verParts) >= 2 {
+		dst.MinorVersion = types.StringValue(fmt.Sprintf("%s.%s", verParts[0], verParts[1]))
+	} else {
+		dst.MinorVersion = types.StringValue(src.Version)
 	}
 
 	return true
@@ -203,7 +149,7 @@ func buildImageInfo(ctx context.Context, img kubernetesengine.ImageInfoResponseM
 	})
 }
 
-func buildLabelsSet(ctx context.Context, labels []kubernetesengine.LabelInfoResponseModel) (types.Set, diag.Diagnostics) {
+func buildLabelsSet(labels []kubernetesengine.LabelInfoResponseModel) (types.Set, diag.Diagnostics) {
 	lbls := make([]attr.Value, 0, len(labels))
 	for _, l := range labels {
 		obj, _ := types.ObjectValue(nodePoolLabelAttrTypes, map[string]attr.Value{
@@ -216,7 +162,7 @@ func buildLabelsSet(ctx context.Context, labels []kubernetesengine.LabelInfoResp
 	return set, d
 }
 
-func buildTaintsSet(ctx context.Context, taints []kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelTaintInfoResponseModel) (types.Set, diag.Diagnostics) {
+func buildTaintsSet(taints []kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelTaintInfoResponseModel) (types.Set, diag.Diagnostics) {
 	tnts := make([]attr.Value, 0, len(taints))
 	for _, t := range taints {
 		obj, _ := types.ObjectValue(nodePoolTaintAttrTypes, map[string]attr.Value{

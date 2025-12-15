@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -53,7 +52,6 @@ func (d *imageMemberDataSource) Metadata(_ context.Context, req datasource.Metad
 
 func (d *imageMemberDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("ImageMember"),
 		Attributes: utils.MergeAttributes[schema.Attribute](
 			imageMemberDataSourceSchema,
 			map[string]schema.Attribute{

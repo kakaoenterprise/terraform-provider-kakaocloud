@@ -4,7 +4,6 @@ package network
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -15,215 +14,166 @@ import (
 )
 
 func getRelatedResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Network("bns_network__v1__api__get_public_ip__model__RelatedResourceInfoModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("id"),
-			Validators:  common.UuidValidator(),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.UuidValidator(),
 		},
 		"name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"type": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("type"),
+			Computed: true,
 		},
 		"device_id": rschema.StringAttribute{
-			Required:    true,
-			Description: desc.String("device_id"),
-			Validators:  common.UuidValidator(),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 		"device_owner": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("device_owner"),
+			Computed: true,
 		},
 		"device_type": rschema.StringAttribute{
-			Required:    true,
-			Description: "The type of device to associate with the public IP (instance, load-balancer).",
+			Required: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf("instance", "load-balancer"),
 			},
 		},
 		"subnet_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_id"),
+			Computed: true,
 		},
 		"subnet_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_name"),
+			Computed: true,
 		},
 		"subnet_cidr": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_cidr"),
+			Computed: true,
 		},
 		"vpc_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_id"),
+			Computed: true,
 		},
 		"vpc_name": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_name"),
+			Computed: true,
 		},
 	}
 }
 
 func getPublicIpResourceSchema() map[string]rschema.Attribute {
-	desc := docs.Network("bns_network__v1__api__get_public_ip__model__FloatingIpModel")
-
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"status": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"description": rschema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("description"),
-			Validators:  common.DescriptionValidator(),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.DescriptionValidator(),
 		},
 		"project_id": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"public_ip": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("public_ip"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"private_ip": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("private_ip"),
+			Computed: true,
 		},
 		"created_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"updated_at": rschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"related_resource": rschema.SingleNestedAttribute{
-			Optional:    true,
-			Description: desc.String("related_resource"),
-			Attributes:  relatedResourceSchemaAttributes,
+			Optional:   true,
+			Attributes: relatedResourceSchemaAttributes,
 		},
 	}
 }
 
 func getRelatedDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Network("bns_network__v1__api__get_public_ip__model__RelatedResourceInfoModel")
-
 	return map[string]dschema.Attribute{
 		"id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"type": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("type"),
+			Computed: true,
 		},
 		"device_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("device_id"),
+			Computed: true,
 		},
 		"device_owner": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("device_owner"),
+			Computed: true,
 		},
 		"device_type": dschema.StringAttribute{
-			Computed:    true,
-			Description: "The type of device associated with the public IP (instance, load-balancer).",
+			Computed: true,
 		},
 		"subnet_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_id"),
+			Computed: true,
 		},
 		"subnet_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_name"),
+			Computed: true,
 		},
 		"subnet_cidr": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("subnet_cidr"),
+			Computed: true,
 		},
 		"vpc_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_id"),
+			Computed: true,
 		},
 		"vpc_name": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vpc_name"),
+			Computed: true,
 		},
 	}
 }
 
 func getPublicIpDataSourceSchema() map[string]dschema.Attribute {
-	desc := docs.Network("bns_network__v1__api__get_public_ip__model__FloatingIpModel")
-
 	return map[string]dschema.Attribute{
 		"status": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"description": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"project_id": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 		},
 		"public_ip": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("public_ip"),
+			Computed: true,
 		},
 		"private_ip": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("private_ip"),
+			Computed: true,
 		},
 		"created_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": dschema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 		"related_resource": dschema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("related_resource"),
-			Attributes:  relatedDataSourceSchemaAttributes,
+			Computed:   true,
+			Attributes: relatedDataSourceSchemaAttributes,
 		},
 	}
 }

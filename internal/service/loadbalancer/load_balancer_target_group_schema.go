@@ -4,7 +4,6 @@ package loadbalancer
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -13,43 +12,34 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-)
-
-var (
-	targetGroupDesc        = docs.Loadbalancer("bns_load_balancer__v1__api__create_target_group__model__TargetGroupModel")
-	listTargetGroupDesc    = docs.Loadbalancer("bns_load_balancer__v1__api__list_target_groups__model__TargetGroupModel")
-	healthMonitorDesc      = docs.Loadbalancer("bns_load_balancer__v1__api__get_target_group__model__HealthMonitorModel")
-	sessionPersistenceDesc = docs.Loadbalancer("bns_load_balancer__v1__api__create_target_group__model__SessionPersistenceModel")
+	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
 var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 	"id": rschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("id"),
+		Computed: true,
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.UseStateForUnknown(),
 		},
 	},
 	"name": rschema.StringAttribute{
-		Required:    true,
-		Description: targetGroupDesc.String("name"),
-		Validators:  common.NameValidator(255),
+		Required:   true,
+		Validators: common.NameValidator(255),
 	},
 	"description": rschema.StringAttribute{
-		Optional:    true,
-		Description: targetGroupDesc.String("description"),
-		Validators:  common.DescriptionValidator(),
+		Optional:   true,
+		Computed:   true,
+		Validators: common.DescriptionValidator(),
 	},
 	"protocol": rschema.StringAttribute{
-		Required:    true,
-		Description: targetGroupDesc.String("protocol"),
+		Required: true,
 		Validators: []validator.String{
 			stringvalidator.OneOf(
-				"HTTP",
-				"HTTPS",
-				"TCP",
-				"UDP",
-				"PROXY",
+				string(loadbalancer.TARGETGROUPPROTOCOL_HTTP),
+				string(loadbalancer.TARGETGROUPPROTOCOL_HTTPS),
+				string(loadbalancer.TARGETGROUPPROTOCOL_TCP),
+				string(loadbalancer.TARGETGROUPPROTOCOL_UDP),
+				string(loadbalancer.TARGETGROUPPROTOCOL_PROXY),
 			),
 		},
 		PlanModifiers: []planmodifier.String{
@@ -57,153 +47,120 @@ var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 		},
 	},
 	"load_balancer_algorithm": rschema.StringAttribute{
-		Required:    true,
-		Description: targetGroupDesc.String("load_balancer_algorithm"),
+		Required: true,
 		Validators: []validator.String{
 			stringvalidator.OneOf(
-				"ROUND_ROBIN",
-				"LEAST_CONNECTIONS",
-				"SOURCE_IP",
+				string(loadbalancer.TARGETGROUPALGORITHM_ROUND_ROBIN),
+				string(loadbalancer.TARGETGROUPALGORITHM_LEAST_CONNECTIONS),
+				string(loadbalancer.TARGETGROUPALGORITHM_SOURCE_IP),
 			),
 		},
 	},
 	"listener_id": rschema.StringAttribute{
-		Optional:    true,
-		Computed:    true,
-		Description: "ID of the listener associated with this target group",
-		Validators:  common.UuidValidator(),
+		Optional:   true,
+		Validators: common.UuidValidator(),
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.RequiresReplace(),
+		},
 	},
 	"load_balancer_id": rschema.StringAttribute{
-		Required:    true,
-		Description: "Load balancer ID for the target group",
-		Validators:  common.UuidValidator(),
+		Required:   true,
+		Validators: common.UuidValidator(),
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.RequiresReplace(),
 		},
 	},
 	"subnet_id": rschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("subnet_id"),
+		Computed: true,
 	},
 	"vpc_id": rschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("vpc_id"),
+		Computed: true,
 	},
 	"availability_zone": rschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("availability_zone"),
+		Computed: true,
 	},
 	"provisioning_status": rschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("provisioning_status"),
+		Computed: true,
 	},
 	"operating_status": rschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("operating_status"),
+		Computed: true,
 	},
 	"project_id": rschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("project_id"),
+		Computed: true,
 	},
 	"created_at": rschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("created_at"),
+		Computed: true,
 	},
 	"updated_at": rschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("updated_at"),
+		Computed: true,
 	},
 	"load_balancer_name": rschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("load_balancer_name"),
+		Computed: true,
 	},
 	"load_balancer_provisioning_status": rschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("load_balancer_provisioning_status"),
+		Computed: true,
 	},
 	"load_balancer_type": rschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("load_balancer_type"),
+		Computed: true,
 	},
 	"subnet_name": rschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("subnet_name"),
+		Computed: true,
 	},
 	"vpc_name": rschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("vpc_name"),
+		Computed: true,
 	},
 	"member_count": rschema.Int64Attribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("member_count"),
+		Computed: true,
 	},
 	"health_monitor": rschema.SingleNestedAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("health_monitor"),
+		Computed: true,
 		Attributes: map[string]rschema.Attribute{
 			"id": rschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("id"),
+				Computed: true,
 			},
 			"type": rschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("type"),
+				Computed: true,
 			},
 			"delay": rschema.Int64Attribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("delay"),
+				Computed: true,
 			},
 			"timeout": rschema.Int64Attribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("timeout"),
+				Computed: true,
 			},
 			"fall_threshold": rschema.Int64Attribute{
-				Optional:    true,
-				Computed:    true,
-				Description: healthMonitorDesc.String("fall_threshold"),
+				Computed: true,
 			},
 			"rise_threshold": rschema.Int64Attribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("rise_threshold"),
+				Computed: true,
 			},
 			"http_method": rschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("http_method"),
+				Computed: true,
 			},
 			"http_version": rschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("http_version"),
+				Computed: true,
 			},
 			"expected_codes": rschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("expected_codes"),
+				Computed: true,
 			},
 			"url_path": rschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("url_path"),
+				Computed: true,
 			},
 			"operating_status": rschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("operating_status"),
+				Computed: true,
 			},
 			"provisioning_status": rschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("provisioning_status"),
+				Computed: true,
 			},
 			"project_id": rschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("project_id"),
+				Computed: true,
 			},
 		},
 	},
 	"session_persistence": rschema.SingleNestedAttribute{
-		Optional:    true,
-		Computed:    true,
-		Description: listTargetGroupDesc.String("session_persistence"),
+		Optional: true,
 		Attributes: map[string]rschema.Attribute{
 			"type": rschema.StringAttribute{
-				Required:    true,
-				Description: sessionPersistenceDesc.String("type"),
+				Required: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"APP_COOKIE",
@@ -213,21 +170,16 @@ var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 				},
 			},
 			"cookie_name": rschema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: sessionPersistenceDesc.String("cookie_name"),
+				Optional: true,
 			},
 			"persistence_timeout": rschema.Int64Attribute{
-				Required:    true,
-				Description: sessionPersistenceDesc.String("persistence_timeout"),
+				Required: true,
 				Validators: []validator.Int64{
 					int64validator.Between(1, 604800),
 				},
 			},
 			"persistence_granularity": rschema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: sessionPersistenceDesc.String("persistence_granularity"),
+				Optional: true,
 				Validators: []validator.String{
 					common.NewIPv4OrIPv6Validator(),
 				},
@@ -235,25 +187,17 @@ var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 		},
 	},
 	"listeners": rschema.ListNestedAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("listeners"),
+		Computed: true,
 		NestedObject: rschema.NestedAttributeObject{
 			Attributes: map[string]rschema.Attribute{
 				"id": rschema.StringAttribute{
-					Computed:    true,
-					Description: "Listener ID",
+					Computed: true,
 				},
-			},
-		},
-	},
-	"load_balancers": rschema.ListNestedAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("load_balancers"),
-		NestedObject: rschema.NestedAttributeObject{
-			Attributes: map[string]rschema.Attribute{
-				"id": rschema.StringAttribute{
-					Computed:    true,
-					Description: "Load balancer ID",
+				"protocol": rschema.StringAttribute{
+					Computed: true,
+				},
+				"protocol_port": rschema.Int64Attribute{
+					Computed: true,
 				},
 			},
 		},
@@ -261,183 +205,137 @@ var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 }
 
 var loadBalancerTargetGroupDataSourceSchemaAttributes = map[string]dschema.Attribute{
-	"id": dschema.StringAttribute{
-		Required:    true,
-		Description: targetGroupDesc.String("id"),
-	},
 	"name": dschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("name"),
+		Computed: true,
 	},
 	"description": dschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("description"),
+		Computed: true,
 	},
 	"protocol": dschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("protocol"),
+		Computed: true,
 	},
 	"load_balancer_algorithm": dschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("load_balancer_algorithm"),
+		Computed: true,
 	},
 	"subnet_id": dschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("subnet_id"),
+		Computed: true,
 	},
 	"vpc_id": dschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("vpc_id"),
+		Computed: true,
 	},
 	"availability_zone": dschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("availability_zone"),
+		Computed: true,
 	},
 	"provisioning_status": dschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("provisioning_status"),
+		Computed: true,
 	},
 	"operating_status": dschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("operating_status"),
+		Computed: true,
 	},
 	"project_id": dschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("project_id"),
+		Computed: true,
 	},
 	"created_at": dschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("created_at"),
+		Computed: true,
 	},
 	"updated_at": dschema.StringAttribute{
-		Computed:    true,
-		Description: targetGroupDesc.String("updated_at"),
+		Computed: true,
 	},
 	"load_balancer_id": dschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("load_balancer_id"),
+		Computed: true,
 	},
 	"load_balancer_name": dschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("load_balancer_name"),
+		Computed: true,
 	},
 	"load_balancer_provisioning_status": dschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("load_balancer_provisioning_status"),
+		Computed: true,
 	},
 	"load_balancer_type": dschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("load_balancer_type"),
+		Computed: true,
 	},
 	"subnet_name": dschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("subnet_name"),
+		Computed: true,
 	},
 	"vpc_name": dschema.StringAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("vpc_name"),
+		Computed: true,
 	},
 	"member_count": dschema.Int64Attribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("member_count"),
+		Computed: true,
 	},
 	"listeners": dschema.ListNestedAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("listeners"),
+		Computed: true,
 		NestedObject: dschema.NestedAttributeObject{
 			Attributes: map[string]dschema.Attribute{
 				"id": dschema.StringAttribute{
-					Computed:    true,
-					Description: "Listener ID",
+					Computed: true,
 				},
 				"protocol": dschema.StringAttribute{
-					Computed:    true,
-					Description: "Listener protocol",
+					Computed: true,
 				},
 				"protocol_port": dschema.Int64Attribute{
-					Computed:    true,
-					Description: "Listener protocol port",
+					Computed: true,
 				},
 			},
 		},
 	},
 	"health_monitor": dschema.SingleNestedAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("health_monitor"),
+		Computed: true,
 		Attributes: map[string]dschema.Attribute{
 			"id": dschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("id"),
+				Computed: true,
 			},
 			"type": dschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("type"),
+				Computed: true,
 			},
 			"delay": dschema.Int64Attribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("delay"),
+				Computed: true,
 			},
 			"timeout": dschema.Int64Attribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("timeout"),
+				Computed: true,
 			},
 			"fall_threshold": dschema.Int64Attribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("fall_threshold"),
+				Computed: true,
 			},
 			"rise_threshold": dschema.Int64Attribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("rise_threshold"),
+				Computed: true,
 			},
 			"http_method": dschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("http_method"),
+				Computed: true,
 			},
 			"http_version": dschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("http_version"),
+				Computed: true,
 			},
 			"expected_codes": dschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("expected_codes"),
+				Computed: true,
 			},
 			"url_path": dschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("url_path"),
+				Computed: true,
 			},
 			"operating_status": dschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("operating_status"),
+				Computed: true,
 			},
 			"project_id": dschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("project_id"),
+				Computed: true,
 			},
 			"provisioning_status": dschema.StringAttribute{
-				Computed:    true,
-				Description: healthMonitorDesc.String("provisioning_status"),
+				Computed: true,
 			},
 		},
 	},
 	"session_persistence": dschema.SingleNestedAttribute{
-		Computed:    true,
-		Description: listTargetGroupDesc.String("session_persistence"),
+		Computed: true,
 		Attributes: map[string]dschema.Attribute{
 			"type": dschema.StringAttribute{
-				Computed:    true,
-				Description: sessionPersistenceDesc.String("type"),
+				Computed: true,
 			},
 			"cookie_name": dschema.StringAttribute{
-				Computed:    true,
-				Description: sessionPersistenceDesc.String("cookie_name"),
+				Computed: true,
 			},
 			"persistence_timeout": dschema.Int64Attribute{
-				Computed:    true,
-				Description: sessionPersistenceDesc.String("persistence_timeout"),
+				Computed: true,
 			},
 			"persistence_granularity": dschema.StringAttribute{
-				Computed:    true,
-				Description: sessionPersistenceDesc.String("persistence_granularity"),
+				Computed: true,
 			},
 		},
 	},

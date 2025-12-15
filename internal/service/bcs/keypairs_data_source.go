@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -37,7 +36,6 @@ func (d *keypairsDataSource) Metadata(_ context.Context, req datasource.Metadata
 
 func (d *keypairsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("Keypairs"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -53,14 +51,12 @@ func (d *keypairsDataSource) Schema(ctx context.Context, _ datasource.SchemaRequ
 				},
 			},
 			"keypairs": schema.ListNestedAttribute{
-				Computed:    true,
-				Description: "조회된 키페어 목록",
+				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: MergeDataSourceSchemaAttributes(
 						map[string]schema.Attribute{
 							"name": schema.StringAttribute{
-								Computed:    true,
-								Description: "키페어 이름",
+								Computed: true,
 							},
 						},
 						keypairDataSourceSchemaAttributes,
@@ -147,7 +143,8 @@ func (d *keypairsDataSource) Read(ctx context.Context, req datasource.ReadReques
 	var keypairResult []bcs.BcsInstanceV1ApiGetKeypairModelKeypairModel
 	err = copier.Copy(&keypairResult, &keypairResp.Keypairs)
 	if err != nil {
-		resp.Diagnostics.AddError("List 변환 실패", fmt.Sprintf("keypairResult 변환 실패: %v", err))
+		common.AddGeneralError(ctx, d, &resp.Diagnostics,
+			fmt.Sprintf("Failed to convert keypairResult: %v", err))
 		return
 	}
 

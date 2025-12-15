@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"terraform-provider-kakaocloud/internal/common"
 
@@ -35,15 +34,12 @@ func (d *loadBalancerL7PolicyRulesDataSource) Metadata(_ context.Context, req da
 
 func (d *loadBalancerL7PolicyRulesDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("LoadBalancerL7PolicyRules"),
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Required:    true,
-				Description: "ID of the L7 policy to list rules for",
+				Required: true,
 			},
 			"l7_rules": schema.ListNestedAttribute{
-				Computed:    true,
-				Description: "List of L7 policy rules",
+				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: loadBalancerL7PolicyRuleListDataSourceSchema,
 				},
@@ -71,7 +67,7 @@ func (d *loadBalancerL7PolicyRulesDataSource) Configure(_ context.Context, req d
 }
 
 func (d *loadBalancerL7PolicyRulesDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config loadBalancerL7PolicyRuleListDataSourceModel
+	var config loadBalancerL7PolicyRulesDataSourceModel
 
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -88,11 +84,9 @@ func (d *loadBalancerL7PolicyRulesDataSource) Read(ctx context.Context, req data
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	l7policyApi := d.kc.ApiClient.LoadBalancerL7PoliciesAPI.GetL7Policy(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken)
-
 	l7policyResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (*loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyModelResponseL7PolicyModel, *http.Response, error) {
-			return l7policyApi.Execute()
+			return d.kc.ApiClient.LoadBalancerL7PoliciesAPI.GetL7Policy(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
 

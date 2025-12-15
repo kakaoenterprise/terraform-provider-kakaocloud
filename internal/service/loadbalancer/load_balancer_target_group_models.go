@@ -44,9 +44,8 @@ type loadBalancerTargetGroupBaseModel struct {
 
 type loadBalancerTargetGroupResourceModel struct {
 	loadBalancerTargetGroupBaseModel
-	ListenerId    types.String           `tfsdk:"listener_id"`
-	LoadBalancers types.List             `tfsdk:"load_balancers"`
-	Timeouts      resourceTimeouts.Value `tfsdk:"timeouts"`
+	ListenerId types.String           `tfsdk:"listener_id"`
+	Timeouts   resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
 type loadBalancerTargetGroupDataSourceModel struct {
@@ -83,32 +82,7 @@ type loadBalancerTargetGroupSessionPersistenceModel struct {
 	PersistenceGranularity types.String `tfsdk:"persistence_granularity"`
 }
 
-type loadBalancerTargetGroupLoadBalancerModel struct {
-	Id types.String `tfsdk:"id"`
-}
-
-type loadBalancerTargetGroupMemberModel struct {
-	Id                 types.String `tfsdk:"id"`
-	Address            types.String `tfsdk:"address"`
-	ProtocolPort       types.Int64  `tfsdk:"protocol_port"`
-	Weight             types.Int64  `tfsdk:"weight"`
-	MonitorPort        types.Int64  `tfsdk:"monitor_port"`
-	IsBackup           types.Bool   `tfsdk:"is_backup"`
-	SubnetId           types.String `tfsdk:"subnet_id"`
-	TargetGroupId      types.String `tfsdk:"target_group_id"`
-	Name               types.String `tfsdk:"name"`
-	OperatingStatus    types.String `tfsdk:"operating_status"`
-	ProvisioningStatus types.String `tfsdk:"provisioning_status"`
-	ProjectId          types.String `tfsdk:"project_id"`
-	CreatedAt          types.String `tfsdk:"created_at"`
-	UpdatedAt          types.String `tfsdk:"updated_at"`
-}
-
 type loadBalancerTargetGroupListenerModel struct {
-	Id types.String `tfsdk:"id"`
-}
-
-type loadBalancerTargetGroupListListenerModel struct {
 	Id           types.String `tfsdk:"id"`
 	Protocol     types.String `tfsdk:"protocol"`
 	ProtocolPort types.Int64  `tfsdk:"protocol_port"`
@@ -137,15 +111,7 @@ var loadBalancerTargetGroupSessionPersistenceAttrType = map[string]attr.Type{
 	"persistence_granularity": types.StringType,
 }
 
-var loadBalancerTargetGroupLoadBalancerAttrType = map[string]attr.Type{
-	"id": types.StringType,
-}
-
 var loadBalancerTargetGroupListenerAttrType = map[string]attr.Type{
-	"id": types.StringType,
-}
-
-var loadBalancerTargetGroupListListenerAttrType = map[string]attr.Type{
 	"id":            types.StringType,
 	"protocol":      types.StringType,
 	"protocol_port": types.Int64Type,

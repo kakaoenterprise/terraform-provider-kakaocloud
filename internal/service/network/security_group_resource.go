@@ -6,10 +6,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -27,39 +25,10 @@ var (
 	_ resource.ResourceWithConfigure      = &securityGroupResource{}
 	_ resource.ResourceWithImportState    = &securityGroupResource{}
 	_ resource.ResourceWithValidateConfig = &securityGroupResource{}
-	_ resource.ResourceWithModifyPlan     = &securityGroupResource{}
 )
 
 func NewSecurityGroupResource() resource.Resource {
 	return &securityGroupResource{}
-}
-
-func (r *securityGroupResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-
-	if req.Plan.Raw.IsNull() {
-		return
-	}
-
-	var plan, state securityGroupResourceModel
-
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if !req.State.Raw.IsNull() {
-		_ = req.State.Get(ctx, &state)
-	}
-
-	if plan.Rules.IsNull() && !state.Rules.IsNull() && !state.Rules.IsUnknown() {
-		resp.Diagnostics.AddWarning(
-			"Optional 'rules' attribute not set",
-			"'rules' is optional, but to avoid unexpected update you should explicitly set it to an empty array: rules = []",
-		)
-	}
-
-	_ = resp.Plan.Set(ctx, &plan)
 }
 
 type securityGroupResource struct {
@@ -72,7 +41,6 @@ func (r *securityGroupResource) Metadata(_ context.Context, req resource.Metadat
 
 func (r *securityGroupResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("SecurityGroup"),
 		Attributes: utils.MergeAttributes(
 			securityGroupResourceSchemaAttributes,
 			map[string]schema.Attribute{
@@ -109,53 +77,39 @@ func (r *securityGroupResource) ValidateConfig(ctx context.Context, req resource
 	for _, rule := range rules {
 		proto := strings.ToUpper(rule.Protocol.ValueString())
 
-		remoteIpKnown := !rule.RemoteIpPrefix.IsUnknown()
-		remoteGrpKnown := !rule.RemoteGroupId.IsUnknown()
-		remoteIpSet := remoteIpKnown && !rule.RemoteIpPrefix.IsNull() && rule.RemoteIpPrefix.ValueString() != ""
-		remoteGroupSet := remoteGrpKnown && !rule.RemoteGroupId.IsNull() && rule.RemoteGroupId.ValueString() != ""
+		remoteIpSet := !rule.RemoteIpPrefix.IsNull()
+		remoteGroupSet := !rule.RemoteGroupId.IsNull()
 
-		if remoteIpKnown && remoteGrpKnown {
-
-			onlyOneRemoteFieldExists := (remoteIpSet) != (remoteGroupSet)
-			if !onlyOneRemoteFieldExists {
-				resp.Diagnostics.AddError(
-					"Invalid security group rule",
-					"Exactly one of remote_ip_prefix or remote_group_id must be provided (not both or neither)",
-				)
-				continue
-			}
+		onlyOneRemoteFieldExists := (remoteIpSet) != (remoteGroupSet)
+		if !onlyOneRemoteFieldExists {
+			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+				"Exactly one of remote_ip_prefix or remote_group_id must be provided (not both or neither)",
+			)
+			continue
 		}
-
-		minProvided := !(rule.PortRangeMin.IsNull() || rule.PortRangeMin.IsUnknown() || rule.PortRangeMin.ValueString() == "")
-		maxProvided := !(rule.PortRangeMax.IsNull() || rule.PortRangeMax.IsUnknown() || rule.PortRangeMax.ValueString() == "")
 
 		switch proto {
 		case string(network.SECURITYGROUPRULEPROTOCOL_TCP), string(network.SECURITYGROUPRULEPROTOCOL_UDP):
-			if !minProvided {
-				resp.Diagnostics.AddError("Invalid security group rule", fmt.Sprintf("port_range_min is required when protocol is %s", proto))
+			if rule.PortRangeMin.IsNull() {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("port_range_min is required when protocol is '%s'", proto),
+				)
 			}
-			if !maxProvided {
-				resp.Diagnostics.AddError("Invalid security group rule", fmt.Sprintf("port_range_max is required when protocol is %s", proto))
+			if rule.PortRangeMax.IsNull() {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("port_range_max is required when protocol is '%s'", proto),
+				)
 			}
-			if minProvided && maxProvided {
-				minVal, err1 := strconv.Atoi(rule.PortRangeMin.ValueString())
-				maxVal, err2 := strconv.Atoi(rule.PortRangeMax.ValueString())
-				minValid := err1 == nil && minVal >= 1 && minVal <= 65535
-				maxValid := err2 == nil && maxVal >= 1 && maxVal <= 65535
-				if !minValid || !maxValid {
-					msg := fmt.Sprintf("port_range_min and port_range_max must be between 1 and 65535 when protocol is %s.", proto)
-					if !minValid {
-						msg += fmt.Sprintf(" port_range_min=%s is out of range.", rule.PortRangeMin.ValueString())
-					}
-					if !maxValid {
-						msg += fmt.Sprintf(" port_range_max=%s is out of range.", rule.PortRangeMax.ValueString())
-					}
-					resp.Diagnostics.AddError("Invalid security group rule", msg)
-				}
+			if rule.PortRangeMin.ValueInt32() > rule.PortRangeMax.ValueInt32() {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("port_range_max must be greater than or equal to port_range_min when protocol is '%s'", proto),
+				)
 			}
 		case string(network.SECURITYGROUPRULEPROTOCOL_ALL), string(network.SECURITYGROUPRULEPROTOCOL_ICMP):
-			if minProvided || maxProvided {
-				resp.Diagnostics.AddError("Invalid security group rule", fmt.Sprintf("port_range_min and port_range_max must be null when protocol is %s", proto))
+			if !rule.PortRangeMin.IsNull() || !rule.PortRangeMax.IsNull() {
+				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
+					fmt.Sprintf("port_range_min and port_range_max must be null when protocol is '%s'", proto),
+				)
 			}
 		}
 	}
@@ -247,9 +201,7 @@ func (r *securityGroupResource) Create(ctx context.Context, req resource.CreateR
 				}
 			}
 		}
-
 		desiredRuleCount = len(desired)
-
 	}
 
 	finalSg, ok := r.waitForRulesToPropagate(ctx, respModel.SecurityGroup.Id, desiredRuleCount, &resp.Diagnostics)
@@ -257,14 +209,9 @@ func (r *securityGroupResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	originalRulesNull := plan.Rules.IsNull() || plan.Rules.IsUnknown()
-
 	ok = mapSecurityGroupBaseModel(ctx, &plan.securityGroupBaseModel, finalSg, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
-	}
-	if originalRulesNull {
-		plan.Rules = types.SetNull(types.ObjectType{AttrTypes: securityGroupRuleAttrType})
 	}
 
 	diags = resp.State.Set(ctx, plan)
@@ -287,14 +234,17 @@ func (r *securityGroupResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
+	var newName, newDescription types.String
 	if !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) && !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		editReq := network.EditSecurityGroupModel{}
 		if !plan.Name.Equal(state.Name) {
 			editReq.SetName(plan.Name.ValueString())
+			newName = plan.Name
 		}
 
 		if !plan.Description.Equal(state.Description) && !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 			editReq.SetDescription(plan.Description.ValueString())
+			newDescription = plan.Description
 		}
 
 		body := network.BodyUpdateSecurityGroup{SecurityGroup: editReq}
@@ -361,7 +311,7 @@ func (r *securityGroupResource) Update(ctx context.Context, req resource.UpdateR
 	}
 
 	desiredRuleCount := 0
-	if !plan.Rules.IsNull() && !plan.Rules.IsUnknown() {
+	if !plan.Rules.IsNull() {
 		desiredRuleCount = len(plan.Rules.Elements())
 	}
 
@@ -370,14 +320,16 @@ func (r *securityGroupResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
-	originalRulesNull := plan.Rules.IsNull() || plan.Rules.IsUnknown()
-
 	ok = mapSecurityGroupBaseModel(ctx, &plan.securityGroupBaseModel, finalSg, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if originalRulesNull {
-		plan.Rules = types.SetNull(types.ObjectType{AttrTypes: securityGroupRuleAttrType})
+
+	if !newName.IsNull() {
+		plan.Name = newName
+	}
+	if !newDescription.IsNull() && !newDescription.IsUnknown() {
+		plan.Description = newDescription
 	}
 
 	diags = resp.State.Set(ctx, &plan)
@@ -450,6 +402,8 @@ func (r *securityGroupResource) waitForRulesToPropagate(
 		ctx,
 		r,
 		3*time.Second,
+		"security group",
+		securityGroupId,
 		[]string{targetStatus},
 		respDiags,
 		func(ctx context.Context) (*network.BnsNetworkV1ApiGetSecurityGroupModelSecurityGroupModel, *http.Response, error) {
@@ -484,14 +438,10 @@ func (r *securityGroupResource) addSecurityGroupRule(ctx context.Context, sgId s
 		creq.SetDescription(rule.Description.ValueString())
 	}
 	if !rule.PortRangeMin.IsNull() && !rule.PortRangeMin.IsUnknown() {
-		if v, err := strconv.Atoi(rule.PortRangeMin.ValueString()); err == nil {
-			creq.SetPortRangeMin(int32(v))
-		}
+		creq.SetPortRangeMin(rule.PortRangeMin.ValueInt32())
 	}
 	if !rule.PortRangeMax.IsNull() && !rule.PortRangeMax.IsUnknown() {
-		if v, err := strconv.Atoi(rule.PortRangeMax.ValueString()); err == nil {
-			creq.SetPortRangeMax(int32(v))
-		}
+		creq.SetPortRangeMax(rule.PortRangeMax.ValueInt32())
 	}
 	if !rule.RemoteIpPrefix.IsNull() && !rule.RemoteIpPrefix.IsUnknown() {
 		creq.SetRemoteIpPrefix(rule.RemoteIpPrefix.ValueString())

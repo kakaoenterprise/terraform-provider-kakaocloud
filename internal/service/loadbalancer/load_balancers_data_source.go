@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"terraform-provider-kakaocloud/internal/utils"
 
@@ -52,7 +51,6 @@ func (d *loadBalancersDataSource) Metadata(_ context.Context, req datasource.Met
 
 func (d *loadBalancersDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("LoadBalancers"),
 		Attributes: map[string]schema.Attribute{
 			"filter": schema.ListNestedAttribute{
 				Optional: true,
@@ -208,7 +206,8 @@ func (d *loadBalancersDataSource) Read(ctx context.Context, req datasource.ReadR
 	var loadBalancersResult []loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel
 	err = copier.Copy(&loadBalancersResult, &lbsTyped.LoadBalancers)
 	if err != nil {
-		resp.Diagnostics.AddError("List conversion failed", fmt.Sprintf("loadBalancersResult conversion failed: %v", err))
+		common.AddGeneralError(ctx, d, &resp.Diagnostics,
+			fmt.Sprintf("Failed to convert loadBalancersResult: %v", err))
 		return
 	}
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 	"time"
 
@@ -39,7 +38,6 @@ func (r *networkInterfaceResource) Metadata(_ context.Context, req resource.Meta
 
 func (r *networkInterfaceResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetResourceDescription("NetworkInterface"),
 		Attributes: MergeResourceSchemaAttributes(
 			networkInterfaceResourceSchema,
 			map[string]schema.Attribute{
@@ -388,6 +386,8 @@ func (r *networkInterfaceResource) pollNetworkInterfaceUntilStatus(
 		ctx,
 		r,
 		2*time.Second,
+		"network interfaces",
+		networkInterfaceId,
 		targetStatuses,
 		resp,
 		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetNetworkInterfaceModelNetworkInterfaceModel, *http.Response, error) {

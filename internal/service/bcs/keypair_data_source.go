@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
@@ -35,12 +34,10 @@ func (d *keypairDataSource) Metadata(_ context.Context, req datasource.MetadataR
 
 func (d *keypairDataSource) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("Keypair"),
 		Attributes: MergeDataSourceSchemaAttributes(
 			map[string]schema.Attribute{
 				"name": schema.StringAttribute{
-					Required:    true,
-					Description: "Key Pair Name",
+					Required: true,
 				},
 				"timeouts": timeouts.Attributes(ctx),
 			},

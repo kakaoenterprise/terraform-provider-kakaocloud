@@ -4,7 +4,6 @@ package bcs
 
 import (
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
@@ -20,64 +19,52 @@ import (
 )
 
 func getInstanceResourceSchema() map[string]schema.Attribute {
-	desc := docs.Bcs("bcs_instance__v1__api__get_instance__model__InstanceModel")
-	instanceDesc := docs.Bcs("CreateInstanceModel")
-
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
-			Description: desc.String("id"),
 		},
 		"name": schema.StringAttribute{
-			Required:    true,
-			Description: desc.String("name"),
-			Validators:  common.NameValidator(63),
+			Required:   true,
+			Validators: common.NameValidator(63),
 		},
 		"description": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("description"),
-			Validators:  common.DescriptionValidator(),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.DescriptionValidator(),
 		},
 		"metadata": schema.MapAttribute{
 			ElementType: types.StringType,
 			Computed:    true,
-			Description: desc.String("metadata"),
 		},
 		"flavor": schema.SingleNestedAttribute{
-			Computed:    true,
-			Description: desc.String("flavor"),
-			Attributes:  getInstanceFlavorResourceSchemaAttributes(),
+			Computed:   true,
+			Attributes: getInstanceFlavorResourceSchemaAttributes(),
 		},
 		"addresses": schema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("addresses"),
+			Computed: true,
 			NestedObject: schema.NestedAttributeObject{
 				Attributes: getInstanceAddressesResourceSchemaAttributes(),
 			},
 		},
 		"is_hyper_threading": schema.BoolAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("is_hyper_threading"),
+			Optional: true,
+			Computed: true,
 			PlanModifiers: []planmodifier.Bool{
 				boolplanmodifier.UseStateForUnknown(),
 				boolplanmodifier.RequiresReplace(),
 			},
 		},
 		"is_hadoop": schema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_hadoop"),
+			Computed: true,
 			PlanModifiers: []planmodifier.Bool{
 				boolplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"is_k8se": schema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_k8se"),
+			Computed: true,
 			PlanModifiers: []planmodifier.Bool{
 				boolplanmodifier.UseStateForUnknown(),
 			},
@@ -87,25 +74,20 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 			PlanModifiers: []planmodifier.Object{
 				objectplanmodifier.UseStateForUnknown(),
 			},
-			Description: desc.String("image"),
-			Attributes:  getInstanceImageResourceSchemaAttributes(),
+			Attributes: getInstanceImageResourceSchemaAttributes(),
 		},
 		"vm_state": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("vm_state"),
+			Computed: true,
 		},
 		"task_state": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("task_state"),
+			Computed: true,
 		},
 		"power_state": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("power_state"),
+			Computed: true,
 		},
 		"status": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("status"),
+			Optional: true,
+			Computed: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(
 					common.InstanceStatusActive,
@@ -115,30 +97,26 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 			},
 		},
 		"user_id": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("user_id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"project_id": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("project_id"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"key_name": schema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("key_name"),
-			Validators:  common.NameValidator(250),
+			Optional:   true,
+			Validators: common.NameValidator(250),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
 		"hostname": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("hostname"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
@@ -150,44 +128,36 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 				stringplanmodifier.UseStateForUnknown(),
 				stringplanmodifier.RequiresReplace(),
 			},
-			Description: desc.String("availability_zone"),
 		},
 		"attached_volumes": schema.ListNestedAttribute{
-			Computed:    true,
-			Description: desc.String("attached_volumes"),
+			Computed: true,
 			NestedObject: schema.NestedAttributeObject{
 				Attributes: getInstanceAttachedVolumesResourceSchemaAttributes(),
 			},
 		},
 		"attached_volume_count": schema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("attached_volume_count"),
+			Computed: true,
 		},
 		"security_groups": schema.SetNestedAttribute{
-			Computed:    true,
-			Description: desc.String("security_groups"),
+			Computed: true,
 			NestedObject: schema.NestedAttributeObject{
 				Attributes: getInstanceSecurityGroupsResourceSchemaAttributes(),
 			},
 		},
 		"security_group_count": schema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("security_group_count"),
+			Computed: true,
 		},
 		"instance_type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_type"),
+			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"created_at": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 
 		"image_id": schema.StringAttribute{
@@ -196,16 +166,13 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
-			Description: instanceDesc.String("image_id"),
 		},
 		"flavor_id": schema.StringAttribute{
-			Required:    true,
-			Validators:  common.UuidValidator(),
-			Description: instanceDesc.String("flavor_id"),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 		"subnets": schema.ListNestedAttribute{
-			Required:    true,
-			Description: instanceDesc.String("subnets"),
+			Required: true,
 			Validators: []validator.List{
 				listvalidator.SizeAtLeast(1),
 			},
@@ -214,8 +181,7 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 			},
 		},
 		"initial_security_groups": schema.SetNestedAttribute{
-			Optional:    true,
-			Description: "List of initial security groups for the instance",
+			Optional: true,
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
 			},
@@ -224,8 +190,7 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 			},
 		},
 		"volumes": schema.ListNestedAttribute{
-			Optional:    true,
-			Description: instanceDesc.String("volumes"),
+			Optional: true,
 			Validators: []validator.List{
 				listvalidator.SizeAtLeast(1),
 			},
@@ -234,272 +199,205 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 			},
 		},
 		"user_data": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: instanceDesc.String("user_data"),
+			Optional:  true,
+			WriteOnly: true,
 		},
 		"is_bonding": schema.BoolAttribute{
 			Optional: true,
 			PlanModifiers: []planmodifier.Bool{
 				boolplanmodifier.RequiresReplace(),
 			},
-			Description: instanceDesc.String("is_bonding"),
 		},
 	}
 }
 
 func getInstanceFlavorResourceSchemaAttributes() map[string]schema.Attribute {
-	desc := docs.Bcs("bcs_instance__v1__api__get_instance__model__InstanceFlavorModel")
-
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"group": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("group"),
+			Computed: true,
 		},
 		"vcpus": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("vcpus"),
+			Computed: true,
 		},
 		"is_burstable": schema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_burstable"),
+			Computed: true,
 		},
 		"manufacturer": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("manufacturer"),
+			Computed: true,
 		},
 		"memory_mb": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("memory_mb"),
+			Computed: true,
 		},
 		"root_gb": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("root_gb"),
+			Computed: true,
 		},
 		"disk_type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("disk_type"),
+			Computed: true,
 		},
 		"instance_family": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_family"),
+			Computed: true,
 		},
 		"os_distro": schema.ListAttribute{
 			Computed:    true,
 			ElementType: types.StringType,
-			Description: desc.String("os_distro"),
 		},
 		"maximum_network_interfaces": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("maximum_network_interfaces"),
+			Computed: true,
 		},
 		"hw_type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("hw_type"),
+			Computed: true,
 		},
 		"hw_count": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("hw_count"),
+			Computed: true,
 		},
 		"is_hyper_threading_supported": schema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_hyper_threading_supported"),
+			Computed: true,
 		},
 		"real_vcpus": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("real_vcpus"),
+			Computed: true,
 		},
 	}
 }
 
 func getInstanceAddressesResourceSchemaAttributes() map[string]schema.Attribute {
-	desc := docs.Bcs("bcs_instance__v1__api__get_instance__model__InstanceAddressModel")
-
 	return map[string]schema.Attribute{
 		"private_ip": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("private_ip"),
+			Computed: true,
 		},
 		"public_ip": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("public_ip"),
+			Computed: true,
 		},
 		"network_interface_id": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("network_interface_id"),
+			Computed: true,
 		},
 	}
 }
 
 func getInstanceImageResourceSchemaAttributes() map[string]schema.Attribute {
-	desc := docs.Bcs("bcs_instance__v1__api__get_instance__model__InstanceImageModel")
-
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"description": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("description"),
+			Computed: true,
 		},
 		"owner": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("owner"),
+			Computed: true,
 		},
 		"is_windows": schema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_windows"),
+			Computed: true,
 		},
 		"size": schema.Int64Attribute{
-			Computed:    true,
-			Description: desc.String("size"),
+			Computed: true,
 		},
 		"status": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"image_type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("image_type"),
+			Computed: true,
 		},
 		"disk_format": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("disk_format"),
+			Computed: true,
 		},
 		"instance_type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("instance_type"),
+			Computed: true,
 		},
 		"member_status": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("member_status"),
+			Computed: true,
 		},
 		"min_disk": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("min_disk"),
+			Computed: true,
 		},
 		"min_memory": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("min_memory"),
+			Computed: true,
 		},
 		"os_admin": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_admin"),
+			Computed: true,
 		},
 		"os_distro": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_distro"),
+			Computed: true,
 		},
 		"os_type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_type"),
+			Computed: true,
 		},
 		"os_architecture": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("os_architecture"),
+			Computed: true,
 		},
 		"created_at": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"updated_at": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("updated_at"),
+			Computed: true,
 		},
 	}
 }
 
 func getInstanceAttachedVolumesResourceSchemaAttributes() map[string]schema.Attribute {
-	desc := docs.Bcs("bcs_instance__v1__api__get_instance__model__InstanceAttachedVolumeModel")
-
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("name"),
+			Computed: true,
 		},
 		"status": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("status"),
+			Computed: true,
 		},
 		"mount_point": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("mount_point"),
+			Computed: true,
 		},
 		"type": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("type"),
+			Computed: true,
 		},
 		"size": schema.Int32Attribute{
-			Computed:    true,
-			Description: desc.String("size"),
+			Computed: true,
 		},
 		"is_delete_on_termination": schema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_delete_on_termination"),
+			Computed: true,
 		},
 		"created_at": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("created_at"),
+			Computed: true,
 		},
 		"is_root": schema.BoolAttribute{
-			Computed:    true,
-			Description: desc.String("is_root"),
+			Computed: true,
 		},
 	}
 }
 
 func getInstanceSecurityGroupsResourceSchemaAttributes() map[string]schema.Attribute {
-	desc := docs.Bcs("bcs_instance__v1__api__get_instance__model__InstanceSecurityGroupModel")
-
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
-			Computed:    true,
-			Description: desc.String("id"),
+			Computed: true,
 		},
 		"name": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("name"),
+			Optional: true,
+			Computed: true,
 		},
 	}
 }
 
 func getInstanceInitialSecurityGroupsResourceSchemaAttributes() map[string]schema.Attribute {
-	desc := docs.Bcs("bcs_instance__v1__api__get_instance__model__InstanceSecurityGroupModel")
-
 	return map[string]schema.Attribute{
 		"name": schema.StringAttribute{
-			Required:    true,
-			Description: desc.String("name"),
+			Required: true,
 		},
 	}
 }
 
 func getInstanceSubnetsResourceSchemaAttributes() map[string]schema.Attribute {
-	desc := docs.Bcs("CreateInstanceSubnetModel")
-
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
-			Required:    true,
-			Validators:  common.UuidValidator(),
-			Description: desc.String("id"),
+			Required:   true,
+			Validators: common.UuidValidator(),
 		},
 		"network_interface_id": schema.StringAttribute{
 			Optional:   true,
@@ -508,37 +406,30 @@ func getInstanceSubnetsResourceSchemaAttributes() map[string]schema.Attribute {
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
-			Description: desc.String("network_interface_id"),
 		},
 		"private_ip": schema.StringAttribute{
-			Optional:    true,
-			CustomType:  iptypes.IPAddressType{},
-			Description: desc.String("private_ip"),
+			Optional:   true,
+			CustomType: iptypes.IPAddressType{},
 		},
 	}
 }
 
 func getInstanceVolumesResourceSchemaAttributes() map[string]schema.Attribute {
-	desc := docs.Bcs("CreateInstanceVolumeModel")
-
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: desc.String("uuid"),
-			Validators:  common.UuidValidator(),
+			Optional:   true,
+			Computed:   true,
+			Validators: common.UuidValidator(),
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"is_delete_on_termination": schema.BoolAttribute{
-			Optional:    true,
-			Description: desc.String("is_delete_on_termination"),
+			Optional: true,
 		},
 		"size": schema.Int32Attribute{
-			Optional:    true,
-			Description: desc.String("size"),
-			Validators:  common.VolumeSizeValidator(),
+			Optional:   true,
+			Validators: common.VolumeSizeValidator(),
 			PlanModifiers: []planmodifier.Int32{
 				common.PreventShrinkModifier[int32]{
 					TypeName:        "Volume Size",
@@ -547,19 +438,16 @@ func getInstanceVolumesResourceSchemaAttributes() map[string]schema.Attribute {
 			},
 		},
 		"image_id": schema.StringAttribute{
-			Optional:    true,
-			Description: docs.Description("volume", "CreateVolumeModel", "image_id"),
-			Validators:  common.UuidValidator(),
+			Optional:   true,
+			Validators: common.UuidValidator(),
 		},
 		"type_id": schema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("type_id"),
-			Validators:  common.UuidValidator(),
+			Optional:   true,
+			Validators: common.UuidValidator(),
 		},
 		"encryption_secret_id": schema.StringAttribute{
-			Optional:    true,
-			Description: desc.String("encryption_secret_id"),
-			Validators:  common.UuidValidator(),
+			Optional:   true,
+			Validators: common.UuidValidator(),
 		},
 	}
 }

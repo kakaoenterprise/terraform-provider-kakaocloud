@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
-	"terraform-provider-kakaocloud/internal/docs"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	datasourceTimeouts "github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/jinzhu/copier"
 	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
 )
 
@@ -46,15 +46,22 @@ func (d *nodePoolsDataSource) Metadata(ctx context.Context, req datasource.Metad
 
 func (d *nodePoolsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: docs.GetDataSourceDescription("KubernetesEngineNodePools"),
 		Attributes: map[string]schema.Attribute{
-			"cluster_name": schema.StringAttribute{Required: true, Description: "Cluster name"},
+			"cluster_name": schema.StringAttribute{
+				Required:   true,
+				Validators: common.NameValidator(20),
+			},
 			"node_pools": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: MergeAttributes[schema.Attribute](
 						map[string]schema.Attribute{
-							"name": schema.StringAttribute{Computed: true},
+							"cluster_name": schema.StringAttribute{
+								Computed: true,
+							},
+							"name": schema.StringAttribute{
+								Computed: true,
+							},
 						},
 						nodePoolDataSourceAttributes,
 					),
@@ -83,18 +90,8 @@ func (d *nodePoolsDataSource) Read(ctx context.Context, req datasource.ReadReque
 	defer cancel()
 
 	listResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (struct{ NodePools []struct{ Name string } }, *http.Response, error) {
-			api := d.kc.ApiClient.NodePoolsAPI.ListNodePools(ctx, config.ClusterName.ValueString()).XAuthToken(d.kc.XAuthToken)
-			resp, httpResp, err := api.Execute()
-			if err != nil {
-				return struct{ NodePools []struct{ Name string } }{}, httpResp, err
-			}
-
-			tmp := struct{ NodePools []struct{ Name string } }{NodePools: make([]struct{ Name string }, len(resp.NodePools))}
-			for i, np := range resp.NodePools {
-				tmp.NodePools[i] = struct{ Name string }{Name: np.Name}
-			}
-			return tmp, httpResp, nil
+		func() (*kubernetesengine.GetK8sClusterNodePoolsResponseModel, *http.Response, error) {
+			return d.kc.ApiClient.NodePoolsAPI.ListNodePools(ctx, config.ClusterName.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
 	if err != nil {
@@ -102,33 +99,17 @@ func (d *nodePoolsDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	for _, np := range listResp.NodePools {
-		var model NodePoolBaseModelDS
+	var nodePools []kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+	err = copier.Copy(&nodePools, &listResp.NodePools)
+	if err != nil {
+		common.AddGeneralError(ctx, d, &resp.Diagnostics,
+			fmt.Sprintf("Failed to convert nodePools: %v", err))
+		return
+	}
 
-		detail, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-			func() (struct {
-				NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
-			}, *http.Response, error) {
-				apiResp, httpResp, err := d.kc.ApiClient.NodePoolsAPI.
-					GetNodePool(ctx, config.ClusterName.ValueString(), np.Name).
-					XAuthToken(d.kc.XAuthToken).
-					Execute()
-				if err != nil {
-					return struct {
-						NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
-					}{}, httpResp, err
-				}
-				return struct {
-					NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
-				}{NodePool: apiResp.NodePool}, httpResp, nil
-			},
-		)
-		if err != nil {
-			common.AddApiActionError(ctx, d, httpResp, "GetNodePool", err, &resp.Diagnostics)
-			return
-		}
-		res := detail.NodePool
-		ok := mapNodePoolFromResponseDS(ctx, &model, &res, &resp.Diagnostics)
+	for _, nodePool := range nodePools {
+		var model NodePoolBaseModel
+		ok := mapNodePoolFromResponse(ctx, &model, &nodePool, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

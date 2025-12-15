@@ -22,6 +22,8 @@ func (r *imageResource) pollImageUtilsStatus(
 		ctx,
 		r,
 		2*time.Second,
+		"image",
+		imageId,
 		targetStatuses,
 		resp,
 		func(ctx context.Context) (*image.BcsImageV1ApiGetImageModelImageModel, *http.Response, error) {
