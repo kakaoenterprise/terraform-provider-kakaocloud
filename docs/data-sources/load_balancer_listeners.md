@@ -57,153 +57,81 @@ Use this data source when you need to:
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-# List all load balancer listeners
-data "kakaocloud_load_balancer_listeners" "all" {
-  # No filters - get all listeners
-}
+# List all load balancer listeners (no filters)
+data "kakaocloud_load_balancer_listeners" "all" {}
 
-# List listeners for a specific load balancer using filter
-data "kakaocloud_load_balancer_listeners" "by_load_balancer" {
-  filter = [
-    {
-      name  = "id"
-      value = "your-listener-id-here" # Replace with your listener ID
-    },
-    {
-      name  = "load_balancer_id"
-      value = "your-load-balancer-id-here" # Replace with your load balancer ID
-    },
-    {
-      name  = "protocol"
-      value = "HTTP"
-    },
-    {
-      name  = "protocol_port"
-      value = "80"
-    },
-    {
-      name  = "provisioning_status"
-      value = "ACTIVE"
-    },
-    {
-      name  = "operating_status"
-      value = "ONLINE"
-    },
-    {
-      name  = "secret_name"
-      value = "your-secret-name" # Replace with your secret name
-    },
-    {
-      name  = "secret_id"
-      value = "your-secret-id" # Replace with your secret ID
-    },
-    {
-      name  = "tls_certificate_id"
-      value = "your-tls-certificate-id" # Replace with your TLS certificate ID
-    },
-    {
-      name  = "created_at"
-      value = "2021-01-01T00:00:00Z" # Replace with your created at
-    },
-    {
-      name  = "updated_at"
-      value = "2021-01-01T00:00:00Z" # Replace with your updated at
-    }
-  ]
-}
-
-# List listeners with filters
+# List listeners filtered by load balancer ID and protocol
 data "kakaocloud_load_balancer_listeners" "filtered" {
   filter = [
     {
-      name  = "protocol"
-      value = "HTTP"
+      name  = "load_balancer_id"
+      value = "<your-load-balancer-id>"
     },
     {
-      name  = "protocol_port"
-      value = "80"
+      name  = "protocol"
+      value = "HTTP" # HTTP, TCP, UDP, TERMINATED_HTTPS
     },
     {
       name  = "provisioning_status"
-      value = "ACTIVE"
+      value = "ACTIVE" # ACTIVE, DELETED, ERROR, PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE
     }
   ]
 }
 
-# List HTTPS listeners with TLS certificate filters
-data "kakaocloud_load_balancer_listeners" "https_listeners" {
-  filter = [
-    {
-      name  = "protocol"
-      value = "TERMINATED_HTTPS"
-    },
-    {
-      name  = "operating_status"
-      value = "ONLINE"
-    },
-    {
-      name  = "secret_name"
-      value = "your-secret-name" # Replace with your secret name
-    }
-  ]
-}
-
-# List listeners by load balancer and TLS certificate
+# Retrieve listeners by load balancer and TLS certificate
 data "kakaocloud_load_balancer_listeners" "by_lb_and_tls" {
   filter = [
     {
       name  = "load_balancer_id"
-      value = "your-load-balancer-id-here" # Replace with your load balancer ID
+      value = "<your-load-balancer-id>"
     },
     {
       name  = "tls_certificate_id"
-      value = "your-tls-certificate-id" # Replace with your TLS certificate ID
+      value = "<your-tls-cert-id>"
     },
     {
       name  = "secret_id"
-      value = "your-secret-id" # Replace with your secret ID
+      value = "<your-secret-id>"
     }
   ]
 }
 
-# Output all listeners
+# Output: All listeners
 output "all_listeners" {
   description = "List of all load balancer listeners"
-  value = {
-    count     = length(data.kakaocloud_load_balancer_listeners.all.listeners)
-    ids       = data.kakaocloud_load_balancer_listeners.all.listeners[*].id
-    protocols = data.kakaocloud_load_balancer_listeners.all.listeners[*].protocol
-  }
+  value = [
+    for listener in data.kakaocloud_load_balancer_listeners.all.listeners : {
+      id       = listener.id
+      protocol = listener.protocol
+      port     = listener.protocol_port
+    }
+  ]
 }
 
-# Output listeners by load balancer
-output "load_balancer_listeners" {
-  description = "Listeners for specific load balancer"
-  value = {
-    count     = length(data.kakaocloud_load_balancer_listeners.by_load_balancer.listeners)
-    ids       = data.kakaocloud_load_balancer_listeners.by_load_balancer.listeners[*].id
-    protocols = data.kakaocloud_load_balancer_listeners.by_load_balancer.listeners[*].protocol
-  }
-}
-
-# Output filtered listeners
+# Output: Filtered listeners
 output "filtered_listeners" {
-  description = "Filtered load balancer listeners"
-  value = {
-    count     = length(data.kakaocloud_load_balancer_listeners.filtered.listeners)
-    ids       = data.kakaocloud_load_balancer_listeners.filtered.listeners[*].id
-    protocols = data.kakaocloud_load_balancer_listeners.filtered.listeners[*].protocol
-  }
+  description = "List of listeners matching filter criteria"
+  value = [
+    for listener in data.kakaocloud_load_balancer_listeners.filtered.listeners : {
+      id       = listener.id
+      name     = listener.name
+      protocol = listener.protocol
+      status   = listener.provisioning_status
+    }
+  ]
 }
 
-# Output HTTPS listeners
-output "https_listeners" {
-  description = "HTTPS load balancer listeners"
-  value = {
-    count     = length(data.kakaocloud_load_balancer_listeners.https_listeners.listeners)
-    ids       = data.kakaocloud_load_balancer_listeners.https_listeners.listeners[*].id
-    protocols = data.kakaocloud_load_balancer_listeners.https_listeners.listeners[*].protocol
-  }
+# Output: Listeners with TLS
+output "tls_listeners" {
+  description = "Listeners associated with specified TLS certificate"
+  value = [
+    for listener in data.kakaocloud_load_balancer_listeners.by_lb_and_tls.listeners : {
+      id        = listener.id
+      protocol  = listener.protocol
+      tls_cert  = listener.tls_certificate_id
+      secret_id = listener.secrets[0].id
+    }
+  ]
 }
 ```
 
@@ -211,23 +139,24 @@ output "https_listeners" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `listeners` (Attributes List) (see [below for nested schema](#nestedatt--listeners))
+- `listeners` (Attributes List) List of listeners that match the specified filters (
+  see [below for nested schema](#nestedatt--listeners))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -241,15 +170,13 @@ The following attributes are exported:
 
 ### Nested Schema for `listeners`
 
-- `id` (Required, String) Listener ID
-
-
 - `alpn_protocols` (List of String) ALPN (Application-Layer Protocol Negotiation) protocol list
 - `connection_limit` (Number) Maximum number of simultaneous connections
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `default_target_group_id` (String) Default target group ID
 - `default_target_group_name` (String) Default target group name
 - `description` (String) Description of the listener
+- `id` (String) Listener ID
 - `insert_headers` (Attributes) Settings for HTTP headers to insert (
   see [below for nested schema](#nestedatt--listeners--insert_headers))
 - `is_enabled` (Boolean) Whether the listener is enabled
@@ -324,3 +251,6 @@ The following attributes are exported:
 - `name` (String) Certificate name
 - `secret_type` (String) Certificate type
 - `status` (String) Certificate status
+
+
+

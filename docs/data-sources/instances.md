@@ -73,76 +73,32 @@ data "kakaocloud_instances" "all" {
   # No filters - get all instances
 }
 
-# List instances with comprehensive filters
+# List instances with filters
 data "kakaocloud_instances" "filtered" {
   filter = [
     {
       name  = "name"
-      value = "your-instance-name" # Replace with your instance name
-    },
-    {
-      name  = "id"
-      value = "your-instance-id" # Replace with your instance ID
-    },
-    {
-      name  = "status"
-      value = "ACTIVE" # ACTIVE, BUILDING, DELETED, ERROR, HARD_REBOOT, MIGRATING, PAUSED, REBOOT, RESCUE, RESIZE, REVERT_RESIZE, SHELVED, SHELVED_OFFLOADED, SHUTOFF, SOFT_DELETED, SUSPENDED, UNKNOWN, VERIFY_RESIZE
-    },
-    {
-      name  = "vm_state"
-      value = "active" # active, building, deleted, error, hard_reboot, migrating, paused, reboot, rescue, resize, revert_resize, shelved, shelved_offloaded, shutoff, soft_deleted, suspended, unknown, verify_resize
+      value = "<your-instance-name>"
     },
     {
       name  = "flavor_name"
-      value = "your-flavor-name" # Replace with your flavor name
-    },
-    {
-      name  = "image_name"
-      value = "your-image-name" # Replace with your image name
-    },
-    {
-      name  = "private_ip"
-      value = "192.168.1.100" # Replace with your private IP
-    },
-    {
-      name  = "public_ip"
-      value = "203.0.113.1" # Replace with your public IP
+      value = "<your-flavor-name>"
     },
     {
       name  = "availability_zone"
-      value = "kr-central-2-a" # Replace with your availability zone
+      value = "kr-central-2-a" # kr-central-2-a, kr-central-2-b, kr-central-2-c
     },
     {
       name  = "instance_type"
-      value = "COMPUTE" # COMPUTE, MEMORY, STORAGE, GPU
+      value = "vm" # vm, bm, gpu
     },
     {
-      name  = "user_id"
-      value = "your-user-id" # Replace with your user ID
-    },
-    {
-      name  = "hostname"
-      value = "your-hostname" # Replace with your hostname
+      name  = "status"
+      value = "ACTIVE" # ACTIVE, BUILDING, ERROR, SHUTOFF, etc.
     },
     {
       name  = "os_type"
       value = "linux" # linux, windows
-    },
-    {
-      name  = "is_hadoop"
-      value = "false" # true, false
-    },
-    {
-      name  = "is_k8se"
-      value = "false" # true, false
-    },
-    {
-      name  = "created_at"
-      value = "2024-01-01T00:00:00Z" # Replace with creation time (RFC3339 format)
-    },
-    {
-      name  = "updated_at"
-      value = "2024-12-31T23:59:59Z" # Replace with update time (RFC3339 format)
     }
   ]
 }
@@ -172,23 +128,24 @@ output "filtered_instances" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `instances` (Attributes List) (see [below for nested schema](#nestedatt--instances))
+- `instances` (Attributes List) List of instance objects that match the specified filters. (
+  see [below for nested schema](#nestedatt--instances))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -226,8 +183,7 @@ The following attributes are exported:
 - `security_group_count` (Number) Number of security groups attached to the instance
 - `security_groups` (Attributes Set) List of security groups attached to the instance (
   see [below for nested schema](#nestedatt--instances--security_groups))
-- `status` (String) Instance status <br/> - Refer
-  to [Instance state and billing](https://docs.kakaocloud.com/en/service/bcs/vm/vm-main#instance-state-and-billing)
+- `status` (String) Instance status <br/> - Only `active`, `shelved_offloaded`, and `stopped` can be entered.
 - `task_state` (String) Current task state
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format <br/> - Based on UTC
 - `user_id` (String) ID of the user who created the instance
@@ -262,7 +218,7 @@ The following attributes are exported:
 - `disk_type` (String) Disk type
 - `group` (String) Instance type group
 - `hw_count` (Number) Number of hardware components included in this instance type <br/> - Example: number of GPUs
-- `hw_type` (String) Hardware type <br/> - Example: GPU
+- `hw_type` (String) Hardware type <br/> - Example: `GPU`
 - `id` (String) Instance type ID
 - `instance_family` (String) Instance family
 - `is_burstable` (Boolean) Whether it is
@@ -307,3 +263,6 @@ The following attributes are exported:
 
 - `id` (String) Security group ID
 - `name` (String) Security group name
+
+
+

@@ -27,19 +27,20 @@ Use this data source when you need to:
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-# List all available load balancer flavors
-data "kakaocloud_load_balancer_flavors" "all" {
-  # No filters supported - returns all available flavors
-}
+# Retrieve all available load balancer flavors
+data "kakaocloud_load_balancer_flavors" "all" {}
 
-# Output all load balancer flavors
-output "all_load_balancer_flavors" {
-  description = "List of all available load balancer flavors"
-  value = {
-    count = length(data.kakaocloud_load_balancer_flavors.all.flavors)
-    ids   = data.kakaocloud_load_balancer_flavors.all.flavors[*].id
-    names = data.kakaocloud_load_balancer_flavors.all.flavors[*].name
-  }
+# Output flavor details
+output "load_balancer_flavors" {
+  description = "List of available load balancer flavors"
+  value = [
+    for flavor in data.kakaocloud_load_balancer_flavors.all.flavors : {
+      id          = flavor.id
+      name        = flavor.name
+      is_enabled  = flavor.is_enabled
+      description = flavor.description
+    }
+  ]
 }
 ```
 
@@ -47,13 +48,14 @@ output "all_load_balancer_flavors" {
 
 ## Argument Reference
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `flavors` (Attributes List) (see [below for nested schema](#nestedatt--flavors))
+- `flavors` (Attributes List) List of available load balancer flavors (
+  see [below for nested schema](#nestedatt--flavors))
 
 <a id="nestedatt--timeouts"></a>
 
@@ -71,3 +73,5 @@ The following attributes are exported:
 - `id` (String) Load balancer type ID
 - `is_enabled` (Boolean) Whether it is enabled
 - `name` (String) Load balancer type name (e.g., ALB, NLB)
+
+

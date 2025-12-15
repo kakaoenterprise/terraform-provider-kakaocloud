@@ -20,13 +20,13 @@ IGW).
 
 # Get a specific VPC by ID
 data "kakaocloud_vpc" "example" {
-  id = "your-vpc-id-here" # Replace with your VPC ID
+  id = "<your-vpc-id>"
 }
 
 # Output the VPC information
 output "vpc_example" {
   description = "Information about the example VPC"
-  value       = kakaocloud_vpc.example
+  value       = data.kakaocloud_vpc.example
 }
 ```
 
@@ -36,7 +36,7 @@ output "vpc_example" {
 
 - `id` (Required, String) VPC ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
@@ -90,3 +90,5 @@ The following attributes are exported:
 - `provisioning_status` (String) Provisioning status
 - `region` (String) Region information
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
+
+

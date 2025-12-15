@@ -29,12 +29,13 @@ Use this data source when you need to:
 
 # Get a specific load balancer by ID
 data "kakaocloud_load_balancer" "example" {
-  id = "your-load-balancer-id-here" # Replace with your load balancer ID
+  id = "<your-load-balancer-id>"
 }
 
-# Output the fetched data
-output "load_balancer_name" {
-  value = data.kakaocloud_load_balancer.example
+# Output the load balancer information
+output "load_balancer_info" {
+  description = "Details of the specified load balancer"
+  value       = data.kakaocloud_load_balancer.example
 }
 ```
 
@@ -42,9 +43,9 @@ output "load_balancer_name" {
 
 ## Argument Reference
 
-- `id` (Required, String) The ID of the load balancer.
+- `id` (Required, String) ID of the created load balancer
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -81,3 +82,5 @@ The following attributes are exported:
 - `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
   consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
   minutes), "h" (hours).
+
+

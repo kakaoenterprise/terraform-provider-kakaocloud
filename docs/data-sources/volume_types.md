@@ -41,13 +41,14 @@ output "all_volume_types" {
 
 ## Argument Reference
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `volume_types` (Attributes List) (see [below for nested schema](#nestedatt--volume_types))
+- `volume_types` (Attributes List) List of available volume types. (
+  see [below for nested schema](#nestedatt--volume_types))
 
 <a id="nestedatt--timeouts"></a>
 
@@ -64,3 +65,5 @@ The following attributes are exported:
 - `description` (String) Description of the volume type
 - `id` (String) ID of the volume
 - `name` (String) Name of the volume type
+
+

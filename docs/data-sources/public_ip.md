@@ -27,13 +27,19 @@ Use this data source when you need to:
 
 # Get a specific public IP by ID
 data "kakaocloud_public_ip" "example" {
-  id = "your-public-ip-id-here" # Replace with your public IP ID
+  id = "<your-public-ip-id>"
 }
 
-# Output the public IP information
-output "public_ip_example" {
-  description = "Information about the example public IP"
-  value       = kakaocloud_public_ip.example
+# Output public IP details
+output "public_ip_details" {
+  description = "Details of the specified public IP"
+  value = {
+    id         = data.kakaocloud_public_ip.example.id
+    public_ip  = data.kakaocloud_public_ip.example.public_ip
+    private_ip = data.kakaocloud_public_ip.example.private_ip
+    status     = data.kakaocloud_public_ip.example.status
+    project_id = data.kakaocloud_public_ip.example.project_id
+  }
 }
 ```
 
@@ -43,7 +49,7 @@ output "public_ip_example" {
 
 - `id` (Required, String) Public IP ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -71,10 +77,10 @@ The following attributes are exported:
 
 ### Nested Schema for `related_resource`
 
-- `device_id` (String) Device ID
+- `device_id` (String) The resource ID
 - `device_owner` (String) Device owner
-- `device_type` (String) The type of device associated with the public IP (instance, load-balancer).
-- `id` (String) ID of the associated resource
+- `device_type` (String) `instance` or `load-balancer`
+- `id` (String) When `device_type` is `instance`, this field contains the network interface ID
 - `name` (String) Resource name
 - `status` (String) Resource status
 - `subnet_cidr` (String) IPv4 CIDR block of the subnet
@@ -83,3 +89,5 @@ The following attributes are exported:
 - `type` (String) Resource type
 - `vpc_id` (String) Unique ID of the VPC
 - `vpc_name` (String) VPC name
+
+

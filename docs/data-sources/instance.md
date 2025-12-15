@@ -25,16 +25,29 @@ Use this data source when you need to:
 ## Example Usage
 
 ```terraform
-# get a instance.
-data "kakaocloud_instance" "example" {
-  id = "your-instance-id-here" # Replace with your instance ID
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
 
+# Get a specific compute instance by ID
+data "kakaocloud_instance" "example" {
+  id = "<your-instance-i>"
 }
 
-# Output the instance information
+# Output instance details
 output "instance_example" {
   description = "Information about the example instance"
-  value       = kakaocloud_instance.example
+  value = {
+    id             = data.kakaocloud_instance.example.id
+    name           = data.kakaocloud_instance.example.name
+    flavor_name    = data.kakaocloud_instance.example.flavor.name
+    image_name     = data.kakaocloud_instance.example.image.name
+    availability   = data.kakaocloud_instance.example.availability_zone
+    private_ip     = data.kakaocloud_instance.example.addresses[0].private_ip
+    public_ip      = data.kakaocloud_instance.example.addresses[0].public_ip
+    status         = data.kakaocloud_instance.example.status
+    power_state    = data.kakaocloud_instance.example.power_state
+    security_group = data.kakaocloud_instance.example.security_groups[*].name
+  }
 }
 ```
 
@@ -44,7 +57,7 @@ output "instance_example" {
 
 - `id` (Required, String) Instance ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -73,8 +86,7 @@ The following attributes are exported:
 - `security_group_count` (Number) Number of security groups attached to the instance
 - `security_groups` (Attributes Set) List of security groups attached to the instance (
   see [below for nested schema](#nestedatt--security_groups))
-- `status` (String) Instance status <br/> - Refer
-  to [Instance state and billing](https://docs.kakaocloud.com/en/service/bcs/vm/vm-main#instance-state-and-billing)
+- `status` (String) Instance status <br/> - Only `active`, `shelved_offloaded`, and `stopped` can be entered.
 - `task_state` (String) Current task state
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format <br/> - Based on UTC
 - `user_id` (String) ID of the user who created the instance
@@ -162,3 +174,5 @@ The following attributes are exported:
 
 - `id` (String) Security group ID
 - `name` (String) Security group name
+
+

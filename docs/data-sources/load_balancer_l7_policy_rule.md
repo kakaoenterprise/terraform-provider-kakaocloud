@@ -29,13 +29,14 @@ Use this data source when you need to:
 
 # Get a specific L7 policy rule by ID
 data "kakaocloud_load_balancer_l7_policy_rule" "example" {
-  id           = "your-l7-policy-rule-id-here" # Replace with your L7 policy rule ID
-  l7_policy_id = "your-l7-policy-id-here"      # Replace with your L7 policy ID
+  id           = "<your-l7-policy-rule-id>"
+  l7_policy_id = "<your-l7-policy-id>"
 }
 
-# Output the L7 policy rule
-output "l7_policy_rule" {
-  value = data.kakaocloud_load_balancer_l7_policy_rule.example
+# Output the L7 policy rule information
+output "l7_policy_rule_info" {
+  description = "Details of the specified L7 policy rule"
+  value       = data.kakaocloud_load_balancer_l7_policy_rule.example
 }
 ```
 
@@ -46,7 +47,7 @@ output "l7_policy_rule" {
 - `id` (Required, String) ID of the created L7 rule
 - `l7_policy_id` (Required, String) ID of the L7 policy where the rule will be added
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -68,3 +69,5 @@ The following attributes are exported:
 - `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
   consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
   minutes), "h" (hours).
+
+

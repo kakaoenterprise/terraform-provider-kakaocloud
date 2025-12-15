@@ -17,15 +17,18 @@ Use this data source when you need to reference an existing Volume Snapshot in y
 ## Example Usage
 
 ```terraform
-# get a volume snapshot.
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+# Get a specific volume snapshot by ID
 data "kakaocloud_volume_snapshot" "example" {
-  id = "your-volume-snapshot-id-here" # Replace with your volume snapshot ID
+  id = "<your-volume-snapshot-id>"
 }
 
 # Output the volume snapshot information
 output "volume_snapshot_example" {
   description = "Information about the example volume snapshot"
-  value       = kakaocloud_volume_snapshot.example
+  value       = data.kakaocloud_volume_snapshot.example
 }
 ```
 
@@ -35,7 +38,7 @@ output "volume_snapshot_example" {
 
 - `id` (Required, String) Volume Snapshot ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
@@ -65,3 +68,5 @@ The following attributes are exported:
 - `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
   consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
   minutes), "h" (hours).
+
+

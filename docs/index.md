@@ -8,7 +8,8 @@ description: |-
 # KakaoCloud Provider
 
 The **KakaoCloud provider** is used to interact with [KakaoCloud](https://www.kakaocloud.com/) services.  
-It enables users to provision, configure, and manage various cloud resources including compute instances, networks, storage, and container services.  
+It enables users to provision, configure, and manage various cloud resources including compute instances, networks,
+storage, and container services.  
 The provider must be configured with the proper credentials before it can be used.
 
 !> **Warning** This provider is supported on **Terraform Version 1.11 or later**.
@@ -30,6 +31,7 @@ provider "kakaocloud" {
   application_credential_secret = var.application_credential_secret
 }
 ```
+
 See the **Authentication** section below for details on configuring provider credentials.
 
 ## Authentication
@@ -43,7 +45,8 @@ It checks for credentials in the following order, as detailed below:
 
 ### 1. Static credentials
 
-Static credentials can be specified directly in the KakaoCloud provider block using the `application_credential_id` and `application_credential_secret` arguments.
+Static credentials can be specified directly in the KakaoCloud provider block using the `application_credential_id` and
+`application_credential_secret` arguments.
 
 ```hcl
 terraform {
@@ -63,7 +66,9 @@ provider "kakaocloud" {
 
 ### 2. Environment variables
 
-Credentials can be supplied using the `KAKAOCLOUD_APPLICATION_CREDENTIAL_ID` and `KAKAOCLOUD_APPLICATION_CREDENTIAL_SECRET` environment variables, which correspond to the application credential ID and secret for KakaoCloud.
+Credentials can be supplied using the `KAKAOCLOUD_APPLICATION_CREDENTIAL_ID` and
+`KAKAOCLOUD_APPLICATION_CREDENTIAL_SECRET` environment variables, which correspond to the application credential ID and
+secret for KakaoCloud.
 
 **Provider Example**
 
@@ -89,7 +94,9 @@ $ terraform plan
 ```
 
 -> **Note** Application credentials can be generated from the KakaoCloud console.
-Please refer to the [KakaoCloud documentation > Credentials](https://docs.kakaocloud.com/en/start/console-guide/credentials) for detailed instructions on generating application credentials.
+Please refer to
+the [KakaoCloud documentation > Credentials](https://docs.kakaocloud.com/en/start/console-guide/credentials) for
+detailed instructions on generating application credentials.
 
 ## Argument Reference
 
@@ -100,5 +107,5 @@ The following arguments are supported:
 
 ## See Also
 
-- [KakaoCloud Console Guide – API Authentication Token](https://docs.kakaocloud.com/en/start/api-preparation)  
+- [KakaoCloud Console Guide – API Authentication Token](https://docs.kakaocloud.com/en/start/api-preparation)
 - [Terraform Plugin Docs – Official Guide](https://github.com/hashicorp/terraform-plugin-docs)

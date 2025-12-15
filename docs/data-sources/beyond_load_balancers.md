@@ -14,7 +14,7 @@ description: |-
   | scheme | Scheme <br/>- **internet-facing**: Connected to the internet <br/>- **internal**: Internal only |
   | provisioning_status | ProvisioningStatus <br/>- **ACTIVE**: Active <br/>- **DELETED**: Deleted <br/>- **ERROR**: Error occurred <br/>- **PENDING_CREATE**: Waiting for creation <br/>- **PENDING_UPDATE**: Waiting for update <br/>- **PENDING_DELETE**: Waiting for deletion |
   | operating_status | LoadBalancerOperatingStatus <br/>- **ONLINE**: Online <br/>- **DRAINING**: Draining connections <br/>- **OFFLINE**: Offline <br/>- **DEGRADED**: Degraded performance <br/>- **ERROR**: Error occurred <br/>- **NO_MONITOR**: No monitoring |
-  | type | LoadBalancerType <br/>Load balancer type <br/>- **ALB**: Application Load Balancer <br/>- **NLB**: Network Load Balancer <br/>- **NLB_L4_DSR**: Network Load Balancer (L4 Direct Server Return) |
+  | type | LoadBalancerType <br/>- **ALB**: Application Load Balancer <br/>- **NLB**: Network Load Balancer <br/>- **NLB_L4_DSR**: Network Load Balancer (L4 Direct Server Return) |
   | vpc_name | string | Name of the connected VPC |
   | vpc_id | string | ID of the connected VPC |
   | created_at | string | Time when the resource was created <br/>- ISO_8601 format <br/>- Based on UTC |
@@ -40,7 +40,7 @@ without hardcoding their attributes.
 | scheme              | Scheme <br/>- **internet-facing**: Connected to the internet <br/>- **internal**: Internal only                                                                                                                                                         |
 | provisioning_status | ProvisioningStatus <br/>- **ACTIVE**: Active <br/>- **DELETED**: Deleted <br/>- **ERROR**: Error occurred <br/>- **PENDING_CREATE**: Waiting for creation <br/>- **PENDING_UPDATE**: Waiting for update <br/>- **PENDING_DELETE**: Waiting for deletion |
 | operating_status    | LoadBalancerOperatingStatus <br/>- **ONLINE**: Online <br/>- **DRAINING**: Draining connections <br/>- **OFFLINE**: Offline <br/>- **DEGRADED**: Degraded performance <br/>- **ERROR**: Error occurred <br/>- **NO_MONITOR**: No monitoring             |
-| type                | LoadBalancerType <br/>Load balancer type <br/>- **ALB**: Application Load Balancer <br/>- **NLB**: Network Load Balancer <br/>- **NLB_L4_DSR**: Network Load Balancer (L4 Direct Server Return)                                                         |
+| type                | LoadBalancerType <br/>- **ALB**: Application Load Balancer <br/>- **NLB**: Network Load Balancer <br/>- **NLB_L4_DSR**: Network Load Balancer (L4 Direct Server Return)                                                                                 |
 | vpc_name            | string                                                                                                                                                                                                                                                  | Name of the connected VPC                                                           |
 | vpc_id              | string                                                                                                                                                                                                                                                  | ID of the connected VPC                                                             |
 | created_at          | string                                                                                                                                                                                                                                                  | Time when the resource was created <br/>- ISO_8601 format <br/>- Based on UTC       |
@@ -52,62 +52,82 @@ without hardcoding their attributes.
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-# List all beyond load balancers
+# Get all Beyond Load Balancer HA Groups
 data "kakaocloud_beyond_load_balancers" "all" {
-  # No filters - get all beyond load balancers
+  # No filters
 }
 
-# List beyond load balancers with filters
+# Get Beyond Load Balancer HA Groups with filters
 data "kakaocloud_beyond_load_balancers" "filtered" {
   filter = [
     {
       name  = "id"
-      value = "your-beyond-load-balancer-id" # Replace with your beyond load balancer ID
+      value = "<your-beyond-load-balancer-id>"
     },
     {
       name  = "name"
-      value = "your-beyond-load-balancer-name" # Replace with your beyond load balancer name
+      value = "<your-beyond-load-balancer-name>"
     },
     {
       name  = "dns_name"
-      value = "your-beyond-load-balancer-dns-name" # Replace with your beyond load balancer DNS name
+      value = "<your-beyond-load-balancer-dns-name>"
     },
     {
       name  = "scheme"
-      value = "internal"
+      value = "internet-facing" # internet-facing, internal
     },
     {
       name  = "provisioning_status"
-      value = "ACTIVE"
+      value = "ACTIVE" # ACTIVE, DELETED, ERROR, PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE
     },
     {
       name  = "operating_status"
-      value = "ONLINE"
+      value = "ONLINE" # ONLINE, DRAINING, OFFLINE, DEGRADED, ERROR, NO_MONITOR
     },
     {
       name  = "type"
-      value = "ALB"
+      value = "NLB" # ALB, NLB, NLB_L4_DSR
     },
     {
       name  = "vpc_id"
-      value = "your-vpc-id-here" # Replace with your VPC ID
+      value = "<your-vpc-id>"
     },
     {
       name  = "vpc_name"
-      value = "your-vpc-name" # Replace with your VPC name
+      value = "<your-vpc-name>"
     },
     {
       name  = "created_at"
-      value = "2021-01-01T00:00:00Z" # Replace with your created at
+      value = "2024-01-01T00:00:00Z" # RFC3339 format
     },
     {
       name  = "updated_at"
-      value = "2021-01-01T00:00:00Z" # Replace with your updated at
+      value = "2024-12-31T23:59:59Z" # RFC3339 format
     }
   ]
 }
 
-# Output beyond load balancers
+# Output all Beyond Load Balancer HA Groups
+output "all_beyond_load_balancers" {
+  description = "List of all Beyond Load Balancer HA Groups"
+  value = {
+    count = length(data.kakaocloud_beyond_load_balancers.all.beyond_load_balancers)
+    ids   = data.kakaocloud_beyond_load_balancers.all.beyond_load_balancers[*].id
+    names = data.kakaocloud_beyond_load_balancers.all.beyond_load_balancers[*].name
+  }
+}
+
+# Output filtered Beyond Load Balancer HA Groups
+output "filtered_beyond_load_balancers" {
+  description = "List of filtered Beyond Load Balancer HA Groups"
+  value = {
+    count = length(data.kakaocloud_beyond_load_balancers.filtered.beyond_load_balancers)
+    ids   = data.kakaocloud_beyond_load_balancers.filtered.beyond_load_balancers[*].id
+    names = data.kakaocloud_beyond_load_balancers.filtered.beyond_load_balancers[*].name
+  }
+}
+
+# Output full resource
 output "beyond_load_balancers" {
   description = "List of beyond load balancers"
   value       = data.kakaocloud_beyond_load_balancers.all
@@ -118,23 +138,24 @@ output "beyond_load_balancers" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `beyond_load_balancers` (Attributes List) (see [below for nested schema](#nestedatt--beyond_load_balancers))
+- `beyond_load_balancers` (Attributes List) List of Beyond Load Balancer HA Groups. (
+  see [below for nested schema](#nestedatt--beyond_load_balancers))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -158,11 +179,11 @@ The following attributes are exported:
 - `name` (String) High availability group name
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID
-- `provider_name` (String) Service provider information
+- `provider_name` (String) Provider name
 - `provisioning_status` (String) Provisioning status
 - `scheme` (String) Access type
 - `type` (String) [Load balancer type](https://docs.kakaocloud.com/en/service/bns/lb/lb-overview#사용-목적에-따른-로드-밸런서-유형-제공)
-- `type_id` (String) High availability group type ID
+- `type_id` (String) ID returned by kakaocloud_load_balancer_flavors
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 - `vpc_cidr_block` (String) IPv4 CIDR block of the VPC
 - `vpc_id` (String) Unique ID of the VPC
@@ -185,3 +206,6 @@ The following attributes are exported:
 - `type` (String) Load balancer type
 - `type_id` (String) Load balancer type identifier
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
+
+
+

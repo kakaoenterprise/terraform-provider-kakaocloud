@@ -49,61 +49,49 @@ Use this data source when you need to:
 
 # List all public IPs
 data "kakaocloud_public_ips" "all" {
-  # No filters - get all public IPs
+  # No filters - retrieve all public IPs in the project
 }
 
-# List public IPs with comprehensive filters
+# List public IPs filtered by status and associated resource name
 data "kakaocloud_public_ips" "filtered" {
   filter = [
     {
-      name  = "id"
-      value = "your-public-ip-id" # Replace with your public IP ID
-    },
-    {
       name  = "status"
-      value = "ACTIVE" # ACTIVE, DOWN, ERROR
-    },
-    {
-      name  = "public_ip"
-      value = "1.2.3.4" # Replace with your public IP address
-    },
-    {
-      name  = "related_resource_id"
-      value = "your-related-resource-id" # Replace with your related resource ID
+      value = "in_use" # available, in_use, attaching
     },
     {
       name  = "related_resource_name"
-      value = "your-related-resource-name" # Replace with your related resource name
-    },
-    {
-      name  = "created_at"
-      value = "2024-01-01T00:00:00Z" # Replace with creation time (RFC3339 format)
-    },
-    {
-      name  = "updated_at"
-      value = "2024-12-31T23:59:59Z" # Replace with update time (RFC3339 format)
+      value = "<your-network-interface-name>"
     }
   ]
 }
 
-# Output all public IPs
+# Output: all public IPs
 output "all_public_ips" {
   description = "List of all public IPs"
-  value = {
-    count = length(data.kakaocloud_public_ips.all.public_ips)
-    ids   = data.kakaocloud_public_ips.all.public_ips[*].id
-    names = data.kakaocloud_public_ips.all.public_ips[*].name
-  }
+  value = [
+    for ip in data.kakaocloud_public_ips.all.public_ips : {
+      id         = ip.id
+      address    = ip.public_ip
+      private_ip = ip.private_ip
+      status     = ip.status
+    }
+  ]
 }
 
-# Output filtered public IPs
+# Output: filtered public IPs with related resource info
 output "filtered_public_ips" {
-  description = "List of filtered public IPs"
-  value = {
-    count = length(data.kakaocloud_public_ips.filtered.public_ips)
-    ids   = data.kakaocloud_public_ips.filtered.public_ips[*].id
-    names = data.kakaocloud_public_ips.filtered.public_ips[*].name
-  }
+  description = "Filtered public IPs and related resource details"
+  value = [
+    for ip in data.kakaocloud_public_ips.filtered.public_ips : {
+      id             = ip.id
+      address        = ip.public_ip
+      related_type   = ip.related_resource.device_type
+      related_id     = ip.related_resource.device_id
+      related_vpc    = ip.related_resource.vpc_name
+      related_subnet = ip.related_resource.subnet_name
+    }
+  ]
 }
 ```
 
@@ -111,23 +99,24 @@ output "filtered_public_ips" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `public_ips` (Attributes List) (see [below for nested schema](#nestedatt--public_ips))
+- `public_ips` (Attributes List) List of public IP resources retrieved by the data source. (
+  see [below for nested schema](#nestedatt--public_ips))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -156,10 +145,10 @@ The following attributes are exported:
 
 ### Nested Schema for `public_ips.related_resource`
 
-- `device_id` (String) Device ID
+- `device_id` (String) The resource ID
 - `device_owner` (String) Device owner
-- `device_type` (String) The type of device associated with the public IP (instance, load-balancer).
-- `id` (String) ID of the associated resource
+- `device_type` (String) `instance` or `load-balancer`
+- `id` (String) When `device_type` is `instance`, this field contains the network interface ID
 - `name` (String) Resource name
 - `status` (String) Resource status
 - `subnet_cidr` (String) IPv4 CIDR block of the subnet
@@ -168,3 +157,6 @@ The following attributes are exported:
 - `type` (String) Resource type
 - `vpc_id` (String) Unique ID of the VPC
 - `vpc_name` (String) VPC name
+
+
+

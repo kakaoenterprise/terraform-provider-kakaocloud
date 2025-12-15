@@ -53,50 +53,68 @@ This data source is useful when you need to:
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-# List all load balancer L7 policies for a specific load balancer and listener
+# List all L7 policies for a given load balancer and listener
 data "kakaocloud_load_balancer_l7_policies" "all" {
-  load_balancer_id = "your-load-balancer-id-here" # Replace with your load balancer ID
-  listener_id      = "your-listener-id-here"      # Replace with your listener ID
+  load_balancer_id = "<your-load-balancer-id>"
+  listener_id      = "<your-listener-id>"
 }
 
-# List L7 policies with filters
+# List filtered L7 policies by attributes
 data "kakaocloud_load_balancer_l7_policies" "filtered" {
-  load_balancer_id = "your-load-balancer-id-here" # Replace with your load balancer ID
-  listener_id      = "your-listener-id-here"      # Replace with your listener ID
+  load_balancer_id = "<your-load-balancer-id>"
+  listener_id      = "<your-listener-id>"
+
   filter = [
     {
       name  = "position"
-      value = "1"
+      value = "1" # Policy priority. Smaller number = higher priority (must be > 0)
     },
     {
       name  = "action"
-      value = "REDIRECT_TO_URL"
+      value = "REDIRECT_TO_URL" # REDIRECT_PREFIX, REDIRECT_TO_POOL, REDIRECT_TO_URL
     },
     {
       name  = "provisioning_status"
-      value = "ACTIVE"
+      value = "ACTIVE" # ACTIVE, DELETED, ERROR, PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE
     },
     {
       name  = "operating_status"
-      value = "ONLINE"
+      value = "ONLINE" # ONLINE, DRAINING, OFFLINE, DEGRADED, ERROR, NO_MONITOR
     },
     {
       name  = "name"
-      value = "your-l7-policy-name-here" # Replace with your L7 policy name
-    },
+      value = "<your-l7-policy-name>"
+    }
   ]
 }
 
-# Output all L7 policies
+# Output all L7 policies (basic info)
 output "all_l7_policies" {
-  description = "List of all load balancer L7 policies"
-  value       = data.kakaocloud_load_balancer_l7_policies.all
+  description = "List of all L7 policies for the specified load balancer and listener"
+  value = [
+    for policy in data.kakaocloud_load_balancer_l7_policies.all.l7_policies : {
+      id       = policy.id
+      name     = policy.name
+      position = policy.position
+      action   = policy.action
+      status   = policy.operating_status
+    }
+  ]
 }
 
-# Output filtered L7 policies
+# Output filtered L7 policies (with redirect URL if applicable)
 output "filtered_l7_policies" {
-  description = "Filtered load balancer L7 policies"
-  value       = data.kakaocloud_load_balancer_l7_policies.filtered
+  description = "Filtered L7 policies matching given criteria"
+  value = [
+    for policy in data.kakaocloud_load_balancer_l7_policies.filtered.l7_policies : {
+      id            = policy.id
+      name          = policy.name
+      action        = policy.action
+      redirect_url  = policy.redirect_url
+      redirect_code = policy.redirect_http_code
+      rules_count   = length(policy.rules) # Derived attribute: number of rules
+    }
+  ]
 }
 ```
 
@@ -107,23 +125,24 @@ output "filtered_l7_policies" {
 - `listener_id` (Required, String) ID of the listener
 - `load_balancer_id` (Required, String) ID of the load balancer
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `l7_policies` (Attributes List) (see [below for nested schema](#nestedatt--l7_policies))
+- `l7_policies` (Attributes List) List of L7 policies associated with the specified load balancer and listener (
+  see [below for nested schema](#nestedatt--l7_policies))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -137,12 +156,9 @@ The following attributes are exported:
 
 ### Nested Schema for `l7_policies`
 
-- `id` (Required, String) ID of the created policy
-
-
 - `action` (String) Policy action type
 - `description` (String) Description of the policy
-- `listener_id` (String) ID of the listener the policy applies to
+- `id` (String) L7 policy ID
 - `name` (String) Policy name
 - `operating_status` (String) Operating status
 - `position` (Number) Policy priority (smaller numbers indicate higher priority)
@@ -168,3 +184,6 @@ The following attributes are exported:
 - `provisioning_status` (String) Provisioning status
 - `type` (String) Target type of the rule
 - `value` (String) Value to compare
+
+
+

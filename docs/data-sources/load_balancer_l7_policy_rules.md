@@ -29,26 +29,19 @@ Use this data source when you need to:
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-# List all L7 policy rules for a specific policy
+# List all L7 policy rules for a specific L7 policy
 data "kakaocloud_load_balancer_l7_policy_rules" "all" {
-  id = "your-l7-policy-id-here" # Replace with your L7 policy ID
+  id = "<your-l7-policy-id>"
 }
 
-# List L7 policy rules with filters
-data "kakaocloud_load_balancer_l7_policy_rules" "filtered" {
-  id = "your-l7-policy-id-here" # Replace with your L7 policy ID
-}
-
-# Output the L7 policy rules list
+# Output all L7 policy rules
 output "all_l7_policy_rules" {
-  description = "List of L7 policy rules"
-  value       = data.kakaocloud_load_balancer_l7_policy_rules.all
-}
-
-# Output the filtered L7 policy rules list
-output "filtered_l7_policy_rules" {
-  description = "Filtered list of L7 policy rules"
-  value       = data.kakaocloud_load_balancer_l7_policy_rules.filtered
+  description = "List of all L7 policy rules for the specified L7 policy"
+  value = {
+    count = length(data.kakaocloud_load_balancer_l7_policy_rules.all.l7_rules)
+    ids   = data.kakaocloud_load_balancer_l7_policy_rules.all.l7_rules[*].id
+    types = data.kakaocloud_load_balancer_l7_policy_rules.all.l7_rules[*].type
+  }
 }
 ```
 
@@ -58,7 +51,7 @@ output "filtered_l7_policy_rules" {
 
 - `id` (Required, String) ID of the L7 policy to list rules for
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -88,3 +81,5 @@ The following attributes are exported:
 - `provisioning_status` (String) Provisioning status
 - `type` (String) Target type to check the rule against
 - `value` (String) Value to compare
+
+

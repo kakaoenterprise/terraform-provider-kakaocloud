@@ -17,89 +17,15 @@ This resource enables advanced traffic routing and fine-grained control over req
 ## Example Usage
 
 ```terraform
-# Copyright (c) HashiCorp, Inc.
-# SPDX-License-Identifier: MPL-2.0
+# kakaocloud_load_balancer_l7_policy_rule Terraform Resource Example
 
-# Example: Create an L7 policy rule for path-based routing
-resource "kakaocloud_load_balancer_l7_policy_rule" "path_rule" {
-  l7_policy_id = "2415269a-7142-455a-a7c8-9082dd146c57" # Replace with your L7 policy ID
+# Basic Usage (kakaocloud_load_balancer_l7_policy_rule)
+resource "kakaocloud_load_balancer_l7_policy_rule" "example" {
+  l7_policy_id = kakaocloud_load_balancer_l7_policy.example.id
   type         = "PATH"
   compare_type = "STARTS_WITH"
   value        = "/api/"
   is_inverted  = false
-
-  # Optional: Configure timeouts
-  timeouts {
-    create = "5m"
-    update = "5m"
-    delete = "5m"
-  }
-}
-
-# Example: Create an L7 policy rule for header-based routing
-resource "kakaocloud_load_balancer_l7_policy_rule" "header_rule" {
-  l7_policy_id = "2415269a-7142-455a-a7c8-9082dd146c57" # Replace with your L7 policy ID
-  type         = "HEADER"
-  compare_type = "EQUAL_TO"
-  key          = "User-Agent"
-  value        = "MobileApp/1.0"
-  is_inverted  = false
-
-  # Optional: Configure timeouts
-  timeouts {
-    create = "5m"
-    update = "5m"
-    delete = "5m"
-  }
-}
-
-# Example: Create an L7 policy rule for host-based routing
-resource "kakaocloud_load_balancer_l7_policy_rule" "host_rule" {
-  l7_policy_id = "2415269a-7142-455a-a7c8-9082dd146c57" # Replace with your L7 policy ID
-  type         = "HOST_NAME"
-  compare_type = "EQUAL_TO"
-  value        = "api.example.com"
-  is_inverted  = false
-
-  # Optional: Configure timeouts
-  timeouts {
-    create = "5m"
-    update = "5m"
-    delete = "5m"
-  }
-}
-
-# Example: Create an L7 policy rule for cookie-based routing
-resource "kakaocloud_load_balancer_l7_policy_rule" "cookie_rule" {
-  l7_policy_id = "2415269a-7142-455a-a7c8-9082dd146c57" # Replace with your L7 policy ID
-  type         = "COOKIE"
-  compare_type = "CONTAINS"
-  key          = "session_type"
-  value        = "premium"
-  is_inverted  = false
-
-  # Optional: Configure timeouts
-  timeouts {
-    create = "5m"
-    update = "5m"
-    delete = "5m"
-  }
-}
-
-# Example: Create an L7 policy rule for file type-based routing
-resource "kakaocloud_load_balancer_l7_policy_rule" "file_type_rule" {
-  l7_policy_id = "2415269a-7142-455a-a7c8-9082dd146c57" # Replace with your L7 policy ID
-  type         = "FILE_TYPE"
-  compare_type = "EQUAL_TO"
-  value        = "jpg"
-  is_inverted  = false
-
-  # Optional: Configure timeouts
-  timeouts {
-    create = "5m"
-    update = "5m"
-    delete = "5m"
-  }
 }
 ```
 
@@ -114,11 +40,9 @@ resource "kakaocloud_load_balancer_l7_policy_rule" "file_type_rule" {
 
 - `is_inverted` (Optional, Boolean) Whether to invert the comparison result of the rule
 - `key` (Optional, String) Comparison key
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
-
-The following attributes are exported:
 
 - `id` (String) ID of the created L7 rule
 - `operating_status` (String) Operating status
@@ -151,25 +75,6 @@ The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/c
 example:
 
 ```shell
-#!/bin/bash
-
-# Copyright (c) HashiCorp, Inc.
-# SPDX-License-Identifier: MPL-2.0
-
-# Example import script for kakaocloud_load_balancer_l7_policy_rule
-# Usage: ./import.sh <l7_policy_id>,<rule_id>
-
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <l7_policy_id>,<rule_id>"
-    echo "Example: $0 2415269a-7142-455a-a7c8-9082dd146c57,8a7a1ca5-c687-4a9a-999b-a169ee248ade"
-    exit 1
-fi
-
-IMPORT_ID=$1
-
-# Import the L7 policy rule
-terraform import kakaocloud_load_balancer_l7_policy_rule.path_rule "$IMPORT_ID"
-
-echo "Import completed for L7 policy rule with ID: $IMPORT_ID"
-echo "Note: You may need to update the resource configuration to match the imported resource."
+$ terraform import kakaocloud_load_balancer_l7_policy_rule.path_rule <l7_policy_id>/<rule_id>
 ```
+

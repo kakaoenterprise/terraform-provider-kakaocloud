@@ -29,12 +29,13 @@ Use this data source when you need to:
 
 # Get a specific load balancer L7 policy by ID
 data "kakaocloud_load_balancer_l7_policy" "example" {
-  id = "your-l7-policy-id-here" # Replace with your L7 policy ID
+  id = "<your-l7-policy-id>"
 }
 
-# Output the L7 policy
-output "l7_policy" {
-  value = data.kakaocloud_load_balancer_l7_policy.example
+# Output the L7 policy information
+output "l7_policy_info" {
+  description = "Details of the specified L7 policy"
+  value       = data.kakaocloud_load_balancer_l7_policy.example
 }
 ```
 
@@ -42,9 +43,9 @@ output "l7_policy" {
 
 ## Argument Reference
 
-- `id` (Required, String) ID of the created policy
+- `id` (Required, String) L7 policy ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -52,7 +53,6 @@ The following attributes are exported:
 
 - `action` (String) Policy action type
 - `description` (String) Description of the policy
-- `listener_id` (String) ID of the listener the policy applies to
 - `name` (String) Policy name
 - `operating_status` (String) Operating status
 - `position` (Number) Policy priority (smaller numbers indicate higher priority)
@@ -86,3 +86,5 @@ The following attributes are exported:
 - `provisioning_status` (String) Provisioning status
 - `type` (String) Target type of the rule
 - `value` (String) Value to compare
+
+

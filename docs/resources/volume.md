@@ -16,23 +16,20 @@ information, enabling reliable storage management for instances.
 ## Example Usage
 
 ```terraform
-# Manage example volume.
+# kakaocloud_volume Terraform Resource Example
+
+# Basic usage (kakaocloud_volume)
 resource "kakaocloud_volume" "example" {
-  name              = "example"
-  description       = "terraform test"
+  name              = "example-volume"
   availability_zone = "kr-central-2-a"
-  flavor_id         = "xxxxxx-yyyy-zzzz-81e8-836ebe461ba6"
-  image_id          = "xxxxxx-yyyy-zzzz-81e8-836ebe461ba6"
-  key_name          = "example-test"
-  volumes = [
-    { size = 30 },
-  ]
-  subnets = [
-    {
-      id = "xxxxxx-yyyy-zzzz-81e8-836ebe461ba6"
-    }
-  ]
-  status = "active"
+  size              = 10
+}
+
+# Restore volume from snapshot (kakaocloud_volume)
+resource "kakaocloud_volume" "example_restore" {
+  name              = "example-volume-restore"
+  availability_zone = "kr-central-2-a"
+  volume_snapshot_id = kakaocloud_volume_snapshot.example.id
 }
 ```
 
@@ -42,19 +39,31 @@ resource "kakaocloud_volume" "example" {
 
 - `availability_zone` (Required, String) Availability zone where the volume is located
 - `name` (Required, String) Name of the volume
-
-- `description` (Optional, String) Description of the volume
-- `encryption_secret_id` (Optional, String)
-- `image_id` (Optional, String) Unique ID of the image
-- `size` (Optional, Number) Volume size (in GB)<br/>- Linux: 1 ~ 16,384 GB <br/>- Windows: 1 ~ 2,048 GB
-- `source_volume_id` (Optional, String) Source volume ID
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
-- `volume_snapshot_id` (Optional, String) Unique ID of the snapshot
+- `description` (Optional, String) Description of the volume <br/>
+    - Ignored if `volume_snapshot_id` is specified.
+- `encryption_secret_id` (Optional, String) Encryption key ID used to encrypt the volume
+- `image_id` (Optional, String) Unique ID of the image <br/>
+    - See ⚠️ Constraints section below for mutual exclusivity.
+- `size` (Optional, Number) Volume size (in GB) <br/>
+    - Required if `volume_snapshot_id` is not specified <br/>
+    - Linux: 1–16,384 GB <br/>
+    - Windows: 1–2,048 GB
+- `source_volume_id` (Optional, String) ID of an existing volume to clone from <br/>
+    - Cannot be specified together with `volume_snapshot_id` or `image_id`.
+- `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
+- `volume_snapshot_id` (Optional, String) ID of the snapshot to restore from <br/>
+    - See ⚠️ Constraints section below for mutual exclusivity.
 - `volume_type_id` (Optional, String) Volume type ID
 
-## Attribute Reference
+---
 
-The following attributes are exported:
+### ⚠️ Constraints
+
+- Only **one of** `volume_snapshot_id`, `image_id`, or `source_volume_id` can be specified.
+- When using `volume_snapshot_id`:
+    - `image_id`, `source_volume_id`, and `description` **must not** be set.
+
+## Attribute Reference
 
 - `attach_status` (String) Attach status of the volume
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
@@ -118,6 +127,6 @@ The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/c
 example:
 
 ```shell
-# Volume can be imported by specifying the uuid.
-terraform import kakaocloud_volume.example xxxxxx-yyyy-zzzz-81e8-836ebe461ba6
+$ terraform import kakaocloud_volume.example <resource_id>
 ```
+

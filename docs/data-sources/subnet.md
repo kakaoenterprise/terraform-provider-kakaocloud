@@ -24,13 +24,13 @@ specifying all of its attributes.
 
 # Get a specific subnet by ID
 data "kakaocloud_subnet" "example" {
-  id = "your-subnet-id-here" # Replace with your subnet ID
+  id = "<your-subnet-id>"
 }
 
 # Output the subnet information
 output "subnet_example" {
   description = "Information about the example subnet"
-  value       = kakaocloud_subnet.example
+  value       = data.kakaocloud_subnet.example
 }
 ```
 
@@ -40,7 +40,7 @@ output "subnet_example" {
 
 - `id` (Required, String) Subnet ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
@@ -68,3 +68,5 @@ The following attributes are exported:
 - `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
   consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
   minutes), "h" (hours).
+
+

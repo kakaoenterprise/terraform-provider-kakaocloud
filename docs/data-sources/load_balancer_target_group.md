@@ -32,12 +32,13 @@ hardcoding their details.
 
 # Get a specific load balancer target group by ID
 data "kakaocloud_load_balancer_target_group" "example" {
-  id = "your-target-group-id-here" # Replace with your target group ID
+  id = "<your-target-group-id>"
 }
 
-# Output the target group
-output "target_group" {
-  value = data.kakaocloud_load_balancer_target_group.example
+# Output target group details
+output "load_balancer_target_group_info" {
+  description = "Details of the specified load balancer target group"
+  value       = data.kakaocloud_load_balancer_target_group.example
 }
 ```
 
@@ -47,7 +48,7 @@ output "target_group" {
 
 - `id` (Required, String) Target group ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -116,7 +117,9 @@ The following attributes are exported:
 
 ### Nested Schema for `session_persistence`
 
-- `cookie_name` (String)
-- `persistence_granularity` (String)
-- `persistence_timeout` (Number)
-- `type` (String)
+- `cookie_name` (String) Name of the session cookie used when persistence is enabled.
+- `persistence_granularity` (String) Level at which session persistence is applied (e.g., per source IP).
+- `persistence_timeout` (Number) Duration (in seconds) for which the session remains persistent.
+- `type` (String) Session persistence method (e.g., SOURCE_IP, APP_COOKIE).
+
+

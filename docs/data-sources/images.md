@@ -60,53 +60,41 @@ Use this data source when you need to:
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-# List all images
+# List all available images in KakaoCloud
 data "kakaocloud_images" "all" {
   # No filters - get all images
 }
 
-# List images with comprehensive filters
+# List images with filters
 data "kakaocloud_images" "filtered" {
   filter = [
     {
-      name  = "name"
-      value = "your-image-name" # Replace with your image name
-    },
-    {
       name  = "id"
-      value = "your-image-id" # Replace with your image ID
+      value = "<your-image-id>"
     },
     {
-      name  = "image_type"
-      value = "snapshot" # snapshot, backup, custom, etc.
+      name  = "name"
+      value = "<your-image-name>"
     },
     {
       name  = "instance_type"
-      value = "COMPUTE" # COMPUTE, MEMORY, STORAGE, GPU
+      value = "vm" # vm, bm
     },
     {
-      name  = "size"
-      value = "1073741824" # Replace with image size in bytes
-    },
-    {
-      name  = "min_disk"
-      value = "20" # Replace with minimum disk size in GB
-    },
-    {
-      name  = "disk_format"
-      value = "qcow2" # Replace with disk format (qcow2, raw, etc.)
-    },
-    {
-      name  = "status"
-      value = "active" # Replace with image status
-    },
-    {
-      name  = "visibility"
-      value = "public" # public, private, shared
+      name  = "image_type"
+      value = "basic" # basic, my
     },
     {
       name  = "os_type"
       value = "LINUX" # LINUX, WINDOWS
+    },
+    {
+      name  = "status"
+      value = "active" # active, queued, saving, deleted, etc.
+    },
+    {
+      name  = "visibility"
+      value = "public" # public, private, shared
     },
     {
       name  = "image_member_status"
@@ -114,18 +102,18 @@ data "kakaocloud_images" "filtered" {
     },
     {
       name  = "created_at"
-      value = "2024-01-01T00:00:00Z" # Replace with creation time (RFC3339 format)
+      value = "2024-01-01T00:00:00Z" # RFC3339 format
     },
     {
       name  = "updated_at"
-      value = "2024-12-31T23:59:59Z" # Replace with update time (RFC3339 format)
+      value = "2024-12-31T23:59:59Z" # RFC3339 format
     }
   ]
 }
 
 # Output all images
 output "all_images" {
-  description = "List of all images"
+  description = "List of all available images"
   value = {
     count = length(data.kakaocloud_images.all.images)
     ids   = data.kakaocloud_images.all.images[*].id
@@ -148,23 +136,24 @@ output "filtered_images" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `images` (Attributes List) (see [below for nested schema](#nestedatt--images))
+- `images` (Attributes List) List of images that match the applied filters. (
+  see [below for nested schema](#nestedatt--images))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -210,3 +199,6 @@ The following attributes are exported:
 - `distro` (String) Name of the distribution
 - `is_hidden` (Boolean) Whether the image is hidden
 - `type` (String) Operating system type
+
+
+

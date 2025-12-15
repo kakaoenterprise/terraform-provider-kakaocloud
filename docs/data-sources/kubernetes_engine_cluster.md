@@ -30,7 +30,7 @@ Use this data source when you need to:
 
 # Get a specific Kubernetes cluster by name
 data "kakaocloud_kubernetes_engine_cluster" "example" {
-  name = "your-cluster-name-here" # Replace with your cluster name
+  name = "<your-cluster-name>"
 }
 
 # Output the cluster information
@@ -44,9 +44,9 @@ output "cluster_example" {
 
 ## Argument Reference
 
-- `name` (Required, String) Kubernetes Engine Cluster Name
+- `name` (Required, String) Cluster name
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -131,3 +131,6 @@ The following attributes are exported:
 - `availability_zone` (String) Availability zone of the subnet
 - `cidr_block` (String) IPv4 CIDR block of the subnet
 - `id` (String) Unique ID of the subnet
+
+
+

@@ -53,19 +53,11 @@ data "kakaocloud_load_balancer_secrets" "filtered" {
   filter = [
     {
       name  = "name"
-      value = "your-secret-name" # Replace with your secret name
-    },
-    {
-      name  = "created_at"
-      value = "2024-01-01T00:00:00Z" # Replace with your start date
-    },
-    {
-      name  = "updated_at"
-      value = "2024-12-31T23:59:59Z" # Replace with your end date
+      value = "<your-secret-name>"
     },
     {
       name  = "expiration"
-      value = "2024-12-31T23:59:59Z" # Replace with your expiration date
+      value = "2024-12-31T23:59:59Z"
     }
   ]
 }
@@ -73,13 +65,21 @@ data "kakaocloud_load_balancer_secrets" "filtered" {
 # Output all load balancer secrets
 output "all_load_balancer_secrets" {
   description = "List of all available load balancer secrets"
-  value       = data.kakaocloud_load_balancer_secrets.all
+  value = {
+    count  = length(data.kakaocloud_load_balancer_secrets.all.secrets)
+    names  = data.kakaocloud_load_balancer_secrets.all.secrets[*].name
+    status = data.kakaocloud_load_balancer_secrets.all.secrets[*].status
+  }
 }
 
 # Output filtered load balancer secrets
 output "filtered_load_balancer_secrets" {
   description = "List of filtered load balancer secrets"
-  value       = data.kakaocloud_load_balancer_secrets.filtered
+  value = {
+    count  = length(data.kakaocloud_load_balancer_secrets.filtered.secrets)
+    names  = data.kakaocloud_load_balancer_secrets.filtered.secrets[*].name
+    status = data.kakaocloud_load_balancer_secrets.filtered.secrets[*].status
+  }
 }
 ```
 
@@ -87,23 +87,24 @@ output "filtered_load_balancer_secrets" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `secrets` (Attributes List) (see [below for nested schema](#nestedatt--secrets))
+- `secrets` (Attributes List) List of SSL/TLS secrets that match the specified filters (
+  see [below for nested schema](#nestedatt--secrets))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -134,3 +135,6 @@ The following attributes are exported:
 
 - `default` (String) Default MIME type of the certificate <br/> - Example: `application/x-pem-file`,
   `application/octet-stream`
+
+
+

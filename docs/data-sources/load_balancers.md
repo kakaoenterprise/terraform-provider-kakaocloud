@@ -64,79 +64,61 @@ Use this data source when you need to:
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-# List all load balancers
-data "kakaocloud_load_balancers" "all" {
-  # No filters - get all load balancers
-}
+# Retrieve all load balancers
+data "kakaocloud_load_balancers" "all" {}
 
-# List load balancers with filters
+# Retrieve load balancers filtered by VPC ID and status
 data "kakaocloud_load_balancers" "filtered" {
   filter = [
     {
-      name  = "id"
-      value = "your-load-balancer-id-here" # Replace with your load balancer ID
+      name  = "vpc_id"
+      value = "<your-vpc-id>"
     },
     {
-      name  = "name"
-      value = "your-load-balancer-name" # Replace with your load balancer name
-    },
-    {
-      name  = "private_vip"
-      value = "your-private-vip-here" # Replace with your private VIP
+      name  = "type"
+      value = "ALB" # ALB, NLB, NLB_L4_DSR
     },
     {
       name  = "provisioning_status"
-      value = "ACTIVE"
+      value = "ACTIVE" # ACTIVE, DELETED, ERROR, PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE
     },
     {
       name  = "operating_status"
-      value = "ONLINE"
-    },
-    {
-      name  = "subnet_id"
-      value = "your-subnet-id-here" # Replace with your subnet ID
-    },
-    {
-      name  = "subnet_cidr_block"
-      value = "your-subnet-cidr-block-here" # Replace with your subnet CIDR block
-    },
-    {
-      name  = "vpc_id"
-      value = "your-vpc-id-here" # Replace with your VPC ID
-    },
-    {
-      name  = "vpc_name"
-      value = "your-vpc-name" # Replace with your VPC name
+      value = "ONLINE" # ONLINE, DRAINING, OFFLINE, DEGRADED, ERROR, NO_MONITOR
     },
     {
       name  = "availability_zone"
-      value = "your-availability-zone-here" # Replace with your availability zone
-    },
-    {
-      name  = "beyond_load_balancer_name"
-      value = "your-beyond-load-balancer-name" # Replace with your beyond load balancer name
-    },
-    {
-      name  = "created_at"
-      value = "2021-01-01T00:00:00Z" # Replace with your created at
-    },
-    {
-      name  = "updated_at"
-      value = "2021-01-01T00:00:00Z" # Replace with your updated at
+      value = "kr-central-2-a" # kr-central-2-a, kr-central-2-b, kr-central-2-c
     }
   ]
 }
 
-# Output all load balancers
+# Output: All load balancers
 output "all_load_balancers" {
   description = "List of all load balancers"
-  value       = data.kakaocloud_load_balancers.all
+  value = [
+    for lb in data.kakaocloud_load_balancers.all.load_balancers : {
+      id         = lb.id
+      name       = lb.name
+      type       = lb.type
+      public_vip = lb.public_vip
+    }
+  ]
 }
 
-# Output filtered load balancers
+# Output: Filtered load balancers with listener and target group count
 output "filtered_load_balancers" {
-  description = "List of filtered load balancers"
-  value       = data.kakaocloud_load_balancers.filtered
+  description = "Filtered load balancers with detailed counts"
+  value = [
+    for lb in data.kakaocloud_load_balancers.filtered.load_balancers : {
+      id               = lb.id
+      name             = lb.name
+      listeners        = lb.listener_count
+      target_groups    = lb.target_group_count
+      provisioning     = lb.provisioning_status
+      operating_status = lb.operating_status
+    }
+  ]
 }
 ```
 
@@ -144,21 +126,22 @@ output "filtered_load_balancers" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `load_balancers` (Attributes List) (see [below for nested schema](#nestedatt--load_balancers))
+- `load_balancers` (Attributes List) List of load balancers (see [below for nested schema](#nestedatt--load_balancers))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
-- `value` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
+- `value` (Required, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -179,7 +162,7 @@ The following attributes are exported:
 - `beyond_load_balancer_name` (String) High availability group name
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `description` (String) Description of the load balancer
-- `id` (String)
+- `id` (String) ID of the created load balancer
 - `listener_count` (Number) Number of associated listeners
 - `listener_ids` (List of String) List of listener IDs
 - `name` (String) Load balancer name
@@ -196,3 +179,5 @@ The following attributes are exported:
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 - `vpc_id` (String) Associated VPC ID
 - `vpc_name` (String) Associated VPC name
+
+

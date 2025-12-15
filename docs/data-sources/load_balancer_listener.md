@@ -29,12 +29,13 @@ Use this data source when you need to:
 
 # Get a specific load balancer listener by ID
 data "kakaocloud_load_balancer_listener" "example" {
-  id = "your-listener-id-here" # Replace with your listener ID
+  id = "<your-listener-id>"
 }
 
-#
-output "listener" {
-  value = data.kakaocloud_load_balancer_listener.example
+# Output the listener information
+output "load_balancer_listener_info" {
+  description = "Details of the specified load balancer listener"
+  value       = data.kakaocloud_load_balancer_listener.example
 }
 ```
 
@@ -44,7 +45,7 @@ output "listener" {
 
 - `id` (Required, String) Listener ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -137,3 +138,5 @@ The following attributes are exported:
 - `name` (String) Certificate name
 - `secret_type` (String) Certificate type
 - `status` (String) Certificate status
+
+

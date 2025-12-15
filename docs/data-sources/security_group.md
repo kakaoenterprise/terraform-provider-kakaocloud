@@ -28,13 +28,19 @@ Use this data source when you need to:
 
 # Get a specific security group by ID
 data "kakaocloud_security_group" "example" {
-  id = "your-security-group-id-here" # Replace with your security group ID
+  id = "<your-security-group-id>"
 }
 
-# Output the security group information
-output "security_group_example" {
-  description = "Information about the example security group"
-  value       = kakaocloud_security_group.example
+# Output the retrieved security group details
+output "security_group_details" {
+  description = "Details of the specified security group"
+  value = {
+    id          = data.kakaocloud_security_group.example.id
+    name        = data.kakaocloud_security_group.example.name
+    description = data.kakaocloud_security_group.example.description
+    is_stateful = data.kakaocloud_security_group.example.is_stateful
+    rules       = data.kakaocloud_security_group.example.rules
+  }
 }
 ```
 
@@ -44,7 +50,7 @@ output "security_group_example" {
 
 - `id` (Required, String) Security Group ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -56,7 +62,8 @@ The following attributes are exported:
 - `name` (String) Name of the security group
 - `project_id` (String) ID of the project the security group belongs to
 - `project_name` (String) Name of the project the security group belongs to
-- `rules` (Attributes Set) (see [below for nested schema](#nestedatt--rules))
+- `rules` (Attributes Set) List of security group rules, including direction, protocol, port ranges, and remote
+  sources. (see [below for nested schema](#nestedatt--rules))
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 
 <a id="nestedatt--timeouts"></a>
@@ -75,11 +82,15 @@ The following attributes are exported:
 - `description` (String) Description of the security group rule
 - `direction` (String) Traffic direction <br/> - `ingress`: inbound (receive) <br/> - `egress`: outbound (send)
 - `id` (String) ID of the security group rule
-- `port_range_max` (String) End value of the allowed port range
-- `port_range_min` (String) Start value of the allowed port range
-- `protocol` (String) Allowed protocol
+- `port_range_max` (Number) End value of the allowed port range
+- `port_range_min` (Number) Start value of the allowed port range
+- `protocol` (String) Allowed network protocol <br/> - `TCP`: Transmission Control Protocol <br/> - `UDP`: User Datagram
+  Protocol <br/> - `ICMP`: Internet Control Message Protocol <br/> - `IPIP`: IP-in-IP tunneling <br/> - `ALL`: All
+  protocols
 - `remote_group_id` (String) ID of the source or destination security group for allowed traffic <br/> - Specify when the
   source/destination is another security group
 - `remote_group_name` (String) Name of the source or destination security group for allowed traffic
 - `remote_ip_prefix` (String) Source or destination IP range in CIDR format
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
+
+

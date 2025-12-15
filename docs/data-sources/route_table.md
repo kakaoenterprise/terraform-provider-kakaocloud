@@ -27,13 +27,19 @@ Use this data source when you need to:
 
 # Get a specific route table by ID
 data "kakaocloud_route_table" "example" {
-  id = "your-route-table-id-here" # Replace with your route table ID
+  id = "<your-route-table-id>"
 }
 
-# Output the route table information
-output "route_table_example" {
-  description = "Information about the example route table"
-  value       = kakaocloud_route_table.example
+# Output route table details
+output "route_table_details" {
+  description = "Details of the specified route table"
+  value = {
+    id      = data.kakaocloud_route_table.example.id
+    name    = data.kakaocloud_route_table.example.name
+    vpc_id  = data.kakaocloud_route_table.example.vpc_id
+    is_main = data.kakaocloud_route_table.example.is_main
+    routes  = data.kakaocloud_route_table.example.routes
+  }
 }
 ```
 
@@ -43,7 +49,7 @@ output "route_table_example" {
 
 - `id` (Required, String) Route Table ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -97,3 +103,5 @@ The following attributes are exported:
 - `target_id` (String) Target resource ID
 - `target_name` (String) Target resource name
 - `target_type` (String) Target resource type
+
+

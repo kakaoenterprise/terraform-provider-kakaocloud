@@ -54,48 +54,48 @@ data "kakaocloud_volume_snapshots" "all" {
   # No filters - get all volume snapshots
 }
 
-# List volume snapshots with comprehensive filters
+# List volume snapshots with filters
 data "kakaocloud_volume_snapshots" "filtered" {
   filter = [
     {
       name  = "name"
-      value = "your-snapshot-name" # Replace with your snapshot name
+      value = "<your-snapshot-name>"
     },
     {
       name  = "id"
-      value = "your-snapshot-id" # Replace with your snapshot ID
+      value = "<your-snapshot-id>"
     },
     {
       name  = "volume_id"
-      value = "your-volume-id" # Replace with your volume ID
+      value = "<your-volume-id>"
     },
     {
       name  = "status"
-      value = "available" # available, creating, deleting, error, error_deleting, restoring
+      value = "AVAILABLE" # CREATING, AVAILABLE, RESTORING, DELETING, ERROR
     },
     {
       name  = "is_incremental"
-      value = "false" # true or false
+      value = "false"
     },
     {
       name  = "is_dependent_snapshot"
-      value = "false" # true or false
+      value = "false"
     },
     {
       name  = "schedule_id"
-      value = "your-schedule-id" # Replace with your schedule ID
+      value = "<your-schedule-id>"
     },
     {
       name  = "parent_id"
-      value = "your-parent-id" # Replace with your parent ID
+      value = "<your-parent-id>"
     },
     {
       name  = "created_at"
-      value = "2024-01-01T00:00:00Z" # Replace with creation time (RFC3339 format)
+      value = "2024-01-01T00:00:00Z"
     },
     {
       name  = "updated_at"
-      value = "2024-12-31T23:59:59Z" # Replace with update time (RFC3339 format)
+      value = "2024-12-31T23:59:59Z"
     }
   ]
 }
@@ -125,23 +125,24 @@ output "filtered_volume_snapshots" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `volume_snapshots` (Attributes List) (see [below for nested schema](#nestedatt--volume_snapshots))
+- `volume_snapshots` (Attributes List) List of snapshot information. (
+  see [below for nested schema](#nestedatt--volume_snapshots))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -172,3 +173,5 @@ The following attributes are exported:
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 - `user_id` (String) ID of the user who created the snapshot
 - `volume_id` (String) Unique ID of the volume
+
+

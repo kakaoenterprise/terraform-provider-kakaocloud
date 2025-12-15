@@ -62,40 +62,40 @@ data "kakaocloud_route_tables" "all" {
   # No filters - get all route tables
 }
 
-# List route tables with comprehensive filters
+# List route tables with filters
 data "kakaocloud_route_tables" "filtered" {
   filter = [
     {
       name  = "id"
-      value = "your-route-table-id" # Replace with your route table ID
+      value = "<your-route-table-id>"
     },
     {
       name  = "name"
-      value = "your-route-table-name" # Replace with your route table name
+      value = "<your-route-table-name>"
     },
     {
       name  = "vpc_id"
-      value = "your-vpc-id" # Replace with your VPC ID
+      value = "<your-vpc-id>"
     },
     {
       name  = "vpc_name"
-      value = "your-vpc-name" # Replace with your VPC name
+      value = "<your-vpc-name>"
     },
     {
       name  = "provisioning_status"
-      value = "ACTIVE" # ACTIVE, BUILDING, DELETED, ERROR, PENDING_CREATE, PENDING_DELETE, PENDING_UPDATE
+      value = "ACTIVE" # ACTIVE, DELETED, ERROR, PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE
     },
     {
       name  = "vpc_provisioning_status"
-      value = "ACTIVE" # ACTIVE, BUILDING, DELETED, ERROR, PENDING_CREATE, PENDING_DELETE, PENDING_UPDATE
+      value = "ACTIVE" # ACTIVE, DELETED, ERROR, PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE
     },
     {
       name  = "subnet_id"
-      value = "your-subnet-id" # Replace with your subnet ID
+      value = "<your-subnet-id>"
     },
     {
       name  = "subnet_name"
-      value = "your-subnet-name" # Replace with your subnet name
+      value = "<your-subnet-name>"
     },
     {
       name  = "association_count"
@@ -107,11 +107,11 @@ data "kakaocloud_route_tables" "filtered" {
     },
     {
       name  = "created_at"
-      value = "2024-01-01T00:00:00Z" # Replace with creation time (RFC3339 format)
+      value = "2024-01-01T00:00:00Z" # RFC3339 format
     },
     {
       name  = "updated_at"
-      value = "2024-12-31T23:59:59Z" # Replace with update time (RFC3339 format)
+      value = "2024-12-31T23:59:59Z" # RFC3339 format
     }
   ]
 }
@@ -141,23 +141,24 @@ output "filtered_route_tables" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `route_tables` (Attributes List) (see [below for nested schema](#nestedatt--route_tables))
+- `route_tables` (Attributes List) List of route table resources, including associated VPCs, subnets, routes, and
+  provisioning details. (see [below for nested schema](#nestedatt--route_tables))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -212,3 +213,6 @@ The following attributes are exported:
 - `target_id` (String) Target resource ID
 - `target_name` (String) Target resource name
 - `target_type` (String) Target resource type
+
+
+

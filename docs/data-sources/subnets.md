@@ -56,64 +56,22 @@ Use this data source when you need to reference multiple existing Subnets in you
 # SPDX-License-Identifier: MPL-2.0
 
 # List all subnets
-data "kakaocloud_subnets" "all" {
-  # No filters - get all subnets
-}
+data "kakaocloud_subnets" "all" {}
 
-# List subnets with comprehensive filters
+# List subnets with filters
 data "kakaocloud_subnets" "filtered" {
   filter = [
     {
-      name  = "id"
-      value = "your-subnet-id" # Replace with your subnet ID
-    },
-    {
-      name  = "name"
-      value = "your-subnet-name" # Replace with your subnet name
-    },
-    {
       name  = "availability_zone"
-      value = "kr-central-2-a" # Replace with your availability zone
+      value = "kr-central-2-a" # kr-central-2-a, kr-central-2-b, kr-central-2-c
     },
     {
       name  = "provisioning_status"
-      value = "ACTIVE" # ACTIVE, BUILDING, DELETED, ERROR, PENDING_CREATE, PENDING_DELETE, PENDING_UPDATE
+      value = "ACTIVE" # ACTIVE, DELETED, ERROR, PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE
     },
     {
       name  = "operating_status"
-      value = "ONLINE" # ONLINE, OFFLINE, DEGRADED, ERROR
-    },
-    {
-      name  = "cidr_block"
-      value = "10.0.1.0/24" # Replace with your subnet CIDR
-    },
-    {
-      name  = "vpc_id"
-      value = "your-vpc-id" # Replace with your VPC ID
-    },
-    {
-      name  = "vpc_name"
-      value = "your-vpc-name" # Replace with your VPC name
-    },
-    {
-      name  = "route_table_id"
-      value = "your-route-table-id" # Replace with your route table ID
-    },
-    {
-      name  = "route_table_name"
-      value = "your-route-table-name" # Replace with your route table name
-    },
-    {
-      name  = "is_shared"
-      value = "false" # true, false
-    },
-    {
-      name  = "created_at"
-      value = "2024-01-01T00:00:00Z" # Replace with creation time (RFC3339 format)
-    },
-    {
-      name  = "updated_at"
-      value = "2024-12-31T23:59:59Z" # Replace with update time (RFC3339 format)
+      value = "ONLINE" # ONLINE, OFFLINE, IN_MAINTENANCE, ERROR
     }
   ]
 }
@@ -121,21 +79,35 @@ data "kakaocloud_subnets" "filtered" {
 # Output all subnets
 output "all_subnets" {
   description = "List of all subnets"
-  value = {
-    count = length(data.kakaocloud_subnets.all.subnets)
-    ids   = data.kakaocloud_subnets.all.subnets[*].id
-    names = data.kakaocloud_subnets.all.subnets[*].name
-  }
+  value = [
+    for subnet in data.kakaocloud_subnets.all.subnets : {
+      id                  = subnet.id
+      name                = subnet.name
+      cidr_block          = subnet.cidr_block
+      availability_zone   = subnet.availability_zone
+      vpc_id              = subnet.vpc_id
+      vpc_name            = subnet.vpc_name
+      provisioning_status = subnet.provisioning_status
+    }
+  ]
 }
 
 # Output filtered subnets
 output "filtered_subnets" {
-  description = "List of filtered subnets"
-  value = {
-    count = length(data.kakaocloud_subnets.filtered.subnets)
-    ids   = data.kakaocloud_subnets.filtered.subnets[*].id
-    names = data.kakaocloud_subnets.filtered.subnets[*].name
-  }
+  description = "Filtered subnet list"
+  value = [
+    for subnet in data.kakaocloud_subnets.filtered.subnets : {
+      id                = subnet.id
+      name              = subnet.name
+      cidr_block        = subnet.cidr_block
+      availability_zone = subnet.availability_zone
+      vpc_id            = subnet.vpc_id
+      vpc_name          = subnet.vpc_name
+      is_shared         = subnet.is_shared
+      route_table_name  = subnet.route_table_name
+      operating_status  = subnet.operating_status
+    }
+  ]
 }
 ```
 
@@ -143,23 +115,23 @@ output "filtered_subnets" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `subnets` (Attributes List) (see [below for nested schema](#nestedatt--subnets))
+- `subnets` (Attributes List) List of subnet information. (see [below for nested schema](#nestedatt--subnets))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -188,3 +160,5 @@ The following attributes are exported:
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 - `vpc_id` (String) ID of the VPC the subnet belongs to
 - `vpc_name` (String) Name of the VPC the subnet belongs to
+
+

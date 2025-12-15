@@ -19,15 +19,18 @@ all of its attributes.
 ## Example Usage
 
 ```terraform
-# get a volume.
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+# Get a specific volume by ID
 data "kakaocloud_volume" "example" {
-  id = "your-volume-id-here" # Replace with your volume ID
+  id = "<your-volume-id>"
 }
 
 # Output the volume information
 output "volume_example" {
   description = "Information about the example volume"
-  value       = kakaocloud_volume.example
+  value       = data.kakaocloud_volume.example
 }
 ```
 
@@ -37,7 +40,7 @@ output "volume_example" {
 
 - `id` (Required, String) Volume ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
@@ -89,3 +92,5 @@ The following attributes are exported:
 - `min_ram` (String) Minimum RAM size required to use the image (MB)
 - `os_type` (String) Operating system type
 - `size` (String) Image size (in bytes)
+
+

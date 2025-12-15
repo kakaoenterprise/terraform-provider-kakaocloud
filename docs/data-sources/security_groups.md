@@ -46,20 +46,24 @@ data "kakaocloud_security_groups" "all" {
   # No filters - get all security groups
 }
 
-# List security groups with comprehensive filters
+# List security groups with filters
 data "kakaocloud_security_groups" "filtered" {
   filter = [
     {
-      name  = "name"
-      value = "your-security-group-name" # Replace with your security group name
+      name  = "id"
+      value = "<your-security-group-id>"
     },
     {
-      name  = "id"
-      value = "your-security-group-id" # Replace with your security group ID
+      name  = "name"
+      value = "<your-security-group-name>"
     },
     {
       name  = "created_at"
-      value = "2024-01-01T00:00:00Z" # Replace with creation time (RFC3339 format)
+      value = "2024-01-01T00:00:00Z" # RFC3339 
+    },
+    {
+      name  = "updated_at"
+      value = "2024-12-31T23:59:59Z" # RFC3339
     }
   ]
 }
@@ -89,23 +93,24 @@ output "filtered_security_groups" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `security_groups` (Attributes List) (see [below for nested schema](#nestedatt--security_groups))
+- `security_groups` (Attributes List) List of retrieved security groups. (
+  see [below for nested schema](#nestedatt--security_groups))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -120,15 +125,14 @@ The following attributes are exported:
 ### Nested Schema for `security_groups`
 
 - `id` (Required, String) Security Group ID
-
-
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `description` (String) Description of the security group
 - `is_stateful` (Boolean) Whether the security group is stateful
 - `name` (String) Name of the security group
 - `project_id` (String) ID of the project the security group belongs to
 - `project_name` (String) Name of the project the security group belongs to
-- `rules` (Attributes Set) (see [below for nested schema](#nestedatt--security_groups--rules))
+- `rules` (Attributes Set) List of inbound and outbound security group rules. (
+  see [below for nested schema](#nestedatt--security_groups--rules))
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 
 <a id="nestedatt--security_groups--rules"></a>
@@ -139,11 +143,16 @@ The following attributes are exported:
 - `description` (String) Description of the security group rule
 - `direction` (String) Traffic direction <br/> - `ingress`: inbound (receive) <br/> - `egress`: outbound (send)
 - `id` (String) ID of the security group rule
-- `port_range_max` (String) End value of the allowed port range
-- `port_range_min` (String) Start value of the allowed port range
-- `protocol` (String) Allowed protocol
+- `port_range_max` (Number) End value of the allowed port range
+- `port_range_min` (Number) Start value of the allowed port range
+- `protocol` (String) Allowed network protocol <br/> - `TCP`: Transmission Control Protocol <br/> - `UDP`: User Datagram
+  Protocol <br/> - `ICMP`: Internet Control Message Protocol <br/> - `IPIP`: IP-in-IP tunneling <br/> - `ALL`: All
+  protocols
 - `remote_group_id` (String) ID of the source or destination security group for allowed traffic <br/> - Specify when the
   source/destination is another security group
 - `remote_group_name` (String) Name of the source or destination security group for allowed traffic
 - `remote_ip_prefix` (String) Source or destination IP range in CIDR format
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
+
+
+

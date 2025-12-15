@@ -28,14 +28,14 @@ This data source is useful when you need to:
 
 # Get a specific node pool by cluster name and node pool name
 data "kakaocloud_kubernetes_engine_node_pool" "example" {
-  cluster_name = "your-cluster-name-here"   # Replace with your cluster name
-  name         = "your-node-pool-name-here" # Replace with your node pool name
+  cluster_name = "<your-cluster-name>"
+  name         = "<your-node-pool-name>"
 }
 
 # Output the node pool information
-output "node_pool_example" {
-  description = "Information about the example node pool"
-  value       = kakaocloud_kubernetes_engine_node_pool.example
+output "node_pool_info" {
+  description = "Detailed information about the specified node pool"
+  value       = data.kakaocloud_kubernetes_engine_node_pool.example
 }
 ```
 
@@ -43,10 +43,10 @@ output "node_pool_example" {
 
 ## Argument Reference
 
-- `cluster_name` (Required, String) 클러스터 이름
-- `name` (Required, String) 노드 풀 이름
+- `cluster_name` (Required, String) Name of the cluster the node pool belongs to
+- `name` (Required, String) Node pool name
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -137,9 +137,10 @@ The following attributes are exported:
 
 ### Nested Schema for `taints`
 
-- `effect` (String)
-- `key` (String)
-- `value` (String)
+- `effect` (String) Taint effect applied to the node <br/>- Possible values: `NoSchedule`, `PreferNoSchedule`,
+  `NoExecute`
+- `key` (String) Taint key
+- `value` (String) Taint value
 
 <a id="nestedatt--vpc_info"></a>
 
@@ -155,3 +156,6 @@ The following attributes are exported:
 - `availability_zone` (String) Availability zone of the subnet
 - `cidr_block` (String) IPv4 CIDR block of the subnet
 - `id` (String) Unique ID of the subnet
+
+
+

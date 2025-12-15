@@ -59,28 +59,27 @@ You can optionally filter the results by attributes such as name, project, or st
 
 # List all volumes
 data "kakaocloud_volumes" "all" {
-  # No filters - get all volumes
+  # No filters ‑ get all volumes
 }
 
-# List volumes with comprehensive filters
+# List volumes with filters
 data "kakaocloud_volumes" "filtered" {
   filter = [
     {
       name  = "name"
-      value = "your-volume-name" # Replace with your volume name
+      value = "<your‑volume‑name>"
     },
     {
       name  = "id"
-      value = "your-volume-id" # Replace with your volume ID
+      value = "<your‑volume‑id>"
     },
     {
       name  = "status"
-      value = "available"
-      # available, creating, deleting, error, error_deleting, error_restoring, in-use, restoring, uploading
+      value = "Available" # Available, Creating, In‑Use, Deleting, Restoring, Error
     },
     {
       name  = "instance_id"
-      value = "your-instance-id" # Replace with your instance ID
+      value = "<your‑instance‑id>"
     },
     {
       name  = "mount_point"
@@ -88,47 +87,47 @@ data "kakaocloud_volumes" "filtered" {
     },
     {
       name  = "type"
-      value = "your-volume-type" # Replace with your volume type
+      value = "<your‑volume‑type>"
     },
     {
       name  = "size"
-      value = "100" # Replace with volume size in GB
+      value = "100"
     },
     {
       name  = "availability_zone"
-      value = "kr-central-2-a" # Replace with your availability zone
+      value = "kr‑central‑2‑a" # kr‑central‑2‑a, kr‑central‑2‑b, kr‑central‑2‑c
     },
     {
       name  = "instance_name"
-      value = "your-instance-name" # Replace with your instance name
+      value = "<your‑instance‑name>"
     },
     {
       name  = "volume_type"
-      value = "your-volume-type" # Replace with your volume type
+      value = "<your‑volume‑type‑name>"
     },
     {
       name  = "attach_status"
-      value = "attached" # attached, detached
+      value = "Attached" # Attached, Detached
     },
     {
       name  = "is_bootable"
-      value = "true" # true, false
+      value = "true" # true or false
     },
     {
       name  = "is_encrypted"
-      value = "false" # true, false
+      value = "false" # true or false
     },
     {
       name  = "is_root"
-      value = "false" # true, false
+      value = "false" # true or false
     },
     {
       name  = "created_at"
-      value = "2024-01-01T00:00:00Z" # Replace with creation time (RFC3339 format)
+      value = "2024‑01‑01T00:00:00Z"
     },
     {
       name  = "updated_at"
-      value = "2024-12-31T23:59:59Z" # Replace with update time (RFC3339 format)
+      value = "2024‑12‑31T23:59:59Z"
     }
   ]
 }
@@ -136,21 +135,23 @@ data "kakaocloud_volumes" "filtered" {
 # Output all volumes
 output "all_volumes" {
   description = "List of all volumes"
-  value = {
-    count = length(data.kakaocloud_volumes.all.volumes)
-    ids   = data.kakaocloud_volumes.all.volumes[*].id
-    names = data.kakaocloud_volumes.all.volumes[*].name
-  }
+  value = [
+    for vol in data.kakaocloud_volumes.all.volumes : {
+      id   = vol.id
+      name = vol.name
+    }
+  ]
 }
 
 # Output filtered volumes
 output "filtered_volumes" {
   description = "List of filtered volumes"
-  value = {
-    count = length(data.kakaocloud_volumes.filtered.volumes)
-    ids   = data.kakaocloud_volumes.filtered.volumes[*].id
-    names = data.kakaocloud_volumes.filtered.volumes[*].name
-  }
+  value = [
+    for vol in data.kakaocloud_volumes.filtered.volumes : {
+      id   = vol.id
+      name = vol.name
+    }
+  ]
 }
 ```
 
@@ -158,23 +159,23 @@ output "filtered_volumes" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `volumes` (Attributes List) (see [below for nested schema](#nestedatt--volumes))
+- `volumes` (Attributes List) List of retrieved volumes (see [below for nested schema](#nestedatt--volumes))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -227,3 +228,6 @@ The following attributes are exported:
 - `min_ram` (String) Minimum RAM size required to use the image (MB)
 - `os_type` (String) Operating system type
 - `size` (String) Image size (in bytes)
+
+
+

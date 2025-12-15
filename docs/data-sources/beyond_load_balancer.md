@@ -3,29 +3,26 @@
 page_title: "kakaocloud_beyond_load_balancer Data Source - kakaocloud"
 subcategory: "Load Balancer"
 description: |-
-  The kakaocloud_beyond_load_balancer resource represents a High Availability (HA) load balancer group in KakaoCloud.This resource is used to provision and manage Beyond Load Balancer services, ensuring traffic distribution and fault tolerance across multiple load balancers.
-  You can use this resource to:
-  Create and manage HA groups with one or more load balancers.Define load balancers to be attached to the HA group.Associate the HA group with a VPC and its CIDR block.Retrieve DNS names, availability zones, and operational status of the group.Track provisioning and operating states for lifecycle management.
-  By managing this resource in Terraform, you can automate deployment and scaling of resilient load balancing services in KakaoCloud.
+  The kakaocloud_beyond_load_balancer data source retrieves detailed information about a specific High Availability (HA) load balancer group in KakaoCloud.
+  This data source is useful when you need to:
+  Retrieve information about an existing HA load balancer group by its ID.Review configuration details such as DNS name, availability zones, VPC settings, and load balancer members.Reference Beyond Load Balancer attributes dynamically in Terraform without hardcoding values.Validate operational and provisioning statuses for lifecycle or monitoring purposes.
+  By using this data source, you can dynamically integrate Beyond Load Balancer information into your Terraform configurations.
 ---
 
 # kakaocloud_beyond_load_balancer (Data Source)
 
-The `kakaocloud_beyond_load_balancer` resource represents a **High Availability (HA) load balancer group** in
-KakaoCloud.  
-This resource is used to provision and manage Beyond Load Balancer services, ensuring traffic distribution and fault
-tolerance across multiple load balancers.
+The `kakaocloud_beyond_load_balancer` data source retrieves detailed information about a specific High Availability (HA)
+load balancer group in KakaoCloud.
 
-You can use this resource to:
+This data source is useful when you need to:
 
-- Create and manage HA groups with one or more load balancers.
-- Define load balancers to be attached to the HA group.
-- Associate the HA group with a VPC and its CIDR block.
-- Retrieve DNS names, availability zones, and operational status of the group.
-- Track provisioning and operating states for lifecycle management.
+- Retrieve information about an existing HA load balancer group by its ID.
+- Review configuration details such as DNS name, availability zones, VPC settings, and load balancer members.
+- Reference Beyond Load Balancer attributes dynamically in Terraform without hardcoding values.
+- Validate operational and provisioning statuses for lifecycle or monitoring purposes.
 
-By managing this resource in Terraform, you can automate deployment and scaling of resilient load balancing services in
-KakaoCloud.
+By using this data source, you can dynamically integrate Beyond Load Balancer information into your Terraform
+configurations.
 
 ## Example Usage
 
@@ -33,14 +30,30 @@ KakaoCloud.
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-# Get a specific beyond load balancer by ID
+# Get a specific Beyond Load Balancer by ID
 data "kakaocloud_beyond_load_balancer" "example" {
-  id = "your-beyond-load-balancer-id-here" # Replace with your beyond load balancer ID
+  id = "<your-beyond-load-balancer-id>"
+
+  timeouts = {
+    read = "30s"
+  }
 }
 
-# Output the fetched data
-output "beyond_load_balancer_name" {
-  value = data.kakaocloud_beyond_load_balancer.example
+# Output detailed Beyond Load Balancer information
+output "beyond_load_balancer_info" {
+  description = "Detailed information about the specified Beyond Load Balancer group"
+  value = {
+    id                  = data.kakaocloud_beyond_load_balancer.example.id
+    name                = data.kakaocloud_beyond_load_balancer.example.name
+    dns_name            = data.kakaocloud_beyond_load_balancer.example.dns_name
+    vpc_id              = data.kakaocloud_beyond_load_balancer.example.vpc_id
+    vpc_name            = data.kakaocloud_beyond_load_balancer.example.vpc_name
+    scheme              = data.kakaocloud_beyond_load_balancer.example.scheme
+    type                = data.kakaocloud_beyond_load_balancer.example.type
+    provisioning_status = data.kakaocloud_beyond_load_balancer.example.provisioning_status
+    operating_status    = data.kakaocloud_beyond_load_balancer.example.operating_status
+    availability_zones  = data.kakaocloud_beyond_load_balancer.example.availability_zones
+  }
 }
 ```
 
@@ -50,7 +63,7 @@ output "beyond_load_balancer_name" {
 
 - `id` (Required, String) beyond load balancer ID
 
-- `timeouts` (Required, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -65,11 +78,11 @@ The following attributes are exported:
 - `name` (String) High availability group name
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID
-- `provider_name` (String) Service provider information
+- `provider_name` (String) Provider name
 - `provisioning_status` (String) Provisioning status
 - `scheme` (String) Access type
 - `type` (String) [Load balancer type](https://docs.kakaocloud.com/en/service/bns/lb/lb-overview#사용-목적에-따른-로드-밸런서-유형-제공)
-- `type_id` (String) High availability group type ID
+- `type_id` (String) ID returned by kakaocloud_load_balancer_flavors
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 - `vpc_cidr_block` (String) IPv4 CIDR block of the VPC
 - `vpc_id` (String) Unique ID of the VPC
@@ -100,3 +113,5 @@ The following attributes are exported:
 - `type` (String) Load balancer type
 - `type_id` (String) Load balancer type identifier
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
+
+

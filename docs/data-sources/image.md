@@ -28,13 +28,22 @@ Use this data source when you need to:
 
 # Get a specific image by ID
 data "kakaocloud_image" "example" {
-  id = "your-image-id-here" # Replace with your image ID
+  id = "<your-image-id>"
 }
 
-# Output the image information
+# Output image details
 output "image_example" {
   description = "Information about the example image"
-  value       = kakaocloud_image.example
+  value = {
+    id         = data.kakaocloud_image.example.id
+    name       = data.kakaocloud_image.example.name
+    os_type    = data.kakaocloud_image.example.os_info.type
+    min_disk   = data.kakaocloud_image.example.min_disk
+    min_ram    = data.kakaocloud_image.example.min_ram
+    visibility = data.kakaocloud_image.example.visibility
+    status     = data.kakaocloud_image.example.status
+    created_at = data.kakaocloud_image.example.created_at
+  }
 }
 ```
 
@@ -44,7 +53,7 @@ output "image_example" {
 
 - `id` (Required, String) Image ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -88,3 +97,5 @@ The following attributes are exported:
 - `distro` (String) Name of the distribution
 - `is_hidden` (Boolean) Whether the image is hidden
 - `type` (String) Operating system type
+
+

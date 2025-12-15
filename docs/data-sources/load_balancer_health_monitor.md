@@ -32,12 +32,13 @@ configuration of health monitors in KakaoCloud.
 
 # Get a specific load balancer health monitor by ID
 data "kakaocloud_load_balancer_health_monitor" "example" {
-  id = "your-health-monitor-id-here" # Replace with your health monitor ID
+  id = "<your-health-monitor-id>"
 }
 
-# Output the health monitor
-output "health_monitor" {
-  value = data.kakaocloud_load_balancer_health_monitor.example
+# Output the health monitor information
+output "health_monitor_example" {
+  description = "Information about the example load balancer health monitor"
+  value       = data.kakaocloud_load_balancer_health_monitor.example
 }
 ```
 
@@ -47,7 +48,7 @@ output "health_monitor" {
 
 - `id` (Required, String) Health monitor ID
 
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -85,3 +86,5 @@ The following attributes are exported:
 ### Nested Schema for `target_groups`
 
 - `id` (String) Target group ID
+
+

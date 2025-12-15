@@ -49,16 +49,16 @@ data "kakaocloud_keypairs" "all" {
   # No filters - get all keypairs
 }
 
-# List keypairs with comprehensive filters
+# List keypairs with filters
 data "kakaocloud_keypairs" "filtered" {
   filter = [
     {
       name  = "id"
-      value = "your-keypair-id" # Replace with your keypair ID
+      value = "<your-keypair-id>"
     },
     {
       name  = "name"
-      value = "your-keypair-name" # Replace with your keypair name
+      value = "<your-keypair-name>"
     },
     {
       name  = "type"
@@ -66,11 +66,11 @@ data "kakaocloud_keypairs" "filtered" {
     },
     {
       name  = "fingerprint"
-      value = "your-keypair-fingerprint" # Replace with your keypair fingerprint
+      value = "<your-keypair-fingerprint>"
     },
     {
       name  = "created_at"
-      value = "2024-01-01T00:00:00Z" # Replace with creation time (RFC3339 format)
+      value = "2024-01-01T00:00:00Z" # RFC3339 format
     }
   ]
 }
@@ -100,23 +100,23 @@ output "filtered_keypairs" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `keypairs` (Attributes List) 조회된 키페어 목록 (see [below for nested schema](#nestedatt--keypairs))
+- `keypairs` (Attributes List) Retrieved key pair list (see [below for nested schema](#nestedatt--keypairs))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -133,7 +133,9 @@ The following attributes are exported:
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `fingerprint` (String) Unique fingerprint of the public key <br/> - Used for verification in SSH clients
 - `id` (String) Unique ID of the key pair
-- `name` (String) 키페어 이름
+- `name` (String) Key pair name
 - `public_key` (String) Public key
 - `type` (String) Key type
 - `user_id` (String) User ID of the key pair owner
+
+

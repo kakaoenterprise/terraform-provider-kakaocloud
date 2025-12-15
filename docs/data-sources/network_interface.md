@@ -29,13 +29,21 @@ Use this data source when you need to:
 
 # Get a specific network interface by ID
 data "kakaocloud_network_interface" "example" {
-  id = "your-network-interface-id-here" # Replace with your network interface ID
+  id = "<your-network-interface-id>"
 }
 
-# Output the network interface information
-output "network_interface_example" {
-  description = "Information about the example network interface"
-  value       = kakaocloud_network_interface.example
+# Output network interface details
+output "network_interface_details" {
+  description = "Details of the specified network interface"
+  value = {
+    id          = data.kakaocloud_network_interface.example.id
+    name        = data.kakaocloud_network_interface.example.name
+    private_ip  = data.kakaocloud_network_interface.example.private_ip
+    public_ip   = data.kakaocloud_network_interface.example.public_ip
+    subnet_id   = data.kakaocloud_network_interface.example.subnet_id
+    vpc_id      = data.kakaocloud_network_interface.example.vpc_id
+    mac_address = data.kakaocloud_network_interface.example.mac_address
+  }
 }
 ```
 
@@ -46,7 +54,7 @@ output "network_interface_example" {
 - `id` (Required, String) Network Interface ID
 
 - `description` (Optional, String) Description of the network interface
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
@@ -93,3 +101,5 @@ The following attributes are exported:
 
 - `id` (String) Security group ID
 - `name` (String) Security group name
+
+

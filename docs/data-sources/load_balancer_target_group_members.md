@@ -60,119 +60,89 @@ This data source is useful when you need to:
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-# List all target group members for a specific target group
-data "kakaocloud_load_balancer_target_group_members" "example" {
-  target_group_id = "your-target-group-id-here" # Replace with your target group ID
+# Get all members of the target group
+data "kakaocloud_load_balancer_target_group_members" "all" {
+  target_group_id = "<your-target-group-id>"
 }
 
-# List target group members with filters
+# Get members filtered by instance ID and status
 data "kakaocloud_load_balancer_target_group_members" "filtered" {
-  target_group_id = "your-target-group-id-here" # Replace with your target group ID
-
-  filter = [
-    {
-      name  = "id"
-      value = "your-target-group-member-id-here" # Replace with your target group member ID
-    },
-    {
-      name  = "name"
-      value = "your-target-group-member-name-here" # Replace with your target group member name
-    },
-    {
-      name  = "protocol"
-      value = "HTTP"
-    },
-    {
-      name  = "availability_zone"
-      value = "your-availability-zone-here" # Replace with your availability zone
-    },
-    {
-      name  = "load_balancer_algorithm"
-      value = "ROUND_ROBIN"
-    },
-    {
-      name  = "load_balancer_name"
-      value = "your-load-balancer-name-here" # Replace with your load balancer name
-    },
-    {
-      name  = "load_balancer_id"
-      value = "your-load-balancer-id-here" # Replace with your load balancer ID
-    },
-    {
-      name  = "listener_protocol"
-      value = "HTTP"
-    },
-    {
-      name  = "vpc_name"
-      value = "your-vpc-name-here" # Replace with your VPC name
-    },
-    {
-      name  = "vpc_id"
-      value = "your-vpc-id-here" # Replace with your VPC ID
-    },
-    {
-      name  = "subnet_name"
-      value = "your-subnet-name-here" # Replace with your subnet name
-    },
-    {
-      name  = "subnet_id"
-      value = "your-subnet-id-here" # Replace with your subnet ID
-    },
-    {
-      name  = "health_monitor_id"
-      value = "your-health-monitor-id-here" # Replace with your health monitor ID
-    },
-    {
-      name  = "created_at"
-      value = "2021-01-01T00:00:00Z" # Replace with your created at
-    },
-    {
-      name  = "updated_at"
-      value = "2021-01-01T00:00:00Z" # Replace with your updated at
-    }
-  ]
-}
-
-# List target group members by instance
-data "kakaocloud_load_balancer_target_group_members" "by_instance" {
-  target_group_id = "your-target-group-id-here" # Replace with your target group ID
+  target_group_id = "<your-target-group-id>"
 
   filter = [
     {
       name  = "instance_id"
-      value = "your-instance-id-here" # Replace with your instance ID
-    },
-    {
-      name  = "vpc_id"
-      value = "your-vpc-id-here" # Replace with your VPC ID
+      value = "<your-instance-id>"
     },
     {
       name  = "operating_status"
-      value = "ONLINE"
+      value = "ONLINE" # ONLINE, DRAINING, OFFLINE, DEGRADED, ERROR, NO_MONITOR
+    },
+    {
+      name  = "provisioning_status"
+      value = "ACTIVE" # ACTIVE, DELETED, ERROR, PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE
     }
   ]
 }
 
-# Output all target group members
-output "target_group_members" {
-  description = "List of target group members"
-  value = {
-    count     = length(data.kakaocloud_load_balancer_target_group_members.example.members)
-    ids       = data.kakaocloud_load_balancer_target_group_members.example.members[*].id
-    names     = data.kakaocloud_load_balancer_target_group_members.example.members[*].name
-    addresses = data.kakaocloud_load_balancer_target_group_members.example.members[*].address
-  }
+# Retrieve members filtered by VPC and Subnet
+data "kakaocloud_load_balancer_target_group_members" "by_vpc_and_subnet" {
+  target_group_id = "<your-target-group-id>"
+
+  filter = [
+    {
+      name  = "vpc_id"
+      value = "<your-vpc-id>"
+    },
+    {
+      name  = "subnet_id"
+      value = "<your-subnet-id>"
+    },
+    {
+      name  = "security_group_name"
+      value = "<your-sg-name>"
+    }
+  ]
 }
 
-# Output filtered target group members
+# Output: All members
+output "all_target_group_members" {
+  description = "All target group members"
+  value = [
+    for member in data.kakaocloud_load_balancer_target_group_members.all.members : {
+      id     = member.id
+      ip     = member.address
+      port   = member.protocol_port
+      status = member.operating_status
+    }
+  ]
+}
+
+# Output: Filtered members
 output "filtered_target_group_members" {
-  description = "List of filtered target group members"
-  value = {
-    count     = length(data.kakaocloud_load_balancer_target_group_members.filtered.members)
-    ids       = data.kakaocloud_load_balancer_target_group_members.filtered.members[*].id
-    names     = data.kakaocloud_load_balancer_target_group_members.filtered.members[*].name
-    addresses = data.kakaocloud_load_balancer_target_group_members.filtered.members[*].address
-  }
+  description = "Target group members matching filter criteria"
+  value = [
+    for member in data.kakaocloud_load_balancer_target_group_members.filtered.members : {
+      id       = member.id
+      name     = member.name
+      ip       = member.address
+      instance = member.instance_name
+      weight   = member.weight
+    }
+  ]
+}
+
+# Output: Members by VPC/Subnet
+output "vpc_subnet_target_group_members" {
+  description = "Target group members filtered by VPC and Subnet"
+  value = [
+    for member in data.kakaocloud_load_balancer_target_group_members.by_vpc_and_subnet.members : {
+      id       = member.id
+      ip       = member.address
+      subnet   = member.subnet.name
+      sg_names = member.security_groups[*].name
+    }
+  ]
 }
 ```
 
@@ -182,23 +152,24 @@ output "filtered_target_group_members" {
 
 - `target_group_id` (Required, String) The ID of the target group to list members for
 
-- `filter` (Optional, Attributes List) (see [below for nested schema](#nestedatt--filter))
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
+  see [below for nested schema](#nestedatt--filter))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `members` (Attributes List) (see [below for nested schema](#nestedatt--members))
+- `members` (Attributes List) List of load balancer target group members returned by this data source. (
+  see [below for nested schema](#nestedatt--members))
 
 <a id="nestedatt--filter"></a>
 
 ### Nested Schema for `filter`
 
-- `name` (Required, String)
+- `name` (Required, String) Name of the attribute to filter by.
 
-
-- `value` (Optional, String)
+- `value` (Optional, String) Value to match for the specified filter attribute.
 
 <a id="nestedatt--timeouts"></a>
 
@@ -217,7 +188,7 @@ The following attributes are exported:
 - `id` (String) Target ID
 - `instance_id` (String) Unique ID of the instance
 - `instance_name` (String) Instance name
-- `is_backup` (Boolean)
+- `is_backup` (Boolean) Indicates whether the target is registered as a backup member.
 - `monitor_port` (Number) Health check port
 - `name` (String) Target name
 - `network_interface_id` (String) Network interface ID
@@ -228,7 +199,7 @@ The following attributes are exported:
 - `security_groups` (Attributes List) List of security groups (
   see [below for nested schema](#nestedatt--members--security_groups))
 - `subnet` (Attributes) Subnet information (see [below for nested schema](#nestedatt--members--subnet))
-- `subnet_id` (String)
+- `subnet_id` (String) Subnet ID where the target instance is located.
 - `target_group_id` (String) Target group ID
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 - `vpc_id` (String) Unique VPC ID
@@ -250,3 +221,6 @@ The following attributes are exported:
 - `health_check_ips` (List of String) List of IP addresses used for health checks
 - `id` (String) Subnet ID
 - `name` (String) Subnet name
+
+
+
