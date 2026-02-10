@@ -210,9 +210,15 @@ func getVolumeResourceSchema() map[string]rschema.Attribute {
 		},
 		"user_id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"project_id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"attach_status": rschema.StringAttribute{
 			Computed: true,
@@ -228,6 +234,9 @@ func getVolumeResourceSchema() map[string]rschema.Attribute {
 		},
 		"created_at": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"updated_at": rschema.StringAttribute{
 			Computed: true,

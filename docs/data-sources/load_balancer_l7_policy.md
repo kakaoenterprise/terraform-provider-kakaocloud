@@ -65,21 +65,17 @@ The following attributes are exported:
 - `rules` (Attributes List) List of associated L7 rules (see [below for nested schema](#nestedatt--rules))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--rules"></a>
-
 ### Nested Schema for `rules`
 
 - `compare_type` (String) Rule comparison method
 - `id` (String) Unique ID of the L7 rule
-- `is_inverted` (Boolean) Whether the rule is inverted<br/>- If `true`, the opposite of the comparison result is
-  considered a match
+- `is_inverted` (Boolean) Whether the rule is inverted<br/>- If `true`, the opposite of the comparison result is considered a match
 - `key` (String) Comparison key
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID

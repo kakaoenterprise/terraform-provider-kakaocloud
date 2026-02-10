@@ -54,19 +54,15 @@ output "load_balancer_flavors" {
 
 The following attributes are exported:
 
-- `flavors` (Attributes List) List of available load balancer flavors (
-  see [below for nested schema](#nestedatt--flavors))
+- `flavors` (Attributes List) List of available load balancer flavors ( see [below for nested schema](#nestedatt--flavors))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--flavors"></a>
-
 ### Nested Schema for `flavors`
 
 - `description` (String) Description of the load balancer type

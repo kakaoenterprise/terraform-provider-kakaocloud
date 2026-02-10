@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"terraform-provider-kakaocloud/internal/common"
 	"terraform-provider-kakaocloud/internal/service/bcs"
+	"terraform-provider-kakaocloud/internal/service/iam"
 
 	"terraform-provider-kakaocloud/internal/service/image"
 	"terraform-provider-kakaocloud/internal/service/kubernetesengine"
 	"terraform-provider-kakaocloud/internal/service/loadbalancer"
 	"terraform-provider-kakaocloud/internal/service/network"
+	"terraform-provider-kakaocloud/internal/service/tgw"
 	"terraform-provider-kakaocloud/internal/service/volume"
 	"terraform-provider-kakaocloud/internal/service/vpc"
 
@@ -113,7 +115,17 @@ func (p *kakaocloudProvider) Configure(ctx context.Context, req provider.Configu
 	}
 
 	userAgent := "terraform-provider-kakaocloud/" + p.version
-	authClient, err := common.NewClient(authConfig, userAgent)
+
+	apiVersion, err := ResolveAPIVersion(ctx, authConfig, userAgent)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unexpected Provider Configure",
+			fmt.Sprintf("Failed to resolve API version: %v", err),
+		)
+		return
+	}
+
+	authClient, err := common.NewClient(authConfig, userAgent, apiVersion)
 	if err != nil {
 		resp.Diagnostics.AddError("Unexpected Provider Configure",
 			fmt.Sprintf(err.Error()))
@@ -126,6 +138,8 @@ func (p *kakaocloudProvider) Configure(ctx context.Context, req provider.Configu
 
 func (p *kakaocloudProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		iam.NewProjectDataSource,
+
 		bcs.NewInstanceDataSource,
 		bcs.NewInstancesDataSource,
 		bcs.NewInstanceFlavorDataSource,
@@ -186,6 +200,16 @@ func (p *kakaocloudProvider) DataSources(_ context.Context) []func() datasource.
 		kubernetesengine.NewKubernetesVersionsDataSource,
 		kubernetesengine.NewKubernetesKubeconfigDataSource,
 		kubernetesengine.NewClusterUpgradableVersionDataSource,
+
+		tgw.NewTransitGatewayDataSource,
+		tgw.NewTransitGatewaysDataSource,
+		tgw.NewTransitGatewayAttachmentDataSource,
+		tgw.NewTransitGatewayAttachmentsDataSource,
+		tgw.NewTransitGatewayRouteTableDataSource,
+		tgw.NewTransitGatewayRouteTablesDataSource,
+		tgw.NewTransitGatewaySharedProjectsDataSource,
+		tgw.NewTransitGatewayRoutesDataSource,
+		tgw.NewTransitGatewayRouteTableAssociationsDataSource,
 	}
 }
 
@@ -216,10 +240,28 @@ func (p *kakaocloudProvider) Resources(_ context.Context) []func() resource.Reso
 		loadbalancer.NewLoadBalancerL7PolicyRuleResource,
 		loadbalancer.NewLoadBalancerTargetGroupResource,
 		loadbalancer.NewLoadBalancerTargetGroupMemberResource,
+		loadbalancer.NewLoadBalancerTargetGroupMembersResource,
 		loadbalancer.NewLoadBalancerHealthMonitorResource,
 
 		kubernetesengine.NewNodePoolResource,
 		kubernetesengine.NewClusterResource,
 		kubernetesengine.NewScheduledScalingResource,
+
+		tgw.NewTransitGatewayResource,
+		tgw.NewTransitGatewayAttachmentResource,
+		tgw.NewTransitGatewayRouteTableResource,
+		tgw.NewTransitGatewayShareResource,
+		tgw.NewTransitGatewayAttachmentApprovalResource,
 	}
+}
+
+func ResolveAPIVersion(
+	ctx context.Context,
+	authConfig *common.Config,
+	userAgent string,
+) (string, error) {
+
+	defaultVersion := "1.2.5"
+
+	return defaultVersion, nil
 }

@@ -113,6 +113,9 @@ func getHealthMonitorResourceSchema() map[string]rschema.Attribute {
 		},
 		"project_id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"target_group_id": rschema.StringAttribute{
 			Required:   true,
@@ -139,6 +142,9 @@ func getHealthMonitorResourceSchema() map[string]rschema.Attribute {
 		},
 		"created_at": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"updated_at": rschema.StringAttribute{
 			Computed: true,

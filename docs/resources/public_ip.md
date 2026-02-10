@@ -52,8 +52,7 @@ resource "kakaocloud_public_ip" "example_lb" {
 ## Argument Reference
 
 - `description` (Optional, String) Description of the public IP
-- `related_resource` (Optional, Attributes) Information of the resource associated with the public IP (
-  see [below for nested schema](#nestedatt--related_resource))
+- `related_resource` (Optional, Attributes) Information of the resource associated with the public IP ( see [below for nested schema](#nestedatt--related_resource))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
@@ -67,7 +66,6 @@ resource "kakaocloud_public_ip" "example_lb" {
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 
 <a id="nestedatt--related_resource"></a>
-
 ### Nested Schema for `related_resource`
 
 - `device_id` (Required, String) Enter the resource ID
@@ -84,23 +82,15 @@ resource "kakaocloud_public_ip" "example_lb" {
 - `vpc_id` (String) Unique ID of the VPC
 - `vpc_name` (String) VPC name
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 ## Import
 

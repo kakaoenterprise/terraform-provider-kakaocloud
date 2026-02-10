@@ -54,25 +54,19 @@ output "all_k8s_clusters" {
 
 The following attributes are exported:
 
-- `clusters` (Attributes List) List of Kubernetes Engine clusters that match the query. (
-  See [below for nested schema](#nestedatt--clusters) for field details.) (
-  see [below for nested schema](#nestedatt--clusters))
+- `clusters` (Attributes List) List of Kubernetes Engine clusters that match the query. ( See [below for nested schema](#nestedatt--clusters) for field details.) ( see [below for nested schema](#nestedatt--clusters))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--clusters"></a>
-
 ### Nested Schema for `clusters`
 
 - `api_version` (String) API version
-- `control_plane_endpoint` (Attributes) Control plane endpoint information (
-  see [below for nested schema](#nestedatt--clusters--control_plane_endpoint))
+- `control_plane_endpoint` (Attributes) Control plane endpoint information ( see [below for nested schema](#nestedatt--clusters--control_plane_endpoint))
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
 - `creator_info` (Attributes) Creator information (see [below for nested schema](#nestedatt--clusters--creator_info))
 - `description` (String) Description of the cluster
@@ -83,44 +77,38 @@ The following attributes are exported:
 - `name` (String) Kubernetes Cluster Name
 - `network` (Attributes) Cluster network information (see [below for nested schema](#nestedatt--clusters--network))
 - `status` (Attributes) Cluster status (see [below for nested schema](#nestedatt--clusters--status))
-- `version` (Attributes) Kubernetes version of the cluster (
-  see [below for nested schema](#nestedatt--clusters--version))
-- `vpc_info` (Attributes) VPC information where the cluster belongs (
-  see [below for nested schema](#nestedatt--clusters--vpc_info))
+- `version` (Attributes) Kubernetes version of the cluster ( see [below for nested schema](#nestedatt--clusters--version))
+- `vpc_info` (Attributes) VPC information where the cluster belongs ( see [below for nested schema](#nestedatt--clusters--vpc_info))
 
 <a id="nestedatt--clusters--control_plane_endpoint"></a>
-
 ### Nested Schema for `clusters.control_plane_endpoint`
 
 - `host` (String) Control plane access address
 - `port` (Number) Control plane access port
 
-<a id="nestedatt--clusters--creator_info"></a>
 
+<a id="nestedatt--clusters--creator_info"></a>
 ### Nested Schema for `clusters.creator_info`
 
 - `id` (String) Creator ID
 - `name` (String) Creator name
 
-<a id="nestedatt--clusters--network"></a>
 
+<a id="nestedatt--clusters--network"></a>
 ### Nested Schema for `clusters.network`
 
-- `cni` (String) CNI (Container Network Interface) plugin in use <br/> - `cilium`: High-performance eBPF-based CNI with
-  low latency and strong security policies  <br/> - `calico`: Widely used CNI with simple configuration and multiple
-  networking modes
+- `cni` (String) CNI (Container Network Interface) plugin in use <br/> - `cilium`: High-performance eBPF-based CNI with low latency and strong security policies  <br/> - `calico`: Widely used CNI with simple configuration and multiple networking modes
 - `pod_cidr` (String) IP range for pods
 - `service_cidr` (String) IP range for cluster services
 
-<a id="nestedatt--clusters--status"></a>
 
+<a id="nestedatt--clusters--status"></a>
 ### Nested Schema for `clusters.status`
 
-- `phase` (String) Current cluster status <br/> - `Pending`: Pending <br/> - `Provisioning`: Creating <br/> -
-  `Provisioned`: Created <br/> - `Updating`: Updating <br/> - `Deleting`: Deleting <br/> - `Failed`: Error occurred
+- `phase` (String) Current cluster status <br/> - `Pending`: Pending <br/> - `Provisioning`: Creating <br/> - `Provisioned`: Created <br/> - `Updating`: Updating <br/> - `Deleting`: Deleting <br/> - `Failed`: Error occurred
+
 
 <a id="nestedatt--clusters--version"></a>
-
 ### Nested Schema for `clusters.version`
 
 - `eol` (String) End of support date (ISO 8601 format, UTC)
@@ -129,16 +117,14 @@ The following attributes are exported:
 - `next_version` (String) Next upgradable version
 - `patch_version` (String) Kubernetes patch version
 
-<a id="nestedatt--clusters--vpc_info"></a>
 
+<a id="nestedatt--clusters--vpc_info"></a>
 ### Nested Schema for `clusters.vpc_info`
 
 - `id` (String) Unique ID of the VPC
-- `subnets` (Attributes Set) List of subnet information (
-  see [below for nested schema](#nestedatt--clusters--vpc_info--subnets))
+- `subnets` (Attributes Set) List of subnet information ( see [below for nested schema](#nestedatt--clusters--vpc_info--subnets))
 
 <a id="nestedatt--clusters--vpc_info--subnets"></a>
-
 ### Nested Schema for `clusters.vpc_info.subnets`
 
 - `availability_zone` (String) Availability zone of the subnet

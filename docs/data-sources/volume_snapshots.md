@@ -125,35 +125,30 @@ output "filtered_volume_snapshots" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
-  see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `volume_snapshots` (Attributes List) List of snapshot information. (
-  see [below for nested schema](#nestedatt--volume_snapshots))
+- `volume_snapshots` (Attributes List) List of snapshot information. ( see [below for nested schema](#nestedatt--volume_snapshots))
 
 <a id="nestedatt--filter"></a>
-
 ### Nested Schema for `filter`
 
 - `name` (Required, String) Name of the attribute to filter by.
 
 - `value` (Optional, String) Value to match for the specified filter attribute.
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--volume_snapshots"></a>
-
 ### Nested Schema for `volume_snapshots`
 
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
@@ -167,9 +162,7 @@ The following attributes are exported:
 - `real_size` (Number) Actual used size (in bytes)
 - `schedule_id` (String) ID of the schedule the snapshot belongs to
 - `size` (Number) Snapshot size (GB)
-- `status` (String) Snapshot status <br/> - `Creating`: snapshot creation in progress <br/> - `Available`: snapshot
-  available <br/> - `Restoring`: restore in progress <br/> - `Deleting`: deletion in progress <br/> - `Error`: snapshot
-  unavailable
+- `status` (String) Snapshot status <br/> - `Creating`: snapshot creation in progress <br/> - `Available`: snapshot available <br/> - `Restoring`: restore in progress <br/> - `Deleting`: deletion in progress <br/> - `Error`: snapshot unavailable
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 - `user_id` (String) ID of the user who created the snapshot
 - `volume_id` (String) Unique ID of the volume

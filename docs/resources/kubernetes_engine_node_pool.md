@@ -109,26 +109,19 @@ resource "kakaocloud_kubernetes_engine_node_pool" "example_sg" {
 - `image_id` (Required, String) Unique ID of the image
 - `name` (Required, String) Target node pool name
 - `ssh_key_name` (Required, String) SSH key name
-- `vpc_info` (Required, Attributes) VPC information for creating the node pool (
-  see [below for nested schema](#nestedatt--vpc_info))
+- `vpc_info` (Required, Attributes) VPC information for creating the node pool ( see [below for nested schema](#nestedatt--vpc_info))
 
-- `autoscaling` (Optional, Attributes) Resource-based autoscaling configuration of the node pool (
-  see [below for nested schema](#nestedatt--autoscaling))
+- `autoscaling` (Optional, Attributes) Resource-based autoscaling configuration of the node pool ( see [below for nested schema](#nestedatt--autoscaling))
 - `description` (Optional, String) Description of the node pool
-- `is_hyper_threading` (Optional, Boolean) Whether hyper-threading is enabled <br/> - `true`: Enable hyper-threading,
-  recognizing 2 vCPUs per physical core <br/> - `false`: Disable hyper-threading, recognizing vCPUs equal to the number
-  of physical cores
-- `labels` (Optional, Attributes Set) List of labels to apply to the node pool (key/value pairs) (
-  see [below for nested schema](#nestedatt--labels))
+- `is_hyper_threading` (Optional, Boolean) Whether hyper-threading is enabled <br/> - `true`: Enable hyper-threading, recognizing 2 vCPUs per physical core <br/> - `false`: Disable hyper-threading, recognizing vCPUs equal to the number of physical cores
+- `labels` (Optional, Attributes Set) List of labels to apply to the node pool (key/value pairs) ( see [below for nested schema](#nestedatt--labels))
 - `minor_version` (Optional, String) Kubernetes version of the node pool
 - `request_node_count` (Optional, Number) Number of nodes in the node pool
 - `request_security_groups` (Optional, Set of String) List of security group IDs to connect
-- `taints` (Optional, Attributes Set) List of taints to apply to the node pool (
-  see [below for nested schema](#nestedatt--taints))
+- `taints` (Optional, Attributes Set) List of taints to apply to the node pool ( see [below for nested schema](#nestedatt--taints))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 - `user_data` (Optional, String) User script to run when creating nodes in the node pool (requires base64 encoding)
-- `volume_size` (Optional, Number) Root volume size of the node pool (unit: GiB) <br/> - Required when creating VM or
-  GPU node pools
+- `volume_size` (Optional, Number) Root volume size of the node pool (unit: GiB) <br/> - Required when creating VM or GPU node pools
 
 ## Attribute Reference
 
@@ -147,23 +140,21 @@ resource "kakaocloud_kubernetes_engine_node_pool" "example_sg" {
 - `version` (String) Kubernetes version of the node pool
 
 <a id="nestedatt--vpc_info"></a>
-
 ### Nested Schema for `vpc_info`
 
 - `id` (Required, String) Unique ID of the VPC
-- `subnets` (Required, Attributes Set) List of subnet IDs to connect (
-  see [below for nested schema](#nestedatt--vpc_info--subnets))
+- `subnets` (Required, Attributes Set) List of subnet IDs to connect ( see [below for nested schema](#nestedatt--vpc_info--subnets))
 
 <a id="nestedatt--vpc_info--subnets"></a>
-
 ### Nested Schema for `vpc_info.subnets`
 
 - `id` (Required, String) Unique ID of the subnet
 - `availability_zone` (String) Availability zone of the subnet
 - `cidr_block` (String) IPv4 CIDR block of the subnet
 
-<a id="nestedatt--autoscaling"></a>
 
+
+<a id="nestedatt--autoscaling"></a>
 ### Nested Schema for `autoscaling`
 
 - `is_autoscaler_enable` (Required, Boolean) Whether resource-based autoscaling is enabled
@@ -171,51 +162,36 @@ resource "kakaocloud_kubernetes_engine_node_pool" "example_sg" {
 - `autoscaler_desired_node_count` (Optional, Number) Desired node count targeted by the autoscaler
 - `autoscaler_max_node_count` (Optional, Number) Maximum node count allowed by resource-based autoscaling
 - `autoscaler_min_node_count` (Optional, Number) Minimum node count allowed by resource-based autoscaling
-- `autoscaler_scale_down_threshold` (Optional, Number) Threshold condition for resource-based autoscaling
-  scale-down <br/> - Specified as a ratio (0–1), up to two decimal places
-- `autoscaler_scale_down_unneeded_time` (Optional, Number) Duration of the scale-down threshold condition (
-  seconds) <br/> - Valid range: 1–86400
-- `autoscaler_scale_down_unready_time` (Optional, Number) Exclusion time for monitoring unready nodes during
-  resource-based scale-down (seconds) <br/> - Valid range: 1–86400
+- `autoscaler_scale_down_threshold` (Optional, Number) Threshold condition for resource-based autoscaling scale-down <br/> - Specified as a ratio (0–1), up to two decimal places
+- `autoscaler_scale_down_unneeded_time` (Optional, Number) Duration of the scale-down threshold condition ( seconds) <br/> - Valid range: 1–86400
+- `autoscaler_scale_down_unready_time` (Optional, Number) Exclusion time for monitoring unready nodes during resource-based scale-down (seconds) <br/> - Valid range: 1–86400
+
 
 <a id="nestedatt--labels"></a>
-
 ### Nested Schema for `labels`
 
 - `key` (Required, String) Label key
 - `value` (Required, String) Label value
 
-<a id="nestedatt--taints"></a>
 
+<a id="nestedatt--taints"></a>
 ### Nested Schema for `taints`
 
-- `effect` (Required, String) Effect of the taint (policy preventing pods from being scheduled on the node) <br/> -
-  `NoExecute`: New pods are not scheduled, and existing pods are evicted <br/> - `NoSchedule`: New pods are not
-  scheduled on this node (existing pods are not affected) <br/> - `PreferNoSchedule`: Prefer not to schedule pods, but
-  they may be scheduled if necessary (soft constraint)
+- `effect` (Required, String) Effect of the taint (policy preventing pods from being scheduled on the node) <br/> - `NoExecute`: New pods are not scheduled, and existing pods are evicted <br/> - `NoSchedule`: New pods are not scheduled on this node (existing pods are not affected) <br/> - `PreferNoSchedule`: Prefer not to schedule pods, but they may be scheduled if necessary (soft constraint)
 - `key` (Required, String) Taint key
 - `value` (Required, String) Taint value
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--image"></a>
-
 ### Nested Schema for `image`
 
 - `architecture` (String) Image architecture
@@ -229,15 +205,14 @@ resource "kakaocloud_kubernetes_engine_node_pool" "example_sg" {
 - `os_type` (String) Operating system type
 - `os_version` (String) Operating system version
 
-<a id="nestedatt--status"></a>
 
+<a id="nestedatt--status"></a>
 ### Nested Schema for `status`
 
 - `available_nodes` (Number) Number of available nodes
-- `phase` (String) Current node pool status <br/>- `Pending`: Pending <br/>- `ScalingUp`: Scaling up <br/>-
-  `ScalingDown`: Scaling down <br/>- `Running`: Running <br/>- `Failed`: Error occurred <br/>- `Deleting`:
-  Deleting  <br/>- `Updating`: Updating <br/>- `Running (Scheduling Disable)`: Running but scheduling disabled
+- `phase` (String) Current node pool status <br/>- `Pending`: Pending <br/>- `ScalingUp`: Scaling up <br/>- `ScalingDown`: Scaling down <br/>- `Running`: Running <br/>- `Failed`: Error occurred <br/>- `Deleting`: Deleting  <br/>- `Updating`: Updating <br/>- `Running (Scheduling Disable)`: Running but scheduling disabled
 - `unavailable_nodes` (Number) Number of unavailable nodes
+
 
 ## Import
 

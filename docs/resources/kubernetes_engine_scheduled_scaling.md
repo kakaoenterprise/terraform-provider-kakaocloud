@@ -37,8 +37,7 @@ resource "kakaocloud_kubernetes_engine_scheduled_scaling" "example" {
 - `desired_nodes` (Required, Number) Target number of nodes to maintain in the node pool when the schedule is executed
 - `name` (Required, String) Scheduled autoscaling rule name
 - `node_pool_name` (Required, String) Target node pool name
-- `schedule_type` (Required, String) Scheduled scaling repeat settings<br/>- `cron`: runs periodically based on a CRON
-  expression<br/>- `once`: runs only once at the specified start time
+- `schedule_type` (Required, String) Scheduled scaling repeat settings<br/>- `cron`: runs periodically based on a CRON expression<br/>- `once`: runs only once at the specified start time
 - `start_time` (Required, String) Reference time when scheduled autoscaling can actually run (ISO 8601, UTC)
 
 - `schedule` (Optional, String) Scheduled autoscaling execution cycle
@@ -50,36 +49,27 @@ resource "kakaocloud_kubernetes_engine_scheduled_scaling" "example" {
 - `status` (Attributes) Status information (see [below for nested schema](#nestedatt--status))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--status"></a>
-
 ### Nested Schema for `status`
 
 - `histories` (Attributes List) List of past executions (see [below for nested schema](#nestedatt--status--histories))
 
 <a id="nestedatt--status--histories"></a>
-
 ### Nested Schema for `status.histories`
 
 - `description` (String) Description of the history
 - `occurred_time` (String) Event occurrence time
 - `state` (String) State value
+
+
 
 ## Import
 

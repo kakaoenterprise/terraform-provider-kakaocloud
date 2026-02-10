@@ -55,39 +55,28 @@ resource "kakaocloud_load_balancer_target_group_member" "example" {
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID that owns the resource
 - `provisioning_status` (String) Provisioning status
-- `security_groups` (Attributes List) List of security groups (
-  see [below for nested schema](#nestedatt--security_groups))
+- `security_groups` (Attributes List) List of security groups ( see [below for nested schema](#nestedatt--security_groups))
 - `subnet` (Attributes) Subnet information (see [below for nested schema](#nestedatt--subnet))
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 - `vpc_id` (String) Unique VPC ID
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--security_groups"></a>
-
 ### Nested Schema for `security_groups`
 
 - `id` (String) Security group ID
 - `name` (String) Security group name
 
-<a id="nestedatt--subnet"></a>
 
+<a id="nestedatt--subnet"></a>
 ### Nested Schema for `subnet`
 
 - `availability_zone` (String) Availability zone where the subnet is located
@@ -95,6 +84,7 @@ resource "kakaocloud_load_balancer_target_group_member" "example" {
 - `health_check_ips` (List of String) List of IP addresses used for health checks
 - `id` (String) Subnet ID
 - `name` (String) Subnet name
+
 
 ## Import
 

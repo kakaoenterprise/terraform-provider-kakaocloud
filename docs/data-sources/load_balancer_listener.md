@@ -57,11 +57,9 @@ The following attributes are exported:
 - `default_target_group_id` (String) Default target group ID
 - `default_target_group_name` (String) Default target group name
 - `description` (String) Description of the listener
-- `insert_headers` (Attributes) Settings for HTTP headers to insert (
-  see [below for nested schema](#nestedatt--insert_headers))
+- `insert_headers` (Attributes) Settings for HTTP headers to insert ( see [below for nested schema](#nestedatt--insert_headers))
 - `is_enabled` (Boolean) Whether the listener is enabled
-- `l7_policies` (Attributes List) List of associated L7 policies (
-  see [below for nested schema](#nestedatt--l7_policies))
+- `l7_policies` (Attributes List) List of associated L7 policies ( see [below for nested schema](#nestedatt--l7_policies))
 - `load_balancer_id` (String) Associated load balancer ID
 - `load_balancer_type` (String) Load balancer type
 - `name` (String) Listener name
@@ -78,23 +76,20 @@ The following attributes are exported:
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--insert_headers"></a>
-
 ### Nested Schema for `insert_headers`
 
 - `x_forwarded_for` (String) Indicates if the X-Forwarded-For header is inserted.
 - `x_forwarded_port` (String) Indicates if the X-Forwarded-Port header is inserted.
 - `x_forwarded_proto` (String) Indicates if the X-Forwarded-Proto header is inserted.
 
-<a id="nestedatt--l7_policies"></a>
 
+<a id="nestedatt--l7_policies"></a>
 ### Nested Schema for `l7_policies`
 
 - `action` (String) Policy action type
@@ -112,13 +107,11 @@ The following attributes are exported:
 - `rules` (Attributes List) List of L7 rules (see [below for nested schema](#nestedatt--l7_policies--rules))
 
 <a id="nestedatt--l7_policies--rules"></a>
-
 ### Nested Schema for `l7_policies.rules`
 
 - `compare_type` (String) Rule comparison method
 - `id` (String) L7 rule ID
-- `is_inverted` (Boolean) Whether the rule is inverted<br/>- If `true`, the opposite of the comparison result is
-  considered a match
+- `is_inverted` (Boolean) Whether the rule is inverted<br/>- If `true`, the opposite of the comparison result is considered a match
 - `key` (String) Comparison key
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID
@@ -126,15 +119,15 @@ The following attributes are exported:
 - `type` (String) Rule type
 - `value` (String) Value to compare
 
-<a id="nestedatt--secrets"></a>
 
+
+<a id="nestedatt--secrets"></a>
 ### Nested Schema for `secrets`
 
 - `creator_id` (String) Certificate creator ID
 - `expiration` (String) Certificate expiration date
 - `id` (String) Certificate ID
-- `is_default` (Boolean) Whether it is the default certificate<br/>- If `true`, it is used as the default certificate
-  for the listener
+- `is_default` (Boolean) Whether it is the default certificate<br/>- If `true`, it is used as the default certificate for the listener
 - `name` (String) Certificate name
 - `secret_type` (String) Certificate type
 - `status` (String) Certificate status

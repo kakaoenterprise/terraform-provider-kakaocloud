@@ -95,35 +95,30 @@ output "filtered_k8s_images" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
-  see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `images` (Attributes List) List of images that match the applied filters. (
-  see [below for nested schema](#nestedatt--images))
+- `images` (Attributes List) List of images that match the applied filters. ( see [below for nested schema](#nestedatt--images))
 
 <a id="nestedatt--filter"></a>
-
 ### Nested Schema for `filter`
 
 - `name` (Required, String) Name of the attribute to filter by.
 
 - `value` (Optional, String) Value to match for the specified filter attribute.
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--images"></a>
-
 ### Nested Schema for `images`
 
 - `architecture` (String) Image architecture

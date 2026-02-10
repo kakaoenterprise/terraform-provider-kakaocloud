@@ -62,20 +62,16 @@ The following attributes are exported:
 - `name` (String) Name of the security group
 - `project_id` (String) ID of the project the security group belongs to
 - `project_name` (String) Name of the project the security group belongs to
-- `rules` (Attributes Set) List of security group rules, including direction, protocol, port ranges, and remote
-  sources. (see [below for nested schema](#nestedatt--rules))
+- `rules` (Attributes Set) List of security group rules, including direction, protocol, port ranges, and remote sources. (see [below for nested schema](#nestedatt--rules))
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--rules"></a>
-
 ### Nested Schema for `rules`
 
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
@@ -84,11 +80,8 @@ The following attributes are exported:
 - `id` (String) ID of the security group rule
 - `port_range_max` (Number) End value of the allowed port range
 - `port_range_min` (Number) Start value of the allowed port range
-- `protocol` (String) Allowed network protocol <br/> - `TCP`: Transmission Control Protocol <br/> - `UDP`: User Datagram
-  Protocol <br/> - `ICMP`: Internet Control Message Protocol <br/> - `IPIP`: IP-in-IP tunneling <br/> - `ALL`: All
-  protocols
-- `remote_group_id` (String) ID of the source or destination security group for allowed traffic <br/> - Specify when the
-  source/destination is another security group
+- `protocol` (String) Allowed network protocol <br/> - `TCP`: Transmission Control Protocol <br/> - `UDP`: User Datagram Protocol <br/> - `ICMP`: Internet Control Message Protocol <br/> - `IPIP`: IP-in-IP tunneling <br/> - `ALL`: All protocols
+- `remote_group_id` (String) ID of the source or destination security group for allowed traffic <br/> - Specify when the source/destination is another security group
 - `remote_group_name` (String) Name of the source or destination security group for allowed traffic
 - `remote_ip_prefix` (String) Source or destination IP range in CIDR format
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC

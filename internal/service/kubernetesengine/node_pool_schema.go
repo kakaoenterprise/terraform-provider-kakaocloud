@@ -241,6 +241,9 @@ func getNodePoolResourceSchema() map[string]rschema.Attribute {
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"cluster_name": rschema.StringAttribute{
 			Required:   true,

@@ -55,31 +55,26 @@ output "route_table_details" {
 
 The following attributes are exported:
 
-- `associations` (Attributes List) List of subnet associations connected to the route table (
-  see [below for nested schema](#nestedatt--associations))
+- `associations` (Attributes List) List of subnet associations connected to the route table ( see [below for nested schema](#nestedatt--associations))
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `is_main` (Boolean) Indicates whether it is the main route table
 - `name` (String) Route table name
 - `project_id` (String) ID of the project the route table belongs to
 - `project_name` (String) Name of the project the route table belongs to
 - `provisioning_status` (String) Provisioning status
-- `routes` (Attributes List) List of routes registered in the route table (
-  see [below for nested schema](#nestedatt--routes))
+- `routes` (Attributes List) List of routes registered in the route table ( see [below for nested schema](#nestedatt--routes))
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 - `vpc_id` (String) ID of the VPC the route table belongs to
 - `vpc_name` (String) Name of the VPC the route table belongs to
 - `vpc_provisioning_status` (String) Status of the VPC
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--associations"></a>
-
 ### Nested Schema for `associations`
 
 - `availability_zone` (String) Availability zone
@@ -91,14 +86,13 @@ The following attributes are exported:
 - `vpc_id` (String) ID of the connected VPC
 - `vpc_name` (String) Name of the connected VPC
 
-<a id="nestedatt--routes"></a>
 
+<a id="nestedatt--routes"></a>
 ### Nested Schema for `routes`
 
 - `destination` (String) Destination network address (CIDR format)
 - `id` (String) Route ID
-- `is_local_route` (Boolean) Indicates whether it is a local route<br/>  - `true`: route for communication within the
-  same VPC
+- `is_local_route` (Boolean) Indicates whether it is a local route<br/>  - `true`: route for communication within the same VPC
 - `provisioning_status` (String) Provisioning status
 - `target_id` (String) Target resource ID
 - `target_name` (String) Target resource name

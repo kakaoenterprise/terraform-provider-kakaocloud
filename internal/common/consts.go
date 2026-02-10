@@ -108,3 +108,13 @@ const (
 	ClusterStatusFailed       = "Failed"
 	ClusterStatusDeleting     = "Deleting"
 )
+
+const (
+	TgwStatusActive         = "ACTIVE"
+	TgwStatusError          = "ERROR"
+	TgwStatusInUse          = "IN_USE"
+	TgwStatusInactive       = "INACTIVE"
+	TgwStatusAvaliable      = "AVAILABLE"
+	TgwStatusPendingApprove = "PENDING_APPROVE"
+	TgwStatusDeleting       = "PENDING_DELETE"
+)

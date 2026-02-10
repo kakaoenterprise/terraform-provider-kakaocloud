@@ -50,11 +50,17 @@ var keypairResourceSchemaAttributes = map[string]rschema.Attribute{
 	},
 	"user_id": rschema.StringAttribute{
 		Computed: true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	},
 	"type": rschema.StringAttribute{
 		Computed: true,
 	},
 	"created_at": rschema.StringAttribute{
 		Computed: true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	},
 }

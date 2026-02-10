@@ -49,20 +49,20 @@ resource "kakaocloud_load_balancer_target_group" "example_with_listener" {
 - `protocol` (Required, String) Traffic receiving protocol
 
 - `description` (Optional, String) Description of the target group
-- `listener_id` (Optional, String) ID of the listener associated with this target group
-- `session_persistence` (Optional, Attributes) Session settings (
-  see [below for nested schema](#nestedatt--session_persistence))
+- `listener_id` (Optional, String) ID of the listener associated with this target group  
+  > ⚠️ Note: Do not include this field when importing an existing resource.  
+  > This value cannot be retrieved, and setting it after import will cause **forced replacement**.
+
+- `session_persistence` (Optional, Attributes) Session settings ( see [below for nested schema](#nestedatt--session_persistence))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 - `availability_zone` (String) Availability zone
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
-- `health_monitor` (Attributes) Associated health monitor information (
-  see [below for nested schema](#nestedatt--health_monitor))
+- `health_monitor` (Attributes) Associated health monitor information ( see [below for nested schema](#nestedatt--health_monitor))
 - `id` (String) Target group ID
-- `listeners` (Attributes List) List of associated listener information (
-  see [below for nested schema](#nestedatt--listeners))
+- `listeners` (Attributes List) List of associated listener information ( see [below for nested schema](#nestedatt--listeners))
 - `load_balancer_name` (String) Associated load balancer name
 - `load_balancer_provisioning_status` (String) Load balancer provisioning status
 - `load_balancer_type` (String) Load balancer type
@@ -77,37 +77,25 @@ resource "kakaocloud_load_balancer_target_group" "example_with_listener" {
 - `vpc_name` (String) VPC name
 
 <a id="nestedatt--session_persistence"></a>
-
 ### Nested Schema for `session_persistence`
 
-- `persistence_timeout` (Required, Number) Duration (in seconds) that a session remains associated with the same
-  backend.
+- `persistence_timeout` (Required, Number) Duration (in seconds) that a session remains associated with the same backend.
 - `type` (Required, String) Session persistence method (e.g., SOURCE_IP, APP_COOKIE).
 
 - `cookie_name` (Optional, String) Name of the session cookie used when cookie-based persistence is enabled.
-- `persistence_granularity` (Optional, String) Level at which session persistence is applied (for example, per-source
-  IP).
+- `persistence_granularity` (Optional, String) Level at which session persistence is applied (for example, per-source IP).
+
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--health_monitor"></a>
-
 ### Nested Schema for `health_monitor`
 
 - `delay` (Number) Health check interval (seconds)
@@ -124,13 +112,14 @@ resource "kakaocloud_load_balancer_target_group" "example_with_listener" {
 - `type` (String) Health monitor type
 - `url_path` (String) Health check request path
 
-<a id="nestedatt--listeners"></a>
 
+<a id="nestedatt--listeners"></a>
 ### Nested Schema for `listeners`
 
 - `id` (String) Listener ID
 - `protocol` (String) Listener protocol
 - `protocol_port` (Number) Listener protocol port
+
 
 ## Import
 
@@ -142,4 +131,10 @@ example:
 ```shell
 $ terraform import kakaocloud_load_balancer_target_group.example <resource_id>
 ```
+
+⚠️ Caution  
+When importing an existing target group, do not specify `listener_id` in the resource block.  
+The `listener_id` used at the time of target group creation cannot be identified during the import process.  
+If `listener_id` is configured after import, Terraform will treat it as a change that forces resource replacement,  
+which results in the existing target group being deleted and recreated.
 

@@ -232,7 +232,7 @@ func (r *instanceResource) pollInstanceUntilStatus(
 	return common.PollUntilResult(
 		ctx,
 		r,
-		2*time.Second,
+		3*time.Second,
 		"instance",
 		instanceId,
 		targetStatuses,

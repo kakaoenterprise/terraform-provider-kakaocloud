@@ -56,23 +56,18 @@ output "all_node_pools" {
 
 The following attributes are exported:
 
-- `node_pools` (Attributes List) List of node pools in the cluster (
-  see [below for nested schema](#nestedatt--node_pools))
+- `node_pools` (Attributes List) List of node pools in the cluster ( see [below for nested schema](#nestedatt--node_pools))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--node_pools"></a>
-
 ### Nested Schema for `node_pools`
 
-- `autoscaling` (Attributes) Resource-based autoscaling configuration of the node pool (
-  see [below for nested schema](#nestedatt--node_pools--autoscaling))
+- `autoscaling` (Attributes) Resource-based autoscaling configuration of the node pool ( see [below for nested schema](#nestedatt--node_pools--autoscaling))
 - `cluster_name` (String) Name of the cluster the node pool belongs to
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
 - `description` (String) Description of the node pool
@@ -86,38 +81,31 @@ The following attributes are exported:
 - `is_gpu` (Boolean) Whether the node pool is GPU type
 - `is_hyper_threading` (Boolean) Whether hyper-threading is enabled
 - `is_upgradable` (Boolean) Whether upgrade is available
-- `labels` (Attributes Set) List of labels applied to the node pool (
-  see [below for nested schema](#nestedatt--node_pools--labels))
+- `labels` (Attributes Set) List of labels applied to the node pool ( see [below for nested schema](#nestedatt--node_pools--labels))
 - `name` (String) Node pool name
 - `node_count` (Number) Number of nodes in the node pool
 - `security_groups` (Set of String) List of connected security groups
 - `ssh_key_name` (String) SSH key name
 - `status` (Attributes) Node pool status (see [below for nested schema](#nestedatt--node_pools--status))
-- `taints` (Attributes Set) List of taints applied to the node pool (
-  see [below for nested schema](#nestedatt--node_pools--taints))
+- `taints` (Attributes Set) List of taints applied to the node pool ( see [below for nested schema](#nestedatt--node_pools--taints))
 - `user_data` (String) User script set for the node pool (base64 encoded)
 - `version` (String) Kubernetes version of the node pool
 - `volume_size` (Number) Root volume size of the node pool (GiB)
-- `vpc_info` (Attributes) VPC information where the node pool belongs (
-  see [below for nested schema](#nestedatt--node_pools--vpc_info))
+- `vpc_info` (Attributes) VPC information where the node pool belongs ( see [below for nested schema](#nestedatt--node_pools--vpc_info))
 
 <a id="nestedatt--node_pools--autoscaling"></a>
-
 ### Nested Schema for `node_pools.autoscaling`
 
 - `autoscaler_desired_node_count` (Number) Desired node count targeted by the autoscaler
 - `autoscaler_max_node_count` (Number) Maximum node count allowed by resource-based autoscaling
 - `autoscaler_min_node_count` (Number) Minimum node count allowed by resource-based autoscaling
-- `autoscaler_scale_down_threshold` (Number) Threshold condition for resource-based autoscaling scale-down <br/> -
-  Specified as a ratio (0–1), up to two decimal places
-- `autoscaler_scale_down_unneeded_time` (Number) Duration of the scale-down threshold condition (seconds) <br/> - Valid
-  range: 1–86400
-- `autoscaler_scale_down_unready_time` (Number) Exclusion time for monitoring unready nodes during resource-based
-  scale-down (seconds) <br/> - Valid range: 1–86400
+- `autoscaler_scale_down_threshold` (Number) Threshold condition for resource-based autoscaling scale-down <br/> - Specified as a ratio (0–1), up to two decimal places
+- `autoscaler_scale_down_unneeded_time` (Number) Duration of the scale-down threshold condition (seconds) <br/> - Valid range: 1–86400
+- `autoscaler_scale_down_unready_time` (Number) Exclusion time for monitoring unready nodes during resource-based scale-down (seconds) <br/> - Valid range: 1–86400
 - `is_autoscaler_enable` (Boolean) Whether resource-based autoscaling is enabled
 
-<a id="nestedatt--node_pools--image"></a>
 
+<a id="nestedatt--node_pools--image"></a>
 ### Nested Schema for `node_pools.image`
 
 - `architecture` (String) Image architecture
@@ -131,42 +119,37 @@ The following attributes are exported:
 - `os_type` (String) Operating system type
 - `os_version` (String) Operating system version
 
-<a id="nestedatt--node_pools--labels"></a>
 
+<a id="nestedatt--node_pools--labels"></a>
 ### Nested Schema for `node_pools.labels`
 
 - `key` (String) Label key
 - `value` (String) Label value
 
-<a id="nestedatt--node_pools--status"></a>
 
+<a id="nestedatt--node_pools--status"></a>
 ### Nested Schema for `node_pools.status`
 
 - `available_nodes` (Number) Number of available nodes
-- `phase` (String) Current node pool status <br/>- `Pending`: Pending <br/>- `ScalingUp`: Scaling up <br/>-
-  `ScalingDown`: Scaling down <br/>- `Running`: Running <br/>- `Failed`: Error occurred <br/>- `Deleting`:
-  Deleting  <br/>- `Updating`: Updating <br/>- `Running (Scheduling Disable)`: Running but scheduling disabled
+- `phase` (String) Current node pool status <br/>- `Pending`: Pending <br/>- `ScalingUp`: Scaling up <br/>- `ScalingDown`: Scaling down <br/>- `Running`: Running <br/>- `Failed`: Error occurred <br/>- `Deleting`: Deleting  <br/>- `Updating`: Updating <br/>- `Running (Scheduling Disable)`: Running but scheduling disabled
 - `unavailable_nodes` (Number) Number of unavailable nodes
 
-<a id="nestedatt--node_pools--taints"></a>
 
+<a id="nestedatt--node_pools--taints"></a>
 ### Nested Schema for `node_pools.taints`
 
-- `effect` (String) Taint effect applied to the node <br/>- Possible values: `NoSchedule`, `PreferNoSchedule`,
-  `NoExecute`
+- `effect` (String) Taint effect applied to the node <br/>- Possible values: `NoSchedule`, `PreferNoSchedule`, `NoExecute`
 - `key` (String) Taint key
 - `value` (String) Taint value
 
-<a id="nestedatt--node_pools--vpc_info"></a>
 
+<a id="nestedatt--node_pools--vpc_info"></a>
 ### Nested Schema for `node_pools.vpc_info`
 
 - `id` (String) Unique ID of the VPC
-- `subnets` (Attributes Set) List of subnet IDs (
-  see [below for nested schema](#nestedatt--node_pools--vpc_info--subnets))
+- `subnets` (Attributes Set) List of subnet IDs ( see [below for nested schema](#nestedatt--node_pools--vpc_info--subnets))
 
 <a id="nestedatt--node_pools--vpc_info--subnets"></a>
-
 ### Nested Schema for `node_pools.vpc_info.subnets`
 
 - `availability_zone` (String) Availability zone of the subnet

@@ -94,12 +94,18 @@ func getVolumeSnapshotResourceSchema() map[string]rschema.Attribute {
 		},
 		"project_id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"parent_id": rschema.StringAttribute{
 			Computed: true,
 		},
 		"user_id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"is_incremental": rschema.BoolAttribute{
 			Required: true,
@@ -115,6 +121,9 @@ func getVolumeSnapshotResourceSchema() map[string]rschema.Attribute {
 		},
 		"created_at": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"updated_at": rschema.StringAttribute{
 			Computed: true,

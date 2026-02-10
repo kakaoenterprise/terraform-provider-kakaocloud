@@ -139,35 +139,30 @@ output "tls_listeners" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
-  see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `listeners` (Attributes List) List of listeners that match the specified filters (
-  see [below for nested schema](#nestedatt--listeners))
+- `listeners` (Attributes List) List of listeners that match the specified filters ( see [below for nested schema](#nestedatt--listeners))
 
 <a id="nestedatt--filter"></a>
-
 ### Nested Schema for `filter`
 
 - `name` (Required, String) Name of the attribute to filter by.
 
 - `value` (Optional, String) Value to match for the specified filter attribute.
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--listeners"></a>
-
 ### Nested Schema for `listeners`
 
 - `alpn_protocols` (List of String) ALPN (Application-Layer Protocol Negotiation) protocol list
@@ -177,11 +172,9 @@ The following attributes are exported:
 - `default_target_group_name` (String) Default target group name
 - `description` (String) Description of the listener
 - `id` (String) Listener ID
-- `insert_headers` (Attributes) Settings for HTTP headers to insert (
-  see [below for nested schema](#nestedatt--listeners--insert_headers))
+- `insert_headers` (Attributes) Settings for HTTP headers to insert ( see [below for nested schema](#nestedatt--listeners--insert_headers))
 - `is_enabled` (Boolean) Whether the listener is enabled
-- `l7_policies` (Attributes List) List of associated L7 policies (
-  see [below for nested schema](#nestedatt--listeners--l7_policies))
+- `l7_policies` (Attributes List) List of associated L7 policies ( see [below for nested schema](#nestedatt--listeners--l7_policies))
 - `load_balancer_id` (String) Associated load balancer ID
 - `load_balancer_type` (String) Load balancer type
 - `name` (String) Listener name
@@ -190,8 +183,7 @@ The following attributes are exported:
 - `protocol` (String) Listening protocol
 - `protocol_port` (Number) Listening port number
 - `provisioning_status` (String) Provisioning status
-- `secrets` (Attributes List) List of associated certificates (
-  see [below for nested schema](#nestedatt--listeners--secrets))
+- `secrets` (Attributes List) List of associated certificates ( see [below for nested schema](#nestedatt--listeners--secrets))
 - `timeout_client_data` (Number) Client data receive timeout (seconds)
 - `tls_certificate_id` (String) Associated TLS certificate ID
 - `tls_ciphers` (String) TLS cipher suite list (applies only to `TERMINATED_HTTPS` protocol)
@@ -199,15 +191,14 @@ The following attributes are exported:
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 
 <a id="nestedatt--listeners--insert_headers"></a>
-
 ### Nested Schema for `listeners.insert_headers`
 
 - `x_forwarded_for` (String) Indicates if the X-Forwarded-For header is inserted.
 - `x_forwarded_port` (String) Indicates if the X-Forwarded-Port header is inserted.
 - `x_forwarded_proto` (String) Indicates if the X-Forwarded-Proto header is inserted.
 
-<a id="nestedatt--listeners--l7_policies"></a>
 
+<a id="nestedatt--listeners--l7_policies"></a>
 ### Nested Schema for `listeners.l7_policies`
 
 - `action` (String) Policy action type
@@ -225,13 +216,11 @@ The following attributes are exported:
 - `rules` (Attributes List) List of L7 rules (see [below for nested schema](#nestedatt--listeners--l7_policies--rules))
 
 <a id="nestedatt--listeners--l7_policies--rules"></a>
-
 ### Nested Schema for `listeners.l7_policies.rules`
 
 - `compare_type` (String) Rule comparison method
 - `id` (String) L7 rule ID
-- `is_inverted` (Boolean) Whether the rule is inverted<br/>- If `true`, the opposite of the comparison result is
-  considered a match
+- `is_inverted` (Boolean) Whether the rule is inverted<br/>- If `true`, the opposite of the comparison result is considered a match
 - `key` (String) Comparison key
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID
@@ -239,15 +228,15 @@ The following attributes are exported:
 - `type` (String) Rule type
 - `value` (String) Value to compare
 
-<a id="nestedatt--listeners--secrets"></a>
 
+
+<a id="nestedatt--listeners--secrets"></a>
 ### Nested Schema for `listeners.secrets`
 
 - `creator_id` (String) Certificate creator ID
 - `expiration` (String) Certificate expiration date
 - `id` (String) Certificate ID
-- `is_default` (Boolean) Whether it is the default certificate<br/>- If `true`, it is used as the default certificate
-  for the listener
+- `is_default` (Boolean) Whether it is the default certificate<br/>- If `true`, it is used as the default certificate for the listener
 - `name` (String) Certificate name
 - `secret_type` (String) Certificate type
 - `status` (String) Certificate status

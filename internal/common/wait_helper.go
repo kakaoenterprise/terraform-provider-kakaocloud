@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -40,7 +41,7 @@ func PollUntilResultWithTimeout[T any](
 	defer ticker.Stop()
 
 	retry404Count := 0
-	maxRetries := 10
+	maxRetries := 30
 
 	typeName, _ := ExtractTypeMetadata(ctx, obj)
 
@@ -53,6 +54,15 @@ func PollUntilResultWithTimeout[T any](
 		case <-ticker.C:
 			result, httpResp, err := fetch(ctxWithTimeout)
 			if err != nil {
+
+				if isTransientPollError(err) {
+					tflog.Warn(ctxWithTimeout, fmt.Sprintf(
+						"Transient polling error (%v). Retrying...",
+						err,
+					))
+					continue
+				}
+
 				if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
 					retry404Count++
 					if retry404Count <= maxRetries {
@@ -69,7 +79,12 @@ func PollUntilResultWithTimeout[T any](
 						"PollForStatus",
 						err,
 						respDiags,
-						fmt.Sprintf("The requested %s '%s' does not exsist or is not accessible after %d retries. Please verify the resource exists.", targetName, targetId, maxRetries),
+						fmt.Sprintf(
+							"The requested %s '%s' does not exist or is not accessible after %d retries. Please verify the resource exists.",
+							targetName,
+							targetId,
+							maxRetries,
+						),
 					)
 					return zero, false
 				}
@@ -89,6 +104,27 @@ func PollUntilResultWithTimeout[T any](
 			tflog.Info(ctxWithTimeout, fmt.Sprintf("%s... [%s elapsed]", status, elapsed))
 		}
 	}
+}
+
+func isTransientPollError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	msg := err.Error()
+
+	switch {
+	case strings.Contains(msg, "GOAWAY"):
+		return true
+	case strings.Contains(msg, "connection reset"):
+		return true
+	case strings.Contains(msg, "broken pipe"):
+		return true
+	case strings.Contains(msg, "EOF"):
+		return true
+	}
+
+	return false
 }
 
 func PollUntilResult[T any](
@@ -135,11 +171,19 @@ func PollUntilDeletion(
 		case <-ticker.C:
 			deleted, httpResp, err := check(ctx)
 
-			if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
-				return
-			}
-
 			if err != nil {
+				if isTransientPollError(err) {
+					tflog.Warn(ctx, fmt.Sprintf(
+						"Transient polling error (%v). Retrying...",
+						err,
+					))
+					continue
+				}
+
+				if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+					return
+				}
+
 				AddApiActionError(ctx, obj, httpResp, "PollForDeletion", err, respDiags)
 				return
 			}

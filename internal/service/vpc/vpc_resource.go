@@ -23,7 +23,6 @@ import (
 var (
 	_ resource.ResourceWithConfigure   = &vpcResource{}
 	_ resource.ResourceWithImportState = &vpcResource{}
-	_ resource.ResourceWithModifyPlan  = &vpcResource{}
 )
 
 func NewVpcResource() resource.Resource {
@@ -67,20 +66,22 @@ func (r *vpcResource) Create(ctx context.Context, req resource.CreateRequest, re
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	var subnetModel vpcSubnetModel
-	diags = plan.Subnet.As(ctx, &subnetModel, basetypes.ObjectAsOptions{})
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	createReq := vpc.CreateVPCModel{
 		Name:      plan.Name.ValueString(),
 		CidrBlock: plan.CidrBlock.ValueString(),
-		Subnet: &vpc.MainSubnet{
+	}
+
+	var subnetModel vpcSubnetModel
+	if !plan.Subnet.IsNull() {
+		diags = plan.Subnet.As(ctx, &subnetModel, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		createReq.Subnet = &vpc.MainSubnet{
 			CidrBlock:        subnetModel.CidrBlock.ValueString(),
 			AvailabilityZone: vpc.AvailabilityZone(subnetModel.AvailabilityZone.ValueString()),
-		},
+		}
 	}
 
 	body := vpc.BodyCreateVpc{
@@ -361,33 +362,6 @@ func (r *vpcResource) validateSubnetCidrBlockConfig(ctx context.Context, config 
 
 		if !config.CidrBlock.IsUnknown() && !subnetModel.CidrBlock.IsUnknown() {
 			common.CidrContainValidator(subnetModel.CidrBlock.ValueString(), config.CidrBlock.ValueString(), "subnet", "vpc", respDiags)
-		}
-	}
-}
-
-func (r *vpcResource) ModifyPlan(
-	ctx context.Context,
-	req resource.ModifyPlanRequest,
-	resp *resource.ModifyPlanResponse,
-) {
-	var plan, state *vpcResourceModel
-
-	planDiags := req.Plan.Get(ctx, &plan)
-	stateDiags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(planDiags...)
-	resp.Diagnostics.Append(stateDiags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if req.Plan.Raw.IsNull() {
-		return
-	}
-
-	if req.State.Raw.IsNull() && !req.Plan.Raw.IsNull() {
-		if plan.Subnet.IsNull() {
-			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
-				"Missing required attribute 'subnet' on create.")
 		}
 	}
 }

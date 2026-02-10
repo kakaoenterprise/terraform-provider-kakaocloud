@@ -71,50 +71,27 @@ resource "kakaocloud_instance" "example" {
 
 ## Argument Reference
 
-- `flavor_id` (Required, String) Instance type ID <br/> - Refer
-  to [List instance types](https://docs.kakaocloud.com/openapi/bcs/list-instance-types) API
+- `flavor_id` (Required, String) Instance type ID <br/> - Refer to [List instance types](https://docs.kakaocloud.com/openapi/bcs/list-instance-types) API
 - `image_id` (Required, String) Unique ID of the image
 - `name` (Required, String) Instance name
 - `subnets` (Required, Attributes List) List of subnets to connect (see [below for nested schema](#nestedatt--subnets))
 
-> **NOTE
-**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)
-> are supported in Terraform 1.11 and later.
-
 - `availability_zone` (Optional, String) Name of the availability zone where the instance was created
 - `description` (Optional, String) Description of the instance
-- `initial_security_groups` (Optional, Set of Object) List of initial security groups for the instance (
-  see [below for nested schema](#nestedatt--initial_security_groups)) <br/>
-    - This field is write-only and cannot be updated after instance creation. <br/>
-    - To modify security groups after creation, use the `kakaocloud_network_interface` resource.
-- `is_bonding` (Optional, Boolean) Whether to enable network interface bonding <br/> - Required only when creating Bare
-  Metal (`bm`) instances
+- `initial_security_groups` (Optional, Attributes Set) List of initial security groups for the instance ( see [below for nested schema](#nestedatt--initial_security_groups)) <br/> - This field is write-only and cannot be updated after instance creation. <br/> - To modify security groups after creation, use the `kakaocloud_network_interface` resource.
+- `is_bonding` (Optional, Boolean) Whether to enable network interface bonding <br/> - Required only when creating Bare Metal (`bm`) instances
 - `is_hyper_threading` (Optional, Boolean) Whether hyper-threading is enabled
 - `key_name` (Optional, String) Key pair name applied to the instance
 - `status` (Optional, String) Instance status <br/> - Only `active`, `shelved_offloaded`, and `stopped` can be entered.
-- `timeouts` (Optional, Attributes) (see [below for nested schema](#nestedatt--timeouts))
-- `user_data` (Optional,
-  String, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments))
-  User data script executed during instance initialization (runs only on the first boot)<br/> - Enter up to 16KB of user
-  data script and `cloud-init` commands<br/> - Input must be a Base64-encoded string<br/> - Script is copied under
-  `/var/lib/cloud/instances` and executed<br/>
-    - ⚠️ Entering incorrect or incomplete scripts may cause boot failure.<br/>
-- To check execution logs, run:<br/>
-  ㄴ Ubuntu: `sudo cat /var/log/syslog` or `sudo journalctl -u cloud-final.service`<br/>
-  ㄴ CentOS: `sudo cat /var/log/messages` or `sudo journalctl -u cloud-final.service`<br/>
-
-- `volumes` (Optional, Attributes List) Volumes to attach to the instance (
-  see [below for nested schema](#nestedatt--volumes))
+- `timeouts` (Optional, Attributes) String, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) User data script executed during instance initialization (runs only on the first boot)<br/> - Enter up to 16KB of user data script and `cloud-init` commands<br/> - Input must be a Base64-encoded string<br/> - Script is copied under `/var/lib/cloud/instances` and executed<br/> - ⚠️ Entering incorrect or incomplete scripts may cause boot failure.<br/> ㄴ Ubuntu: `sudo cat /var/log/syslog` or `sudo journalctl -u cloud-final.service`<br/> ㄴ CentOS: `sudo cat /var/log/messages` or `sudo journalctl -u cloud-final.service`<br/> (see [below for nested schema](#nestedatt--timeouts))
+- `user_data` (Optional, String) User script to run when creating nodes in the node pool (requires base64 encoding)
+- `volumes` (Optional, Attributes List) Volumes to attach to the instance ( see [below for nested schema](#nestedatt--volumes))
 
 ## Attribute Reference
 
-The following attributes are exported:
-
-- `addresses` (Attributes List) Network addresses associated with the instance (
-  see [below for nested schema](#nestedatt--addresses))
+- `addresses` (Attributes List) Network addresses associated with the instance ( see [below for nested schema](#nestedatt--addresses))
 - `attached_volume_count` (Number) Number of block storage volumes attached to the instance
-- `attached_volumes` (Attributes List) List of attached volumes (
-  see [below for nested schema](#nestedatt--attached_volumes))
+- `attached_volumes` (Attributes List) List of attached volumes ( see [below for nested schema](#nestedatt--attached_volumes))
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `flavor` (Attributes) Instance type (see [below for nested schema](#nestedatt--flavor))
 - `hostname` (String) Host name of the instance
@@ -127,80 +104,56 @@ The following attributes are exported:
 - `power_state` (String) Power state code
 - `project_id` (String) Project ID the instance belongs to
 - `security_group_count` (Number) Number of security groups attached to the instance
-- `security_groups` (Attributes Set) List of security groups attached to the instance (
-  see [below for nested schema](#nestedatt--security_groups))
+- `security_groups` (Attributes Set) List of security groups attached to the instance ( see [below for nested schema](#nestedatt--security_groups))
 - `task_state` (String) Current task state
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format <br/> - Based on UTC
 - `user_id` (String) ID of the user who created the instance
 - `vm_state` (String) Internal VM state value
 
 <a id="nestedatt--subnets"></a>
-
 ### Nested Schema for `subnets`
 
 - `id` (Required, String) ID of the subnet to attach to the instance
-- `network_interface_id` (Optional, String) ID of the network interface to use <br/> - Cannot be used together with
-  `private_ip`
-- `private_ip` (Optional, String) Manually assign a private IP if needed <br/> - Use when a static IP configuration is
-  required instead of auto-assignment <br/> - Cannot be used together with `network_interface_id`
+
+- `network_interface_id` (Optional, String) ID of the network interface to use <br/> - Cannot be used together with `private_ip`
+- `private_ip` (Optional, String) Manually assign a private IP if needed <br/> - Use when a static IP configuration is required instead of auto-assignment <br/> - Cannot be used together with `network_interface_id`
+
 
 <a id="nestedatt--initial_security_groups"></a>
-
 ### Nested Schema for `initial_security_groups`
 
 - `name` (Required, String) Security group name
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--volumes"></a>
-
 ### Nested Schema for `volumes`
 
-- `encryption_secret_id` (Optional, String) Encryption key ID <br/> - Field name `encryption_secret_uuid` has been
-  changed to `encryption_secret_id`<br/> - Requests with `encryption_secret_uuid` are still processed but will be
-  deprecated in the future<br/> - If both `encryption_secret_id` and `encryption_secret_uuid` are provided, only
-  `encryption_secret_id` will be used
-- `id` (Optional, String) ID of an existing volume to attach (used when creating from an existing volume)  
-  Cannot be specified together with `image_id`.
-- `image_id` (Optional, String) ID of an image to create the volume from (used when creating from an existing image)  
-  Cannot be specified together with `id`.
-- `is_delete_on_termination` (Optional, Boolean) Whether to automatically delete the volume when the instance is
-  terminated <br/> - First volume: default `true`<br/> - Additional volumes: default `false`
-- `size` (Optional, Number) Volume size (GB) <br/>
-    - Allowed range: 1 ~ 16384 <br/>
-    - Required when using `image_id` <br/>
-    - For `source_type = image`, must be greater than or equal to the image's `min_disk` <br/>
-    - For Windows images, supports up to 2048GB
-- `type_id` (Optional, String) Volume type ID of the block storage to attach (currently only `gp2` general-purpose SSD
-  supported)<br/> - Required only for `image` or `blank` source types<br/> - Refer to `volume_types.id`
-  from [List volume types](https://docs.kakaocloud.com/openapi/bcs/list-volume-types)
+- `encryption_secret_id` (Optional, String) Encryption key ID <br/> - Field name `encryption_secret_uuid` has been changed to `encryption_secret_id`<br/> - Requests with `encryption_secret_uuid` are still processed but will be deprecated in the future<br/> - If both `encryption_secret_id` and `encryption_secret_uuid` are provided, only `encryption_secret_id` will be used
+- `id` (Optional, String) ID of an existing volume to attach (used when creating from an existing volume)   Cannot be specified together with `image_id`.
+- `image_id` (Optional, String) ID of an image to create the volume from (used when creating from an existing image)   Cannot be specified together with `id`.
+- `is_delete_on_termination` (Optional, Boolean) Whether to automatically delete the volume when the instance is terminated <br/> - First volume: default `true`<br/> - Additional volumes: default `false`
+- `size` (Optional, Number) Volume size (GB) <br/> - Allowed range: 1 ~ 16384 <br/> - Required when using `image_id` <br/> - For `source_type = image`, must be greater than or equal to the image's `min_disk` <br/> - For Windows images, supports up to 2048GB
+- `type_id` (Optional, String) Volume type ID of the block storage to attach (currently only `gp2` general-purpose SSD supported)<br/> - Required only for `image` or `blank` source types<br/> - Refer to `volume_types.id` from [List volume types](https://docs.kakaocloud.com/openapi/bcs/list-volume-types)
+
 
 <a id="nestedatt--addresses"></a>
-
 ### Nested Schema for `addresses`
 
 - `network_interface_id` (String) Connected network interface ID
 - `private_ip` (String) Private IP address (IPv4 format)
 - `public_ip` (String) Public IP address
 
-<a id="nestedatt--attached_volumes"></a>
 
+<a id="nestedatt--attached_volumes"></a>
 ### Nested Schema for `attached_volumes`
 
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
@@ -213,8 +166,8 @@ The following attributes are exported:
 - `status` (String) Volume status
 - `type` (String) Volume type
 
-<a id="nestedatt--flavor"></a>
 
+<a id="nestedatt--flavor"></a>
 ### Nested Schema for `flavor`
 
 - `disk_type` (String) Disk type
@@ -223,8 +176,7 @@ The following attributes are exported:
 - `hw_type` (String) Hardware type <br/> - Example: GPU
 - `id` (String) Instance type ID
 - `instance_family` (String) Instance family
-- `is_burstable` (Boolean) Whether it is
-  a [burstable instance](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-type/general-purpose/burstable-main)
+- `is_burstable` (Boolean) Whether it is a [burstable instance](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-type/general-purpose/burstable-main)
 - `is_hyper_threading_supported` (Boolean) Whether hyper-threading is supported
 - `manufacturer` (String) Manufacturer information
 - `maximum_network_interfaces` (Number) Maximum number of network interfaces
@@ -235,8 +187,8 @@ The following attributes are exported:
 - `root_gb` (Number) Root disk size (GB, default: 0)
 - `vcpus` (Number) Number of vCPUs
 
-<a id="nestedatt--image"></a>
 
+<a id="nestedatt--image"></a>
 ### Nested Schema for `image`
 
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
@@ -259,13 +211,13 @@ The following attributes are exported:
 - `status` (String) Image status
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format <br/> - Based on UTC
 
-<a id="nestedatt--security_groups"></a>
 
+<a id="nestedatt--security_groups"></a>
 ### Nested Schema for `security_groups`
 
-- `name` (String)
+- `name` (Optional, String) Name of the security group attached to the instance.
+- `id` (String) Unique ID of the security group attached to the instance.
 
-- `id` (String)
 
 ## Import
 
@@ -277,3 +229,4 @@ example:
 ```shell
 $ terraform import kakaocloud_instance.example <resource_id> 
 ```
+

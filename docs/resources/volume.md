@@ -39,29 +39,15 @@ resource "kakaocloud_volume" "example_restore" {
 
 - `availability_zone` (Required, String) Availability zone where the volume is located
 - `name` (Required, String) Name of the volume
-- `description` (Optional, String) Description of the volume <br/>
-    - Ignored if `volume_snapshot_id` is specified.
+
+- `description` (Optional, String) Description of the volume <br/> - Ignored if `volume_snapshot_id` is specified.
 - `encryption_secret_id` (Optional, String) Encryption key ID used to encrypt the volume
-- `image_id` (Optional, String) Unique ID of the image <br/>
-    - See ⚠️ Constraints section below for mutual exclusivity.
-- `size` (Optional, Number) Volume size (in GB) <br/>
-    - Required if `volume_snapshot_id` is not specified <br/>
-    - Linux: 1–16,384 GB <br/>
-    - Windows: 1–2,048 GB
-- `source_volume_id` (Optional, String) ID of an existing volume to clone from <br/>
-    - Cannot be specified together with `volume_snapshot_id` or `image_id`.
+- `image_id` (Optional, String) Unique ID of the image <br/> - See ⚠️ Constraints section below for mutual exclusivity.
+- `size` (Optional, Number) Volume size (in GB) <br/> - Required if `volume_snapshot_id` is not specified <br/> - Linux: 1–16,384 GB <br/> - Windows: 1–2,048 GB
+- `source_volume_id` (Optional, String) ID of an existing volume to clone from <br/> - Cannot be specified together with `volume_snapshot_id` or `image_id`.
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
-- `volume_snapshot_id` (Optional, String) ID of the snapshot to restore from <br/>
-    - See ⚠️ Constraints section below for mutual exclusivity.
+- `volume_snapshot_id` (Optional, String) ID of the snapshot to restore from <br/> - See ⚠️ Constraints section below for mutual exclusivity.
 - `volume_type_id` (Optional, String) Volume type ID
-
----
-
-### ⚠️ Constraints
-
-- Only **one of** `volume_snapshot_id`, `image_id`, or `source_volume_id` can be specified.
-- When using `volume_snapshot_id`:
-    - `image_id`, `source_volume_id`, and `description` **must not** be set.
 
 ## Attribute Reference
 
@@ -69,8 +55,7 @@ resource "kakaocloud_volume" "example_restore" {
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `encryption_key_id` (String) ID of the key used for volume encryption
 - `id` (String) Unique ID of the volume
-- `image_metadata` (Attributes) Metadata of the associated instance if this is a root volume (
-  see [below for nested schema](#nestedatt--image_metadata))
+- `image_metadata` (Attributes) Metadata of the associated instance if this is a root volume ( see [below for nested schema](#nestedatt--image_metadata))
 - `instance_id` (String) Unique ID of the instance
 - `instance_name` (String) Name of the instance attached to the volume
 - `is_bootable` (Boolean) Whether the volume is bootable
@@ -81,33 +66,22 @@ resource "kakaocloud_volume" "example_restore" {
 - `mount_point` (String) Path where the volume is mounted on the instance
 - `previous_status` (String) Previous status
 - `project_id` (String) Project ID the volume belongs to
-- `status` (String) Status of the volume <br/> - Refer
-  to [volume states](https://docs.kakaocloud.com/en/service/bcs/vm/vm-main#volume-states)
+- `status` (String) Status of the volume <br/> - Refer to [volume states](https://docs.kakaocloud.com/en/service/bcs/vm/vm-main#volume-states)
 - `type` (String) Detailed type of the volume
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 - `user_id` (String) ID of the user who owns the volume
 - `volume_type` (String) Volume type
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--image_metadata"></a>
-
 ### Nested Schema for `image_metadata`
 
 - `container_format` (String) Image container format
@@ -118,6 +92,7 @@ resource "kakaocloud_volume" "example_restore" {
 - `min_ram` (String) Minimum RAM size required to use the image (MB)
 - `os_type` (String) Operating system type
 - `size` (String) Image size (in bytes)
+
 
 ## Import
 

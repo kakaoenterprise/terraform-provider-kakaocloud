@@ -63,8 +63,7 @@ resource "kakaocloud_security_group" "example_ssh" {
 - `name` (Required, String) Name of the security group
 
 - `description` (Optional, String) Description of the security group
-- `rules` (Optional, Attributes Set) Inbound and outbound rules configured in the security group (
-  see [below for nested schema](#nestedatt--rules))
+- `rules` (Optional, Attributes Set) Inbound and outbound rules configured in the security group ( see [below for nested schema](#nestedatt--rules))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
@@ -77,47 +76,30 @@ resource "kakaocloud_security_group" "example_ssh" {
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 
 <a id="nestedatt--rules"></a>
-
 ### Nested Schema for `rules`
 
-- `direction` (Required, String) Traffic direction <br/> - `ingress`: inbound (receive) <br/> - `egress`: outbound (
-  send)
-- `protocol` (Required, String) Allowed network protocol <br/> - `TCP`: Transmission Control Protocol <br/> - `UDP`:
-  User Datagram Protocol <br/> - `ICMP`: Internet Control Message Protocol <br/> - `IPIP`: IP-in-IP tunneling <br/> -
-  `ALL`: All protocols
+- `direction` (Required, String) Traffic direction <br/> - `ingress`: inbound (receive) <br/> - `egress`: outbound ( send)
+- `protocol` (Required, String) Allowed network protocol <br/> - `TCP`: Transmission Control Protocol <br/> - `UDP`: User Datagram Protocol <br/> - `ICMP`: Internet Control Message Protocol <br/> - `IPIP`: IP-in-IP tunneling <br/> - `ALL`: All protocols
 
 - `description` (Optional, String) Description of the security group rule
-- `port_range_min` (Optional, Number) Start port of the allowed range (e.g., `22` for SSH)
-    - Required for TCP/UDP protocols
-- `port_range_max` (Optional, Number) End port of the allowed range (e.g., `22` for SSH)
-    - Required for TCP/UDP protocols
-- `remote_group_id` (Optional, String) ID of the source/destination security group
-    - Use when traffic should be allowed from/to other security groups
-    - Cannot be set together with `remote_ip_prefix`
-- `remote_ip_prefix` (Optional, String) Source or destination IP range in CIDR format (e.g., `0.0.0.0/0`)
-    - Required if `remote_group_id` is not set
+- `port_range_max` (Optional, Number) End port of the allowed range (e.g., `22` for SSH) - Required for TCP/UDP protocols
+- `port_range_min` (Optional, Number) Start port of the allowed range (e.g., `22` for SSH) - Required for TCP/UDP protocols
+- `remote_group_id` (Optional, String) ID of the source/destination security group - Use when traffic should be allowed from/to other security groups - Cannot be set together with `remote_ip_prefix`
+- `remote_ip_prefix` (Optional, String) Source or destination IP range in CIDR format (e.g., `0.0.0.0/0`) - Required if `remote_group_id` is not set
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `id` (String) ID of the security group rule
 - `remote_group_name` (String) Name of the source or destination security group for allowed traffic
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 ## Import
 

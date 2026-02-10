@@ -87,9 +87,15 @@ var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 	},
 	"project_id": rschema.StringAttribute{
 		Computed: true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	},
 	"created_at": rschema.StringAttribute{
 		Computed: true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	},
 	"updated_at": rschema.StringAttribute{
 		Computed: true,

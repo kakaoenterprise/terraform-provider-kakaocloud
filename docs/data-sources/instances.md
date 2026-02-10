@@ -128,42 +128,35 @@ output "filtered_instances" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
-  see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `instances` (Attributes List) List of instance objects that match the specified filters. (
-  see [below for nested schema](#nestedatt--instances))
+- `instances` (Attributes List) List of instance objects that match the specified filters. ( see [below for nested schema](#nestedatt--instances))
 
 <a id="nestedatt--filter"></a>
-
 ### Nested Schema for `filter`
 
 - `name` (Required, String) Name of the attribute to filter by.
 
 - `value` (Optional, String) Value to match for the specified filter attribute.
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--instances"></a>
-
 ### Nested Schema for `instances`
 
-- `addresses` (Attributes List) Network addresses associated with the instance (
-  see [below for nested schema](#nestedatt--instances--addresses))
+- `addresses` (Attributes List) Network addresses associated with the instance ( see [below for nested schema](#nestedatt--instances--addresses))
 - `attached_volume_count` (Number) Number of block storage volumes attached to the instance
-- `attached_volumes` (Attributes List) List of attached volumes (
-  see [below for nested schema](#nestedatt--instances--attached_volumes))
+- `attached_volumes` (Attributes List) List of attached volumes ( see [below for nested schema](#nestedatt--instances--attached_volumes))
 - `availability_zone` (String) Name of the availability zone where the instance was created
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `description` (String) Description of the instance
@@ -181,8 +174,7 @@ The following attributes are exported:
 - `power_state` (String) Power state code
 - `project_id` (String) Project ID the instance belongs to
 - `security_group_count` (Number) Number of security groups attached to the instance
-- `security_groups` (Attributes Set) List of security groups attached to the instance (
-  see [below for nested schema](#nestedatt--instances--security_groups))
+- `security_groups` (Attributes Set) List of security groups attached to the instance ( see [below for nested schema](#nestedatt--instances--security_groups))
 - `status` (String) Instance status <br/> - Only `active`, `shelved_offloaded`, and `stopped` can be entered.
 - `task_state` (String) Current task state
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format <br/> - Based on UTC
@@ -190,15 +182,14 @@ The following attributes are exported:
 - `vm_state` (String) Internal VM state value
 
 <a id="nestedatt--instances--addresses"></a>
-
 ### Nested Schema for `instances.addresses`
 
 - `network_interface_id` (String) Connected network interface ID
 - `private_ip` (String) Private IP address (IPv4 format)
 - `public_ip` (String) Public IP address
 
-<a id="nestedatt--instances--attached_volumes"></a>
 
+<a id="nestedatt--instances--attached_volumes"></a>
 ### Nested Schema for `instances.attached_volumes`
 
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
@@ -211,8 +202,8 @@ The following attributes are exported:
 - `status` (String) Volume status
 - `type` (String) Volume type
 
-<a id="nestedatt--instances--flavor"></a>
 
+<a id="nestedatt--instances--flavor"></a>
 ### Nested Schema for `instances.flavor`
 
 - `disk_type` (String) Disk type
@@ -221,8 +212,7 @@ The following attributes are exported:
 - `hw_type` (String) Hardware type <br/> - Example: `GPU`
 - `id` (String) Instance type ID
 - `instance_family` (String) Instance family
-- `is_burstable` (Boolean) Whether it is
-  a [burstable instance](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-type/general-purpose/burstable-main)
+- `is_burstable` (Boolean) Whether it is a [burstable instance](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-type/general-purpose/burstable-main)
 - `is_hyper_threading_supported` (Boolean) Whether hyper-threading is supported
 - `manufacturer` (String) Manufacturer information
 - `maximum_network_interfaces` (Number) Maximum number of network interfaces
@@ -233,8 +223,8 @@ The following attributes are exported:
 - `root_gb` (Number) Root disk size (GB, default: 0)
 - `vcpus` (Number) Number of vCPUs
 
-<a id="nestedatt--instances--image"></a>
 
+<a id="nestedatt--instances--image"></a>
 ### Nested Schema for `instances.image`
 
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
@@ -257,8 +247,8 @@ The following attributes are exported:
 - `status` (String) Image status
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format <br/> - Based on UTC
 
-<a id="nestedatt--instances--security_groups"></a>
 
+<a id="nestedatt--instances--security_groups"></a>
 ### Nested Schema for `instances.security_groups`
 
 - `id` (String) Security group ID

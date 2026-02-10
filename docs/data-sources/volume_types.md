@@ -47,19 +47,15 @@ output "all_volume_types" {
 
 The following attributes are exported:
 
-- `volume_types` (Attributes List) List of available volume types. (
-  see [below for nested schema](#nestedatt--volume_types))
+- `volume_types` (Attributes List) List of available volume types. ( see [below for nested schema](#nestedatt--volume_types))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--volume_types"></a>
-
 ### Nested Schema for `volume_types`
 
 - `description` (String) Description of the volume type

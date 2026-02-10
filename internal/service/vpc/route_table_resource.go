@@ -555,12 +555,12 @@ func (r *routeTableResource) ValidateConfig(ctx context.Context, req resource.Va
 }
 
 func (r *routeTableResource) validateRouteConfig(ctx context.Context, config routeTableResourceModel, resp *resource.ValidateConfigResponse) {
-	if config.Routes.IsNull() || config.Routes.IsUnknown() {
+	if config.RequestRoutes.IsNull() || config.RequestRoutes.IsUnknown() {
 		return
 	}
 
-	var routes []routeTableRouteModel
-	diags := config.Routes.ElementsAs(ctx, &routes, false)
+	var routes []routeTableRequestRouteModel
+	diags := config.RequestRoutes.ElementsAs(ctx, &routes, false)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return

@@ -73,8 +73,7 @@ The following attributes are exported:
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `description` (String) Description of the high availability group
 - `dns_name` (String) Associated DNS name (e.g., public address of the load balancer)
-- `load_balancers` (Attributes List) List of load balancers included in the high availability group (
-  see [below for nested schema](#nestedatt--load_balancers))
+- `load_balancers` (Attributes List) List of load balancers included in the high availability group ( see [below for nested schema](#nestedatt--load_balancers))
 - `name` (String) High availability group name
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID
@@ -89,15 +88,12 @@ The following attributes are exported:
 - `vpc_name` (String) Associated VPC name
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--load_balancers"></a>
-
 ### Nested Schema for `load_balancers`
 
 - `availability_zone` (String) List of availability zones configured for the high availability group

@@ -66,23 +66,19 @@ The following attributes are exported:
 - `project_id` (String) Project ID the resource belongs to
 - `provisioning_status` (String) Provisioning status
 - `target_group_id` (String) Target group ID to associate with the health monitor
-- `target_groups` (Attributes List) List of associated target groups (
-  see [below for nested schema](#nestedatt--target_groups))
+- `target_groups` (Attributes List) List of associated target groups ( see [below for nested schema](#nestedatt--target_groups))
 - `timeout` (Number) Response timeout (seconds)
 - `type` (String) Health monitor type
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 - `url_path` (String) URL path configured for health check (type=HTTP/HTTPS)
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--target_groups"></a>
-
 ### Nested Schema for `target_groups`
 
 - `id` (String) Target group ID

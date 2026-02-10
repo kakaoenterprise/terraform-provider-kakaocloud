@@ -48,8 +48,7 @@ resource "kakaocloud_beyond_load_balancer" "example" {
 
 ## Argument Reference
 
-- `attached_load_balancers` (Required, Attributes Set) Request List of load balancers belonging to the HA group (
-  see [below for nested schema](#nestedatt--attached_load_balancers))
+- `attached_load_balancers` (Required, Attributes Set) Request List of load balancers belonging to the HA group ( see [below for nested schema](#nestedatt--attached_load_balancers))
 - `name` (Required, String) High availability group name
 - `scheme` (Required, String) Access type
 - `type_id` (Required, String) ID returned by kakaocloud_load_balancer_flavors
@@ -64,8 +63,7 @@ resource "kakaocloud_beyond_load_balancer" "example" {
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `dns_name` (String) Associated DNS name (e.g., public address of the load balancer)
 - `id` (String) High availability group ID
-- `load_balancers` (Attributes List) List of load balancers included in the high availability group (
-  see [below for nested schema](#nestedatt--load_balancers))
+- `load_balancers` (Attributes List) List of load balancers included in the high availability group ( see [below for nested schema](#nestedatt--load_balancers))
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID
 - `provider_name` (String) Provider name
@@ -76,32 +74,22 @@ resource "kakaocloud_beyond_load_balancer" "example" {
 - `vpc_name` (String) Associated VPC name
 
 <a id="nestedatt--attached_load_balancers"></a>
-
 ### Nested Schema for `attached_load_balancers`
 
 - `availability_zone` (Required, String) Availability zone
 - `id` (Required, String) Load balancer ID
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--load_balancers"></a>
-
 ### Nested Schema for `load_balancers`
 
 - `availability_zone` (String) List of availability zones configured for the high availability group
@@ -117,6 +105,7 @@ resource "kakaocloud_beyond_load_balancer" "example" {
 - `type` (String) Load balancer type
 - `type_id` (String) Load balancer type identifier
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
+
 
 ## Import
 

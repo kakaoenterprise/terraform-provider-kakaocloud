@@ -47,27 +47,23 @@ resource "kakaocloud_route_table" "example_with_route" {
 - `vpc_id` (Required, String) ID of the VPC the route table belongs to
 
 - `is_main` (Optional, Boolean) Indicates whether it is the main route table
-- `request_routes` (Optional, Attributes List) List of routes registered in the route table (
-  see [below for nested schema](#nestedatt--request_routes))
+- `request_routes` (Optional, Attributes List) List of routes registered in the route table ( see [below for nested schema](#nestedatt--request_routes))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
-- `associations` (Attributes List) List of subnet associations connected to the route table (
-  see [below for nested schema](#nestedatt--associations))
+- `associations` (Attributes List) List of subnet associations connected to the route table ( see [below for nested schema](#nestedatt--associations))
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `id` (String) Route table ID
 - `project_id` (String) ID of the project the route table belongs to
 - `project_name` (String) Name of the project the route table belongs to
 - `provisioning_status` (String) Provisioning status
-- `routes` (Attributes List) List of routes registered in the route table (
-  see [below for nested schema](#nestedatt--routes))
+- `routes` (Attributes List) List of routes registered in the route table ( see [below for nested schema](#nestedatt--routes))
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 - `vpc_name` (String) Name of the VPC the route table belongs to
 - `vpc_provisioning_status` (String) Status of the VPC
 
 <a id="nestedatt--request_routes"></a>
-
 ### Nested Schema for `request_routes`
 
 - `destination` (Required, String) Destination network address (CIDR format)
@@ -75,26 +71,17 @@ resource "kakaocloud_route_table" "example_with_route" {
 - `target_type` (Required, String) Target resource type
 - `id` (String) Route ID
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--associations"></a>
-
 ### Nested Schema for `associations`
 
 - `availability_zone` (String) Availability zone
@@ -106,18 +93,18 @@ resource "kakaocloud_route_table" "example_with_route" {
 - `vpc_id` (String) ID of the connected VPC
 - `vpc_name` (String) Name of the connected VPC
 
-<a id="nestedatt--routes"></a>
 
+<a id="nestedatt--routes"></a>
 ### Nested Schema for `routes`
 
 - `destination` (Required, String) Destination network address (CIDR format)
 - `target_id` (Required, String) Target resource ID
 - `target_type` (Required, String) Target resource type
 - `id` (String) Route ID
-- `is_local_route` (Boolean) Indicates whether it is a local route<br/>  - `true`: route for communication within the
-  same VPC
+- `is_local_route` (Boolean) Indicates whether it is a local route<br/>  - `true`: route for communication within the same VPC
 - `provisioning_status` (String) Provisioning status
 - `target_name` (String) Target resource name
+
 
 ## Import
 

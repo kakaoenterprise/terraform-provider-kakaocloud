@@ -202,6 +202,9 @@ func getClusterResourceSchema() map[string]rschema.Attribute {
 		},
 		"id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"name": rschema.StringAttribute{
 			Required:   true,

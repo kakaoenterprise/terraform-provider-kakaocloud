@@ -72,6 +72,9 @@ func getL7PolicyRuleResourceSchema() map[string]rschema.Attribute {
 		},
 		"project_id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 	}
 }

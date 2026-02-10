@@ -61,19 +61,15 @@ output "upgradable_k8s_versions" {
 The following attributes are exported:
 
 - `current` (Attributes) Current cluster version (see [below for nested schema](#nestedatt--current))
-- `upgradable` (Attributes List) List of Kubernetes versions that can be upgraded from the current version (
-  see [below for nested schema](#nestedatt--upgradable))
+- `upgradable` (Attributes List) List of Kubernetes versions that can be upgraded from the current version ( see [below for nested schema](#nestedatt--upgradable))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--current"></a>
-
 ### Nested Schema for `current`
 
 - `eol` (String) End of support time (ISO 8601 format, UTC)
@@ -82,8 +78,8 @@ The following attributes are exported:
 - `next_version` (String) Next upgradable version
 - `patch_version` (String) Kubernetes patch version
 
-<a id="nestedatt--upgradable"></a>
 
+<a id="nestedatt--upgradable"></a>
 ### Nested Schema for `upgradable`
 
 - `eol` (String) End of support time (ISO 8601 format, UTC)

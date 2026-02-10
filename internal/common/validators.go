@@ -460,10 +460,6 @@ func (p PreserveStateWhenNotSet) PlanModifyString(_ context.Context, req planmod
 	}
 }
 
-func NewPreserveStateWhenNotSet() planmodifier.String {
-	return PreserveStateWhenNotSet{}
-}
-
 func UrlValidator() []validator.String {
 	return []validator.String{
 		stringvalidator.LengthBetween(4, 247),
@@ -515,4 +511,42 @@ func MajorMinorVersionNotDecreasingValidator(planVer, stateVer string, diags *di
 		diags.AddError("Invalid Configuration",
 			fmt.Sprintf("Cannot set version lower than the current state. current state version: '%v'", stateVer))
 	}
+}
+
+type MonitorPortDefaultFromProtocolPort struct{}
+
+func (m MonitorPortDefaultFromProtocolPort) Description(ctx context.Context) string {
+	return "Defaults monitor_port to protocol_port when not set"
+}
+
+func (m MonitorPortDefaultFromProtocolPort) MarkdownDescription(ctx context.Context) string {
+	return m.Description(ctx)
+}
+
+func (m MonitorPortDefaultFromProtocolPort) PlanModifyInt32(
+	ctx context.Context,
+	req planmodifier.Int32Request,
+	resp *planmodifier.Int32Response,
+) {
+
+	if !req.ConfigValue.IsNull() {
+		return
+	}
+
+	var protocolPort types.Int32
+	diags := req.Config.GetAttribute(
+		ctx,
+		req.Path.ParentPath().AtName("protocol_port"),
+		&protocolPort,
+	)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if protocolPort.IsNull() || protocolPort.IsUnknown() {
+		return
+	}
+
+	resp.PlanValue = protocolPort
 }

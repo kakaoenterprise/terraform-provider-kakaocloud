@@ -95,9 +95,6 @@ func getNetworkInterfaceResourceSchema() map[string]rschema.Attribute {
 		},
 		"project_name": rschema.StringAttribute{
 			Computed: true,
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
-			},
 		},
 		"secondary_ips": rschema.ListAttribute{
 			ElementType: types.StringType,
@@ -139,6 +136,9 @@ func getNetworkInterfaceResourceSchema() map[string]rschema.Attribute {
 		},
 		"created_at": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"updated_at": rschema.StringAttribute{
 			Computed: true,

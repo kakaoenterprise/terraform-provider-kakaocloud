@@ -61,18 +61,15 @@ output "image_members_example" {
 
 The following attributes are exported:
 
-- `members` (Attributes List)  (see [below for nested schema](#nestedatt--members))
+- `members` (Attributes List) List of projects with which the image is shared. (see [below for nested schema](#nestedatt--members))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--members"></a>
-
 ### Nested Schema for `members`
 
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC

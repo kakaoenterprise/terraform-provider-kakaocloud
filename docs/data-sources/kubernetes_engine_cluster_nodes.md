@@ -54,27 +54,22 @@ output "cluster_nodes" {
 
 - `cluster_name` (Required, String) Name of the Kubernetes cluster to query.
 
-- `node_pool_name` (Optional, String) Name of the node pool to filter nodes. If omitted, all nodes in the cluster are
-  returned.
+- `node_pool_name` (Optional, String) Name of the node pool to filter nodes. If omitted, all nodes in the cluster are returned.
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `nodes` (Attributes List) List of node objects returned from the cluster. (
-  see [below for nested schema](#nestedatt--nodes))
+- `nodes` (Attributes List) List of node objects returned from the cluster. ( see [below for nested schema](#nestedatt--nodes))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--nodes"></a>
-
 ### Nested Schema for `nodes`
 
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
@@ -92,11 +87,9 @@ The following attributes are exported:
 - `updated_at` (String) Last modified time of the resource <br/> - ISO_8601 format  <br/> - UTC
 - `version` (String) Kubernetes version of the node
 - `volume_size` (Number) Root volume size of the node (GiB)
-- `vpc_info` (Attributes) VPC information where the node belongs (
-  see [below for nested schema](#nestedatt--nodes--vpc_info))
+- `vpc_info` (Attributes) VPC information where the node belongs ( see [below for nested schema](#nestedatt--nodes--vpc_info))
 
 <a id="nestedatt--nodes--image"></a>
-
 ### Nested Schema for `nodes.image`
 
 - `architecture` (String) Image architecture
@@ -110,23 +103,20 @@ The following attributes are exported:
 - `os_type` (String) Operating system type
 - `os_version` (String) Operating system version
 
-<a id="nestedatt--nodes--status"></a>
 
+<a id="nestedatt--nodes--status"></a>
 ### Nested Schema for `nodes.status`
 
-- `phase` (String) Current node status <br/> - `Running`: Running normally <br/> - `Running (Scheduling Disable)`:
-  Running but scheduling disabled <br/> - `Provisioned`: Created <br/> - `Deleted`: Deleted <br/> - `Pending`:
-  Pending <br/> - `Provisioning`: Creating <br/> - `Deleting`: Deleting <br/> - `Failed`: Error occurred
+- `phase` (String) Current node status <br/> - `Running`: Running normally <br/> - `Running (Scheduling Disable)`: Running but scheduling disabled <br/> - `Provisioned`: Created <br/> - `Deleted`: Deleted <br/> - `Pending`: Pending <br/> - `Provisioning`: Creating <br/> - `Deleting`: Deleting <br/> - `Failed`: Error occurred
+
 
 <a id="nestedatt--nodes--vpc_info"></a>
-
 ### Nested Schema for `nodes.vpc_info`
 
 - `id` (String) Unique ID of the VPC
 - `subnets` (Attributes Set) List of subnet IDs (see [below for nested schema](#nestedatt--nodes--vpc_info--subnets))
 
 <a id="nestedatt--nodes--vpc_info--subnets"></a>
-
 ### Nested Schema for `nodes.vpc_info.subnets`
 
 - `availability_zone` (String) Availability zone of the subnet

@@ -53,8 +53,7 @@ output "cluster_example" {
 The following attributes are exported:
 
 - `api_version` (String) API version
-- `control_plane_endpoint` (Attributes) Control plane endpoint information (
-  see [below for nested schema](#nestedatt--control_plane_endpoint))
+- `control_plane_endpoint` (Attributes) Control plane endpoint information ( see [below for nested schema](#nestedatt--control_plane_endpoint))
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
 - `creator_info` (Attributes) Creator information (see [below for nested schema](#nestedatt--creator_info))
 - `description` (String) Description of the cluster
@@ -65,50 +64,43 @@ The following attributes are exported:
 - `network` (Attributes) Cluster network information (see [below for nested schema](#nestedatt--network))
 - `status` (Attributes) Cluster status (see [below for nested schema](#nestedatt--status))
 - `version` (Attributes) Kubernetes version of the cluster (see [below for nested schema](#nestedatt--version))
-- `vpc_info` (Attributes) VPC information where the cluster belongs (
-  see [below for nested schema](#nestedatt--vpc_info))
+- `vpc_info` (Attributes) VPC information where the cluster belongs ( see [below for nested schema](#nestedatt--vpc_info))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--control_plane_endpoint"></a>
-
 ### Nested Schema for `control_plane_endpoint`
 
 - `host` (String) Control plane access address
 - `port` (Number) Control plane access port
 
-<a id="nestedatt--creator_info"></a>
 
+<a id="nestedatt--creator_info"></a>
 ### Nested Schema for `creator_info`
 
 - `id` (String) Creator ID
 - `name` (String) Creator name
 
-<a id="nestedatt--network"></a>
 
+<a id="nestedatt--network"></a>
 ### Nested Schema for `network`
 
-- `cni` (String) CNI (Container Network Interface) plugin in use <br/> - `cilium`: High-performance eBPF-based CNI with
-  low latency and strong security policies  <br/> - `calico`: Widely used CNI with simple configuration and multiple
-  networking modes
+- `cni` (String) CNI (Container Network Interface) plugin in use <br/> - `cilium`: High-performance eBPF-based CNI with low latency and strong security policies  <br/> - `calico`: Widely used CNI with simple configuration and multiple networking modes
 - `pod_cidr` (String) IP range for pods
 - `service_cidr` (String) IP range for cluster services
 
-<a id="nestedatt--status"></a>
 
+<a id="nestedatt--status"></a>
 ### Nested Schema for `status`
 
-- `phase` (String) Current cluster status <br/> - `Pending`: Pending <br/> - `Provisioning`: Creating <br/> -
-  `Provisioned`: Created <br/> - `Updating`: Updating <br/> - `Deleting`: Deleting <br/> - `Failed`: Error occurred
+- `phase` (String) Current cluster status <br/> - `Pending`: Pending <br/> - `Provisioning`: Creating <br/> - `Provisioned`: Created <br/> - `Updating`: Updating <br/> - `Deleting`: Deleting <br/> - `Failed`: Error occurred
+
 
 <a id="nestedatt--version"></a>
-
 ### Nested Schema for `version`
 
 - `eol` (String) End of support date (ISO 8601 format, UTC)
@@ -117,15 +109,14 @@ The following attributes are exported:
 - `next_version` (String) Next upgradable version
 - `patch_version` (String) Kubernetes patch version
 
-<a id="nestedatt--vpc_info"></a>
 
+<a id="nestedatt--vpc_info"></a>
 ### Nested Schema for `vpc_info`
 
 - `id` (String) Unique ID of the VPC
 - `subnets` (Attributes Set) List of subnet information (see [below for nested schema](#nestedatt--vpc_info--subnets))
 
 <a id="nestedatt--vpc_info--subnets"></a>
-
 ### Nested Schema for `vpc_info.subnets`
 
 - `availability_zone` (String) Availability zone of the subnet

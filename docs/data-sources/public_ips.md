@@ -99,35 +99,30 @@ output "filtered_public_ips" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
-  see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `public_ips` (Attributes List) List of public IP resources retrieved by the data source. (
-  see [below for nested schema](#nestedatt--public_ips))
+- `public_ips` (Attributes List) List of public IP resources retrieved by the data source. ( see [below for nested schema](#nestedatt--public_ips))
 
 <a id="nestedatt--filter"></a>
-
 ### Nested Schema for `filter`
 
 - `name` (Required, String) Name of the attribute to filter by.
 
 - `value` (Optional, String) Value to match for the specified filter attribute.
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--public_ips"></a>
-
 ### Nested Schema for `public_ips`
 
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
@@ -136,13 +131,11 @@ The following attributes are exported:
 - `private_ip` (String) Private IP address of the associated network interface (IPv4 format)
 - `project_id` (String) ID of the project this public IP belongs to
 - `public_ip` (String) Public IP address
-- `related_resource` (Attributes) Information of the resource associated with the public IP (
-  see [below for nested schema](#nestedatt--public_ips--related_resource))
+- `related_resource` (Attributes) Information of the resource associated with the public IP ( see [below for nested schema](#nestedatt--public_ips--related_resource))
 - `status` (String) Current status of the public IP
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 
 <a id="nestedatt--public_ips--related_resource"></a>
-
 ### Nested Schema for `public_ips.related_resource`
 
 - `device_id` (String) The resource ID

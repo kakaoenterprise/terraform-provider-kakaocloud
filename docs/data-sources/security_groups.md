@@ -93,35 +93,30 @@ output "filtered_security_groups" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
-  see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `security_groups` (Attributes List) List of retrieved security groups. (
-  see [below for nested schema](#nestedatt--security_groups))
+- `security_groups` (Attributes List) List of retrieved security groups. ( see [below for nested schema](#nestedatt--security_groups))
 
 <a id="nestedatt--filter"></a>
-
 ### Nested Schema for `filter`
 
 - `name` (Required, String) Name of the attribute to filter by.
 
 - `value` (Optional, String) Value to match for the specified filter attribute.
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--security_groups"></a>
-
 ### Nested Schema for `security_groups`
 
 - `id` (Required, String) Security Group ID
@@ -131,12 +126,10 @@ The following attributes are exported:
 - `name` (String) Name of the security group
 - `project_id` (String) ID of the project the security group belongs to
 - `project_name` (String) Name of the project the security group belongs to
-- `rules` (Attributes Set) List of inbound and outbound security group rules. (
-  see [below for nested schema](#nestedatt--security_groups--rules))
+- `rules` (Attributes Set) List of inbound and outbound security group rules. ( see [below for nested schema](#nestedatt--security_groups--rules))
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 
 <a id="nestedatt--security_groups--rules"></a>
-
 ### Nested Schema for `security_groups.rules`
 
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
@@ -145,11 +138,8 @@ The following attributes are exported:
 - `id` (String) ID of the security group rule
 - `port_range_max` (Number) End value of the allowed port range
 - `port_range_min` (Number) Start value of the allowed port range
-- `protocol` (String) Allowed network protocol <br/> - `TCP`: Transmission Control Protocol <br/> - `UDP`: User Datagram
-  Protocol <br/> - `ICMP`: Internet Control Message Protocol <br/> - `IPIP`: IP-in-IP tunneling <br/> - `ALL`: All
-  protocols
-- `remote_group_id` (String) ID of the source or destination security group for allowed traffic <br/> - Specify when the
-  source/destination is another security group
+- `protocol` (String) Allowed network protocol <br/> - `TCP`: Transmission Control Protocol <br/> - `UDP`: User Datagram Protocol <br/> - `ICMP`: Internet Control Message Protocol <br/> - `IPIP`: IP-in-IP tunneling <br/> - `ALL`: All protocols
+- `remote_group_id` (String) ID of the source or destination security group for allowed traffic <br/> - Specify when the source/destination is another security group
 - `remote_group_name` (String) Name of the source or destination security group for allowed traffic
 - `remote_ip_prefix` (String) Source or destination IP range in CIDR format
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC

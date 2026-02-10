@@ -45,12 +45,10 @@ resource "kakaocloud_vpc" "example" {
 ## Attribute Reference
 
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
-- `default_route_table` (Attributes) Object containing default route table information (
-  see [below for nested schema](#nestedatt--default_route_table))
+- `default_route_table` (Attributes) Object containing default route table information ( see [below for nested schema](#nestedatt--default_route_table))
 - `description` (String) Description of the VPC
 - `id` (String) Unique ID of the VPC
-- `igw` (Attributes) Object containing information of the attached internet gateway (
-  see [below for nested schema](#nestedatt--igw))
+- `igw` (Attributes) Object containing information of the attached internet gateway ( see [below for nested schema](#nestedatt--igw))
 - `is_default` (Boolean) Indicates whether it is the default VPC
 - `is_enable_dns_support` (Boolean) Indicates whether DNS support is enabled
 - `project_id` (String) ID of the project the VPC belongs to
@@ -60,33 +58,22 @@ resource "kakaocloud_vpc" "example" {
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 
 <a id="nestedatt--subnet"></a>
-
 ### Nested Schema for `subnet`
 
-- `availability_zone` (Required, String) Availability zone to create the subnet in<br/> - `kr-central-2-a`:
-  kr-central-2-a AZ<br/> - `kr-central-2-b`: kr-central-2-b AZ<br/> - `kr-central-2-c`: kr-central-2-c AZ
+- `availability_zone` (Required, String) Availability zone to create the subnet in<br/> - `kr-central-2-a`: kr-central-2-a AZ<br/> - `kr-central-2-b`: kr-central-2-b AZ<br/> - `kr-central-2-c`: kr-central-2-c AZ
 - `cidr_block` (Required, String) IP address range of the subnet (CIDR format)<br/> - Example: `10.0.1.0/24`
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--default_route_table"></a>
-
 ### Nested Schema for `default_route_table`
 
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
@@ -96,8 +83,8 @@ resource "kakaocloud_vpc" "example" {
 - `provisioning_status` (String) Provisioning status
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 
-<a id="nestedatt--igw"></a>
 
+<a id="nestedatt--igw"></a>
 ### Nested Schema for `igw`
 
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
@@ -109,6 +96,7 @@ resource "kakaocloud_vpc" "example" {
 - `provisioning_status` (String) Provisioning status
 - `region` (String) Region information
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
+
 
 ## Import
 

@@ -51,26 +51,21 @@ output "all_scheduled_scalings" {
 - `cluster_name` (Required, String) Target cluster name
 - `node_pool_name` (Required, String) Target node pool name
 
-- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).) (
-  see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).) ( see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `scheduled_scaling` (Attributes List) List of scheduled autoscaling rules configured for the specified node pool. (
-  see [below for nested schema](#nestedatt--scheduled_scaling))
+- `scheduled_scaling` (Attributes List) List of scheduled autoscaling rules configured for the specified node pool. ( see [below for nested schema](#nestedatt--scheduled_scaling))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--scheduled_scaling"></a>
-
 ### Nested Schema for `scheduled_scaling`
 
 - `cluster_name` (String) Target cluster name
@@ -84,14 +79,11 @@ The following attributes are exported:
 - `status` (Attributes) Status information (see [below for nested schema](#nestedatt--scheduled_scaling--status))
 
 <a id="nestedatt--scheduled_scaling--status"></a>
-
 ### Nested Schema for `scheduled_scaling.status`
 
-- `histories` (Attributes List) List of past executions (
-  see [below for nested schema](#nestedatt--scheduled_scaling--status--histories))
+- `histories` (Attributes List) List of past executions ( see [below for nested schema](#nestedatt--scheduled_scaling--status--histories))
 
 <a id="nestedatt--scheduled_scaling--status--histories"></a>
-
 ### Nested Schema for `scheduled_scaling.status.histories`
 
 - `description` (String) Description of the history

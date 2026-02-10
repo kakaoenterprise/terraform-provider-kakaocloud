@@ -22,7 +22,7 @@ func ExecuteWithRetryAndAuth[T any](
 	var zero T
 	maxAuthRetries := 2
 	max429Retries := 1000
-	interval := 100 * time.Millisecond
+	interval := 1000 * time.Millisecond
 
 	action := GetCallerMethodName()
 

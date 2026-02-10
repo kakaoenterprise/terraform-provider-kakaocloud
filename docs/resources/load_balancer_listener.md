@@ -37,15 +37,22 @@ resource "kakaocloud_load_balancer_listener" "example" {
 
 - `connection_limit` (Optional, Number) Maximum number of simultaneous connections
 - `default_tls_container_ref` (Optional, String) Reference ID of the default TLS certificate used in the HTTPS listener
-- `insert_headers` (Optional, Attributes) Settings for HTTP headers to insert (
-  see [below for nested schema](#nestedatt--insert_headers))
+
+- `insert_headers` (Optional, Attributes) Settings for HTTP headers to insert (see [below for nested schema](#nestedatt--insert_headers))
+
+    > ⚠️ **Note:** This block is only supported when `protocol` is `HTTP` or `TERMINATED_HTTPS`.  
+    > Using it with other protocols will be ignored or may cause validation errors.  
+    > Default values are: `x_forwarded_for = true`, `x_forwarded_port = false`, `x_forwarded_proto = false`.
+
 - `sni_container_refs` (Optional, List of String) List of SNI certificate references
 - `target_group_id` (Optional, String) ID of the target group to retrieve
 - `timeout_client_data` (Optional, Number) Client data receive timeout (seconds)
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
-- `tls_min_version` (Optional, String) Minimum TLS version allowed by the listener (supports TLS protocol equal to or
-  above the specified version) <br/> ※ Applies only when using the `TERMINATED_HTTPS` protocol<br/>- `TLSv1`: Allow TLS
-  1.0 as minimum<br/>- `TLSv1.1`: Allow TLS 1.1 as minimum<br/>- `TLSv1.2`: Allow TLS 1.2 as minimum<br/>
+- `tls_min_version` (Optional, String) Minimum TLS version allowed by the listener (supports TLS protocol equal to or above the specified version)  
+  ※ Applies only when using the `TERMINATED_HTTPS` protocol  
+  - `TLSv1`: Allow TLS 1.0 as minimum  
+  - `TLSv1.1`: Allow TLS 1.1 as minimum  
+  - `TLSv1.2`: Allow TLS 1.2 as minimum
 
 ## Attribute Reference
 
@@ -56,8 +63,7 @@ resource "kakaocloud_load_balancer_listener" "example" {
 - `description` (String) Description of the listener
 - `id` (String) Listener ID
 - `is_enabled` (Boolean) Whether the listener is enabled
-- `l7_policies` (Attributes List) List of associated L7 policies (
-  see [below for nested schema](#nestedatt--l7_policies))
+- `l7_policies` (Attributes List) List of associated L7 policies ( see [below for nested schema](#nestedatt--l7_policies))
 - `load_balancer_type` (String) Load balancer type
 - `name` (String) Listener name
 - `operating_status` (String) Operating status
@@ -70,33 +76,23 @@ resource "kakaocloud_load_balancer_listener" "example" {
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 
 <a id="nestedatt--insert_headers"></a>
-
 ### Nested Schema for `insert_headers`
 
 - `x_forwarded_for` (Optional, String) Configures the X-Forwarded-For header.
 - `x_forwarded_port` (Optional, String) Configures the X-Forwarded-Port header.
 - `x_forwarded_proto` (Optional, String) Configures the X-Forwarded-Proto header.
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--l7_policies"></a>
-
 ### Nested Schema for `l7_policies`
 
 - `action` (String) Policy action type
@@ -114,13 +110,11 @@ resource "kakaocloud_load_balancer_listener" "example" {
 - `rules` (Attributes List) List of L7 rules (see [below for nested schema](#nestedatt--l7_policies--rules))
 
 <a id="nestedatt--l7_policies--rules"></a>
-
 ### Nested Schema for `l7_policies.rules`
 
 - `compare_type` (String) Rule comparison method
 - `id` (String) L7 rule ID
-- `is_inverted` (Boolean) Whether the rule is inverted<br/>- If `true`, the opposite of the comparison result is
-  considered a match
+- `is_inverted` (Boolean) Whether the rule is inverted<br/>- If `true`, the opposite of the comparison result is considered a match
 - `key` (String) Comparison key
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID
@@ -128,18 +122,19 @@ resource "kakaocloud_load_balancer_listener" "example" {
 - `type` (String) Rule type
 - `value` (String) Value to compare
 
-<a id="nestedatt--secrets"></a>
 
+
+<a id="nestedatt--secrets"></a>
 ### Nested Schema for `secrets`
 
 - `creator_id` (String) Certificate creator ID
 - `expiration` (String) Certificate expiration date
 - `id` (String) Certificate ID
-- `is_default` (Boolean) Whether it is the default certificate<br/>- If `true`, it is used as the default certificate
-  for the listener
+- `is_default` (Boolean) Whether it is the default certificate<br/>- If `true`, it is used as the default certificate for the listener
 - `name` (String) Certificate name
 - `secret_type` (String) Certificate type
 - `status` (String) Certificate status
+
 
 ## Import
 

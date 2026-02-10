@@ -37,12 +37,10 @@ resource "kakaocloud_network_interface" "example" {
 ## Argument Reference
 
 - `name` (Required, String) Name of the network interface
-- `security_groups` (Required, Attributes Set) List of attached security groups (
-  see [below for nested schema](#nestedatt--security_groups))
+- `security_groups` (Required, Attributes Set) List of attached security groups ( see [below for nested schema](#nestedatt--security_groups))
 - `subnet_id` (Required, String) ID of the connected subnet
 
-- `allowed_address_pairs` (Optional, Attributes Set) List of allowed IP addresses for packet transmission (
-  see [below for nested schema](#nestedatt--allowed_address_pairs))
+- `allowed_address_pairs` (Optional, Attributes Set) List of allowed IP addresses for packet transmission ( see [below for nested schema](#nestedatt--allowed_address_pairs))
 - `description` (Optional, String) Description of the network interface
 - `private_ip` (Optional, String) Primary private IP address (IPv4 format)
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
@@ -64,36 +62,27 @@ resource "kakaocloud_network_interface" "example" {
 - `vpc_id` (String) ID of the VPC the network interface belongs to
 
 <a id="nestedatt--security_groups"></a>
-
 ### Nested Schema for `security_groups`
 
 - `id` (Required, String) Security group ID
 - `name` (String) Security group name
 
-<a id="nestedatt--allowed_address_pairs"></a>
 
+<a id="nestedatt--allowed_address_pairs"></a>
 ### Nested Schema for `allowed_address_pairs`
 
 - `ip_address` (Required, String) Allowed IP address
 - `mac_address` (String) Allowed MAC address
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 ## Import
 

@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -228,6 +229,9 @@ func getVpcResourceSchema() map[string]rschema.Attribute {
 		},
 		"is_default": rschema.BoolAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.Bool{
+				boolplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"provisioning_status": rschema.StringAttribute{
 			Computed: true,
@@ -237,6 +241,9 @@ func getVpcResourceSchema() map[string]rschema.Attribute {
 		},
 		"created_at": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"updated_at": rschema.StringAttribute{
 			Computed: true,

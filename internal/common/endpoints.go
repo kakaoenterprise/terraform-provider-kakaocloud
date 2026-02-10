@@ -3,7 +3,6 @@
 package common
 
 import (
-	"fmt"
 	"reflect"
 
 	kakaocloud "github.com/kakaoenterprise/kc-sdk-go/common"
@@ -13,6 +12,7 @@ import (
 	kubernetesEngine "github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
 	loadbalancer "github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 	network "github.com/kakaoenterprise/kc-sdk-go/services/network"
+	tgw "github.com/kakaoenterprise/kc-sdk-go/services/tgw"
 	volume "github.com/kakaoenterprise/kc-sdk-go/services/volume"
 	vpc "github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 )
@@ -28,6 +28,7 @@ func (c *KakaoCloudClient) buildEndpoints() kakaocloud.Endpoints {
 		Image:            getSDKDefaultEndpoint(image.NewConfiguration()),
 		BCS:              getSDKDefaultEndpoint(bcs.NewConfiguration()),
 		KubernetesEngine: getSDKDefaultEndpoint(kubernetesEngine.NewConfiguration()),
+		TGW:              getSDKDefaultEndpoint(tgw.NewConfiguration()),
 	}
 
 	for service, endpoint := range c.Config.EndpointOverrides {
@@ -48,10 +49,10 @@ func (c *KakaoCloudClient) buildEndpoints() kakaocloud.Endpoints {
 			endpoints.BCS = endpoint
 		case "kubernetes_engine":
 			endpoints.KubernetesEngine = endpoint
+		case "tgw":
+			endpoints.TGW = endpoint
 		}
 	}
-
-	fmt.Printf("Endpoints: %+v\n", endpoints)
 
 	return endpoints
 }

@@ -117,40 +117,34 @@ output "filtered_network_interfaces" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
-  see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `network_interfaces` (Attributes List) List of network interfaces retrieved by the data source (
-  see [below for nested schema](#nestedatt--network_interfaces))
+- `network_interfaces` (Attributes List) List of network interfaces retrieved by the data source ( see [below for nested schema](#nestedatt--network_interfaces))
 
 <a id="nestedatt--filter"></a>
-
 ### Nested Schema for `filter`
 
 - `name` (Required, String) Name of the attribute to filter by.
 
 - `value` (Optional, String) Value to match for the specified filter attribute.
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--network_interfaces"></a>
-
 ### Nested Schema for `network_interfaces`
 
 - `description` (Optional, String) Description of the network interface
-- `allowed_address_pairs` (Attributes Set) List of allowed IP addresses for packet transmission (
-  see [below for nested schema](#nestedatt--network_interfaces--allowed_address_pairs))
+- `allowed_address_pairs` (Attributes Set) List of allowed IP addresses for packet transmission ( see [below for nested schema](#nestedatt--network_interfaces--allowed_address_pairs))
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `device_id` (String) ID of the resource attached to the network interface
 - `device_owner` (String) Owner type of the resource attached to the interface (e.g., instance, router, etc.)
@@ -163,22 +157,20 @@ The following attributes are exported:
 - `project_name` (String) Name of the project
 - `public_ip` (String) Associated public IP
 - `secondary_ips` (List of String) List of secondary IPs attached to the network interface
-- `security_groups` (Attributes Set) List of attached security groups (
-  see [below for nested schema](#nestedatt--network_interfaces--security_groups))
+- `security_groups` (Attributes Set) List of attached security groups ( see [below for nested schema](#nestedatt--network_interfaces--security_groups))
 - `status` (String) Current status of the network interface
 - `subnet_id` (String) ID of the connected subnet
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 - `vpc_id` (String) ID of the VPC the network interface belongs to
 
 <a id="nestedatt--network_interfaces--allowed_address_pairs"></a>
-
 ### Nested Schema for `network_interfaces.allowed_address_pairs`
 
 - `ip_address` (String) Allowed IP address
 - `mac_address` (String) Allowed MAC address
 
-<a id="nestedatt--network_interfaces--security_groups"></a>
 
+<a id="nestedatt--network_interfaces--security_groups"></a>
 ### Nested Schema for `network_interfaces.security_groups`
 
 - `id` (String) Security group ID

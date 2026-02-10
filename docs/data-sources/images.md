@@ -136,35 +136,30 @@ output "filtered_images" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
-  see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `images` (Attributes List) List of images that match the applied filters. (
-  see [below for nested schema](#nestedatt--images))
+- `images` (Attributes List) List of images that match the applied filters. ( see [below for nested schema](#nestedatt--images))
 
 <a id="nestedatt--filter"></a>
-
 ### Nested Schema for `filter`
 
 - `name` (Required, String) Name of the attribute to filter by.
 
 - `value` (Optional, String) Value to match for the specified filter attribute.
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--images"></a>
-
 ### Nested Schema for `images`
 
 - `container_format` (String) Container format of the image
@@ -172,26 +167,22 @@ The following attributes are exported:
 - `description` (String) Description of the image
 - `disk_format` (String) Disk format of the image
 - `id` (String) Image ID
-- `image_member_status` (String) Sharing status of the image member (project) <br/>- Available if the image is shared
-  from another project
+- `image_member_status` (String) Sharing status of the image member (project) <br/>- Available if the image is shared from another project
 - `instance_type` (String) Compatible instance types for the image <br/>- `gpu` images can be checked in `vm` images
 - `is_shared` (Boolean) Whether the image is shared
 - `min_disk` (Number) Minimum disk size required to use this image (GB)
 - `min_ram` (Number) Minimum memory required to use this image (MB)
 - `name` (String) Name of the image
-- `os_info` (Attributes) Operating system information of the image (
-  see [below for nested schema](#nestedatt--images--os_info))
+- `os_info` (Attributes) Operating system information of the image ( see [below for nested schema](#nestedatt--images--os_info))
 - `owner` (String) Owner of the image (project ID that owns the image)
 - `project_id` (String) Unique ID of the project
 - `size` (Number) Size of the image (in bytes)
 - `status` (String) Status of the image
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format  <br/> - Based on UTC
 - `virtual_size` (Number) Size of the image (in bytes)
-- `visibility` (String) Visibility of the image <br/> - `public`: Visible to all users <br/> - `private`: Available only
-  to the owning project <br/> - `shared`: Shared only with selected projects
+- `visibility` (String) Visibility of the image <br/> - `public`: Visible to all users <br/> - `private`: Available only to the owning project <br/> - `shared`: Shared only with selected projects
 
 <a id="nestedatt--images--os_info"></a>
-
 ### Nested Schema for `images.os_info`
 
 - `admin_user` (String) Default administrator account name of the image

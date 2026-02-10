@@ -60,6 +60,21 @@ type loadBalancerTargetGroupMemberListDataSourceModel struct {
 	Timeouts      datasourceTimeouts.Value                 `tfsdk:"timeouts"`
 }
 
+type loadBalancerTargetGroupMemberListResourceModel struct {
+	TargetGroupId types.String                              `tfsdk:"target_group_id"`
+	Members       []loadBalancerTargetGroupMemberBatchModel `tfsdk:"members"`
+	Timeouts      resourceTimeouts.Value                    `tfsdk:"timeouts"`
+}
+
+type loadBalancerTargetGroupMemberBatchModel struct {
+	Name         types.String `tfsdk:"name"`
+	Address      types.String `tfsdk:"address"`
+	ProtocolPort types.Int32  `tfsdk:"protocol_port"`
+	SubnetId     types.String `tfsdk:"subnet_id"`
+	Weight       types.Int32  `tfsdk:"weight"`
+	MonitorPort  types.Int32  `tfsdk:"monitor_port"`
+}
+
 var loadBalancerTargetGroupMemberSubnetAttrType = map[string]attr.Type{
 	"id":                types.StringType,
 	"name":              types.StringType,

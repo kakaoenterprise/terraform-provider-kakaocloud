@@ -51,8 +51,7 @@ The following attributes are exported:
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `description` (String) Description of the volume
 - `encryption_key_id` (String) ID of the key used for volume encryption
-- `image_metadata` (Attributes) Metadata of the associated instance if this is a root volume (
-  see [below for nested schema](#nestedatt--image_metadata))
+- `image_metadata` (Attributes) Metadata of the associated instance if this is a root volume ( see [below for nested schema](#nestedatt--image_metadata))
 - `instance_id` (String) Unique ID of the instance
 - `instance_name` (String) Name of the instance attached to the volume
 - `is_bootable` (Boolean) Whether the volume is bootable
@@ -65,23 +64,19 @@ The following attributes are exported:
 - `previous_status` (String) Previous status
 - `project_id` (String) Project ID the volume belongs to
 - `size` (Number) Size of the volume
-- `status` (String) Status of the volume <br/> - Refer
-  to [volume states](https://docs.kakaocloud.com/en/service/bcs/vm/vm-main#volume-states)
+- `status` (String) Status of the volume <br/> - Refer to [volume states](https://docs.kakaocloud.com/en/service/bcs/vm/vm-main#volume-states)
 - `type` (String) Detailed type of the volume
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 - `user_id` (String) ID of the user who owns the volume
 - `volume_type` (String) Volume type
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--image_metadata"></a>
-
 ### Nested Schema for `image_metadata`
 
 - `container_format` (String) Image container format

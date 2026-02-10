@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -29,6 +30,9 @@ func getBaseMemberAttributes() map[string]rschema.Attribute {
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"name": rschema.StringAttribute{
 			Optional:   true,
@@ -60,11 +64,15 @@ func getBaseMemberAttributes() map[string]rschema.Attribute {
 			Optional:   true,
 			Computed:   true,
 			Validators: []validator.Int32{weightValidator},
+			Default:    int32default.StaticInt32(1),
 		},
 		"monitor_port": rschema.Int32Attribute{
 			Optional:   true,
 			Computed:   true,
 			Validators: common.PortValidator(),
+			PlanModifiers: []planmodifier.Int32{
+				common.MonitorPortDefaultFromProtocolPort{},
+			},
 		},
 		"operating_status": rschema.StringAttribute{
 			Computed: true,
@@ -77,9 +85,15 @@ func getBaseMemberAttributes() map[string]rschema.Attribute {
 		},
 		"project_id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"created_at": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"updated_at": rschema.StringAttribute{
 			Computed: true,
@@ -365,8 +379,57 @@ func getLoadBalancerTargetGroupMemberListDataSourceSchema() map[string]dschema.A
 	}
 }
 
+func getLoadBalancerTargetGroupMemberListResourceSchema() map[string]rschema.Attribute {
+	return map[string]rschema.Attribute{
+		"target_group_id": rschema.StringAttribute{
+			Required:   true,
+			Validators: common.UuidValidator(),
+		},
+		"members": rschema.ListNestedAttribute{
+			Required: true,
+			NestedObject: rschema.NestedAttributeObject{
+				Attributes: map[string]rschema.Attribute{
+					"name": rschema.StringAttribute{
+						Optional:   true,
+						Computed:   true,
+						Validators: common.NameValidator(255),
+					},
+					"address": rschema.StringAttribute{
+						Required:   true,
+						Validators: []validator.String{ipv4Validator},
+					},
+					"protocol_port": rschema.Int32Attribute{
+						Required:   true,
+						Validators: common.PortValidator(),
+					},
+					"subnet_id": rschema.StringAttribute{
+						Required:   true,
+						Validators: common.UuidValidator(),
+					},
+					"weight": rschema.Int32Attribute{
+						Optional:   true,
+						Computed:   true,
+						Validators: []validator.Int32{weightValidator},
+						Default:    int32default.StaticInt32(1),
+					},
+					"monitor_port": rschema.Int32Attribute{
+						Optional:   true,
+						Computed:   true,
+						Validators: common.PortValidator(),
+						PlanModifiers: []planmodifier.Int32{
+							common.MonitorPortDefaultFromProtocolPort{},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 var loadBalancerTargetGroupMemberResourceSchema = getLoadBalancerTargetGroupMemberResourceSchema()
 
 var loadBalancerTargetGroupMemberDataSourceSchema = getLoadBalancerTargetGroupMemberDataSourceSchema()
 
 var loadBalancerTargetGroupMemberListDataSourceSchema = getLoadBalancerTargetGroupMemberListDataSourceSchema()
+
+var loadBalancerTargetGroupMemberListResourceSchema = getLoadBalancerTargetGroupMemberListResourceSchema()

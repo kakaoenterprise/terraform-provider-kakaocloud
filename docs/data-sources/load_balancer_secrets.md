@@ -87,39 +87,33 @@ output "filtered_load_balancer_secrets" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
-  see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `secrets` (Attributes List) List of SSL/TLS secrets that match the specified filters (
-  see [below for nested schema](#nestedatt--secrets))
+- `secrets` (Attributes List) List of SSL/TLS secrets that match the specified filters ( see [below for nested schema](#nestedatt--secrets))
 
 <a id="nestedatt--filter"></a>
-
 ### Nested Schema for `filter`
 
 - `name` (Required, String) Name of the attribute to filter by.
 
 - `value` (Optional, String) Value to match for the specified filter attribute.
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--secrets"></a>
-
 ### Nested Schema for `secrets`
 
-- `content_types` (Attributes) List of certificate content types (
-  see [below for nested schema](#nestedatt--secrets--content_types))
+- `content_types` (Attributes) List of certificate content types ( see [below for nested schema](#nestedatt--secrets--content_types))
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `creator_id` (String) Certificate creator ID
 - `expiration` (String) Certificate expiration time
@@ -130,11 +124,9 @@ The following attributes are exported:
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 
 <a id="nestedatt--secrets--content_types"></a>
-
 ### Nested Schema for `secrets.content_types`
 
-- `default` (String) Default MIME type of the certificate <br/> - Example: `application/x-pem-file`,
-  `application/octet-stream`
+- `default` (String) Default MIME type of the certificate <br/> - Example: `application/x-pem-file`, `application/octet-stream`
 
 
 

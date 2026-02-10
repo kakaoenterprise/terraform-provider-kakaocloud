@@ -36,10 +36,21 @@ resource "kakaocloud_load_balancer" "example" {
 - `name` (Required, String) Load balancer name
 - `subnet_id` (Required, String) ID of the subnet the load balancer belongs to
 
-- `access_logs` (Optional, Attributes) Access log settings (see [below for nested schema](#nestedatt--access_logs))
-- `description` (Optional, String) Description of the load balancer
-- `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
+- `access_logs` (Optional, Attributes) Access log settings  
+  (see [below for nested schema](#nestedatt--access_logs))
 
+    > ⚠️ Note: The `access_logs` block is stored in Terraform state as a **base64-encoded string**,  
+    > despite being defined as an object.  
+    > As a result, Terraform may show diffs even if the actual configuration hasn't changed.  
+    >  
+    > - To prevent unnecessary updates: **Avoid modifying `access_logs` unless required.**  
+    > - During `terraform import`: **Do not specify `access_logs`**,  
+    >   as it will cause a diff on the next plan.
+
+- `description` (Optional, String) Description of the load balancer
+- `timeouts` (Optional, Attributes) Custom timeout settings  
+  (see [below for nested schema](#nestedatt--timeouts))
+  
 ## Attribute Reference
 
 - `beyond_load_balancer_dns_name` (String) DNS name of the high availability group
@@ -63,30 +74,21 @@ resource "kakaocloud_load_balancer" "example" {
 - `vpc_name` (String) Associated VPC name
 
 <a id="nestedatt--access_logs"></a>
-
 ### Nested Schema for `access_logs`
 
 - `access_key` (Required, String) Access key used for bucket access
 - `bucket` (Required, String) Target bucket name for storing logs
 - `secret_key` (Required, String) Certificate key used for bucket access
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state
-  before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 ## Import
 

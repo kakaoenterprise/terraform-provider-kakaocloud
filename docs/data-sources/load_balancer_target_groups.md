@@ -122,8 +122,7 @@ output "filtered_target_groups" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
-  see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
@@ -133,32 +132,27 @@ The following attributes are exported:
 - `target_groups` (Attributes List) List of target groups (see [below for nested schema](#nestedatt--target_groups))
 
 <a id="nestedatt--filter"></a>
-
 ### Nested Schema for `filter`
 
 - `name` (Required, String) Name of the attribute to filter by.
 - `value` (Required, String) Value to match for the specified filter attribute.
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--target_groups"></a>
-
 ### Nested Schema for `target_groups`
 
 - `availability_zone` (String) Availability zone
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `description` (String) Description of the target group
-- `health_monitor` (Attributes) Associated health monitor information (
-  see [below for nested schema](#nestedatt--target_groups--health_monitor))
+- `health_monitor` (Attributes) Associated health monitor information ( see [below for nested schema](#nestedatt--target_groups--health_monitor))
 - `id` (String) Target group ID
-- `listeners` (Attributes List) List of associated listener information (
-  see [below for nested schema](#nestedatt--target_groups--listeners))
+- `listeners` (Attributes List) List of associated listener information ( see [below for nested schema](#nestedatt--target_groups--listeners))
 - `load_balancer_algorithm` (String) Load balancing algorithm
 - `load_balancer_id` (String) Associated load balancer ID
 - `load_balancer_name` (String) Associated load balancer name
@@ -170,8 +164,7 @@ The following attributes are exported:
 - `project_id` (String) Project ID
 - `protocol` (String) Traffic receiving protocol
 - `provisioning_status` (String) Provisioning status
-- `session_persistence` (Attributes) Session settings (
-  see [below for nested schema](#nestedatt--target_groups--session_persistence))
+- `session_persistence` (Attributes) Session settings ( see [below for nested schema](#nestedatt--target_groups--session_persistence))
 - `subnet_id` (String) Subnet ID
 - `subnet_name` (String) Subnet name
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
@@ -179,7 +172,6 @@ The following attributes are exported:
 - `vpc_name` (String) VPC name
 
 <a id="nestedatt--target_groups--health_monitor"></a>
-
 ### Nested Schema for `target_groups.health_monitor`
 
 - `delay` (Number) Health check interval (seconds)
@@ -196,16 +188,16 @@ The following attributes are exported:
 - `type` (String) Health monitor type
 - `url_path` (String) Health check request path
 
-<a id="nestedatt--target_groups--listeners"></a>
 
+<a id="nestedatt--target_groups--listeners"></a>
 ### Nested Schema for `target_groups.listeners`
 
 - `id` (String) Listener ID
 - `protocol` (String) Listener protocol
 - `protocol_port` (Number) Listener protocol port
 
-<a id="nestedatt--target_groups--session_persistence"></a>
 
+<a id="nestedatt--target_groups--session_persistence"></a>
 ### Nested Schema for `target_groups.session_persistence`
 
 - `cookie_name` (String) Cookie name used for session stickiness (type must be `APP_COOKIE` or `HTTP_COOKIE`)

@@ -12,6 +12,10 @@ import (
 	"terraform-provider-kakaocloud/internal/provider"
 )
 
+var (
+	version string = "dev"
+)
+
 func main() {
 	var debug bool
 
@@ -23,7 +27,7 @@ func main() {
 		Debug:   debug,
 	}
 
-	err := providerserver.Serve(context.Background(), provider.New("dev"), opts)
+	err := providerserver.Serve(context.Background(), provider.New(version), opts)
 
 	if err != nil {
 		log.Fatal(err.Error())

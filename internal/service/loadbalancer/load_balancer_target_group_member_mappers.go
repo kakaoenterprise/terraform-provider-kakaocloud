@@ -186,3 +186,31 @@ func mapLoadBalancerTargetGroupMemberListFromGetResponse(
 	model.Members = members
 	return !diags.HasError()
 }
+
+func mapLoadBalancerTargetGroupMembersToBatchRequest(
+	model *loadBalancerTargetGroupMemberListResourceModel,
+) *loadbalancer.BodyUpdateTargets {
+	membersReq := make([]loadbalancer.BnsLoadBalancerV1ApiUpdateTargetsModelEditTargetGroupMember, 0, len(model.Members))
+
+	for _, member := range model.Members {
+		memberReq := loadbalancer.NewBnsLoadBalancerV1ApiUpdateTargetsModelEditTargetGroupMember(
+			member.Address.ValueString(),
+			member.ProtocolPort.ValueInt32(),
+			member.SubnetId.ValueString(),
+		)
+
+		if !member.Name.IsNull() && !member.Name.IsUnknown() {
+			memberReq.SetName(member.Name.ValueString())
+		}
+		if !member.Weight.IsNull() && !member.Weight.IsUnknown() {
+			memberReq.SetWeight(member.Weight.ValueInt32())
+		}
+		if !member.MonitorPort.IsNull() && !member.MonitorPort.IsUnknown() {
+			memberReq.SetMonitorPort(member.MonitorPort.ValueInt32())
+		}
+
+		membersReq = append(membersReq, *memberReq)
+	}
+
+	return loadbalancer.NewBodyUpdateTargets(membersReq)
+}

@@ -59,27 +59,22 @@ The following attributes are exported:
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
 - `desired_nodes` (Number) Target number of nodes to maintain in the node pool when the schedule is executed
 - `schedule` (String) Scheduled autoscaling execution cycle
-- `schedule_type` (String) Type of the scheduled autoscaling cycle <br/>- Possible values: `Once` (run once), `Daily` (
-  run every day), `Weekly` (run on specified weekdays)
+- `schedule_type` (String) Type of the scheduled autoscaling cycle <br/>- Possible values: `Once` (run once), `Daily` ( run every day), `Weekly` (run on specified weekdays)
 - `start_time` (String) Reference time when scheduled autoscaling can actually run (ISO 8601, UTC)
 - `status` (Attributes) Status information (see [below for nested schema](#nestedatt--status))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--status"></a>
-
 ### Nested Schema for `status`
 
 - `histories` (Attributes List) List of past executions (see [below for nested schema](#nestedatt--status--histories))
 
 <a id="nestedatt--status--histories"></a>
-
 ### Nested Schema for `status.histories`
 
 - `description` (String) Description of the history

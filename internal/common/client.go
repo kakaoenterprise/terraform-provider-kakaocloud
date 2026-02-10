@@ -25,9 +25,10 @@ type KakaoCloudClient struct {
 	TokenManager *auth.TokenManager
 	ApiClient    *kakaocloud.APIClient
 	XAuthToken   string
+	XApiVersion  string
 }
 
-func NewClient(config *Config, userAgent string) (*KakaoCloudClient, error) {
+func NewClient(config *Config, userAgent, apiVersion string) (*KakaoCloudClient, error) {
 	if err := completeConfig(config); err != nil {
 		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
@@ -40,6 +41,7 @@ func NewClient(config *Config, userAgent string) (*KakaoCloudClient, error) {
 	client.ApiClient = kakaocloud.NewAPIClient(kakaocloud.Config{
 		Endpoints: endpoints,
 		UserAgent: userAgent,
+		Version:   apiVersion,
 	})
 
 	client.TokenManager = auth.NewTokenManager(

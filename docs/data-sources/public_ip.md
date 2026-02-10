@@ -60,21 +60,17 @@ The following attributes are exported:
 - `private_ip` (String) Private IP address of the associated network interface (IPv4 format)
 - `project_id` (String) ID of the project this public IP belongs to
 - `public_ip` (String) Public IP address
-- `related_resource` (Attributes) Information of the resource associated with the public IP (
-  see [below for nested schema](#nestedatt--related_resource))
+- `related_resource` (Attributes) Information of the resource associated with the public IP ( see [below for nested schema](#nestedatt--related_resource))
 - `status` (String) Current status of the public IP
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--related_resource"></a>
-
 ### Nested Schema for `related_resource`
 
 - `device_id` (String) The resource ID

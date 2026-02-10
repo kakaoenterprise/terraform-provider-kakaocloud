@@ -52,19 +52,15 @@ output "all_k8s_versions" {
 
 The following attributes are exported:
 
-- `versions` (Attributes List) List of supported Kubernetes versions. (
-  see [below for nested schema](#nestedatt--versions))
+- `versions` (Attributes List) List of supported Kubernetes versions. ( see [below for nested schema](#nestedatt--versions))
 
 <a id="nestedatt--timeouts"></a>
-
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--versions"></a>
-
 ### Nested Schema for `versions`
 
 - `eol` (String) End-of-life (EOL) date of the Kubernetes version.

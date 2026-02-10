@@ -110,8 +110,7 @@ output "filtered_vpcs" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (
-  see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
@@ -121,33 +120,28 @@ The following attributes are exported:
 - `vpcs` (Attributes List) List of VPCs. (see [below for nested schema](#nestedatt--vpcs))
 
 <a id="nestedatt--filter"></a>
-
 ### Nested Schema for `filter`
 
 - `name` (Required, String) Name of the attribute to filter by.
 
 - `value` (Optional, String) Value to match for the specified filter attribute.
 
-<a id="nestedatt--timeouts"></a>
 
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration)
-  consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (
-  minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+
 
 <a id="nestedatt--vpcs"></a>
-
 ### Nested Schema for `vpcs`
 
 - `cidr_block` (String) IPv4 CIDR block of the VPC
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
-- `default_route_table` (Attributes) Object containing default route table information (
-  see [below for nested schema](#nestedatt--vpcs--default_route_table))
+- `default_route_table` (Attributes) Object containing default route table information ( see [below for nested schema](#nestedatt--vpcs--default_route_table))
 - `description` (String) Description of the VPC
 - `id` (String) VPC ID
-- `igw` (Attributes) Object containing information of the attached internet gateway (
-  see [below for nested schema](#nestedatt--vpcs--igw))
+- `igw` (Attributes) Object containing information of the attached internet gateway ( see [below for nested schema](#nestedatt--vpcs--igw))
 - `is_default` (Boolean) Indicates whether it is the default VPC
 - `is_enable_dns_support` (Boolean) Indicates whether DNS support is enabled
 - `name` (String) VPC name
@@ -158,7 +152,6 @@ The following attributes are exported:
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 
 <a id="nestedatt--vpcs--default_route_table"></a>
-
 ### Nested Schema for `vpcs.default_route_table`
 
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
@@ -168,8 +161,8 @@ The following attributes are exported:
 - `provisioning_status` (String) Provisioning status
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 
-<a id="nestedatt--vpcs--igw"></a>
 
+<a id="nestedatt--vpcs--igw"></a>
 ### Nested Schema for `vpcs.igw`
 
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
