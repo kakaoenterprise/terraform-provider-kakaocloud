@@ -39,8 +39,7 @@ resource "kakaocloud_load_balancer" "example" {
 - `access_logs` (Optional, Attributes) Access log settings  
   (see [below for nested schema](#nestedatt--access_logs))
 
-    > ⚠️ Note: The `access_logs` block is stored in Terraform state as a **base64-encoded string**,  
-    > despite being defined as an object.  
+    > ⚠️ Note: The `access_logs` block is stored in Terraform state as a **base64-encoded string**, despite being defined as an object.  
     > As a result, Terraform may show diffs even if the actual configuration hasn't changed.  
     >  
     > - To prevent unnecessary updates: **Avoid modifying `access_logs` unless required.**  
