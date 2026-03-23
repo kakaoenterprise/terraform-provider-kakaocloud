@@ -43,7 +43,7 @@ Use this data source when you need to:
 | id                  | string              | Unique ID of the image                                                                                                                                 |
 | name                | string              | Image name                                                                                                                                             |
 | instance_type       | ImageInstanceType   | Compatible instance type for the image  <br>- `vm`: Virtual Machine type <br>- `bm`: Bare Metal Server type                                            |
-| image_type          | ImageVisibilityType | Image visibility type  <br>- `basic`: Default images provided by Kakao Cloud (Linux and Windows) <br>- `my`: Custom images created by the project user |
+| image_type          | ImageVisibilityType | Image visibility type  <br>- `basic`: Default images provided by KakaoCloud (Linux and Windows) <br>- `my`: Custom images created by the project user |
 | size                | integer             | Image size (in bytes)                                                                                                                                  |
 | min_disk            | integer             | Minimum disk size required to use the image (in GB)                                                                                                    |
 | disk_format         | integer             | Disk format of the image                                                                                                                               |

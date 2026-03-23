@@ -15,15 +15,18 @@ import (
 
 func (r *transitGatewayRouteTableResource) updateRouteTableRoutes(
 	ctx context.Context,
+	tgwId string,
 	tgwRouteTableId string,
 	plans *[]tgwRouteTableRequestRouteModel,
 	states *[]tgwRouteTableRequestRouteModel,
 	resp *diag.Diagnostics,
 ) bool {
 	stateMap := make(map[string]tgwRouteTableRequestRouteModel)
-	for _, s := range *states {
-		if !s.Id.IsNull() && !s.Id.IsUnknown() {
-			stateMap[s.Id.ValueString()] = s
+	if states != nil {
+		for _, s := range *states {
+			if !s.Id.IsNull() && !s.Id.IsUnknown() {
+				stateMap[s.Id.ValueString()] = s
+			}
 		}
 	}
 	planMap := make(map[string]tgwRouteTableRequestRouteModel)
@@ -35,28 +38,40 @@ func (r *transitGatewayRouteTableResource) updateRouteTableRoutes(
 		}
 	}
 
-	for _, stateRoute := range *states {
-		if _, exists := planMap[stateRoute.Id.ValueString()]; !exists || !stateRoute.DestinationCidrBlock.Equal(planMap[stateRoute.Id.ValueString()].DestinationCidrBlock) {
-			ok := r.deleteRoute(ctx, tgwRouteTableId, stateRoute.Id.ValueString(), resp)
-			if !ok {
-				return false
+	if states != nil {
+		for _, stateRoute := range *states {
+			if _, exists := planMap[stateRoute.Id.ValueString()]; !exists || !stateRoute.DestinationCidrBlock.Equal(planMap[stateRoute.Id.ValueString()].DestinationCidrBlock) {
+				_, ok := pollTgw(ctx, r.kc, r, tgwId, []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, resp)
+				if !ok || resp.HasError() {
+					return false
+				}
+				ok = r.deleteRoute(ctx, tgwRouteTableId, stateRoute.Id.ValueString(), resp)
+				if !ok {
+					return false
+				}
 			}
 		}
 	}
 
 	if plans != nil {
-		for _, planRoute := range *plans {
-			if _, exists := stateMap[planRoute.Id.ValueString()]; !exists || !planRoute.DestinationCidrBlock.Equal(stateMap[planRoute.Id.ValueString()].DestinationCidrBlock) {
-				ok := r.addRoute(ctx, tgwRouteTableId, &planRoute, resp)
+		for i := range *plans {
+			planRoute := &(*plans)[i]
+
+			_, ok := pollTgw(ctx, r.kc, r, tgwId, []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, resp)
+			if !ok || resp.HasError() {
+				return false
+			}
+
+			stateRoute, exists := stateMap[planRoute.Id.ValueString()]
+			if !exists || !planRoute.DestinationCidrBlock.Equal(stateRoute.DestinationCidrBlock) {
+				ok := r.addRoute(ctx, tgwRouteTableId, planRoute, resp)
 				if !ok {
 					return false
 				}
-			} else {
-				if !planRoute.TgwAttachmentId.Equal(stateMap[planRoute.Id.ValueString()].TgwAttachmentId) {
-					ok := r.updateRoute(ctx, tgwRouteTableId, &planRoute, resp)
-					if !ok {
-						return false
-					}
+			} else if !planRoute.TgwAttachmentId.Equal(stateRoute.TgwAttachmentId) {
+				ok := r.updateRoute(ctx, tgwRouteTableId, planRoute, resp)
+				if !ok {
+					return false
 				}
 			}
 		}
@@ -135,7 +150,7 @@ func (r *transitGatewayRouteTableResource) deleteRoute(ctx context.Context, tgwR
 			return nil, httpResp, err
 		},
 	)
-	if err != nil {
+	if !(httpResp != nil && httpResp.StatusCode == 404) && err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "DeleteTgwRoute", err, diag)
 		return false
 	}

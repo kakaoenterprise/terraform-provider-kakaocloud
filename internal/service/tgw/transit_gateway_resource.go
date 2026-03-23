@@ -75,7 +75,7 @@ func (r *transitGatewayResource) Create(ctx context.Context, req resource.Create
 
 	optionsReq := tgw.BnsTgwV1ApiCreateTransitGatewayModelTgwOptionRequestModel{
 		IsAutoAcceptSharedAttachments:  optionsModel.IsAutoAcceptSharedAttachments.ValueBool(),
-		IsDefaultRouteTableAssociation: optionsModel.IsDefaultRouteTableAssociation.ValueBool(),
+		IsDefaultRouteTableAssociation: false,
 	}
 
 	createReq := tgw.BnsTgwV1ApiCreateTransitGatewayModelTgwRequestModel{
@@ -111,7 +111,7 @@ func (r *transitGatewayResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	ok = mapTransitGatewayBaseModel(ctx, &plan.transitGatewayBaseModel, result, &resp.Diagnostics)
+	ok = mapTransitGatewayResourceBaseModel(ctx, &plan.transitGatewayResourceBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -158,7 +158,7 @@ func (r *transitGatewayResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	tgwResult := respModel.Tgw
-	ok := mapTransitGatewayBaseModel(ctx, &state.transitGatewayBaseModel, &tgwResult, &resp.Diagnostics)
+	ok := mapTransitGatewayResourceBaseModel(ctx, &state.transitGatewayResourceBaseModel, &tgwResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -184,6 +184,10 @@ func (r *transitGatewayResource) Update(ctx context.Context, req resource.Update
 		return
 	}
 
+	mutex := common.LockForID(plan.Id.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -208,9 +212,7 @@ func (r *transitGatewayResource) Update(ctx context.Context, req resource.Update
 	}
 
 	needUpdateOption := false
-	if !planOption.IsDefaultRouteTableAssociation.Equal(stateOption.IsDefaultRouteTableAssociation) ||
-		!planOption.IsAutoAcceptSharedAttachments.Equal(stateOption.IsAutoAcceptSharedAttachments) ||
-		(!planOption.AssociationDefaultRouteTableId.IsUnknown() && !planOption.AssociationDefaultRouteTableId.Equal(stateOption.AssociationDefaultRouteTableId)) {
+	if !planOption.IsAutoAcceptSharedAttachments.Equal(stateOption.IsAutoAcceptSharedAttachments) {
 		needUpdateOption = true
 	}
 
@@ -226,11 +228,7 @@ func (r *transitGatewayResource) Update(ctx context.Context, req resource.Update
 				IsDefaultRouteTableAssociation: planOption.IsDefaultRouteTableAssociation.ValueBool(),
 			}
 			if planOption.IsDefaultRouteTableAssociation.ValueBool() {
-				if !planOption.AssociationDefaultRouteTableId.IsNull() && !planOption.AssociationDefaultRouteTableId.IsUnknown() {
-					optionsReq.SetAssociationDefaultRouteTableId(planOption.AssociationDefaultRouteTableId.ValueString())
-				} else {
-					optionsReq.SetAssociationDefaultRouteTableId(stateOption.AssociationDefaultRouteTableId.ValueString())
-				}
+				optionsReq.SetAssociationDefaultRouteTableId(planOption.AssociationDefaultRouteTableId.ValueString())
 			}
 			updateReq.SetOptions(optionsReq)
 		}
@@ -262,7 +260,7 @@ func (r *transitGatewayResource) Update(ctx context.Context, req resource.Update
 			return
 		}
 
-		ok = mapTransitGatewayBaseModel(ctx, &state.transitGatewayBaseModel, result, &resp.Diagnostics)
+		ok = mapTransitGatewayResourceBaseModel(ctx, &state.transitGatewayResourceBaseModel, result, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
@@ -282,6 +280,10 @@ func (r *transitGatewayResource) Delete(ctx context.Context, req resource.Delete
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	mutex := common.LockForID(state.Id.ValueString())
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
 

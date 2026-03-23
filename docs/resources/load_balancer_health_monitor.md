@@ -22,7 +22,6 @@ targets.
 
 # Basic Usage (kakaocloud_load_balancer_health_monitor)
 resource "kakaocloud_load_balancer_health_monitor" "example" {
-  name             = "example-health-monitor"
   type             = "PING"
   delay            = 10
   timeout          = 5

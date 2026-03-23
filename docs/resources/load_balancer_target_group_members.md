@@ -13,8 +13,6 @@ This resource manages the members (targets) associated with a specific Load Bala
 > ⚠️ Note:
 > - Do not use this resource together with individual `kakaocloud_load_balancer_target_group_member` resources for the same target group. Doing so will cause conflicts.
 
-
-
 ## Example Usage
 
 ```terraform
@@ -42,6 +40,7 @@ resource "kakaocloud_load_balancer_target_group_members" "example" {
 
 - `members` (Required, Attributes List) A list of target members to register in the target group. (see [below for nested schema](#nestedatt--members))
 - `target_group_id` (Required, String) The ID of the target group in which the members will be managed.
+
 - `timeouts` (Optional, Attributes) Timeout configuration for create, read, update, and delete operations. (see [below for nested schema](#nestedatt--timeouts))
 
 <a id="nestedatt--members"></a>
@@ -55,6 +54,7 @@ resource "kakaocloud_load_balancer_target_group_members" "example" {
 - `name` (Optional, String) A name assigned to the target member.
 - `weight` (Optional, Number) The traffic distribution weight of the target member.
 
+
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
@@ -62,6 +62,7 @@ resource "kakaocloud_load_balancer_target_group_members" "example" {
 - `delete` (Optional, String) A string that can be parsed as a duration such as "30s" or "2h45m". This timeout applies only if changes are saved into state before the destroy operation occurs.
 - `read` (Optional, String) A string that can be parsed as a duration such as "30s" or "2h45m". Read operations occur during refresh or planning when refresh is enabled.
 - `update` (Optional, String) A string that can be parsed as a duration such as "30s" or "2h45m". Valid time units are "s", "m", and "h".
+
 
 ## Import
 
@@ -73,3 +74,4 @@ terraform import kakaocloud_load_balancer_target_group_members.example <target_g
 
 > ⚠️ Note: When importing, ensure the `members` list in your configuration is **sorted by IP address (`address`)**.  
 > Any difference in order compared to the actual target group state will result in a diff and **force resource replacement** during the next apply.
+

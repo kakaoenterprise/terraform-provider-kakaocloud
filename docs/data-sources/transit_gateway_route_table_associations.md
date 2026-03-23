@@ -84,7 +84,6 @@ The following attributes are exported:
 - `resource_id` (String) Associated resource ID.
 - `resource_type` (String) Associated resource type (for example, VPC).
 - `route_table_id` (String) Route table ID.
-- `tgw_attachment_id` (String) Transit Gateway attachment ID.
 - `tgw_route_table_id` (String) Transit Gateway route table ID.
 
 <a id="nestedatt--associations--resource"></a>

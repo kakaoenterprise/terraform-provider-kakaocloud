@@ -16,7 +16,7 @@ description: |-
   | architecture                | string       | Architecture of the instance type (CPU structure) |
   | memory_mb                   | integer      | Memory size (in MB) |
   | instance_type               | string | Instance type  <br>- `vm`: Virtual Machine type <br>- `bm`: Bare Metal Server type <br>- `gpu`: GPU type |
-  | instance_family             | string       | [Instance family](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-instance-overview#instance-family) <br>- Example: `r2a`, `c2a` |
+  | instance_family             | string       | [Instance family](https://docs.kakaocloud.com/service/bcs/instance-overview#instance-family) <br>- Example: `r2a`, `c2a` |
   | instance_size               | string       | Instance size |
   | manufacturer                | string       | Manufacturer information |
   | maximum_network_interfaces  | integer      | Maximum number of network interfaces |
@@ -48,7 +48,7 @@ Use this data source when you need to:
 | architecture               | string  | Architecture of the instance type (CPU structure)                                                                                            |
 | memory_mb                  | integer | Memory size (in MB)                                                                                                                          |
 | instance_type              | string  | Instance type  <br>- `vm`: Virtual Machine type <br>- `bm`: Bare Metal Server type <br>- `gpu`: GPU type                                     |
-| instance_family            | string  | [Instance family](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-instance-overview#instance-family) <br>- Example: `r2a`, `c2a` |
+| instance_family            | string  | [Instance family](https://docs.kakaocloud.com/en/service/bcs/instance-overview#instance-family) <br>- Example: `r2a`, `c2a` |
 | instance_size              | string  | Instance size                                                                                                                                |
 | manufacturer               | string  | Manufacturer information                                                                                                                     |
 | maximum_network_interfaces | integer | Maximum number of network interfaces                                                                                                         |
@@ -159,7 +159,7 @@ The following attributes are exported:
 - `hw_name` (String) Hardware name <br/> - Example: a100
 - `hw_type` (String) Hardware type <br/> - Example: GPU
 - `id` (String) Flavor ID
-- `instance_family` (String) [Instance family](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-instance-overview#instance-family)
+- `instance_family` (String) [Instance family](https://docs.kakaocloud.com/en/service/bcs/instance-overview#instance-family)
 - `instance_size` (String) Instance size
 - `instance_type` (String) Instance type <br/> - Refer to [Instance specifications](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-type)
 - `is_burstable` (Boolean) Whether it is a [burstable instance](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-type/general-purpose/burstable-main)

@@ -52,6 +52,7 @@ resource "kakaocloud_load_balancer_l7_policy_rule" "example" {
 - `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Read operations occur during any refresh or planning operation when refresh is enabled.
 - `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), and "h" (hours).
 
+
 ## Import
 
 This resource supports import using the following format:
@@ -70,3 +71,4 @@ terraform import kakaocloud_load_balancer_l7_policy_rule.example <l7_policy_id>/
 > These must be joined with a forward slash (`/`).  
 > This is required because Terraform uses this format when a resource is uniquely identified by **multiple keys**.  
 > ⚠️ Incorrect formatting (e.g. missing slash or wrong order) will result in an import failure.
+

@@ -27,7 +27,6 @@ type transitGatewayRouteBaseModel struct {
 	ResourceAttachmentId types.String `tfsdk:"resource_attachment_id"`
 	ResourceId           types.String `tfsdk:"resource_id"`
 	ResourceType         types.String `tfsdk:"resource_type"`
-	TgwAttachmentId      types.String `tfsdk:"tgw_attachment_id"`
 	TgwRouteTableId      types.String `tfsdk:"tgw_route_table_id"`
 	ProvisioningStatus   types.String `tfsdk:"provisioning_status"`
 	Resource             types.Object `tfsdk:"resource"`

@@ -49,10 +49,7 @@ resource "kakaocloud_load_balancer_target_group" "example_with_listener" {
 - `protocol` (Required, String) Traffic receiving protocol
 
 - `description` (Optional, String) Description of the target group
-- `listener_id` (Optional, String) ID of the listener associated with this target group  
-  > ⚠️ Note: Do not include this field when importing an existing resource.  
-  > This value cannot be retrieved, and setting it after import will cause **forced replacement**.
-
+- `listener_id` (Optional, String) ID of the listener associated with this target group   > ⚠️ Note: Do not include this field when importing an existing resource. > This value cannot be retrieved, and setting it after import will cause **forced replacement**.
 - `session_persistence` (Optional, Attributes) Session settings ( see [below for nested schema](#nestedatt--session_persistence))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 

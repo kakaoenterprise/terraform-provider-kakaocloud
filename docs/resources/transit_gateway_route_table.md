@@ -26,13 +26,11 @@ resource "kakaocloud_transit_gateway_route_table" "example" {
 - `name` (Required, String) Name of the Transit Gateway route table.
 - `tgw_id` (Required, String) ID of the Transit Gateway that owns the route table.
 
-- `request_associations` (Optional, Attributes Set) Set of Transit Gateway attachment associations to apply to the route table. (see [below for nested schema](#nestedatt--request_associations))
-- `request_routes` (Optional, Attributes Set) Set of routing rules to configure in the route table. (see [below for nested schema](#nestedatt--request_routes))
+- `routes` (Optional, Attributes Set) List of routes configured in the route table. (see [below for nested schema](#nestedatt--routes))
 - `timeouts` (Optional, Attributes) Timeout configuration for create, read, update, and delete operations. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
-- `associations` (Attributes List) List of attachment associations applied to the route table. (see [below for nested schema](#nestedatt--associations))
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `id` (String) Transit Gateway route table ID.
 - `is_default_association_route_table` (Boolean) Whether this route table is the default association route table.
@@ -41,23 +39,15 @@ resource "kakaocloud_transit_gateway_route_table" "example" {
 - `project_name` (String) Project name that owns the route table.
 - `provisioning_status` (String) Current provisioning status of the route table.
 - `region` (String) Region where the route table is located.
-- `routes` (Attributes List) List of routes configured in the route table. (see [below for nested schema](#nestedatt--routes))
 - `tgw_name` (String) Name of the associated Transit Gateway.
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 
-<a id="nestedatt--request_associations"></a>
-### Nested Schema for `request_associations`
-
-- `tgw_attachment_id` (Required, String) ID of the Transit Gateway attachment to associate with the route table.
-- `id` (String) Association identifier.
-
-
-<a id="nestedatt--request_routes"></a>
-### Nested Schema for `request_routes`
+<a id="nestedatt--routes"></a>
+### Nested Schema for `routes`
 
 - `destination_cidr_block` (Required, String) Destination CIDR block for the route.
-- `tgw_attachment_id` (Required, String) ID of the Transit Gateway attachment that traffic is routed to.
-- `id` (String) Route identifier.
+- `tgw_attachment_id` (Required, String) Transit Gateway attachment ID.
+- `id` (String) Route ID.
 
 
 <a id="nestedatt--timeouts"></a>
@@ -73,50 +63,7 @@ resource "kakaocloud_transit_gateway_route_table" "example" {
 ### Nested Schema for `associations`
 
 - `id` (String) Association ID.
-- `provisioning_status` (String) Provisioning status of the association.
-- `resource` (Attributes) Resource associated with the attachment. (see [below for nested schema](#nestedatt--associations--resource))
-- `resource_attachment_id` (String) Resource attachment ID.
-- `resource_id` (String) ID of the associated resource.
-- `resource_type` (String) Type of the associated resource.
 - `tgw_attachment_id` (String) Transit Gateway attachment ID.
-- `tgw_route_table_id` (String) Transit Gateway route table ID.
-
-<a id="nestedatt--associations--resource"></a>
-### Nested Schema for `associations.resource`
-
-- `cidr_block` (String) CIDR block of the associated resource.
-- `id` (String) Resource ID.
-- `name` (String) Resource name.
-- `project_id` (String) Project ID that owns the resource.
-- `project_name` (String) Project name that owns the resource.
-- `provisioning_status` (String) Provisioning status of the resource.
-
-
-
-<a id="nestedatt--routes"></a>
-### Nested Schema for `routes`
-
-- `destination_cidr_block` (String) Destination CIDR block for the route.
-- `id` (String) Route ID.
-- `provisioning_status` (String) Provisioning status of the route.
-- `resource` (Attributes) Resource targeted by the route. (see [below for nested schema](#nestedatt--routes--resource))
-- `resource_attachment_id` (String) Resource attachment ID.
-- `resource_id` (String) ID of the target resource.
-- `resource_type` (String) Type of the target resource.
-- `route_type` (String) Type of the route.
-- `tgw_attachment_id` (String) Transit Gateway attachment ID.
-- `tgw_route_table_id` (String) Transit Gateway route table ID.
-
-<a id="nestedatt--routes--resource"></a>
-### Nested Schema for `routes.resource`
-
-- `cidr_block` (String) CIDR block of the target resource.
-- `id` (String) Resource ID.
-- `name` (String) Resource name.
-- `project_id` (String) Project ID that owns the resource.
-- `project_name` (String) Project name that owns the resource.
-- `provisioning_status` (String) Provisioning status of the resource.
-
 
 
 ## Import

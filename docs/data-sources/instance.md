@@ -126,7 +126,7 @@ The following attributes are exported:
 - `hw_type` (String) Hardware type <br/> - Example: GPU
 - `id` (String) Instance type ID
 - `instance_family` (String) Instance family
-- `is_burstable` (Boolean) Whether it is a [burstable instance](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-type/general-purpose/burstable-main)
+- `is_burstable` (Boolean) Whether it is a [burstable instance](https://docs.kakaocloud.com/en/service/bcs/bcs-specifications/general-purpose/burstable-main)
 - `is_hyper_threading_supported` (Boolean) Whether hyper-threading is supported
 - `manufacturer` (String) Manufacturer information
 - `maximum_network_interfaces` (Number) Maximum number of network interfaces

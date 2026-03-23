@@ -252,6 +252,8 @@ func (p *kakaocloudProvider) Resources(_ context.Context) []func() resource.Reso
 		tgw.NewTransitGatewayRouteTableResource,
 		tgw.NewTransitGatewayShareResource,
 		tgw.NewTransitGatewayAttachmentApprovalResource,
+		tgw.NewTransitGatewayDefaultRouteTableResource,
+		tgw.NewTransitGatewayRouteTableAssociationResource,
 	}
 }
 

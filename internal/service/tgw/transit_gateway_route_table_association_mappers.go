@@ -11,7 +11,7 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
 )
 
-func mapTransitGatewayRouteTableAssociationListModel(
+func mapTransitGatewayRouteTableAssociationBaseModel(
 	ctx context.Context,
 	base *transitGatewayRouteTableAssociationBaseModel,
 	assocResult *tgw.BnsTgwV1ApiListTgwRouteTableAssociationsModelAssociationResponseModel,
@@ -21,7 +21,6 @@ func mapTransitGatewayRouteTableAssociationListModel(
 	base.Id = utils.ConvertNullableString(assocResult.Id)
 	base.RouteTableId = types.StringValue(routeTableId)
 	base.ResourceAttachmentId = utils.ConvertNullableString(assocResult.ResourceAttachmentId)
-	base.TgwAttachmentId = utils.ConvertNullableString(assocResult.TgwAttachmentId)
 	base.ResourceId = utils.ConvertNullableString(assocResult.ResourceId)
 	base.ResourceType = utils.ConvertNullableString(assocResult.ResourceType)
 	base.TgwRouteTableId = utils.ConvertNullableString(assocResult.TgwRouteTableId)

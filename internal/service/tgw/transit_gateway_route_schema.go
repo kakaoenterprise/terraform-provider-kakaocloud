@@ -59,9 +59,6 @@ func getTransitGatewayRouteDataSourceSchemaAttributes() map[string]schema.Attrib
 		"resource_type": schema.StringAttribute{
 			Computed: true,
 		},
-		"tgw_attachment_id": schema.StringAttribute{
-			Computed: true,
-		},
 		"tgw_route_table_id": schema.StringAttribute{
 			Computed: true,
 		},

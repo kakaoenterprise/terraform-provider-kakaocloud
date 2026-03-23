@@ -127,7 +127,7 @@ func (d *transitGatewayRouteTableAssociationsDataSource) Read(ctx context.Contex
 	config.Associations = make([]transitGatewayRouteTableAssociationBaseModel, 0)
 	for _, assoc := range listResp.Associations {
 		var assocModel transitGatewayRouteTableAssociationBaseModel
-		ok := mapTransitGatewayRouteTableAssociationListModel(ctx, &assocModel, &assoc, config.RouteTableId.ValueString(), &resp.Diagnostics)
+		ok := mapTransitGatewayRouteTableAssociationBaseModel(ctx, &assocModel, &assoc, config.RouteTableId.ValueString(), &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

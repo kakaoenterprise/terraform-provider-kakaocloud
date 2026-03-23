@@ -28,27 +28,15 @@ resource "kakaocloud_load_balancer_l7_policy" "example" {
 ## Argument Reference
 
 - `action` (Required, String) Policy action type
-
-- `listener_id` (Required, String) ID of the listener the policy applies to
-
-    > ⚠️ **Note:** This value is required at creation time, but is **not returned by the API**.  
-    > During read/import, this may result in diffs or forced replacements if not handled carefully.
+- `listener_id` (Required, String) ID of the listener the policy applies to > ⚠️ **Note:** This value is required at creation time, but is **not returned by the API**. > During read/import, this may result in diffs or forced replacements if not handled carefully.
 
 - `description` (Optional, String) Description of the policy
 - `name` (Optional, String) Policy name
-
-- `position` (Optional, Number) Policy priority (smaller numbers indicate higher priority)
-
-    > ⚠️ **Note:** If the input position does not match the position returned by the API,  
-    > Terraform may detect unwanted diffs or mark the resource as tainted.  
-    > - Must be within a valid range (invalid values will cause a validation error starting from 2026-11)  
-    > - Consider using `depends_on` to control policy ordering.
-
+- `position` (Optional, Number) Policy priority (smaller numbers indicate higher priority) > ⚠️ **Note:** If the input position does not match the position returned by the API, > Terraform may detect unwanted diffs or mark the resource as tainted. > - Must be within a valid range (invalid values will cause a validation error starting from 2026-11) > - Consider using `depends_on` to control policy ordering.
 - `redirect_prefix` (Optional, String) Redirect target path prefix (`action=REDIRECT_PREFIX`)
 - `redirect_target_group_id` (Optional, String) Redirect target group ID (`action=REDIRECT_TO_POOL`)
 - `redirect_url` (Optional, String) Redirect target URL (http or https format, `action=REDIRECT_TO_URL`)
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
-
 
 ## Attribute Reference
 
@@ -67,6 +55,7 @@ resource "kakaocloud_load_balancer_l7_policy" "example" {
 - `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) such as "30s" or "2h45m".
 - `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) such as "30s" or "2h45m".
 
+
 <a id="nestedatt--rules"></a>
 ### Nested Schema for `rules`
 
@@ -79,6 +68,7 @@ resource "kakaocloud_load_balancer_l7_policy" "example" {
 - `provisioning_status` (String) Provisioning status
 - `type` (String) Target type of the rule
 - `value` (String) Value to compare
+
 
 ## Import
 
@@ -95,3 +85,4 @@ terraform import kakaocloud_load_balancer_l7_policy.example <policy_id>
 > - Do **not** specify `listener_id` in the config unless you're recreating the resource  
 > - If necessary, find the associated listener by listing listeners and matching the `l7_policy_id`  
 > - This process may require pagination (up to 1000 listeners per page)
+

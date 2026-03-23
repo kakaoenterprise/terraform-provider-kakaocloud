@@ -87,7 +87,6 @@ The following attributes are exported:
 - `resource_attachment_id` (String) Attachment ID of the associated resource.
 - `resource_id` (String) ID of the associated resource.
 - `resource_type` (String) Type of the associated resource.
-- `tgw_attachment_id` (String) Transit Gateway attachment ID.
 - `tgw_route_table_id` (String) Transit Gateway route table ID.
 
 <a id="nestedatt--associations--resource"></a>
@@ -113,7 +112,6 @@ The following attributes are exported:
 - `resource_id` (String) ID of the target resource.
 - `resource_type` (String) Type of the target resource.
 - `route_type` (String) Route type.
-- `tgw_attachment_id` (String) Transit Gateway attachment ID used by the route.
 - `tgw_route_table_id` (String) Transit Gateway route table ID.
 
 <a id="nestedatt--routes--resource"></a>

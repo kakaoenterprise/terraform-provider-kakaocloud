@@ -146,7 +146,7 @@ func (d *transitGatewayRouteTablesDataSource) Read(ctx context.Context, req data
 		return
 	}
 
-	config.TransitGatewayRouteTables = make([]transitGatewayRouteTableBaseModel, 0)
+	config.TransitGatewayRouteTables = make([]transitGatewayRouteTableDataSourceBaseModel, 0)
 
 	routeTablesResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (*tgw.GetTgwRouteTablesResponseModel, *http.Response, error) {
@@ -159,7 +159,7 @@ func (d *transitGatewayRouteTablesDataSource) Read(ctx context.Context, req data
 	}
 
 	for _, item := range routeTablesResp.TgwRouteTables {
-		var routeTableModel transitGatewayRouteTableBaseModel
+		var routeTableModel transitGatewayRouteTableDataSourceBaseModel
 
 		if !mapTransitGatewayRouteTableListModel(ctx, &routeTableModel, &item, &resp.Diagnostics) {
 			return

@@ -58,6 +58,6 @@ Import is supported using the following syntax:
 The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
 
 ```shell
-$ terraform import kakaocloud_transit_gateway_attachment_approval.example <attachment_approval_id>
+$ terraform import kakaocloud_transit_gateway_attachment_approval.example <attachment_id>
 ```
 

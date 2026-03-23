@@ -69,115 +69,7 @@ func getTransitGatewayRouteTableResourceSchema() map[string]rschema.Attribute {
 		"updated_at": rschema.StringAttribute{
 			Computed: true,
 		},
-		"routes": rschema.ListNestedAttribute{
-			Computed: true,
-			NestedObject: rschema.NestedAttributeObject{
-				Attributes: map[string]rschema.Attribute{
-					"id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"route_type": rschema.StringAttribute{
-						Computed: true,
-					},
-					"destination_cidr_block": rschema.StringAttribute{
-						Computed: true,
-					},
-					"resource_attachment_id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"resource_id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"resource_type": rschema.StringAttribute{
-						Computed: true,
-					},
-					"tgw_attachment_id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"tgw_route_table_id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"provisioning_status": rschema.StringAttribute{
-						Computed: true,
-					},
-					"resource": rschema.SingleNestedAttribute{
-						Computed: true,
-						Attributes: map[string]rschema.Attribute{
-							"id": rschema.StringAttribute{
-								Computed: true,
-							},
-							"name": rschema.StringAttribute{
-								Computed: true,
-							},
-							"cidr_block": rschema.StringAttribute{
-								Computed: true,
-							},
-							"project_id": rschema.StringAttribute{
-								Computed: true,
-							},
-							"project_name": rschema.StringAttribute{
-								Computed: true,
-							},
-							"provisioning_status": rschema.StringAttribute{
-								Computed: true,
-							},
-						},
-					},
-				},
-			},
-		},
-		"associations": rschema.ListNestedAttribute{
-			Computed: true,
-			NestedObject: rschema.NestedAttributeObject{
-				Attributes: map[string]rschema.Attribute{
-					"id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"resource_attachment_id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"resource_id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"resource_type": rschema.StringAttribute{
-						Computed: true,
-					},
-					"tgw_attachment_id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"tgw_route_table_id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"provisioning_status": rschema.StringAttribute{
-						Computed: true,
-					},
-					"resource": rschema.SingleNestedAttribute{
-						Computed: true,
-						Attributes: map[string]rschema.Attribute{
-							"id": rschema.StringAttribute{
-								Computed: true,
-							},
-							"name": rschema.StringAttribute{
-								Computed: true,
-							},
-							"cidr_block": rschema.StringAttribute{
-								Computed: true,
-							},
-							"project_id": rschema.StringAttribute{
-								Computed: true,
-							},
-							"project_name": rschema.StringAttribute{
-								Computed: true,
-							},
-							"provisioning_status": rschema.StringAttribute{
-								Computed: true,
-							},
-						},
-					},
-				},
-			},
-		},
-		"request_routes": rschema.SetNestedAttribute{
+		"routes": rschema.SetNestedAttribute{
 			Optional: true,
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
@@ -186,9 +78,6 @@ func getTransitGatewayRouteTableResourceSchema() map[string]rschema.Attribute {
 				Attributes: map[string]rschema.Attribute{
 					"id": rschema.StringAttribute{
 						Computed: true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.UseStateForUnknown(),
-						},
 					},
 					"destination_cidr_block": rschema.StringAttribute{
 						Required:   true,
@@ -201,22 +90,15 @@ func getTransitGatewayRouteTableResourceSchema() map[string]rschema.Attribute {
 				},
 			},
 		},
-		"request_associations": rschema.SetNestedAttribute{
-			Optional: true,
-			Validators: []validator.Set{
-				setvalidator.SizeAtLeast(1),
-			},
+		"associations": rschema.ListNestedAttribute{
+			Computed: true,
 			NestedObject: rschema.NestedAttributeObject{
 				Attributes: map[string]rschema.Attribute{
 					"id": rschema.StringAttribute{
 						Computed: true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.UseStateForUnknown(),
-						},
 					},
 					"tgw_attachment_id": rschema.StringAttribute{
-						Required:   true,
-						Validators: common.UuidValidator(),
+						Computed: true,
 					},
 				},
 			},
@@ -281,9 +163,6 @@ func getTransitGatewayRouteTableDataSourceSchema() map[string]dschema.Attribute 
 					"resource_type": dschema.StringAttribute{
 						Computed: true,
 					},
-					"tgw_attachment_id": dschema.StringAttribute{
-						Computed: true,
-					},
 					"tgw_route_table_id": dschema.StringAttribute{
 						Computed: true,
 					},
@@ -330,9 +209,6 @@ func getTransitGatewayRouteTableDataSourceSchema() map[string]dschema.Attribute 
 						Computed: true,
 					},
 					"resource_type": dschema.StringAttribute{
-						Computed: true,
-					},
-					"tgw_attachment_id": dschema.StringAttribute{
 						Computed: true,
 					},
 					"tgw_route_table_id": dschema.StringAttribute{

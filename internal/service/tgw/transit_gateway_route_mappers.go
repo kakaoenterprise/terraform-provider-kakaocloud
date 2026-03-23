@@ -25,7 +25,6 @@ func mapTransitGatewayRouteListModel(
 	base.ResourceAttachmentId = utils.ConvertNullableString(routeResult.ResourceAttachmentId)
 	base.ResourceId = utils.ConvertNullableString(routeResult.ResourceId)
 	base.ResourceType = utils.ConvertNullableString(routeResult.ResourceType)
-	base.TgwAttachmentId = utils.ConvertNullableString(routeResult.TgwAttachmentId)
 	base.TgwRouteTableId = utils.ConvertNullableString(routeResult.TgwRouteTableId)
 	base.ProvisioningStatus = utils.ConvertNullableString(routeResult.ProvisioningStatus)
 

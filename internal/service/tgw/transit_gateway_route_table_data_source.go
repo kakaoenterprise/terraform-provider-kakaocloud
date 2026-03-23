@@ -79,7 +79,7 @@ func (d *transitGatewayRouteTableDataSource) Read(ctx context.Context, req datas
 
 	routeTableResult := routeTableResp.TgwRouteTable
 
-	if !mapTransitGatewayRouteTableBaseModel(ctx, &config.transitGatewayRouteTableBaseModel, &routeTableResult, &resp.Diagnostics) {
+	if !mapTransitGatewayRouteTableDataSourceModel(ctx, &config.transitGatewayRouteTableDataSourceBaseModel, &routeTableResult, &resp.Diagnostics) {
 		return
 	}
 

@@ -37,22 +37,12 @@ resource "kakaocloud_load_balancer_listener" "example" {
 
 - `connection_limit` (Optional, Number) Maximum number of simultaneous connections
 - `default_tls_container_ref` (Optional, String) Reference ID of the default TLS certificate used in the HTTPS listener
-
-- `insert_headers` (Optional, Attributes) Settings for HTTP headers to insert (see [below for nested schema](#nestedatt--insert_headers))
-
-    > ⚠️ **Note:** This block is only supported when `protocol` is `HTTP` or `TERMINATED_HTTPS`.  
-    > Using it with other protocols will be ignored or may cause validation errors.  
-    > Default values are: `x_forwarded_for = true`, `x_forwarded_port = false`, `x_forwarded_proto = false`.
-
+- `insert_headers` (Optional, Attributes) Settings for HTTP headers to insert > ⚠️ **Note:** This block is only supported when `protocol` is `HTTP` or `TERMINATED_HTTPS`. > Using it with other protocols will be ignored or may cause validation errors. > Default values are: `x_forwarded_for = true`, `x_forwarded_port = false`, `x_forwarded_proto = false`. (see [below for nested schema](#nestedatt--insert_headers))
 - `sni_container_refs` (Optional, List of String) List of SNI certificate references
 - `target_group_id` (Optional, String) ID of the target group to retrieve
 - `timeout_client_data` (Optional, Number) Client data receive timeout (seconds)
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
-- `tls_min_version` (Optional, String) Minimum TLS version allowed by the listener (supports TLS protocol equal to or above the specified version)  
-  ※ Applies only when using the `TERMINATED_HTTPS` protocol  
-  - `TLSv1`: Allow TLS 1.0 as minimum  
-  - `TLSv1.1`: Allow TLS 1.1 as minimum  
-  - `TLSv1.2`: Allow TLS 1.2 as minimum
+- `tls_min_version` (Optional, String) Minimum TLS version allowed by the listener (supports TLS protocol equal to or above the specified version)   ※ Applies only when using the `TERMINATED_HTTPS` protocol
 
 ## Attribute Reference
 

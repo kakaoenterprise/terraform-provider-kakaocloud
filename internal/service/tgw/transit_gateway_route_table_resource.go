@@ -72,6 +72,11 @@ func (r *transitGatewayRouteTableResource) Create(ctx context.Context, req resou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	_, ok := pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
 	createReq := tgw.BnsTgwV1ApiCreateTgwRouteTableModelTgwRouteTableRequestModel{
 		TgwId: plan.TgwId.ValueString(),
 		Name:  plan.Name.ValueString(),
@@ -95,58 +100,39 @@ func (r *transitGatewayRouteTableResource) Create(ctx context.Context, req resou
 	}
 
 	plan.Id = types.StringValue(respModel.RouteTable.Id)
-	result, ok := r.pollRouteTableUntilAvailable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
+	result, ok := pollRouteTableUntilAvailable(ctx, r.kc, r, plan.Id.ValueString(), &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+	_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	if !plan.RequestRoutes.IsNull() {
+	if !plan.Routes.IsNull() {
 		var requestRoutes []tgwRouteTableRequestRouteModel
-		diags := plan.RequestRoutes.ElementsAs(ctx, &requestRoutes, false)
+		diags := plan.Routes.ElementsAs(ctx, &requestRoutes, false)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
-		for i := range requestRoutes {
-			tmpPlan := requestRoutes[i]
-			r.addRoute(ctx, plan.Id.ValueString(), &tmpPlan, &resp.Diagnostics)
-			requestRoutes[i] = tmpPlan
-		}
+		r.updateRouteTableRoutes(ctx, plan.TgwId.ValueString(), plan.Id.ValueString(), &requestRoutes, nil, &resp.Diagnostics)
 		elemType := types.ObjectType{AttrTypes: tgwRouteTableRequestRouteAttrType}
-		plan.RequestRoutes, diags = types.SetValueFrom(ctx, elemType, requestRoutes)
+		plan.Routes, diags = types.SetValueFrom(ctx, elemType, requestRoutes)
 		resp.Diagnostics.Append(diags...)
 
-		result, ok = r.pollRouteTableUntilAvailable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
+		result, ok = pollRouteTableUntilAvailable(ctx, r.kc, r, plan.Id.ValueString(), &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+		_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
 	}
 
-	if !plan.RequestAssociations.IsNull() {
-		var requestAssociations []tgwRouteTableRequestAssociationModel
-		diags := plan.RequestAssociations.ElementsAs(ctx, &requestAssociations, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		for i := range requestAssociations {
-			tmpPlan := requestAssociations[i]
-			r.addAssociation(ctx, plan.Id.ValueString(), &tmpPlan, &resp.Diagnostics)
-			requestAssociations[i] = tmpPlan
-		}
-		elemType := types.ObjectType{AttrTypes: tgwRouteTableRequestAssociationAttrType}
-		plan.RequestAssociations, diags = types.SetValueFrom(ctx, elemType, requestAssociations)
-		resp.Diagnostics.Append(diags...)
-
-		result, ok = r.pollRouteTableUntilAvailable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
-		if !ok || resp.Diagnostics.HasError() {
-			return
-		}
-	}
-
-	ok = mapTransitGatewayRouteTableBaseModel(ctx, &plan.transitGatewayRouteTableBaseModel, result, &resp.Diagnostics)
+	ok = mapTransitGatewayRouteTableResourceModel(ctx, &plan, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -193,13 +179,12 @@ func (r *transitGatewayRouteTableResource) Read(ctx context.Context, req resourc
 		return
 	}
 
-	if !mapTransitGatewayRouteTableBaseModel(ctx, &state.transitGatewayRouteTableBaseModel, &respModel.TgwRouteTable, &resp.Diagnostics) {
+	if !mapTransitGatewayRouteTableResourceModel(ctx, &state, &respModel.TgwRouteTable, &resp.Diagnostics) {
 		return
 	}
 
+	var requestRoutes []tgwRouteTableRequestRouteModel
 	if respModel.TgwRouteTable.Routes != nil && len(respModel.TgwRouteTable.Routes) > 0 {
-		var requestRoutes []tgwRouteTableRequestRouteModel
-
 		for _, route := range respModel.TgwRouteTable.Routes {
 			destinationCidrBlock := route.DestinationCidrBlock.Get()
 			requestRoutes = append(requestRoutes,
@@ -209,32 +194,13 @@ func (r *transitGatewayRouteTableResource) Read(ctx context.Context, req resourc
 					TgwAttachmentId:      utils.ConvertNullableString(route.ResourceAttachmentId),
 				})
 		}
-		var mapDiags diag.Diagnostics
-		elemType := types.ObjectType{AttrTypes: tgwRouteTableRequestRouteAttrType}
-		state.RequestRoutes, mapDiags = types.SetValueFrom(ctx, elemType, requestRoutes)
-		diags.Append(mapDiags...)
-		if diags.HasError() {
-			return
-		}
 	}
-
-	if respModel.TgwRouteTable.Associations != nil && len(respModel.TgwRouteTable.Associations) > 0 {
-		var requestAssociations []tgwRouteTableRequestAssociationModel
-
-		for _, association := range respModel.TgwRouteTable.Associations {
-			requestAssociations = append(requestAssociations,
-				tgwRouteTableRequestAssociationModel{
-					Id:              utils.ConvertNullableString(association.Id),
-					TgwAttachmentId: utils.ConvertNullableString(association.ResourceAttachmentId),
-				})
-		}
-		var mapDiags diag.Diagnostics
-		elemType := types.ObjectType{AttrTypes: tgwRouteTableRequestAssociationAttrType}
-		state.RequestAssociations, mapDiags = types.SetValueFrom(ctx, elemType, requestAssociations)
-		diags.Append(mapDiags...)
-		if diags.HasError() {
-			return
-		}
+	var mapDiags diag.Diagnostics
+	routesElemType := types.ObjectType{AttrTypes: tgwRouteTableRequestRouteAttrType}
+	state.Routes, mapDiags = types.SetValueFrom(ctx, routesElemType, requestRoutes)
+	diags.Append(mapDiags...)
+	if diags.HasError() {
+		return
 	}
 
 	diags = resp.State.Set(ctx, &state)
@@ -272,8 +238,12 @@ func (r *transitGatewayRouteTableResource) Update(ctx context.Context, req resou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	_, ok := pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
 	var result *tgw.BnsTgwV1ApiGetTgwRouteTableModelTgwRouteTableResponseModel
-	var ok bool
 	if !plan.Name.Equal(state.Name) {
 		updateReq := tgw.NewBnsTgwV1ApiUpdateTgwRouteTableModelTgwRouteTableRequestModel(plan.Name.ValueString())
 
@@ -296,43 +266,40 @@ func (r *transitGatewayRouteTableResource) Update(ctx context.Context, req resou
 
 		time.Sleep(5 * time.Second)
 
-		result, ok = r.pollRouteTableUntilAvailable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
+		result, ok = pollRouteTableUntilAvailable(ctx, r.kc, r, plan.Id.ValueString(), &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+		_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
 	}
 
-	if !plan.RequestRoutes.Equal(state.RequestRoutes) {
-		var planRequestRoutes, stateRequestRoutes []tgwRouteTableRequestRouteModel
-		diags := plan.RequestRoutes.ElementsAs(ctx, &planRequestRoutes, false)
+	if !plan.Routes.Equal(state.Routes) {
+		var planRoutes, stateRoutes []tgwRouteTableRequestRouteModel
+		diags := plan.Routes.ElementsAs(ctx, &planRoutes, false)
 		resp.Diagnostics.Append(diags...)
-		diags = state.RequestRoutes.ElementsAs(ctx, &stateRequestRoutes, false)
+		diags = state.Routes.ElementsAs(ctx, &stateRoutes, false)
 		if resp.Diagnostics.HasError() {
 			return
 		}
-		r.updateRouteTableRoutes(ctx, plan.Id.ValueString(), &planRequestRoutes, &stateRequestRoutes, &resp.Diagnostics)
-		result, ok = r.pollRouteTableUntilAvailable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
-		if !ok || resp.Diagnostics.HasError() {
-			return
-		}
-	}
-
-	if !plan.RequestAssociations.Equal(state.RequestAssociations) {
-		var planRequestAssociations, stateRequestAssociations []tgwRouteTableRequestAssociationModel
-		diags := plan.RequestAssociations.ElementsAs(ctx, &planRequestAssociations, false)
+		r.updateRouteTableRoutes(ctx, plan.TgwId.ValueString(), plan.Id.ValueString(), &planRoutes, &stateRoutes, &resp.Diagnostics)
+		elemType := types.ObjectType{AttrTypes: tgwRouteTableRequestRouteAttrType}
+		plan.Routes, diags = types.SetValueFrom(ctx, elemType, planRoutes)
 		resp.Diagnostics.Append(diags...)
-		diags = state.RequestAssociations.ElementsAs(ctx, &stateRequestAssociations, false)
-		if resp.Diagnostics.HasError() {
+
+		result, ok = pollRouteTableUntilAvailable(ctx, r.kc, r, plan.Id.ValueString(), &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
-		r.updateRouteTableAssociations(ctx, plan.Id.ValueString(), &planRequestAssociations, &stateRequestAssociations, &resp.Diagnostics)
-		result, ok = r.pollRouteTableUntilAvailable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
+		_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
 	}
 
-	if !mapTransitGatewayRouteTableBaseModel(ctx, &plan.transitGatewayRouteTableBaseModel, result, &resp.Diagnostics) {
+	if !mapTransitGatewayRouteTableResourceModel(ctx, &plan, result, &resp.Diagnostics) {
 		return
 	}
 
@@ -365,21 +332,34 @@ func (r *transitGatewayRouteTableResource) Delete(ctx context.Context, req resou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	_, ok := pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
 	if !state.Routes.IsNull() && len(state.Routes.Elements()) > 0 {
-		var routes []tgwRouteTableRouteNestedModel
+		var routes []tgwRouteTableRequestRouteModel
 		diags := state.Routes.ElementsAs(ctx, &routes, false)
 		resp.Diagnostics.Append(diags...)
-		for _, route := range routes {
-			r.deleteRoute(ctx, state.Id.ValueString(), route.Id.ValueString(), &resp.Diagnostics)
+
+		r.updateRouteTableRoutes(ctx, state.TgwId.ValueString(), state.Id.ValueString(), nil, &routes, &resp.Diagnostics)
+		_, ok = pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
 		}
 	}
 
 	if !state.Associations.IsNull() && len(state.Associations.Elements()) > 0 {
-		var associations []tgwRouteTableAssociationNestedModel
+		var associations []tgwRouteTableRequestAssociationModel
 		diags := state.Associations.ElementsAs(ctx, &associations, false)
 		resp.Diagnostics.Append(diags...)
 		for _, association := range associations {
-			r.deleteAssociation(ctx, state.Id.ValueString(), association.Id.ValueString(), &resp.Diagnostics)
+			_, ok = pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+			deleteRouteTableAssociation(ctx, r.kc, r, state.Id.ValueString(), association.Id.ValueString(), &resp.Diagnostics)
+		}
+		_, ok = pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
 		}
 	}
 
@@ -434,16 +414,18 @@ func (r *transitGatewayRouteTableResource) ImportState(ctx context.Context, req 
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (r *transitGatewayRouteTableResource) pollRouteTableUntilAvailable(
+func pollRouteTableUntilAvailable(
 	ctx context.Context,
+	kc *common.KakaoCloudClient,
+	resource interface{},
 	routeTableId string,
 	diags *diag.Diagnostics,
 ) (*tgw.BnsTgwV1ApiGetTgwRouteTableModelTgwRouteTableResponseModel, bool) {
 
 	result, ok := common.PollUntilResult(
 		ctx,
-		r,
-		5*time.Second,
+		resource,
+		3*time.Second,
 		"transit gateway route table",
 		routeTableId,
 		[]string{
@@ -455,11 +437,11 @@ func (r *transitGatewayRouteTableResource) pollRouteTableUntilAvailable(
 		},
 		diags,
 		func(ctx context.Context) (*tgw.BnsTgwV1ApiGetTgwRouteTableModelTgwRouteTableResponseModel, *http.Response, error) {
-			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
+			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, kc, diags,
 				func() (*tgw.GetTgwRouteTableResponseModel, *http.Response, error) {
-					return r.kc.ApiClient.RouteTablesAPI.
+					return kc.ApiClient.RouteTablesAPI.
 						GetTgwRouteTable(ctx, routeTableId).
-						XAuthToken(r.kc.XAuthToken).
+						XAuthToken(kc.XAuthToken).
 						Execute()
 				},
 			)
@@ -482,7 +464,7 @@ func (r *transitGatewayRouteTableResource) pollRouteTableUntilAvailable(
 
 	common.CheckResourceAvailableStatus(
 		ctx,
-		r,
+		resource,
 		(*string)(result.ProvisioningStatus.Get()),
 		[]string{
 			common.TgwStatusActive,
@@ -512,12 +494,12 @@ func (r *transitGatewayRouteTableResource) ValidateConfig(ctx context.Context, r
 }
 
 func (r *transitGatewayRouteTableResource) validateRouteConfig(ctx context.Context, config transitGatewayRouteTableResourceModel, resp *resource.ValidateConfigResponse) {
-	if config.RequestRoutes.IsNull() || config.RequestRoutes.IsUnknown() {
+	if config.Routes.IsNull() || config.Routes.IsUnknown() {
 		return
 	}
 
 	var routes []tgwRouteTableRequestRouteModel
-	diags := config.RequestRoutes.ElementsAs(ctx, &routes, false)
+	diags := config.Routes.ElementsAs(ctx, &routes, false)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return

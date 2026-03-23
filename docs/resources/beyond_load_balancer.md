@@ -68,7 +68,7 @@ resource "kakaocloud_beyond_load_balancer" "example" {
 - `project_id` (String) Project ID
 - `provider_name` (String) Provider name
 - `provisioning_status` (String) Provisioning status
-- `type` (String) [Load balancer type](https://docs.kakaocloud.com/en/service/bns/lb/lb-overview#사용-목적에-따른-로드-밸런서-유형-제공)
+- `type` (String) [Load balancer type](https://docs.kakaocloud.com/en/service/networking/lb/lb-overview#different-load-balancer-types-based-on-use-case)
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 - `vpc_cidr_block` (String) IPv4 CIDR block of the VPC
 - `vpc_name` (String) Associated VPC name

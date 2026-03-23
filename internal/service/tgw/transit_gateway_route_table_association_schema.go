@@ -5,87 +5,116 @@ package tgw
 import (
 	"terraform-provider-kakaocloud/internal/common"
 
-	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
 
-func getTransitGatewayRouteTableAssociationsDataSourceSchema() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-		"route_table_id": schema.StringAttribute{
+func getTransitGatewayRouteTableAssociationsDataSourceSchema() map[string]dschema.Attribute {
+	return map[string]dschema.Attribute{
+		"route_table_id": dschema.StringAttribute{
 			Required:   true,
 			Validators: common.UuidValidator(),
 		},
-		"filter": schema.ListNestedAttribute{
+		"filter": dschema.ListNestedAttribute{
 			Optional: true,
-			NestedObject: schema.NestedAttributeObject{
-				Attributes: map[string]schema.Attribute{
-					"name": schema.StringAttribute{
+			NestedObject: dschema.NestedAttributeObject{
+				Attributes: map[string]dschema.Attribute{
+					"name": dschema.StringAttribute{
 						Required: true,
 					},
-					"value": schema.StringAttribute{
+					"value": dschema.StringAttribute{
 						Optional: true,
 					},
 				},
 			},
 		},
-		"associations": schema.ListNestedAttribute{
+		"associations": dschema.ListNestedAttribute{
 			Computed: true,
-			NestedObject: schema.NestedAttributeObject{
-				Attributes: getTransitGatewayRouteTableAssociationBaseSchema(),
+			NestedObject: dschema.NestedAttributeObject{
+				Attributes: getTransitGatewayRouteTableAssociationDataSourceSchema(),
 			},
 		},
 	}
 }
 
-func getTransitGatewayRouteTableAssociationBaseSchema() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-		"id": schema.StringAttribute{
+func getTransitGatewayRouteTableAssociationDataSourceSchema() map[string]dschema.Attribute {
+	return map[string]dschema.Attribute{
+		"id": dschema.StringAttribute{
 			Computed: true,
 		},
-		"route_table_id": schema.StringAttribute{
+		"route_table_id": dschema.StringAttribute{
 			Computed: true,
 		},
-		"resource_attachment_id": schema.StringAttribute{
+		"resource_attachment_id": dschema.StringAttribute{
 			Computed: true,
 		},
-		"tgw_attachment_id": schema.StringAttribute{
+		"resource_id": dschema.StringAttribute{
 			Computed: true,
 		},
-		"resource_id": schema.StringAttribute{
+		"resource_type": dschema.StringAttribute{
 			Computed: true,
 		},
-		"resource_type": schema.StringAttribute{
+		"tgw_route_table_id": dschema.StringAttribute{
 			Computed: true,
 		},
-		"tgw_route_table_id": schema.StringAttribute{
+		"provisioning_status": dschema.StringAttribute{
 			Computed: true,
 		},
-		"provisioning_status": schema.StringAttribute{
+		"resource": dschema.SingleNestedAttribute{
 			Computed: true,
-		},
-		"resource": schema.SingleNestedAttribute{
-			Computed: true,
-			Attributes: map[string]schema.Attribute{
-				"id": schema.StringAttribute{
+			Attributes: map[string]dschema.Attribute{
+				"id": dschema.StringAttribute{
 					Computed: true,
 				},
-				"name": schema.StringAttribute{
+				"name": dschema.StringAttribute{
 					Computed: true,
 				},
-				"cidr_block": schema.StringAttribute{
+				"cidr_block": dschema.StringAttribute{
 					Computed: true,
 				},
-				"project_id": schema.StringAttribute{
+				"project_id": dschema.StringAttribute{
 					Computed: true,
 				},
-				"project_name": schema.StringAttribute{
+				"project_name": dschema.StringAttribute{
 					Computed: true,
 				},
-				"provisioning_status": schema.StringAttribute{
+				"provisioning_status": dschema.StringAttribute{
 					Computed: true,
 				},
 			},
+		},
+	}
+}
+
+func getTransitGatewayRouteTableAssociationResourceSchema() map[string]rschema.Attribute {
+	return map[string]rschema.Attribute{
+		"id": rschema.StringAttribute{
+			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
+		},
+		"route_table_id": rschema.StringAttribute{
+			Required:   true,
+			Validators: common.UuidValidator(),
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
+		},
+		"tgw_attachment_id": rschema.StringAttribute{
+			Required:   true,
+			Validators: common.UuidValidator(),
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
+		},
+		"provisioning_status": rschema.StringAttribute{
+			Computed: true,
 		},
 	}
 }
 
 var transitGatewayRouteTableAssociationsDataSourceSchemaAttributes = getTransitGatewayRouteTableAssociationsDataSourceSchema()
+var transitGatewayRouteTableAssociationsResourceSchemaAttributes = getTransitGatewayRouteTableAssociationResourceSchema()

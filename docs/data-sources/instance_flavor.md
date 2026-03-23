@@ -72,10 +72,10 @@ The following attributes are exported:
 - `hw_count` (Number) Number of hardware components included in this instance type <br/> - Example: number of GPUs
 - `hw_name` (String) Hardware name <br/> - Example: a100
 - `hw_type` (String) Hardware type <br/> - Example: GPU
-- `instance_family` (String) [Instance family](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-instance-overview#instance-family)
+- `instance_family` (String) [Instance family](https://docs.kakaocloud.com/en/service/bcs/instance-overview#instance-family)
 - `instance_size` (String) Instance size
-- `instance_type` (String) Instance type <br/> - Refer to [Instance specifications](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-type)
-- `is_burstable` (Boolean) Whether it is a [burstable instance](https://docs.kakaocloud.com/en/service/bcs/bcs-instance/bcs-type/general-purpose/burstable-main)
+- `instance_type` (String) Instance type <br/> - Refer to [Instance specifications](https://docs.kakaocloud.com/en/service/bcs/instance-overview#instance-type)
+- `is_burstable` (Boolean) Whether it is a [burstable instance](https://docs.kakaocloud.com/en/service/bcs/bcs-specifications/general-purpose/burstable-main)
 - `is_hyper_threading_disable_supported` (Boolean) Whether disabling hyper-threading is supported
 - `is_hyper_threading_disabled` (Boolean) Whether hyper-threading is disabled
 - `is_hyper_threading_supported` (Boolean) Whether hyper-threading is supported

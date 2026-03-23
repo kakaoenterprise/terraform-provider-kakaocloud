@@ -41,7 +41,8 @@ func PollUntilResultWithTimeout[T any](
 	defer ticker.Stop()
 
 	retry404Count := 0
-	maxRetries := 30
+	maxRetries := 300
+	max404Retries := 10
 
 	typeName, _ := ExtractTypeMetadata(ctx, obj)
 
@@ -65,7 +66,7 @@ func PollUntilResultWithTimeout[T any](
 
 				if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
 					retry404Count++
-					if retry404Count <= maxRetries {
+					if retry404Count <= max404Retries {
 						tflog.Warn(ctxWithTimeout, fmt.Sprintf(
 							"%s not found (404). Retrying %d/%d...",
 							typeName, retry404Count, maxRetries,
@@ -83,7 +84,7 @@ func PollUntilResultWithTimeout[T any](
 							"The requested %s '%s' does not exist or is not accessible after %d retries. Please verify the resource exists.",
 							targetName,
 							targetId,
-							maxRetries,
+							max404Retries,
 						),
 					)
 					return zero, false

@@ -13,11 +13,63 @@ import (
 )
 
 func mapTransitGatewayRouteTableBaseModel(
-	ctx context.Context,
 	base *transitGatewayRouteTableBaseModel,
 	result *tgw.BnsTgwV1ApiGetTgwRouteTableModelTgwRouteTableResponseModel,
 	diags *diag.Diagnostics,
 ) bool {
+	base.Id = ConvertNullableString(result.Id)
+	base.Name = ConvertNullableString(result.Name)
+	base.TgwId = ConvertNullableString(result.TgwId)
+	base.Region = ConvertNullableString(result.Region)
+	base.ProjectId = ConvertNullableString(result.ProjectId)
+	base.ProjectName = ConvertNullableString(result.ProjectName)
+	base.TgwName = ConvertNullableString(result.TgwName)
+	base.IsDefaultAssociationRouteTable = ConvertNullableBool(result.IsDefaultAssociationRouteTable)
+	base.IsDefaultPropagationRouteTable = ConvertNullableBool(result.IsDefaultPropagationRouteTable)
+	base.ProvisioningStatus = ConvertNullableString(result.ProvisioningStatus)
+	base.CreatedAt = ConvertNullableTime(result.CreatedAt)
+	base.UpdatedAt = ConvertNullableTime(result.UpdatedAt)
+
+	return !diags.HasError()
+}
+
+func mapTransitGatewayRouteTableResourceModel(
+	ctx context.Context,
+	base *transitGatewayRouteTableResourceModel,
+	result *tgw.BnsTgwV1ApiGetTgwRouteTableModelTgwRouteTableResponseModel,
+	diags *diag.Diagnostics,
+) bool {
+	mapTransitGatewayRouteTableBaseModel(&base.transitGatewayRouteTableBaseModel, result, diags)
+
+	var associations []tgwRouteTableRequestAssociationModel
+	if result.Associations != nil && len(result.Associations) > 0 {
+		for _, association := range result.Associations {
+			associations = append(associations,
+				tgwRouteTableRequestAssociationModel{
+					Id:              ConvertNullableString(association.Id),
+					TgwAttachmentId: ConvertNullableString(association.ResourceAttachmentId),
+				})
+		}
+	}
+	associationsElemType := types.ObjectType{AttrTypes: tgwRouteTableRequestAssociationAttrType}
+	var mapDiags diag.Diagnostics
+	base.Associations, mapDiags = types.ListValueFrom(ctx, associationsElemType, associations)
+	diags.Append(mapDiags...)
+	if diags.HasError() {
+		return false
+	}
+
+	return !diags.HasError()
+}
+
+func mapTransitGatewayRouteTableDataSourceModel(
+	ctx context.Context,
+	base *transitGatewayRouteTableDataSourceBaseModel,
+	result *tgw.BnsTgwV1ApiGetTgwRouteTableModelTgwRouteTableResponseModel,
+	diags *diag.Diagnostics,
+) bool {
+	mapTransitGatewayRouteTableBaseModel(&base.transitGatewayRouteTableBaseModel, result, diags)
+
 	routes, routeDiags := ConvertListFromModel(ctx, result.Routes, tgwRouteTableRouteAttrType,
 		func(route tgw.BnsTgwV1ApiGetTgwRouteTableModelRouteResponseModel) any {
 			resourceObj, _ := types.ObjectValueFrom(ctx, tgwRouteTableResourceAttrType, tgwRouteTableResourceNestedModel{
@@ -36,7 +88,6 @@ func mapTransitGatewayRouteTableBaseModel(
 				ResourceAttachmentId: ConvertNullableString(route.ResourceAttachmentId),
 				ResourceId:           ConvertNullableString(route.ResourceId),
 				ResourceType:         ConvertNullableString(route.ResourceType),
-				TgwAttachmentId:      ConvertNullableString(route.TgwAttachmentId),
 				TgwRouteTableId:      ConvertNullableString(route.TgwRouteTableId),
 				ProvisioningStatus:   ConvertNullableString(route.ProvisioningStatus),
 				Resource:             resourceObj,
@@ -60,7 +111,6 @@ func mapTransitGatewayRouteTableBaseModel(
 				ResourceAttachmentId: ConvertNullableString(assoc.ResourceAttachmentId),
 				ResourceId:           ConvertNullableString(assoc.ResourceId),
 				ResourceType:         ConvertNullableString(assoc.ResourceType),
-				TgwAttachmentId:      ConvertNullableString(assoc.TgwAttachmentId),
 				TgwRouteTableId:      ConvertNullableString(assoc.TgwRouteTableId),
 				ProvisioningStatus:   ConvertNullableString(assoc.ProvisioningStatus),
 				Resource:             resourceObj,
@@ -68,18 +118,6 @@ func mapTransitGatewayRouteTableBaseModel(
 		})
 	diags.Append(assocDiags...)
 
-	base.Id = ConvertNullableString(result.Id)
-	base.Name = ConvertNullableString(result.Name)
-	base.TgwId = ConvertNullableString(result.TgwId)
-	base.Region = ConvertNullableString(result.Region)
-	base.ProjectId = ConvertNullableString(result.ProjectId)
-	base.ProjectName = ConvertNullableString(result.ProjectName)
-	base.TgwName = ConvertNullableString(result.TgwName)
-	base.IsDefaultAssociationRouteTable = ConvertNullableBool(result.IsDefaultAssociationRouteTable)
-	base.IsDefaultPropagationRouteTable = ConvertNullableBool(result.IsDefaultPropagationRouteTable)
-	base.ProvisioningStatus = ConvertNullableString(result.ProvisioningStatus)
-	base.CreatedAt = ConvertNullableTime(result.CreatedAt)
-	base.UpdatedAt = ConvertNullableTime(result.UpdatedAt)
 	base.Routes = routes
 	base.Associations = associations
 
@@ -88,7 +126,7 @@ func mapTransitGatewayRouteTableBaseModel(
 
 func mapTransitGatewayRouteTableListModel(
 	ctx context.Context,
-	base *transitGatewayRouteTableBaseModel,
+	base *transitGatewayRouteTableDataSourceBaseModel,
 	result *tgw.BnsTgwV1ApiListTgwRouteTablesModelTgwRouteTableResponseModel,
 	diags *diag.Diagnostics,
 ) bool {
@@ -110,7 +148,6 @@ func mapTransitGatewayRouteTableListModel(
 				ResourceAttachmentId: ConvertNullableString(route.ResourceAttachmentId),
 				ResourceId:           ConvertNullableString(route.ResourceId),
 				ResourceType:         ConvertNullableString(route.ResourceType),
-				TgwAttachmentId:      ConvertNullableString(route.TgwAttachmentId),
 				TgwRouteTableId:      ConvertNullableString(route.TgwRouteTableId),
 				ProvisioningStatus:   ConvertNullableString(route.ProvisioningStatus),
 				Resource:             resourceObj,
@@ -134,7 +171,6 @@ func mapTransitGatewayRouteTableListModel(
 				ResourceAttachmentId: ConvertNullableString(assoc.ResourceAttachmentId),
 				ResourceId:           ConvertNullableString(assoc.ResourceId),
 				ResourceType:         ConvertNullableString(assoc.ResourceType),
-				TgwAttachmentId:      ConvertNullableString(assoc.TgwAttachmentId),
 				TgwRouteTableId:      ConvertNullableString(assoc.TgwRouteTableId),
 				ProvisioningStatus:   ConvertNullableString(assoc.ProvisioningStatus),
 				Resource:             resourceObj,

@@ -7,6 +7,7 @@ import (
 
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
@@ -17,12 +18,16 @@ func getOptionsResourceSchema() map[string]rschema.Attribute {
 			Required: true,
 		},
 		"is_default_route_table_association": rschema.BoolAttribute{
-			Required: true,
+			Computed: true,
+			PlanModifiers: []planmodifier.Bool{
+				boolplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"association_default_route_table_id": rschema.StringAttribute{
-			Optional:   true,
-			Computed:   true,
-			Validators: common.UuidValidator(),
+			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 	}
 }
@@ -47,36 +52,8 @@ func getTransitGatewayResourceSchema() map[string]rschema.Attribute {
 		},
 		"is_shared": rschema.BoolAttribute{
 			Computed: true,
-		},
-		"attachments": rschema.ListNestedAttribute{
-			Computed: true,
-			NestedObject: rschema.NestedAttributeObject{
-				Attributes: map[string]rschema.Attribute{
-					"id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"resource_type": rschema.StringAttribute{
-						Computed: true,
-					},
-					"resource_id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"resource_name": rschema.StringAttribute{
-						Computed: true,
-					},
-					"tgw_id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"provisioning_status": rschema.StringAttribute{
-						Computed: true,
-					},
-					"created_at": rschema.StringAttribute{
-						Computed: true,
-					},
-					"updated_at": rschema.StringAttribute{
-						Computed: true,
-					},
-				},
+			PlanModifiers: []planmodifier.Bool{
+				boolplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"options": rschema.SingleNestedAttribute{
@@ -97,46 +74,12 @@ func getTransitGatewayResourceSchema() map[string]rschema.Attribute {
 		},
 		"owner_project_id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"owner_project_name": rschema.StringAttribute{
 			Computed: true,
-		},
-		"route_tables": rschema.ListNestedAttribute{
-			Computed: true,
-			NestedObject: rschema.NestedAttributeObject{
-				Attributes: map[string]rschema.Attribute{
-					"id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"name": rschema.StringAttribute{
-						Computed: true,
-					},
-					"region": rschema.StringAttribute{
-						Computed: true,
-					},
-					"project_id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"tgw_id": rschema.StringAttribute{
-						Computed: true,
-					},
-					"is_default_association_route_table": rschema.BoolAttribute{
-						Computed: true,
-					},
-					"is_default_propagation_route_table": rschema.BoolAttribute{
-						Computed: true,
-					},
-					"provisioning_status": rschema.StringAttribute{
-						Computed: true,
-					},
-					"created_at": rschema.StringAttribute{
-						Computed: true,
-					},
-					"updated_at": rschema.StringAttribute{
-						Computed: true,
-					},
-				},
-			},
 		},
 		"created_at": rschema.StringAttribute{
 			Computed: true,

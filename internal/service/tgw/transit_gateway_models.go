@@ -35,25 +35,29 @@ type tgwRouteTableNestedModel struct {
 	UpdatedAt                      types.String `tfsdk:"updated_at"`
 }
 
-type transitGatewayBaseModel struct {
+type transitGatewayResourceBaseModel struct {
 	Id                 types.String `tfsdk:"id"`
 	Name               types.String `tfsdk:"name"`
 	Region             types.String `tfsdk:"region"`
 	IsShared           types.Bool   `tfsdk:"is_shared"`
-	Attachments        types.List   `tfsdk:"attachments"`
 	Options            types.Object `tfsdk:"options"`
 	ProvisioningStatus types.String `tfsdk:"provisioning_status"`
 	ProjectId          types.String `tfsdk:"project_id"`
 	ProjectName        types.String `tfsdk:"project_name"`
 	OwnerProjectId     types.String `tfsdk:"owner_project_id"`
 	OwnerProjectName   types.String `tfsdk:"owner_project_name"`
-	RouteTables        types.List   `tfsdk:"route_tables"`
 	CreatedAt          types.String `tfsdk:"created_at"`
 	UpdatedAt          types.String `tfsdk:"updated_at"`
 }
 
+type transitGatewayBaseModel struct {
+	transitGatewayResourceBaseModel
+	Attachments types.List `tfsdk:"attachments"`
+	RouteTables types.List `tfsdk:"route_tables"`
+}
+
 type transitGatewayResourceModel struct {
-	transitGatewayBaseModel
+	transitGatewayResourceBaseModel
 	Timeouts resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 

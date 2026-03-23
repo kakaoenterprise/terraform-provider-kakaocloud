@@ -19,7 +19,6 @@ type tgwRouteTableRouteNestedModel struct {
 	ResourceAttachmentId types.String `tfsdk:"resource_attachment_id"`
 	ResourceId           types.String `tfsdk:"resource_id"`
 	ResourceType         types.String `tfsdk:"resource_type"`
-	TgwAttachmentId      types.String `tfsdk:"tgw_attachment_id"`
 	TgwRouteTableId      types.String `tfsdk:"tgw_route_table_id"`
 	ProvisioningStatus   types.String `tfsdk:"provisioning_status"`
 	Resource             types.Object `tfsdk:"resource"`
@@ -30,7 +29,6 @@ type tgwRouteTableAssociationNestedModel struct {
 	ResourceAttachmentId types.String `tfsdk:"resource_attachment_id"`
 	ResourceId           types.String `tfsdk:"resource_id"`
 	ResourceType         types.String `tfsdk:"resource_type"`
-	TgwAttachmentId      types.String `tfsdk:"tgw_attachment_id"`
 	TgwRouteTableId      types.String `tfsdk:"tgw_route_table_id"`
 	ProvisioningStatus   types.String `tfsdk:"provisioning_status"`
 	Resource             types.Object `tfsdk:"resource"`
@@ -61,7 +59,6 @@ var tgwRouteTableRouteAttrType = map[string]attr.Type{
 	"resource_attachment_id": types.StringType,
 	"resource_id":            types.StringType,
 	"resource_type":          types.StringType,
-	"tgw_attachment_id":      types.StringType,
 	"tgw_route_table_id":     types.StringType,
 	"provisioning_status":    types.StringType,
 	"resource":               types.ObjectType{AttrTypes: tgwRouteTableResourceAttrType},
@@ -72,7 +69,6 @@ var tgwRouteTableAssociationAttrType = map[string]attr.Type{
 	"resource_attachment_id": types.StringType,
 	"resource_id":            types.StringType,
 	"resource_type":          types.StringType,
-	"tgw_attachment_id":      types.StringType,
 	"tgw_route_table_id":     types.StringType,
 	"provisioning_status":    types.StringType,
 	"resource":               types.ObjectType{AttrTypes: tgwRouteTableResourceAttrType},
@@ -89,10 +85,14 @@ type transitGatewayRouteTableBaseModel struct {
 	IsDefaultAssociationRouteTable types.Bool   `tfsdk:"is_default_association_route_table"`
 	IsDefaultPropagationRouteTable types.Bool   `tfsdk:"is_default_propagation_route_table"`
 	ProvisioningStatus             types.String `tfsdk:"provisioning_status"`
-	Routes                         types.List   `tfsdk:"routes"`
-	Associations                   types.List   `tfsdk:"associations"`
 	CreatedAt                      types.String `tfsdk:"created_at"`
 	UpdatedAt                      types.String `tfsdk:"updated_at"`
+}
+
+type transitGatewayRouteTableDataSourceBaseModel struct {
+	transitGatewayRouteTableBaseModel
+	Routes       types.List `tfsdk:"routes"`
+	Associations types.List `tfsdk:"associations"`
 }
 
 var tgwRouteTableRequestRouteAttrType = map[string]attr.Type{
@@ -119,18 +119,18 @@ type tgwRouteTableRequestAssociationModel struct {
 
 type transitGatewayRouteTableResourceModel struct {
 	transitGatewayRouteTableBaseModel
-	RequestRoutes       types.Set              `tfsdk:"request_routes"`
-	RequestAssociations types.Set              `tfsdk:"request_associations"`
-	Timeouts            resourceTimeouts.Value `tfsdk:"timeouts"`
+	Routes       types.Set              `tfsdk:"routes"`
+	Associations types.List             `tfsdk:"associations"`
+	Timeouts     resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
 type transitGatewayRouteTableDataSourceModel struct {
-	transitGatewayRouteTableBaseModel
+	transitGatewayRouteTableDataSourceBaseModel
 	Timeouts datasourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
 type transitGatewayRouteTablesDataSourceModel struct {
-	Filter                    []common.FilterModel                `tfsdk:"filter"`
-	TransitGatewayRouteTables []transitGatewayRouteTableBaseModel `tfsdk:"transit_gateway_route_tables"`
-	Timeouts                  datasourceTimeouts.Value            `tfsdk:"timeouts"`
+	Filter                    []common.FilterModel                          `tfsdk:"filter"`
+	TransitGatewayRouteTables []transitGatewayRouteTableDataSourceBaseModel `tfsdk:"transit_gateway_route_tables"`
+	Timeouts                  datasourceTimeouts.Value                      `tfsdk:"timeouts"`
 }

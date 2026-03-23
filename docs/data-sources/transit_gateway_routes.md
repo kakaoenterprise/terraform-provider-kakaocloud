@@ -92,7 +92,6 @@ The following attributes are exported:
 - `resource_type` (String) Type of the associated resource.
 - `route_table_id` (String) ID of the Transit Gateway route table.
 - `route_type` (String) Type of the route.
-- `tgw_attachment_id` (String) Transit Gateway attachment ID.
 - `tgw_route_table_id` (String) Transit Gateway route table ID.
 
 <a id="nestedatt--transit_gateway_routes--resource"></a>

@@ -11,9 +11,9 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
 )
 
-func mapTransitGatewayBaseModel(
+func mapTransitGatewayResourceBaseModel(
 	ctx context.Context,
-	base *transitGatewayBaseModel,
+	base *transitGatewayResourceBaseModel,
 	tgwResult *tgw.BnsTgwV1ApiGetTransitGatewayModelTgwResponseModel,
 	respDiags *diag.Diagnostics,
 ) bool {
@@ -31,6 +31,27 @@ func mapTransitGatewayBaseModel(
 	base.Region = ConvertNullableString(tgwResult.Region)
 	base.IsShared = ConvertNullableBool(tgwResult.IsShared)
 
+	base.Options = options
+	base.ProvisioningStatus = ConvertNullableString(tgwResult.ProvisioningStatus)
+	base.ProjectId = ConvertNullableString(tgwResult.ProjectId)
+	base.ProjectName = ConvertNullableString(tgwResult.ProjectName)
+	base.OwnerProjectId = ConvertNullableString(tgwResult.OwnerProjectId)
+	base.OwnerProjectName = ConvertNullableString(tgwResult.OwnerProjectName)
+
+	base.CreatedAt = ConvertNullableTime(tgwResult.CreatedAt)
+	base.UpdatedAt = ConvertNullableTime(tgwResult.UpdatedAt)
+
+	return !respDiags.HasError()
+}
+
+func mapTransitGatewayBaseModel(
+	ctx context.Context,
+	base *transitGatewayBaseModel,
+	tgwResult *tgw.BnsTgwV1ApiGetTransitGatewayModelTgwResponseModel,
+	respDiags *diag.Diagnostics,
+) bool {
+	mapTransitGatewayResourceBaseModel(ctx, &base.transitGatewayResourceBaseModel, tgwResult, respDiags)
+
 	attachmentsList, attachmentsDiags := ConvertListFromModel(ctx, tgwResult.Attachments, tgwAttachmentAttrType, func(att tgw.BnsTgwV1ApiGetTransitGatewayModelAttachmentResponseModel) any {
 		return tgwAttachmentNestedModel{
 			Id:                 ConvertNullableString(att.Id),
@@ -45,13 +66,6 @@ func mapTransitGatewayBaseModel(
 	})
 	respDiags.Append(attachmentsDiags...)
 	base.Attachments = attachmentsList
-
-	base.Options = options
-	base.ProvisioningStatus = ConvertNullableString(tgwResult.ProvisioningStatus)
-	base.ProjectId = ConvertNullableString(tgwResult.ProjectId)
-	base.ProjectName = ConvertNullableString(tgwResult.ProjectName)
-	base.OwnerProjectId = ConvertNullableString(tgwResult.OwnerProjectId)
-	base.OwnerProjectName = ConvertNullableString(tgwResult.OwnerProjectName)
 
 	routeTablesList, routeTablesDiags := ConvertListFromModel(ctx, tgwResult.RouteTables, tgwRouteTableAttrType, func(rt tgw.BnsTgwV1ApiGetTransitGatewayModelRouteTableResponseModel) any {
 		return tgwRouteTableNestedModel{
@@ -69,9 +83,6 @@ func mapTransitGatewayBaseModel(
 	})
 	respDiags.Append(routeTablesDiags...)
 	base.RouteTables = routeTablesList
-
-	base.CreatedAt = ConvertNullableTime(tgwResult.CreatedAt)
-	base.UpdatedAt = ConvertNullableTime(tgwResult.UpdatedAt)
 
 	return !respDiags.HasError()
 }

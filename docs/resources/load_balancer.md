@@ -36,20 +36,10 @@ resource "kakaocloud_load_balancer" "example" {
 - `name` (Required, String) Load balancer name
 - `subnet_id` (Required, String) ID of the subnet the load balancer belongs to
 
-- `access_logs` (Optional, Attributes) Access log settings  
-  (see [below for nested schema](#nestedatt--access_logs))
-
-    > ⚠️ Note: The `access_logs` block is stored in Terraform state as a **base64-encoded string**, despite being defined as an object.  
-    > As a result, Terraform may show diffs even if the actual configuration hasn't changed.  
-    >  
-    > - To prevent unnecessary updates: **Avoid modifying `access_logs` unless required.**  
-    > - During `terraform import`: **Do not specify `access_logs`**,  
-    >   as it will cause a diff on the next plan.
-
+- `access_logs` (Optional, Attributes) Access log settings > ⚠️ Note: The `access_logs` block is stored in Terraform state as a **base64-encoded string**, despite being defined as an object. > As a result, Terraform may show diffs even if the actual configuration hasn't changed. > > - To prevent unnecessary updates: **Avoid modifying `access_logs` unless required.** > - During `terraform import`: **Do not specify `access_logs`**, >   as it will cause a diff on the next plan. (see [below for nested schema](#nestedatt--access_logs))
 - `description` (Optional, String) Description of the load balancer
-- `timeouts` (Optional, Attributes) Custom timeout settings  
-  (see [below for nested schema](#nestedatt--timeouts))
-  
+- `timeouts` (Optional, Attributes) Custom timeout settings (see [below for nested schema](#nestedatt--timeouts))
+
 ## Attribute Reference
 
 - `beyond_load_balancer_dns_name` (String) DNS name of the high availability group
