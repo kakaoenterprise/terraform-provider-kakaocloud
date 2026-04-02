@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/terraform-plugin-log v0.10.0
 	github.com/hashicorp/terraform-plugin-testing v1.14.0
 	github.com/jinzhu/copier v0.4.0
-	github.com/kakaoenterprise/kc-sdk-go v1.2.5-rev.2
+	github.com/kakaoenterprise/kc-sdk-go v1.2.5-rev.4
 	golang.org/x/net v0.50.0
 	gopkg.in/yaml.v3 v3.0.1
 )
