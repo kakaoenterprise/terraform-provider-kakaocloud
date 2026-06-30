@@ -133,5 +133,3 @@ The following attributes are exported:
 - `public_key` (String) Public key
 - `type` (String) Key type
 - `user_id` (String) User ID of the key pair owner
-
-

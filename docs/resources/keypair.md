@@ -62,4 +62,3 @@ example:
 ```shell
 $ terraform import kakaocloud_keypair.example <resource_name>
 ```
-

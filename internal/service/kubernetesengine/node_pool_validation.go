@@ -14,33 +14,36 @@ import (
 )
 
 func (r *nodePoolResource) validateAutoscalingModel(ctx context.Context, auto NodePoolAutoscalingModel, resp *resource.ValidateConfigResponse) {
+	if auto.IsAutoscalerEnable.IsUnknown() {
+		return
+	}
+
 	enabled := auto.IsAutoscalerEnable.ValueBool()
 
 	if !enabled {
 		invalid := make([]string, 0)
-		if !auto.AutoscalerDesiredNodeCount.IsNull() {
+		if !auto.AutoscalerDesiredNodeCount.IsNull() && !auto.AutoscalerDesiredNodeCount.IsUnknown() {
 			invalid = append(invalid, "autoscaler_desired_node_count")
 		}
-		if !auto.AutoscalerMaxNodeCount.IsNull() {
+		if !auto.AutoscalerMaxNodeCount.IsNull() && !auto.AutoscalerMaxNodeCount.IsUnknown() {
 			invalid = append(invalid, "autoscaler_max_node_count")
 		}
-		if !auto.AutoscalerMinNodeCount.IsNull() {
+		if !auto.AutoscalerMinNodeCount.IsNull() && !auto.AutoscalerMinNodeCount.IsUnknown() {
 			invalid = append(invalid, "autoscaler_min_node_count")
 		}
-		if !auto.AutoscalerScaleDownThreshold.IsNull() {
+		if !auto.AutoscalerScaleDownThreshold.IsNull() && !auto.AutoscalerScaleDownThreshold.IsUnknown() {
 			invalid = append(invalid, "autoscaler_scale_down_threshold")
 		}
-		if !auto.AutoscalerScaleDownUnneededTime.IsNull() {
+		if !auto.AutoscalerScaleDownUnneededTime.IsNull() && !auto.AutoscalerScaleDownUnneededTime.IsUnknown() {
 			invalid = append(invalid, "autoscaler_scale_down_unneeded_time")
 		}
-		if !auto.AutoscalerScaleDownUnreadyTime.IsNull() {
+		if !auto.AutoscalerScaleDownUnreadyTime.IsNull() && !auto.AutoscalerScaleDownUnreadyTime.IsUnknown() {
 			invalid = append(invalid, "autoscaler_scale_down_unready_time")
 		}
 		if len(invalid) > 0 {
 			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 				fmt.Sprintf("When 'is_autoscaler_enable' is false, the following fields must be unset: %s", strings.Join(invalid, ", ")),
 			)
-			return
 		}
 		return
 	}
@@ -70,6 +73,13 @@ func (r *nodePoolResource) validateAutoscalingModel(ctx context.Context, auto No
 		common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 			fmt.Sprintf("When 'is_autoscaler_enable' is true, the following fields are required: %s", strings.Join(missing, ", ")),
 		)
+		return
+	}
+
+	if auto.AutoscalerDesiredNodeCount.IsUnknown() ||
+		auto.AutoscalerMaxNodeCount.IsUnknown() ||
+		auto.AutoscalerMinNodeCount.IsUnknown() ||
+		auto.AutoscalerScaleDownThreshold.IsUnknown() {
 		return
 	}
 

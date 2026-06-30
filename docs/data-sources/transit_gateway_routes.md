@@ -103,6 +103,3 @@ The following attributes are exported:
 - `project_id` (String) Project ID that owns the resource.
 - `project_name` (String) Project name that owns the resource.
 - `provisioning_status` (String) Provisioning status of the resource.
-
-
-

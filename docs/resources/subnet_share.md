@@ -61,4 +61,3 @@ example:
 ```shell
 $ terraform import kakaocloud_subnet_share.example <resource_id>
 ```
-

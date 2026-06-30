@@ -124,6 +124,19 @@ func mapLoadBalancerTargetGroupToCreateRequest(
 		createReq.SetDescription(model.Description.ValueString())
 	}
 
+	if !model.AlpnProtocols.IsNull() && !model.AlpnProtocols.IsUnknown() {
+		var vals []string
+		diags.Append(model.AlpnProtocols.ElementsAs(ctx, &vals, false)...)
+		if diags.HasError() {
+			return nil
+		}
+
+		if len(vals) == 1 {
+			p := loadbalancer.AlpnProtocol(vals[0])
+			createReq.SetAlpnProtocols(p)
+		}
+	}
+
 	if !model.SessionPersistence.IsNull() {
 		var sessionPersistence loadBalancerTargetGroupSessionPersistenceModel
 		diags.Append(model.SessionPersistence.As(ctx, &sessionPersistence, basetypes.ObjectAsOptions{})...)
@@ -174,6 +187,7 @@ func mapLoadBalancerTargetGroupFromGetResponse(
 	model.SubnetName = utils.ConvertNullableString(src.SubnetName)
 	model.VpcName = utils.ConvertNullableString(src.VpcName)
 	model.MemberCount = utils.ConvertNullableInt32ToInt64(src.MemberCount)
+	model.AlpnProtocols = utils.ConvertNullableStringList(src.AlpnProtocols)
 
 	healthMonitor, healthMonitorDiags := utils.ConvertObjectFromModel(ctx, src.HealthMonitor, loadBalancerTargetGroupHealthMonitorAttrType, func(healthMonitor loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupModelHealthMonitorModel) any {
 		return loadBalancerTargetGroupHealthMonitorModel{

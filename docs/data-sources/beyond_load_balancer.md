@@ -109,5 +109,3 @@ The following attributes are exported:
 - `type` (String) Load balancer type
 - `type_id` (String) Load balancer type identifier
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
-
-

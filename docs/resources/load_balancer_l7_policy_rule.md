@@ -61,14 +61,4 @@ This resource supports import using the following format:
 terraform import kakaocloud_load_balancer_l7_policy_rule.example <l7_policy_id>/<rule_id>
 ```
 
-> ⚠️ **Note:** The import ID for this resource uses a **compound format** with two required fields:  
-> `l7_policy_id/rule_id`  
->
-> Where:  
-> - `l7_policy_id` is the ID of the parent L7 policy  
-> - `rule_id` is the unique ID of the rule under that policy  
->
-> These must be joined with a forward slash (`/`).  
-> This is required because Terraform uses this format when a resource is uniquely identified by **multiple keys**.  
-> ⚠️ Incorrect formatting (e.g. missing slash or wrong order) will result in an import failure.
-
+-> **Note:** - The import ID for this resource uses a **compound format**: `l7_policy_id/rule_id`. <br/> - `l7_policy_id` is the ID of the parent L7 policy. <br/> - `rule_id` is the unique ID of the rule under that policy. <br/> - These values must be joined with a forward slash (`/`) because Terraform uses this format when a resource is uniquely identified by **multiple keys**. <br/> - Incorrect formatting (e.g. missing slash or wrong order) will result in an import failure.

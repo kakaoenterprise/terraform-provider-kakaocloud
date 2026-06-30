@@ -12,7 +12,7 @@ It enables users to provision, configure, and manage various cloud resources inc
 storage, and container services.  
 The provider must be configured with the proper credentials before it can be used.
 
-!> **Warning** This provider is supported on **Terraform Version 1.11 or later**.
+!> **Warning** This provider is supported on **Terraform Version 1.14 or later**.
 
 ## Example Usage
 
@@ -93,10 +93,7 @@ $ export KAKAOCLOUD_APPLICATION_CREDENTIAL_SECRET="application-credential-secret
 $ terraform plan
 ```
 
--> **Note** Application credentials can be generated from the KakaoCloud console.
-Please refer to
-the [KakaoCloud documentation > Credentials](https://docs.kakaocloud.com/en/start/console-guide/credentials) for
-detailed instructions on generating application credentials.
+-> **Note:** Application credentials can be generated from the KakaoCloud console. For detailed instructions, see the [KakaoCloud documentation > Credentials](https://docs.kakaocloud.com/en/start/console-guide/credentials).
 
 ## Argument Reference
 

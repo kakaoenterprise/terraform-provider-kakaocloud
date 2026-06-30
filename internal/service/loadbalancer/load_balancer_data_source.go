@@ -91,7 +91,7 @@ func (d *loadBalancerDataSource) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	ok := mapLoadBalancerBaseForDataSource(ctx, &data.loadBalancerDataSourceBaseModel, &lb.LoadBalancer, &resp.Diagnostics)
+	ok := mapLoadBalancerBaseForDataSource(ctx, &data.loadBalancerBaseModel, &lb.LoadBalancer, &resp.Diagnostics)
 	if !ok {
 		return
 	}

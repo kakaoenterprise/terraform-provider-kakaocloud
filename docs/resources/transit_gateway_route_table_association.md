@@ -49,4 +49,3 @@ The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/c
 # kakaocloud_transit_gateway_route_table_association import script
 terraform import kakaocloud_transit_gateway_route_table_association.example <route_table_id>/<tgw_attachment_id>
 ```
-

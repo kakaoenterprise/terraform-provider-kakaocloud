@@ -48,8 +48,9 @@ resource "kakaocloud_load_balancer_target_group" "example_with_listener" {
 - `name` (Required, String) Target group name
 - `protocol` (Required, String) Traffic receiving protocol
 
+- `alpn_protocols` (Optional, List of String) ALPN (Application-Layer Protocol Negotiation) protocol list
 - `description` (Optional, String) Description of the target group
-- `listener_id` (Optional, String) ID of the listener associated with this target group   > ⚠️ Note: Do not include this field when importing an existing resource. > This value cannot be retrieved, and setting it after import will cause **forced replacement**.
+- `listener_id` (Optional, String) ID of the listener associated with this target group. <br/> - **Note:** Do not include this field when importing an existing resource. This value cannot be retrieved, and setting it after import will cause **forced replacement**.
 - `session_persistence` (Optional, Attributes) Session settings ( see [below for nested schema](#nestedatt--session_persistence))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
@@ -129,9 +130,4 @@ example:
 $ terraform import kakaocloud_load_balancer_target_group.example <resource_id>
 ```
 
-⚠️ Caution  
-When importing an existing target group, do not specify `listener_id` in the resource block.  
-The `listener_id` used at the time of target group creation cannot be identified during the import process.  
-If `listener_id` is configured after import, Terraform will treat it as a change that forces resource replacement,  
-which results in the existing target group being deleted and recreated.
-
+!> **Caution:** When importing an existing target group, do not specify `listener_id` in the resource block. The `listener_id` used at the time of target group creation cannot be identified during the import process. If `listener_id` is configured after import, Terraform will treat it as a change that forces resource replacement, which results in the existing target group being deleted and recreated.

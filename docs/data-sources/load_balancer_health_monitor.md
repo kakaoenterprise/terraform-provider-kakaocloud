@@ -82,5 +82,3 @@ The following attributes are exported:
 ### Nested Schema for `target_groups`
 
 - `id` (String) Target group ID
-
-

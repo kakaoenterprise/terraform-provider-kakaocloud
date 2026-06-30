@@ -10,8 +10,7 @@ description: |-
 Manages `kakaocloud_load_balancer_target_group_members`.  
 This resource manages the members (targets) associated with a specific Load Balancer target group and keeps the target group membership synchronized with the configuration defined in Terraform.
 
-> ⚠️ Note:
-> - Do not use this resource together with individual `kakaocloud_load_balancer_target_group_member` resources for the same target group. Doing so will cause conflicts.
+-> **Note:** Do not use this resource together with individual `kakaocloud_load_balancer_target_group_member` resources for the same target group. Using both resources for the same target group will cause conflicts.
 
 ## Example Usage
 
@@ -72,6 +71,4 @@ This resource supports import using the following format:
 terraform import kakaocloud_load_balancer_target_group_members.example <target_group_id>
 ```
 
-> ⚠️ Note: When importing, ensure the `members` list in your configuration is **sorted by IP address (`address`)**.  
-> Any difference in order compared to the actual target group state will result in a diff and **force resource replacement** during the next apply.
-
+-> **Note:** When importing, ensure the `members` list in your configuration is **sorted by IP address (`address`)**. Any difference in order compared to the actual target group state will result in a diff and **force resource replacement** during the next apply.

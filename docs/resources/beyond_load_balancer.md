@@ -117,4 +117,3 @@ example:
 ```shell
 $ terraform import kakaocloud_beyond_load_balancer.example <resource_id>
 ```
-

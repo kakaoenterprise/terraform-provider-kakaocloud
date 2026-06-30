@@ -28,11 +28,11 @@ resource "kakaocloud_load_balancer_l7_policy" "example" {
 ## Argument Reference
 
 - `action` (Required, String) Policy action type
-- `listener_id` (Required, String) ID of the listener the policy applies to > ⚠️ **Note:** This value is required at creation time, but is **not returned by the API**. > During read/import, this may result in diffs or forced replacements if not handled carefully.
+- `listener_id` (Required, String) ID of the listener the policy applies to. <br/> **Note:** This value is required at creation time, but is **not returned by the API**. <br/> During read/import, this may result in diffs or forced replacements if not handled carefully.
 
 - `description` (Optional, String) Description of the policy
 - `name` (Optional, String) Policy name
-- `position` (Optional, Number) Policy priority (smaller numbers indicate higher priority) > ⚠️ **Note:** If the input position does not match the position returned by the API, > Terraform may detect unwanted diffs or mark the resource as tainted. > - Must be within a valid range (invalid values will cause a validation error starting from 2026-11) > - Consider using `depends_on` to control policy ordering.
+- `position` (Optional, Number) Policy priority (smaller numbers indicate higher priority). <br/> **Note:** If the input position does not match the position returned by the API, Terraform may detect unwanted diffs or mark the resource as tainted. <br/> Must be within a valid range (invalid values will cause a validation error starting from 2026-11). <br/> Consider using `depends_on` to control policy ordering.
 - `redirect_prefix` (Optional, String) Redirect target path prefix (`action=REDIRECT_PREFIX`)
 - `redirect_target_group_id` (Optional, String) Redirect target group ID (`action=REDIRECT_TO_POOL`)
 - `redirect_url` (Optional, String) Redirect target URL (http or https format, `action=REDIRECT_TO_URL`)
@@ -78,11 +78,4 @@ Import is supported using the following syntax:
 terraform import kakaocloud_load_balancer_l7_policy.example <policy_id>
 ```
 
-> ⚠️ Note:  
-> The `listener_id` field is not retrievable via the API after creation.  
-> Therefore, when importing this resource:
->
-> - Do **not** specify `listener_id` in the config unless you're recreating the resource  
-> - If necessary, find the associated listener by listing listeners and matching the `l7_policy_id`  
-> - This process may require pagination (up to 1000 listeners per page)
-
+-> **Note:** The `listener_id` field is not retrievable via the API after creation. Do **not** specify `listener_id` in the config unless you're recreating the resource. If necessary, find the associated listener by listing listeners and matching the `l7_policy_id`. This process may require pagination (up to 1000 listeners per page).

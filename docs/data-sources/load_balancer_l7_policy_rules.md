@@ -78,5 +78,3 @@ The following attributes are exported:
 - `provisioning_status` (String) Provisioning status
 - `type` (String) Target type to check the rule against
 - `value` (String) Value to compare
-
-

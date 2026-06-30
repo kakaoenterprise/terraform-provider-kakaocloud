@@ -16,7 +16,6 @@ type instanceBaseModel struct {
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
-	Metadata    types.Map    `tfsdk:"metadata"`
 
 	Flavor    types.Object `tfsdk:"flavor"`
 	Addresses types.List   `tfsdk:"addresses"`

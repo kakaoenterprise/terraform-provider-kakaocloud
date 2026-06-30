@@ -97,5 +97,3 @@ The following attributes are exported:
 - `target_id` (String) Target resource ID
 - `target_name` (String) Target resource name
 - `target_type` (String) Target resource type
-
-

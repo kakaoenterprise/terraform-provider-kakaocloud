@@ -580,6 +580,7 @@ func (r *beyondLoadBalancerResource) validateAvailabilityZoneConfig(ctx context.
 		common.ValidateAvailabilityZone(
 			path.Root("availability_zone"),
 			configLb.AvailabilityZone,
+			common.ServiceLB,
 			r.kc,
 			&resp.Diagnostics,
 		)

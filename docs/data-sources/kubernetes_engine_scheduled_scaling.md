@@ -80,6 +80,3 @@ The following attributes are exported:
 - `description` (String) Description of the history
 - `occurred_time` (String) Event occurrence time
 - `state` (String) State value
-
-
-

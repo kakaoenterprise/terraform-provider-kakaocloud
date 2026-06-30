@@ -169,11 +169,9 @@ The following attributes are exported:
 - `description` (String) Description of the internet gateway
 - `id` (String) Internet gateway ID
 - `name` (String) Internet gateway name
+- `nat_ip` (String) NAT IP address of the internet gateway
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID of the VPC
 - `provisioning_status` (String) Provisioning status
 - `region` (String) Region information
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
-
-
-

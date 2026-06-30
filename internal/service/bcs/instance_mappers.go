@@ -17,15 +17,6 @@ func mapInstanceBaseModel(
 	instanceResult *bcs.BcsInstanceV1ApiGetInstanceModelInstanceModel,
 	respDiags *diag.Diagnostics,
 ) bool {
-
-	if instanceResult.Metadata == nil {
-		base.Metadata = types.MapNull(types.StringType)
-	} else {
-		metaMap, metaDiags := types.MapValueFrom(ctx, types.StringType, instanceResult.Metadata)
-		respDiags.Append(metaDiags...)
-		base.Metadata = metaMap
-	}
-
 	base.Id = types.StringValue(instanceResult.Id)
 	base.Name = ConvertNullableString(instanceResult.Name)
 	base.Description = ConvertNullableString(instanceResult.Description)
@@ -147,15 +138,6 @@ func mapInstanceListModel(
 	instanceResult *bcs.BcsInstanceV1ApiListInstancesModelInstanceModel,
 	respDiags *diag.Diagnostics,
 ) bool {
-
-	if instanceResult.Metadata == nil {
-		base.Metadata = types.MapNull(types.StringType)
-	} else {
-		metaMap, metaDiags := types.MapValueFrom(ctx, types.StringType, instanceResult.Metadata)
-		respDiags.Append(metaDiags...)
-		base.Metadata = metaMap
-	}
-
 	base.Id = types.StringValue(instanceResult.Id)
 	base.Name = ConvertNullableString(instanceResult.Name)
 	base.Description = ConvertNullableString(instanceResult.Description)

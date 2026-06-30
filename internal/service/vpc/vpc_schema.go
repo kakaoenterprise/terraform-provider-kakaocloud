@@ -29,6 +29,9 @@ func getIgwDataSourceSchema() map[string]dschema.Attribute {
 		"region": dschema.StringAttribute{
 			Computed: true,
 		},
+		"nat_ip": dschema.StringAttribute{
+			Computed: true,
+		},
 		"project_id": dschema.StringAttribute{
 			Computed: true,
 		},
@@ -129,6 +132,9 @@ func getIgwResourceSchema() map[string]rschema.Attribute {
 			Computed: true,
 		},
 		"region": rschema.StringAttribute{
+			Computed: true,
+		},
+		"nat_ip": rschema.StringAttribute{
 			Computed: true,
 		},
 		"project_id": rschema.StringAttribute{

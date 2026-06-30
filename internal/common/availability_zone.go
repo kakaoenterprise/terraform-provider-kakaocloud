@@ -2,38 +2,43 @@
 // SPDX-License-Identifier: MPL-2.0
 package common
 
-const (
-	AvailabilityZoneKr1a = "kr-central-1-a"
-	AvailabilityZoneKr1b = "kr-central-1-b"
-	AvailabilityZoneKr2a = "kr-central-2-a"
-	AvailabilityZoneKr2b = "kr-central-2-b"
-	AvailabilityZoneKr2c = "kr-central-2-c"
-	AvailabilityZoneKr2d = "kr-central-2-d"
+import (
+	"net/http"
+
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/kakaoenterprise/kc-sdk-go/services/config"
+	"golang.org/x/net/context"
 )
 
-var zoneMatrix = map[string]map[string][]string{
-	ServiceRealmStage: {
-		RegionKR2: {AvailabilityZoneKr2a, AvailabilityZoneKr2b},
-	},
-	ServiceRealmPublic: {
-		RegionKR2: {AvailabilityZoneKr2a, AvailabilityZoneKr2b, AvailabilityZoneKr2c, AvailabilityZoneKr2d},
-	},
-	ServiceRealmGov: {
-		RegionKR1: {AvailabilityZoneKr1a, AvailabilityZoneKr1b},
-	},
-}
+func (c *KakaoCloudClient) loadServiceAzPolicyFromConfigAPI(ctx context.Context) (map[string]map[string]struct{}, error) {
+	diags := &diag.Diagnostics{}
 
-func AvailabilityZonesFor(serviceRealm, region string) ([]string, bool) {
-	regions, ok := zoneMatrix[serviceRealm]
-	if !ok {
-		return nil, false
-	}
-	zones, ok := regions[region]
-	if !ok {
-		return nil, false
+	result := make(map[string]map[string]struct{})
+
+	respModel, httpResp, err := ExecuteWithRetryAndAuth(ctx, c, diags,
+		func() (*config.AzPolicyResponse, *http.Response, error) {
+			return c.ApiClient.ConfigAPI.ResolveAzPolicy(ctx).
+				XAuthToken(c.XAuthToken).Execute()
+		},
+	)
+	if err != nil {
+		if c.Config.EndpointOverrides == nil || len(c.Config.EndpointOverrides) == 0 {
+			tflog.Warn(ctx, "ResolveAzPolicy failed, availability zone validation disabled")
+			return result, nil
+		}
+
+		AddApiActionError(ctx, c, httpResp, "ResolveAzPolicy", err, diags)
+		return nil, err
 	}
 
-	out := make([]string, len(zones))
-	copy(out, zones)
-	return out, true
+	for svc, list := range respModel.Data.Services {
+		m := make(map[string]struct{}, len(list))
+		for _, az := range list {
+			m[az] = struct{}{}
+		}
+		result[svc] = m
+	}
+
+	return result, nil
 }

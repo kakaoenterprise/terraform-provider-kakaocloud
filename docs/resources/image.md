@@ -84,4 +84,3 @@ example:
 ```shell
 $ terraform import kakaocloud_image.example <resource_id>
 ```
-

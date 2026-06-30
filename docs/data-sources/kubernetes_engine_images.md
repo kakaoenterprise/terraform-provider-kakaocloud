@@ -132,5 +132,3 @@ The following attributes are exported:
 - `os_distro` (String) Operating system distribution
 - `os_type` (String) Operating system type
 - `os_version` (String) Operating system version
-
-

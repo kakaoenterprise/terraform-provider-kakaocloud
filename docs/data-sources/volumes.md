@@ -221,6 +221,3 @@ The following attributes are exported:
 - `min_ram` (String) Minimum RAM size required to use the image (MB)
 - `os_type` (String) Operating system type
 - `size` (String) Image size (in bytes)
-
-
-

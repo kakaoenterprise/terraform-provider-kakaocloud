@@ -3,12 +3,13 @@
 package common
 
 import (
+	"context"
 	"runtime"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/action"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"golang.org/x/net/context"
 )
 
 func ExtractTypeMetadata(ctx context.Context, obj interface{}) (string, string) {
@@ -26,6 +27,11 @@ func ExtractTypeMetadata(ctx context.Context, obj interface{}) (string, string) 
 		v.Metadata(ctx, datasource.MetadataRequest{ProviderTypeName: "kakaocloud"}, &metaResp)
 		typeName = metaResp.TypeName
 		tfObjectType = "datasource"
+	case action.Action:
+		var metaResp action.MetadataResponse
+		v.Metadata(ctx, action.MetadataRequest{ProviderTypeName: "kakaocloud"}, &metaResp)
+		typeName = metaResp.TypeName
+		tfObjectType = "action"
 	default:
 		typeName = "unknown"
 		tfObjectType = "unknown"
@@ -35,7 +41,7 @@ func ExtractTypeMetadata(ctx context.Context, obj interface{}) (string, string) 
 
 func GetCallerMethodName() string {
 	const maxDepth = 10
-	actions := []string{ActionC, ActionR, ActionU, ActionD}
+	actions := []string{ActionC, ActionR, ActionU, ActionD, ActionInvoke}
 
 	for i := 2; i < 2+maxDepth; i++ {
 		pc, _, _, ok := runtime.Caller(i)

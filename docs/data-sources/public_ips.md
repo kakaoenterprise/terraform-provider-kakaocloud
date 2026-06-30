@@ -150,6 +150,3 @@ The following attributes are exported:
 - `type` (String) Resource type
 - `vpc_id` (String) Unique ID of the VPC
 - `vpc_name` (String) VPC name
-
-
-

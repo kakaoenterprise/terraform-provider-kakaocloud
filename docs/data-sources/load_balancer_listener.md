@@ -51,8 +51,6 @@ output "load_balancer_listener_info" {
 
 The following attributes are exported:
 
-- `alpn_protocols` (List of String) ALPN (Application-Layer Protocol Negotiation) protocol list
-- `connection_limit` (Number) Maximum number of simultaneous connections
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `default_target_group_id` (String) Default target group ID
 - `default_target_group_name` (String) Default target group name
@@ -131,5 +129,3 @@ The following attributes are exported:
 - `name` (String) Certificate name
 - `secret_type` (String) Certificate type
 - `status` (String) Certificate status
-
-

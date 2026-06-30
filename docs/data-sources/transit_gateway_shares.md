@@ -66,5 +66,3 @@ The following attributes are exported:
 - `is_enabled` (Boolean) Whether the Transit Gateway sharing is currently enabled.
 - `name` (String) Project name.
 - `nickname` (String) Project nickname.
-
-

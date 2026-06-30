@@ -28,6 +28,7 @@ func (r *instanceResource) validateAvailabilityZoneConfig(config instanceResourc
 	common.ValidateAvailabilityZone(
 		path.Root("availability_zone"),
 		config.AvailabilityZone,
+		common.ServiceBCS,
 		r.kc,
 		&resp.Diagnostics,
 	)

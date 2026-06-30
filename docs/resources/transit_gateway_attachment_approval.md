@@ -60,4 +60,3 @@ The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/c
 ```shell
 $ terraform import kakaocloud_transit_gateway_attachment_approval.example <attachment_id>
 ```
-

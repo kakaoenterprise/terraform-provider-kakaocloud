@@ -6,12 +6,15 @@ import (
 	"terraform-provider-kakaocloud/internal/common"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
@@ -208,6 +211,24 @@ var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 			},
 		},
 	},
+	"alpn_protocols": rschema.ListAttribute{
+		Optional:    true,
+		Computed:    true,
+		ElementType: types.StringType,
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
+			listvalidator.ValueStringsAre(
+				stringvalidator.OneOf(
+					string(loadbalancer.ALPNPROTOCOL_H2),
+					string(loadbalancer.ALPNPROTOCOL_HTTP_1_1),
+				),
+			),
+		},
+		PlanModifiers: []planmodifier.List{
+			listplanmodifier.UseStateForUnknown(),
+			listplanmodifier.RequiresReplace(),
+		},
+	},
 }
 
 var loadBalancerTargetGroupDataSourceSchemaAttributes = map[string]dschema.Attribute{
@@ -344,5 +365,9 @@ var loadBalancerTargetGroupDataSourceSchemaAttributes = map[string]dschema.Attri
 				Computed: true,
 			},
 		},
+	},
+	"alpn_protocols": dschema.ListAttribute{
+		Computed:    true,
+		ElementType: types.StringType,
 	},
 }

@@ -4,13 +4,14 @@ package common
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net"
 	"net/netip"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
-	"terraform-provider-kakaocloud/internal/utils"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
@@ -23,8 +24,8 @@ import (
 	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
 )
 
-func isSetString(v types.String) bool { return !(v.IsNull() || v.IsUnknown()) }
-func isSetList(v types.List) bool     { return !(v.IsNull() || v.IsUnknown()) }
+func isSetString(v types.String) bool { return !v.IsNull() && !v.IsUnknown() }
+func isSetList(v types.List) bool     { return !v.IsNull() && !v.IsUnknown() }
 
 func ValidateFiltersExclusiveValue(
 	_ context.Context,
@@ -49,7 +50,7 @@ func ValidateFiltersExclusiveValue(
 		}
 
 		if valuesSet {
-			if f.Values.IsNull() == false {
+			if !f.Values.IsNull() {
 				if len(f.Values.Elements()) == 0 {
 					ok = false
 					respDiags.AddAttributeError(
@@ -114,6 +115,70 @@ func UuidNoHyphenValidator() []validator.String {
 			regexp.MustCompile(`(?i)^[a-f0-9]{32}$`),
 			"Invalid ID Format",
 		),
+	}
+}
+
+func DataSourceNameValidator(minLength, maxLength int) []validator.String {
+	return []validator.String{
+		stringvalidator.LengthBetween(minLength, maxLength),
+		stringvalidator.RegexMatches(
+			regexp.MustCompile(`^[a-z][a-z0-9-]*[a-z0-9]$`),
+			"Name must start with a lowercase letter, end with a lowercase letter or number, and can only contain lowercase letters, numbers, and hyphens",
+		),
+	}
+}
+
+func NotBlankValidator() []validator.String {
+	return []validator.String{
+		stringvalidator.RegexMatches(
+			regexp.MustCompile(`\S`),
+			"Value must not be blank",
+		),
+	}
+}
+
+func Base64Validator(maxSizeKB int) []validator.String {
+	return []validator.String{base64Validator{maxSizeKB: maxSizeKB}}
+}
+
+type base64Validator struct {
+	maxSizeKB int
+}
+
+func (v base64Validator) Description(_ context.Context) string {
+	return "Value must be a valid Base64 encoded string"
+}
+
+func (v base64Validator) MarkdownDescription(_ context.Context) string {
+	return "Value must be a valid Base64 encoded string"
+}
+
+func (v base64Validator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	value := req.ConfigValue.ValueString()
+	if strings.TrimSpace(value) == "" {
+		return
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(value)
+	if err != nil {
+		resp.Diagnostics.AddAttributeError(
+			req.Path,
+			"Invalid Base64 format",
+			"The string is not a valid Base64 encoded format.",
+		)
+		return
+	}
+
+	maxSizeBytes := v.maxSizeKB * 1024
+	if maxSizeBytes > 0 && len(decoded) > maxSizeBytes {
+		resp.Diagnostics.AddAttributeError(
+			req.Path,
+			"Invalid Base64 size",
+			fmt.Sprintf("Decoded data size exceeds the maximum allowed size of %dKB.", v.maxSizeKB),
+		)
 	}
 }
 
@@ -266,7 +331,7 @@ func (v CIDRPrefixLengthValidator) Description(_ context.Context) string {
 }
 
 func (v CIDRPrefixLengthValidator) MarkdownDescription(_ context.Context) string {
-	return v.Description(nil)
+	return v.Description(context.TODO())
 }
 
 func (v CIDRPrefixLengthValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
@@ -294,8 +359,8 @@ func (v CIDRPrefixLengthValidator) ValidateString(_ context.Context, req validat
 	}
 }
 
-func NewCIDRPrefixLengthValidator(min, max int) validator.String {
-	return CIDRPrefixLengthValidator{Min: min, Max: max}
+func NewCIDRPrefixLengthValidator(minLength, maxLength int) validator.String {
+	return CIDRPrefixLengthValidator{Min: minLength, Max: maxLength}
 }
 
 type IpOrCIDRValidator struct{}
@@ -380,21 +445,41 @@ func ValidateRFC3339(v string) error {
 func ValidateAvailabilityZone(
 	attrPath path.Path,
 	az types.String,
+	service string,
 	kc *KakaoCloudClient,
 	diags *diag.Diagnostics,
 ) {
-	if kc == nil || az.IsNull() || az.IsUnknown() {
+	if kc == nil || len(kc.ServiceAzPolicy) == 0 || az.IsNull() || az.IsUnknown() {
 		return
 	}
 
 	val := az.ValueString()
-	if !utils.Contains(kc.Config.AvailabilityZones, val) {
-		allowedZones := strings.Join(kc.Config.AvailabilityZones, ", ")
+
+	allowedMap, ok := kc.ServiceAzPolicy[service]
+	if !ok {
+		diags.AddAttributeError(
+			attrPath,
+			"Unsupported service",
+			fmt.Sprintf("Service '%s' is not supported for availability zone validation", service),
+		)
+		return
+	}
+
+	if _, ok := allowedMap[val]; !ok {
+		var allowed []string
+		for az := range allowedMap {
+			allowed = append(allowed, az)
+		}
+		sort.Strings(allowed)
+
 		diags.AddAttributeError(
 			attrPath,
 			"Invalid Availability Zone",
-			fmt.Sprintf("'%s' is not a valid availability zone for region %s (%s). Allowed: %v",
-				val, kc.Config.Region.ValueString(), kc.Config.ServiceRealm.ValueString(), allowedZones),
+			fmt.Sprintf(
+				"'%s' is not valid. Allowed: %s",
+				val,
+				strings.Join(allowed, ", "),
+			),
 		)
 	}
 }

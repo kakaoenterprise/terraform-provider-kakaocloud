@@ -175,6 +175,3 @@ The following attributes are exported:
 
 - `id` (String) Security group ID
 - `name` (String) Security group name
-
-
-

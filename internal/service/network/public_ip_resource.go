@@ -546,7 +546,7 @@ func (r *publicIpResource) detachPublicIPByType(
 	}
 
 	if err != nil {
-		common.AddApiActionError(ctx, r, httpResp, "AssociatePublicIp", err, respDiags)
+		common.AddApiActionError(ctx, r, httpResp, "RemovePublicIp", err, respDiags)
 		return false
 	}
 
@@ -648,7 +648,7 @@ func (r *publicIpResource) cleanupCreateFailurePublicIP(
 		},
 	)
 	if err != nil {
-		common.AddApiActionError(ctx, r, httpResp, "DeletePublicIp(rollback)", err, diags)
+		common.AddApiActionError(ctx, r, httpResp, "DeletePublicIp", err, diags)
 		return err
 	}
 

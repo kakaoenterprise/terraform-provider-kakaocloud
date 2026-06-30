@@ -68,5 +68,3 @@ The following attributes are exported:
 - `minor_version` (String) Minor version number (e.g., 1.28).
 - `next_version` (String) Next available upgrade target version.
 - `patch_version` (String) Patch version number (e.g., 1.28.3).
-
-

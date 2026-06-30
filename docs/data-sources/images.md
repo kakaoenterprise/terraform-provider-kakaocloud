@@ -190,6 +190,3 @@ The following attributes are exported:
 - `distro` (String) Name of the distribution
 - `is_hidden` (Boolean) Whether the image is hidden
 - `type` (String) Operating system type
-
-
-

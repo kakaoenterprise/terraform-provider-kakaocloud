@@ -151,7 +151,7 @@ The following attributes are exported:
 <a id="nestedatt--load_balancers"></a>
 ### Nested Schema for `load_balancers`
 
-- `access_logs` (String) Access log settings
+- `access_logs` (Attributes) Access log settings (see [below for nested schema](#nestedatt--load_balancers--access_logs))
 - `availability_zone` (String) Availability zone
 - `beyond_load_balancer_dns_name` (String) DNS name of the high availability group
 - `beyond_load_balancer_id` (String) Associated high availability group ID
@@ -176,4 +176,7 @@ The following attributes are exported:
 - `vpc_id` (String) Associated VPC ID
 - `vpc_name` (String) Associated VPC name
 
+<a id="nestedatt--load_balancers--access_logs"></a>
+### Nested Schema for `load_balancers.access_logs`
 
+- `bucket` (String) Target bucket name for storing access logs

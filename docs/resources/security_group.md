@@ -111,4 +111,3 @@ example:
 ```shell
 $ terraform import kakaocloud_security_group.example <resource_id>
 ```
-

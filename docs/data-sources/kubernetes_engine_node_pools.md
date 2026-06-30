@@ -155,7 +155,3 @@ The following attributes are exported:
 - `availability_zone` (String) Availability zone of the subnet
 - `cidr_block` (String) IPv4 CIDR block of the subnet
 - `id` (String) Unique ID of the subnet
-
-
-
-

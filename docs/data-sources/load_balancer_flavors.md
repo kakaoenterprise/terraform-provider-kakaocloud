@@ -69,5 +69,3 @@ The following attributes are exported:
 - `id` (String) Load balancer type ID
 - `is_enabled` (Boolean) Whether it is enabled
 - `name` (String) Load balancer type name (e.g., ALB, NLB)
-
-

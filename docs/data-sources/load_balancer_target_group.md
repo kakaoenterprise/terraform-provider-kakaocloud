@@ -54,6 +54,7 @@ output "load_balancer_target_group_info" {
 
 The following attributes are exported:
 
+- `alpn_protocols` (List of String) ALPN (Application-Layer Protocol Negotiation) protocol list
 - `availability_zone` (String) Availability zone
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `description` (String) Description of the target group
@@ -116,5 +117,3 @@ The following attributes are exported:
 - `persistence_granularity` (String) Level at which session persistence is applied (e.g., per source IP).
 - `persistence_timeout` (Number) Duration (in seconds) for which the session remains persistent.
 - `type` (String) Session persistence method (e.g., SOURCE_IP, APP_COOKIE).
-
-

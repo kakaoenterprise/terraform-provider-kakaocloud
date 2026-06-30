@@ -156,5 +156,3 @@ The following attributes are exported:
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 - `vpc_id` (String) ID of the VPC the subnet belongs to
 - `vpc_name` (String) Name of the VPC the subnet belongs to
-
-

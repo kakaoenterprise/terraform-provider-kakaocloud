@@ -175,5 +175,3 @@ The following attributes are exported:
 - `root_gb` (Number) Root disk size (in GB)
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format <br/> - Based on UTC
 - `vcpus` (Number) Detailed vCPU information
-
-

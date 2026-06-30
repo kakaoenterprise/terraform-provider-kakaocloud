@@ -44,4 +44,3 @@ The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/c
 # kakaocloud_transit_gateway_default_route_table import script
 terraform import kakaocloud_transit_gateway_default_route_table.example <tgw_id>
 ```
-

@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	kakaocloud "github.com/kakaoenterprise/kc-sdk-go/common"
+	"golang.org/x/net/context"
 )
 
 type Config struct {
@@ -16,19 +17,19 @@ type Config struct {
 	ApplicationCredentialSecret types.String
 	ServiceRealm                types.String
 	Region                      types.String
-	AvailabilityZones           []string
 	EndpointOverrides           map[string]string
 }
 
 type KakaoCloudClient struct {
-	Config       *Config
-	TokenManager *auth.TokenManager
-	ApiClient    *kakaocloud.APIClient
-	XAuthToken   string
-	XApiVersion  string
+	Config          *Config
+	TokenManager    *auth.TokenManager
+	ApiClient       *kakaocloud.APIClient
+	XAuthToken      string
+	XApiVersion     string
+	ServiceAzPolicy map[string]map[string]struct{}
 }
 
-func NewClient(config *Config, userAgent, apiVersion string) (*KakaoCloudClient, error) {
+func NewClient(ctx context.Context, config *Config, userAgent, apiVersion string) (*KakaoCloudClient, error) {
 	if err := completeConfig(config); err != nil {
 		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
@@ -37,7 +38,7 @@ func NewClient(config *Config, userAgent, apiVersion string) (*KakaoCloudClient,
 		Config: config,
 	}
 
-	endpoints := client.buildEndpoints()
+	endpoints := client.initEndpoints()
 	client.ApiClient = kakaocloud.NewAPIClient(kakaocloud.Config{
 		Endpoints: endpoints,
 		UserAgent: userAgent,
@@ -49,6 +50,22 @@ func NewClient(config *Config, userAgent, apiVersion string) (*KakaoCloudClient,
 		client.Config.ApplicationCredentialID.ValueString(),
 		client.Config.ApplicationCredentialSecret.ValueString(),
 	)
+
+	resolvedEndpoints, err := client.loadEndpointsFromConfigAPI(ctx, &endpoints)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load endpoints: %w", err)
+	}
+
+	client.ApiClient = kakaocloud.NewAPIClient(kakaocloud.Config{
+		Endpoints: *resolvedEndpoints,
+		UserAgent: userAgent,
+		Version:   apiVersion,
+	})
+
+	client.ServiceAzPolicy, err = client.loadServiceAzPolicyFromConfigAPI(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load az policy: %w", err)
+	}
 
 	return client, nil
 }
@@ -79,13 +96,6 @@ func completeConfig(config *Config) error {
 	if config.EndpointOverrides == nil {
 		config.EndpointOverrides = make(map[string]string)
 	}
-
-	availabilityZones, ok := AvailabilityZonesFor(config.ServiceRealm.ValueString(), config.Region.ValueString())
-	if !ok {
-		return fmt.Errorf("unsupported combination: service_realm=%s, region=%s",
-			config.ServiceRealm.ValueString(), config.Region.ValueString())
-	}
-	config.AvailabilityZones = availabilityZones
 
 	return nil
 }

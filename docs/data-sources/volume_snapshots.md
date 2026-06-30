@@ -166,5 +166,3 @@ The following attributes are exported:
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 - `user_id` (String) ID of the user who created the snapshot
 - `volume_id` (String) Unique ID of the volume
-
-

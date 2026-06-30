@@ -102,4 +102,3 @@ example:
 ```shell
 $ terraform import kakaocloud_public_ip.example <resource_id>
 ```
-

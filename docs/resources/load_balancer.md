@@ -36,7 +36,7 @@ resource "kakaocloud_load_balancer" "example" {
 - `name` (Required, String) Load balancer name
 - `subnet_id` (Required, String) ID of the subnet the load balancer belongs to
 
-- `access_logs` (Optional, Attributes) Access log settings > ⚠️ Note: The `access_logs` block is stored in Terraform state as a **base64-encoded string**, despite being defined as an object. > As a result, Terraform may show diffs even if the actual configuration hasn't changed. > > - To prevent unnecessary updates: **Avoid modifying `access_logs` unless required.** > - During `terraform import`: **Do not specify `access_logs`**, >   as it will cause a diff on the next plan. (see [below for nested schema](#nestedatt--access_logs))
+- `access_logs` (Optional, Attributes) Access log settings. <br/> **Note:** The `access_logs` block is stored in Terraform state as a **base64-encoded string**, despite being defined as an object. <br/> Terraform may show diffs even if the actual configuration hasn't changed. <br/> To prevent unnecessary updates, **avoid modifying `access_logs` unless required**. <br/> During `terraform import`, **do not specify `access_logs`**, as it will cause a diff on the next plan. (see [below for nested schema](#nestedatt--access_logs))
 - `description` (Optional, String) Description of the load balancer
 - `timeouts` (Optional, Attributes) Custom timeout settings (see [below for nested schema](#nestedatt--timeouts))
 
@@ -65,9 +65,10 @@ resource "kakaocloud_load_balancer" "example" {
 <a id="nestedatt--access_logs"></a>
 ### Nested Schema for `access_logs`
 
-- `access_key` (Required, String) Access key used for bucket access
 - `bucket` (Required, String) Target bucket name for storing logs
-- `secret_key` (Required, String) Certificate key used for bucket access
+
+- `access_key` (Optional, String) Access key used for bucket access
+- `secret_key` (Optional, String) Certificate key used for bucket access
 
 
 <a id="nestedatt--timeouts"></a>
@@ -89,4 +90,3 @@ example:
 ```shell
 $ terraform import kakaocloud_load_balancer.example <resource_id>
 ```
-

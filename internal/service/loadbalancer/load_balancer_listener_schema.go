@@ -10,7 +10,6 @@ import (
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -89,13 +88,6 @@ func getListenerResourceSchema() map[string]rschema.Attribute {
 			ElementType: types.StringType,
 			Computed:    true,
 		},
-		"alpn_protocols": rschema.ListAttribute{
-			ElementType: types.StringType,
-			Computed:    true,
-			PlanModifiers: []planmodifier.List{
-				listplanmodifier.UseStateForUnknown(),
-			},
-		},
 		"project_id": rschema.StringAttribute{
 			Computed: true,
 			PlanModifiers: []planmodifier.String{
@@ -108,11 +100,6 @@ func getListenerResourceSchema() map[string]rschema.Attribute {
 			PlanModifiers: []planmodifier.Int32{
 				int32planmodifier.RequiresReplace(),
 			},
-		},
-		"connection_limit": rschema.Int32Attribute{
-			Optional:   true,
-			Computed:   true,
-			Validators: common.ConnectionLimitValidator(),
 		},
 		"load_balancer_id": rschema.StringAttribute{
 			Required:   true,
@@ -322,17 +309,10 @@ func getListenerDataSourceSchema() map[string]dschema.Attribute {
 			ElementType: types.StringType,
 			Computed:    true,
 		},
-		"alpn_protocols": dschema.ListAttribute{
-			ElementType: types.StringType,
-			Computed:    true,
-		},
 		"project_id": dschema.StringAttribute{
 			Computed: true,
 		},
 		"protocol_port": dschema.Int32Attribute{
-			Computed: true,
-		},
-		"connection_limit": dschema.Int32Attribute{
 			Computed: true,
 		},
 		"load_balancer_id": dschema.StringAttribute{

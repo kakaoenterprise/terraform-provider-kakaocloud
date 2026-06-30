@@ -61,5 +61,3 @@ The following attributes are exported:
 - `description` (String) Description of the volume type
 - `id` (String) ID of the volume
 - `name` (String) Name of the volume type
-
-

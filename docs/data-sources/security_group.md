@@ -85,5 +85,3 @@ The following attributes are exported:
 - `remote_group_name` (String) Name of the source or destination security group for allowed traffic
 - `remote_ip_prefix` (String) Source or destination IP range in CIDR format
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
-
-

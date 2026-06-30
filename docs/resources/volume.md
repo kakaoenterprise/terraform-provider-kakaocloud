@@ -104,4 +104,3 @@ example:
 ```shell
 $ terraform import kakaocloud_volume.example <resource_id>
 ```
-

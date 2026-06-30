@@ -91,6 +91,7 @@ resource "kakaocloud_vpc" "example" {
 - `description` (String) Description of the internet gateway
 - `id` (String) Internet gateway ID
 - `name` (String) Internet gateway name
+- `nat_ip` (String) NAT IP address of the internet gateway
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID of the VPC
 - `provisioning_status` (String) Provisioning status
@@ -108,4 +109,3 @@ example:
 ```shell
 $ terraform import kakaocloud_vpc.example <resource_id>
 ```
-

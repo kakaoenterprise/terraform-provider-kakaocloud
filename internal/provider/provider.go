@@ -12,11 +12,13 @@ import (
 	"terraform-provider-kakaocloud/internal/service/image"
 	"terraform-provider-kakaocloud/internal/service/kubernetesengine"
 	"terraform-provider-kakaocloud/internal/service/loadbalancer"
+	"terraform-provider-kakaocloud/internal/service/mysql"
 	"terraform-provider-kakaocloud/internal/service/network"
 	"terraform-provider-kakaocloud/internal/service/tgw"
 	"terraform-provider-kakaocloud/internal/service/volume"
 	"terraform-provider-kakaocloud/internal/service/vpc"
 
+	"github.com/hashicorp/terraform-plugin-framework/action"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -25,7 +27,8 @@ import (
 )
 
 var (
-	_ provider.Provider = &kakaocloudProvider{}
+	_ provider.Provider            = &kakaocloudProvider{}
+	_ provider.ProviderWithActions = &kakaocloudProvider{}
 )
 
 func New(version string) func() provider.Provider {
@@ -125,15 +128,16 @@ func (p *kakaocloudProvider) Configure(ctx context.Context, req provider.Configu
 		return
 	}
 
-	authClient, err := common.NewClient(authConfig, userAgent, apiVersion)
+	authClient, err := common.NewClient(ctx, authConfig, userAgent, apiVersion)
 	if err != nil {
 		resp.Diagnostics.AddError("Unexpected Provider Configure",
-			fmt.Sprintf(err.Error()))
+			err.Error())
 		return
 	}
 
 	resp.DataSourceData = authClient
 	resp.ResourceData = authClient
+	resp.ActionData = authClient
 }
 
 func (p *kakaocloudProvider) DataSources(_ context.Context) []func() datasource.DataSource {
@@ -189,6 +193,23 @@ func (p *kakaocloudProvider) DataSources(_ context.Context) []func() datasource.
 		loadbalancer.NewLoadBalancerTargetGroupMembersDataSource,
 		loadbalancer.NewLoadBalancerHealthMonitorDataSource,
 
+		mysql.NewFlavorsDataSource,
+		mysql.NewEngineVersionsDataSource,
+		mysql.NewBackupDataSource,
+		mysql.NewBackupsDataSource,
+		mysql.NewCustomParameterGroupDataSource,
+		mysql.NewCustomParameterGroupEventsDataSource,
+		mysql.NewCustomParameterGroupsDataSource,
+		mysql.NewDefaultParameterGroupDataSource,
+		mysql.NewDefaultParameterGroupEventsDataSource,
+		mysql.NewDefaultParameterGroupsDataSource,
+		mysql.NewInstanceGroupDataSource,
+		mysql.NewInstanceGroupsDataSource,
+		mysql.NewInstanceGroupsUsingCustomParameterGroupDataSource,
+		mysql.NewInstanceGroupsUsingDefaultParameterGroupDataSource,
+		mysql.NewInstancesDataSource,
+		mysql.NewInstanceGroupRestorableTimeDataSource,
+
 		kubernetesengine.NewClusterDataSource,
 		kubernetesengine.NewClustersDataSource,
 		kubernetesengine.NewNodePoolDataSource,
@@ -242,6 +263,9 @@ func (p *kakaocloudProvider) Resources(_ context.Context) []func() resource.Reso
 		loadbalancer.NewLoadBalancerTargetGroupMemberResource,
 		loadbalancer.NewLoadBalancerTargetGroupMembersResource,
 		loadbalancer.NewLoadBalancerHealthMonitorResource,
+		mysql.NewInstanceGroupResource,
+		mysql.NewBackupResource,
+		mysql.NewCustomParameterGroupResource,
 
 		kubernetesengine.NewNodePoolResource,
 		kubernetesengine.NewClusterResource,
@@ -257,13 +281,23 @@ func (p *kakaocloudProvider) Resources(_ context.Context) []func() resource.Reso
 	}
 }
 
+func (p *kakaocloudProvider) Actions(_ context.Context) []func() action.Action {
+	return []func() action.Action{
+		mysql.NewInstanceGroupRestartAction,
+		mysql.NewInstanceGroupSwitchoverAction,
+		mysql.NewInstanceGroupScaleInAction,
+		mysql.NewInstanceExportLogsAction,
+		mysql.NewInstanceGroupParameterGroupRetryAction,
+	}
+}
+
 func ResolveAPIVersion(
 	ctx context.Context,
 	authConfig *common.Config,
 	userAgent string,
 ) (string, error) {
 
-	defaultVersion := "1.2.5"
+	defaultVersion := "1.3.0"
 
 	return defaultVersion, nil
 }

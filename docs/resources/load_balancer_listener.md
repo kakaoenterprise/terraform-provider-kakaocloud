@@ -35,7 +35,6 @@ resource "kakaocloud_load_balancer_listener" "example" {
 - `protocol` (Required, String) Listening protocol
 - `protocol_port` (Required, Number) Listening port number
 
-- `connection_limit` (Optional, Number) Maximum number of simultaneous connections
 - `default_tls_container_ref` (Optional, String) Reference ID of the default TLS certificate used in the HTTPS listener
 - `insert_headers` (Optional, Attributes) Settings for HTTP headers to insert > ⚠️ **Note:** This block is only supported when `protocol` is `HTTP` or `TERMINATED_HTTPS`. > Using it with other protocols will be ignored or may cause validation errors. > Default values are: `x_forwarded_for = true`, `x_forwarded_port = false`, `x_forwarded_proto = false`. (see [below for nested schema](#nestedatt--insert_headers))
 - `sni_container_refs` (Optional, List of String) List of SNI certificate references
@@ -46,7 +45,6 @@ resource "kakaocloud_load_balancer_listener" "example" {
 
 ## Attribute Reference
 
-- `alpn_protocols` (List of String) ALPN (Application-Layer Protocol Negotiation) protocol list
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `default_target_group_id` (String) Default target group ID
 - `default_target_group_name` (String) Default target group name
@@ -136,4 +134,3 @@ example:
 ```shell
 $ terraform import kakaocloud_load_balancer_listener.example <resource_id>
 ```
-

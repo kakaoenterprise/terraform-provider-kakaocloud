@@ -345,6 +345,7 @@ func (r *vpcResource) validateAvailabilityZoneConfig(ctx context.Context, config
 		common.ValidateAvailabilityZone(
 			path.Root("availability_zone"),
 			subnetModel.AvailabilityZone,
+			common.ServiceVPC,
 			r.kc,
 			&resp.Diagnostics,
 		)

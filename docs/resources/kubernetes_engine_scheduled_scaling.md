@@ -81,4 +81,3 @@ example:
 ```shell
 $ terraform import kakaocloud_kubernetes_engine_scheduled_scaling.example <cluster_name/node_pool_name/name>
 ```
-

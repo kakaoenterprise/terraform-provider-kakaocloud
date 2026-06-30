@@ -351,13 +351,6 @@ func (r *loadBalancerListenerResource) updateListenerAttributes(
 		}
 	}
 
-	if state == nil || !plan.ConnectionLimit.Equal(state.ConnectionLimit) {
-		if !plan.ConnectionLimit.IsNull() && !plan.ConnectionLimit.IsUnknown() {
-			editReq.SetConnectionLimit(plan.ConnectionLimit.ValueInt32())
-			needsUpdate = true
-		}
-	}
-
 	if state != nil && !plan.TargetGroupId.Equal(state.TargetGroupId) && !plan.TargetGroupId.Equal(state.DefaultTargetGroupId) {
 		if !plan.TargetGroupId.IsNull() {
 			editReq.SetTargetGroupId(plan.TargetGroupId.ValueString())

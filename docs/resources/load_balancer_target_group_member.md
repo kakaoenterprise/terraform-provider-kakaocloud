@@ -96,4 +96,3 @@ example:
 ```shell
 $ terraform import kakaocloud_load_balancer_target_group_member.example <target_group_id>/<member_id>
 ```
-

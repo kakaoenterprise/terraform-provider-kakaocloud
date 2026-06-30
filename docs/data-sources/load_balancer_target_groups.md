@@ -147,6 +147,7 @@ The following attributes are exported:
 <a id="nestedatt--target_groups"></a>
 ### Nested Schema for `target_groups`
 
+- `alpn_protocols` (List of String) ALPN (Application-Layer Protocol Negotiation) protocol list
 - `availability_zone` (String) Availability zone
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `description` (String) Description of the target group
@@ -204,6 +205,3 @@ The following attributes are exported:
 - `persistence_granularity` (String) Level at which session stickiness is applied <br/>- Example: `SOURCE_IP`
 - `persistence_timeout` (Number) Duration of session persistence (seconds)
 - `type` (String) Session persistence type <br/>- Possible values: `SOURCE_IP`, `APP_COOKIE`, `HTTP_COOKIE`
-
-
-

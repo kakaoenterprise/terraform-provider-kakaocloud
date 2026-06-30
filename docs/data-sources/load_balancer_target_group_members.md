@@ -214,6 +214,3 @@ The following attributes are exported:
 - `health_check_ips` (List of String) List of IP addresses used for health checks
 - `id` (String) Subnet ID
 - `name` (String) Subnet name
-
-
-

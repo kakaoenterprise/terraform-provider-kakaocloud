@@ -115,8 +115,3 @@ The following attributes are exported:
 
 - `name` (String) Name of the environment variable.
 - `value` (String) Value assigned to the environment variable.
-
-
-
-
-

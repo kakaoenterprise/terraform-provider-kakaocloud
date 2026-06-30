@@ -84,4 +84,3 @@ example:
 ```shell
 $ terraform import kakaocloud_load_balancer_health_monitor.example <resource_id>
 ```
-

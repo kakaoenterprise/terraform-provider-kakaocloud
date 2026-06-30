@@ -169,7 +169,6 @@ The following attributes are exported:
 - `is_hyper_threading` (Boolean) Whether hyper-threading is enabled
 - `is_k8se` (Boolean) Whether the instance was created for a Kubernetes Engine environment
 - `key_name` (String) Key pair name applied to the instance
-- `metadata` (Map of String) User-defined metadata
 - `name` (String) Instance name
 - `power_state` (String) Power state code
 - `project_id` (String) Project ID the instance belongs to
@@ -253,6 +252,3 @@ The following attributes are exported:
 
 - `id` (String) Security group ID
 - `name` (String) Security group name
-
-
-

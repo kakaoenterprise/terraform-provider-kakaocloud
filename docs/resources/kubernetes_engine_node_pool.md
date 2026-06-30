@@ -224,4 +224,3 @@ example:
 ```shell
 $ terraform import kakaocloud_kubernetes_engine_node_pool.example <cluster_name/node_pool_name>
 ```
-

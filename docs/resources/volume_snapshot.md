@@ -81,4 +81,3 @@ example:
 # Volume snapshot can be imported by specifying the uuid.
 $ terraform import kakaocloud_volume_snapshot.example <resource_id>
 ```
-

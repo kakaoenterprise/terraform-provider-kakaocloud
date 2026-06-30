@@ -43,5 +43,3 @@ The following attributes are exported:
 
 - `id` (String) ID of the domain.
 - `name` (String) Name of the domain.
-
-

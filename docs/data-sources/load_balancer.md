@@ -51,7 +51,7 @@ output "load_balancer_info" {
 
 The following attributes are exported:
 
-- `access_logs` (String) Access log settings
+- `access_logs` (Attributes) Access log settings (see [below for nested schema](#nestedatt--access_logs))
 - `availability_zone` (String) Availability zone
 - `beyond_load_balancer_dns_name` (String) DNS name of the high availability group
 - `beyond_load_balancer_id` (String) Associated high availability group ID
@@ -81,3 +81,7 @@ The following attributes are exported:
 - `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
 
 
+<a id="nestedatt--access_logs"></a>
+### Nested Schema for `access_logs`
+
+- `bucket` (String) Target bucket name for storing access logs

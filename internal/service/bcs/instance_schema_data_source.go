@@ -15,10 +15,6 @@ func getInstanceDataSourceSchema() map[string]schema.Attribute {
 		"description": schema.StringAttribute{
 			Computed: true,
 		},
-		"metadata": schema.MapAttribute{
-			ElementType: types.StringType,
-			Computed:    true,
-		},
 		"flavor": schema.SingleNestedAttribute{
 			Computed:   true,
 			Attributes: getInstanceFlavorSchemaAttributes(),

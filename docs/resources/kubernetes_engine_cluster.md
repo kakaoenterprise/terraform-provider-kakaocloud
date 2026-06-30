@@ -142,4 +142,3 @@ example:
 ```shell
 $ terraform import kakaocloud_kubernetes_engine_cluster.example <cluster_name>
 ```
-

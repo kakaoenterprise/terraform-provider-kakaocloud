@@ -3,12 +3,13 @@
 package vpc
 
 import (
+	. "terraform-provider-kakaocloud/internal/utils"
+
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
 	"golang.org/x/net/context"
-	. "terraform-provider-kakaocloud/internal/utils"
 )
 
 func mapVpcBaseModel(
@@ -23,6 +24,7 @@ func mapVpcBaseModel(
 			Name:               ConvertNullableString(src.Name),
 			Description:        ConvertNullableString(src.Description),
 			Region:             ConvertNullableString(src.Region),
+			NatIp:              ConvertNullableString(src.NatIp),
 			ProjectId:          ConvertNullableString(src.ProjectId),
 			OperatingStatus:    ConvertNullableString(src.OperatingStatus),
 			ProvisioningStatus: ConvertNullableString(src.ProvisioningStatus),
@@ -78,6 +80,7 @@ func mapVpcListModel(
 			Name:               ConvertNullableString(src.Name),
 			Description:        ConvertNullableString(src.Description),
 			Region:             ConvertNullableString(src.Region),
+			NatIp:              ConvertNullableString(src.NatIp),
 			ProjectId:          ConvertNullableString(src.ProjectId),
 			OperatingStatus:    ConvertNullableString(src.OperatingStatus),
 			ProvisioningStatus: ConvertNullableString(src.ProvisioningStatus),

@@ -116,4 +116,3 @@ example:
 ```shell
 $ terraform import kakaocloud_route_table.example <resource_id>
 ```
-

@@ -126,10 +126,8 @@ func mapLoadBalancerListenerBaseModel(
 	} else {
 		base.TlsVersions = types.ListNull(types.StringType)
 	}
-	base.AlpnProtocols = utils.ConvertNullableStringList(src.AlpnProtocols)
 	base.ProjectId = utils.ConvertNullableString(src.ProjectId)
 	base.ProtocolPort = utils.ConvertNullableInt32(src.ProtocolPort)
-	base.ConnectionLimit = utils.ConvertNullableInt32(src.ConnectionLimit)
 	base.LoadBalancerId = utils.ConvertNullableString(src.LoadBalancerId)
 	base.TlsCertificateId = utils.ConvertNullableString(src.TlsCertificateId)
 	base.ProvisioningStatus = utils.ConvertNullableString(src.ProvisioningStatus)

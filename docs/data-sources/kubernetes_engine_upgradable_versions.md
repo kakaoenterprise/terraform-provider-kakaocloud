@@ -87,5 +87,3 @@ The following attributes are exported:
 - `minor_version` (String) Kubernetes minor version
 - `next_version` (String) Next upgradable version
 - `patch_version` (String) Kubernetes patch version
-
-

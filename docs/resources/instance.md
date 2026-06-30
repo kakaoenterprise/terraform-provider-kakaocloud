@@ -100,7 +100,6 @@ resource "kakaocloud_instance" "example" {
 - `instance_type` (String) Instance type
 - `is_hadoop` (Boolean) Whether the instance was created for a Hadoop environment
 - `is_k8se` (Boolean) Whether the instance was created for a Kubernetes Engine environment
-- `metadata` (Map of String) User-defined metadata
 - `power_state` (String) Power state code
 - `project_id` (String) Project ID the instance belongs to
 - `security_group_count` (Number) Number of security groups attached to the instance
@@ -229,4 +228,3 @@ example:
 ```shell
 $ terraform import kakaocloud_instance.example <resource_id> 
 ```
-

@@ -177,6 +177,3 @@ The following attributes are exported:
 - `provisioning_status` (String) Provisioning status
 - `type` (String) Target type of the rule
 - `value` (String) Value to compare
-
-
-

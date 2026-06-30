@@ -52,4 +52,3 @@ The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/c
 ```shell
 $ terraform import kakaocloud_transit_gateway_share.example <tgw_id>/<target_project_id>
 ```
-

@@ -368,6 +368,7 @@ func (r *subnetResource) validateAvailabilityZoneConfig(config subnetResourceMod
 	common.ValidateAvailabilityZone(
 		path.Root("availability_zone"),
 		config.AvailabilityZone,
+		common.ServiceVPC,
 		r.kc,
 		&resp.Diagnostics,
 	)

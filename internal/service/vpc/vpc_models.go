@@ -51,6 +51,7 @@ type igwModel struct {
 	Name               types.String `tfsdk:"name"`
 	Description        types.String `tfsdk:"description"`
 	Region             types.String `tfsdk:"region"`
+	NatIp              types.String `tfsdk:"nat_ip"`
 	ProjectId          types.String `tfsdk:"project_id"`
 	OperatingStatus    types.String `tfsdk:"operating_status"`
 	ProvisioningStatus types.String `tfsdk:"provisioning_status"`
@@ -63,6 +64,7 @@ var igwAttrType = map[string]attr.Type{
 	"name":                types.StringType,
 	"description":         types.StringType,
 	"region":              types.StringType,
+	"nat_ip":              types.StringType,
 	"project_id":          types.StringType,
 	"operating_status":    types.StringType,
 	"provisioning_status": types.StringType,

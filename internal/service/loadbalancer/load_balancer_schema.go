@@ -23,14 +23,14 @@ func getAccessLogsResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 		"access_key": rschema.StringAttribute{
-			Required:  true,
+			Optional:  true,
 			Sensitive: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 			},
 		},
 		"secret_key": rschema.StringAttribute{
-			Required:  true,
+			Optional:  true,
 			Sensitive: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
@@ -144,6 +144,14 @@ func getLoadBalancerResourceSchema() map[string]rschema.Attribute {
 	}
 }
 
+func getAccessLogsDataSourceSchema() map[string]dschema.Attribute {
+	return map[string]dschema.Attribute{
+		"bucket": dschema.StringAttribute{
+			Computed: true,
+		},
+	}
+}
+
 func getLoadBalancerDataSourceSchema() map[string]dschema.Attribute {
 	return map[string]dschema.Attribute{
 		"name": dschema.StringAttribute{
@@ -177,8 +185,9 @@ func getLoadBalancerDataSourceSchema() map[string]dschema.Attribute {
 		"availability_zone": dschema.StringAttribute{
 			Computed: true,
 		},
-		"access_logs": dschema.StringAttribute{
-			Computed: true,
+		"access_logs": dschema.SingleNestedAttribute{
+			Computed:   true,
+			Attributes: getAccessLogsDataSourceSchema(),
 		},
 		"beyond_load_balancer_id": dschema.StringAttribute{
 			Computed: true,

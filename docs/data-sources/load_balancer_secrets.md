@@ -127,6 +127,3 @@ The following attributes are exported:
 ### Nested Schema for `secrets.content_types`
 
 - `default` (String) Default MIME type of the certificate <br/> - Example: `application/x-pem-file`, `application/octet-stream`
-
-
-

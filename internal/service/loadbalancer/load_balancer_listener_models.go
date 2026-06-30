@@ -18,10 +18,8 @@ type loadBalancerListenerBaseModel struct {
 	IsEnabled              types.Bool   `tfsdk:"is_enabled"`
 	TlsCiphers             types.String `tfsdk:"tls_ciphers"`
 	TlsVersions            types.List   `tfsdk:"tls_versions"`
-	AlpnProtocols          types.List   `tfsdk:"alpn_protocols"`
 	ProjectId              types.String `tfsdk:"project_id"`
 	ProtocolPort           types.Int32  `tfsdk:"protocol_port"`
-	ConnectionLimit        types.Int32  `tfsdk:"connection_limit"`
 	LoadBalancerId         types.String `tfsdk:"load_balancer_id"`
 	TlsCertificateId       types.String `tfsdk:"tls_certificate_id"`
 	ProvisioningStatus     types.String `tfsdk:"provisioning_status"`

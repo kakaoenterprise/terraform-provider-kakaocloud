@@ -112,5 +112,3 @@ The following attributes are exported:
 - `region` (String) Region where the route table is located.
 - `tgw_id` (String) Associated Transit Gateway ID.
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
-
-

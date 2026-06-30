@@ -14,13 +14,27 @@ const (
 	LongCreateTimeout = 24 * time.Hour
 	LongUpdateTimeout = 10 * time.Hour
 	LongDeleteTimeout = 10 * time.Hour
+
+	defaultActionProgressInterval = 10 * time.Second
 )
 
 const (
-	ActionC = "create"
-	ActionR = "read"
-	ActionU = "update"
-	ActionD = "delete"
+	ActionC      = "create"
+	ActionR      = "read"
+	ActionU      = "update"
+	ActionD      = "delete"
+	ActionInvoke = "invoke"
+)
+
+const (
+	ServiceBCS  = "bcs"
+	ServiceVPC  = "vpc"
+	ServiceLB   = "lb"
+	ServiceK8SE = "k8se"
+)
+
+const (
+	ServiceMySQL = "mysql"
 )
 
 const (

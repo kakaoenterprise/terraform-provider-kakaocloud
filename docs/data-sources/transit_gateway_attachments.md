@@ -146,6 +146,3 @@ The following attributes are exported:
 - `name` (String) Transit Gateway name.
 - `project_id` (String) Project ID that owns the Transit Gateway.
 - `project_name` (String) Project name that owns the Transit Gateway.
-
-
-

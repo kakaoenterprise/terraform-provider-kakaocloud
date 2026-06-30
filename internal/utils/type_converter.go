@@ -3,6 +3,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"golang.org/x/net/context"
 )
 
 type Nullable[T any] interface {
@@ -35,6 +35,13 @@ func ConvertNullableString[T ~string](n Nullable[T]) types.String {
 		return types.StringValue(string(*n.Get()))
 	}
 	return types.StringNull()
+}
+
+func GetNullableStringValue[T ~string](n Nullable[T]) (string, bool) {
+	if !n.IsSet() || n.Get() == nil {
+		return "", false
+	}
+	return string(*n.Get()), true
 }
 
 func ConvertNullableInt64(n Nullable[int64]) types.Int64 {
@@ -194,6 +201,13 @@ func ConvertNullableStringList(input interface{}) types.List {
 
 	list, _ := types.ListValue(types.StringType, values)
 	return list
+}
+
+func ListFromStrings(ctx context.Context, vals []string) (types.List, diag.Diagnostics) {
+	if vals == nil {
+		return types.ListNull(types.StringType), nil
+	}
+	return types.ListValueFrom(ctx, types.StringType, vals)
 }
 
 func StringsFromSet(ctx context.Context, s types.Set, diags *diag.Diagnostics) []string {

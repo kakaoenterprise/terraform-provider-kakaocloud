@@ -94,4 +94,3 @@ example:
 ```shell
 $ terraform import kakaocloud_network_interface.example <resource_id>
 ```
-

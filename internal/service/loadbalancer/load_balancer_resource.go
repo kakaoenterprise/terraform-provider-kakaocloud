@@ -72,6 +72,11 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
+	ok := r.validateAccessLog(ctx, plan, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -83,7 +88,6 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 	defer cancel()
 
 	var result *loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel
-	var ok bool
 
 	createReq := loadbalancer.CreateLoadBalancerModel{
 		Name:             plan.Name.ValueString(),
@@ -223,6 +227,11 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
+	ok := r.validateAccessLog(ctx, plan, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
 	diags = req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -238,7 +247,6 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 	defer cancel()
 
 	var result *loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel
-	var ok bool
 
 	mutex := common.LockForID(plan.Id.ValueString())
 	mutex.Lock()
@@ -469,7 +477,30 @@ func (r *loadBalancerResource) validateAvailabilityZoneConfig(config loadBalance
 	common.ValidateAvailabilityZone(
 		path.Root("availability_zone"),
 		config.AvailabilityZone,
+		common.ServiceLB,
 		r.kc,
 		&resp.Diagnostics,
 	)
+}
+
+func (r *loadBalancerResource) validateAccessLog(
+	ctx context.Context,
+	plan loadBalancerResourceModel,
+	diag *diag.Diagnostics,
+) bool {
+	if !plan.AccessLogs.IsNull() {
+		var accessLogs accessLogModel
+		diags := plan.AccessLogs.As(ctx, &accessLogs, basetypes.ObjectAsOptions{})
+		diag.Append(diags...)
+		if diag.HasError() {
+			return false
+		}
+
+		if accessLogs.AccessKey.IsNull() || accessLogs.SecretKey.IsNull() {
+			common.AddValidationConfigError(ctx, r, diag,
+				"When configuring access logs, both the access_key and secret_key are required.")
+			return false
+		}
+	}
+	return true
 }

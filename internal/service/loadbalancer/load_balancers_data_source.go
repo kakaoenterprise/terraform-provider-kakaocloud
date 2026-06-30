@@ -212,7 +212,7 @@ func (d *loadBalancersDataSource) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	for _, lb := range loadBalancersResult {
-		var lbModel loadBalancerDataSourceBaseModel
+		var lbModel loadBalancerBaseModel
 		ok := mapLoadBalancerBaseForDataSource(ctx, &lbModel, &lb, &resp.Diagnostics)
 		if !ok {
 			return

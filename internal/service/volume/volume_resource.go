@@ -419,6 +419,7 @@ func (r *volumeResource) validateAvailabilityZoneConfig(config volumeResourceMod
 	common.ValidateAvailabilityZone(
 		path.Root("availability_zone"),
 		config.AvailabilityZone,
+		common.ServiceBCS,
 		r.kc,
 		&resp.Diagnostics,
 	)

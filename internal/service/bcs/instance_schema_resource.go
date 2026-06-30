@@ -35,10 +35,6 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 			Computed:   true,
 			Validators: common.DescriptionValidator(),
 		},
-		"metadata": schema.MapAttribute{
-			ElementType: types.StringType,
-			Computed:    true,
-		},
 		"flavor": schema.SingleNestedAttribute{
 			Computed:   true,
 			Attributes: getInstanceFlavorResourceSchemaAttributes(),

@@ -722,7 +722,11 @@ func (r *nodePoolResource) ValidateConfig(
 		return
 	}
 
-	if !config.Autoscaling.IsNull() && !config.Autoscaling.IsUnknown() {
+	if config.Autoscaling.IsUnknown() {
+		return
+	}
+
+	if !config.Autoscaling.IsNull() {
 		var cfAuto NodePoolAutoscalingModel
 		diags = config.Autoscaling.As(ctx, &cfAuto, basetypes.ObjectAsOptions{})
 		resp.Diagnostics.Append(diags...)
@@ -730,7 +734,7 @@ func (r *nodePoolResource) ValidateConfig(
 			return
 		}
 
-		if cfAuto.IsAutoscalerEnable.ValueBool() && !config.RequestNodeCount.IsNull() {
+		if cfAuto.IsAutoscalerEnable.ValueBool() && !config.RequestNodeCount.IsNull() && !config.RequestNodeCount.IsUnknown() {
 			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 				"request_node_count must be omitted when autoscaling is enabled")
 			return

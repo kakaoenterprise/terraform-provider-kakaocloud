@@ -18,6 +18,7 @@ type loadBalancerTargetGroupBaseModel struct {
 	Protocol              types.String `tfsdk:"protocol"`
 	LoadBalancerAlgorithm types.String `tfsdk:"load_balancer_algorithm"`
 	LoadBalancerId        types.String `tfsdk:"load_balancer_id"`
+	AlpnProtocols         types.List   `tfsdk:"alpn_protocols"`
 
 	ProvisioningStatus types.String `tfsdk:"provisioning_status"`
 	OperatingStatus    types.String `tfsdk:"operating_status"`
