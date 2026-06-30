@@ -6,8 +6,8 @@ The kakaocloud Provider enables [Terraform](https://terraform.io) to manage [kak
 
 ## Requirements
 
-- [Terraform](https://www.terraform.io/downloads.html) 1.11.0 or later.
-- [Go](https://golang.org/doc/install) v1.23 (to build the provider plugin).
+- [Terraform](https://www.terraform.io/downloads.html) 1.14.0 or later.
+- [Go](https://golang.org/doc/install) v1.26 or later (to build the provider plugin).
 
 ---
 
