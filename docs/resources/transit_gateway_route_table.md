@@ -31,6 +31,7 @@ resource "kakaocloud_transit_gateway_route_table" "example" {
 
 ## Attribute Reference
 
+- `associations` (Attributes List) List of attachment associations applied to the route table. (see [below for nested schema](#nestedatt--associations))
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `id` (String) Transit Gateway route table ID.
 - `is_default_association_route_table` (Boolean) Whether this route table is the default association route table.
