@@ -1407,7 +1407,12 @@ func instanceGroupTopologyReady(resp mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupMod
 		return false
 	}
 	if expectedStandbyCount == 0 {
+
 		return true
+	}
+	if resp.Status != mysqlsdk.INSTANCEGROUPSTATUS_AVAILABLE {
+
+		return false
 	}
 
 	readyStandbyCount := 0

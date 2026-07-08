@@ -41,7 +41,7 @@ resource "kakaocloud_load_balancer_listener" "example" {
 - `target_group_id` (Optional, String) ID of the target group to retrieve
 - `timeout_client_data` (Optional, Number) Client data receive timeout (seconds)
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
-- `tls_min_version` (Optional, String) Minimum TLS version allowed by the listener (supports TLS protocol equal to or above the specified version)   ※ Applies only when using the `TERMINATED_HTTPS` protocol
+- `tls_min_version` (Optional, String) Minimum TLS version allowed by the listener (supports TLS protocol equal to or above the specified version)   ※ Applies only when using the `TERMINATED_HTTPS` protocol. TLS v1.3 cannot be specified in currently released provider versions.
 
 ## Attribute Reference
 

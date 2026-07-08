@@ -185,7 +185,7 @@ The following attributes are exported:
 - `timeout_client_data` (Number) Client data receive timeout (seconds)
 - `tls_certificate_id` (String) Associated TLS certificate ID
 - `tls_ciphers` (String) TLS cipher suite list (applies only to `TERMINATED_HTTPS` protocol)
-- `tls_versions` (List of String) Supported TLS versions list
+- `tls_versions` (List of String) Supported TLS versions list. Listeners whose TLS versions include TLS v1.3 cannot be imported or read in currently released provider versions.
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 
 <a id="nestedatt--listeners--insert_headers"></a>
