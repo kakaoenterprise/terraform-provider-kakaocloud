@@ -173,6 +173,7 @@ func (r *transitGatewayRouteTableResource) pollRouteActive(
 			func() (*tgw.GetTgwRouteTableRoutesResponseModel, *http.Response, error) {
 				return r.kc.ApiClient.RouteTablesAPI.
 					ListTgwRoutes(ctx, tgwRouteTableId).
+					SortKeys("resource_id").
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
 			},
@@ -205,6 +206,7 @@ func (r *transitGatewayRouteTableResource) pollRouteDelete(
 			func() (*tgw.GetTgwRouteTableRoutesResponseModel, *http.Response, error) {
 				return r.kc.ApiClient.RouteTablesAPI.
 					ListTgwRoutes(ctx, tgwRouteTableId).
+					SortKeys("resource_id").
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
 			},

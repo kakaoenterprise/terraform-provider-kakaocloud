@@ -308,6 +308,7 @@ func (r *transitGatewayRouteTableAssociationResource) fetchRouteTableAssociation
 		func() (*tgw.GetTgwRouteTableAssociationsResponseModel, *http.Response, error) {
 			return r.kc.ApiClient.RouteTablesAPI.
 				ListTgwRouteTableAssociations(ctx, routeTableId).
+				SortKeys("resource_id").
 				Limit(1000).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -344,6 +345,7 @@ func (r *transitGatewayRouteTableAssociationResource) pollAssociationActive(
 			func() (*tgw.GetTgwRouteTableAssociationsResponseModel, *http.Response, error) {
 				return r.kc.ApiClient.RouteTablesAPI.
 					ListTgwRouteTableAssociations(ctx, tgwRouteTableId).
+					SortKeys("resource_id").
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
 			},
@@ -405,6 +407,7 @@ func pollAssociationDelete(
 			func() (*tgw.GetTgwRouteTableAssociationsResponseModel, *http.Response, error) {
 				return kc.ApiClient.RouteTablesAPI.
 					ListTgwRouteTableAssociations(ctx, tgwRouteTableId).
+					SortKeys("resource_id").
 					XAuthToken(kc.XAuthToken).
 					Execute()
 			},

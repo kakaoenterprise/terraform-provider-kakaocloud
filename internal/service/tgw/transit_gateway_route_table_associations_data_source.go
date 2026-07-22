@@ -62,7 +62,7 @@ func (d *transitGatewayRouteTableAssociationsDataSource) Read(ctx context.Contex
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	associationApi := d.kc.ApiClient.RouteTablesAPI.ListTgwRouteTableAssociations(ctx, config.RouteTableId.ValueString())
+	associationApi := d.kc.ApiClient.RouteTablesAPI.ListTgwRouteTableAssociations(ctx, config.RouteTableId.ValueString()).SortKeys("resource_id")
 
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {

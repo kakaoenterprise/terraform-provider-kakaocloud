@@ -61,7 +61,7 @@ func (d *transitGatewayRoutesDataSource) Read(ctx context.Context, req datasourc
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	routeApi := d.kc.ApiClient.RouteTablesAPI.ListTgwRoutes(ctx, config.RouteTableId.ValueString())
+	routeApi := d.kc.ApiClient.RouteTablesAPI.ListTgwRoutes(ctx, config.RouteTableId.ValueString()).SortKeys("resource_id")
 
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
