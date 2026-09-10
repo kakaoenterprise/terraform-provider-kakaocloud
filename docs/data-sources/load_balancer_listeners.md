@@ -3,9 +3,9 @@
 page_title: "kakaocloud_load_balancer_listeners Data Source - kakaocloud"
 subcategory: "Load Balancer"
 description: |-
-  The kakaocloud_load_balancer_listeners data source retrieves a list of listeners associated with KakaoCloud Load Balancers.It supports filtering by attributes such as name and returns details including protocol, port, connection limits, TLS configuration, associated L7 policies, and SSL certificates.
+  The kakaocloud_load_balancer_listeners data source retrieves a list of listeners associated with KakaoCloud Load Balancers.It supports filtering by attributes such as load_balancer_id and protocol and returns details including protocol, port, connection limits, TLS configuration, associated L7 policies, and SSL certificates.
   Use this data source when you need to:
-  Query multiple listeners dynamically instead of hardcoding listener IDs.Filter listeners by attributes (e.g., name, protocol, or port) for use in other Terraform resources.Validate that listeners are configured correctly before attaching them to load balancers or applying policies.
+  Query multiple listeners dynamically instead of hardcoding listener IDs.Filter listeners by attributes (e.g., load_balancer_id, protocol, or protocol_port) for use in other Terraform resources.Validate that listeners are configured correctly before attaching them to load balancers or applying policies.
   Available filters
   | Filter            | Type                        | Description |
   |-----------------------|-----------------------------|-------------|
@@ -26,13 +26,13 @@ description: |-
 
 The `kakaocloud_load_balancer_listeners` data source retrieves a list of listeners associated with KakaoCloud Load
 Balancers.  
-It supports filtering by attributes such as `name` and returns details including protocol, port, connection limits, TLS
+It supports filtering by attributes such as `load_balancer_id` and `protocol` and returns details including protocol, port, connection limits, TLS
 configuration, associated L7 policies, and SSL certificates.
 
 Use this data source when you need to:
 
 - Query multiple listeners dynamically instead of hardcoding listener IDs.
-- Filter listeners by attributes (e.g., name, protocol, or port) for use in other Terraform resources.
+- Filter listeners by attributes (e.g., load_balancer_id, protocol, or protocol_port) for use in other Terraform resources.
 - Validate that listeners are configured correctly before attaching them to load balancers or applying policies.
 
 ## Available filters
@@ -182,10 +182,10 @@ The following attributes are exported:
 - `protocol_port` (Number) Listening port number
 - `provisioning_status` (String) Provisioning status
 - `secrets` (Attributes List) List of associated certificates ( see [below for nested schema](#nestedatt--listeners--secrets))
-- `timeout_client_data` (Number) Client data receive timeout (seconds)
+- `timeout_client_data` (Number) Client data receive timeout (ms)
 - `tls_certificate_id` (String) Associated TLS certificate ID
 - `tls_ciphers` (String) TLS cipher suite list (applies only to `TERMINATED_HTTPS` protocol)
-- `tls_versions` (List of String) Supported TLS versions list. Listeners whose TLS versions include TLS v1.3 cannot be imported or read in currently released provider versions.
+- `tls_versions` (List of String) Supported TLS versions list.
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 
 <a id="nestedatt--listeners--insert_headers"></a>

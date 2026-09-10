@@ -25,6 +25,15 @@ resource "kakaocloud_route_table" "example" {
 }
 
 # Usage with Route Definition (kakaocloud_route_table)
+resource "kakaocloud_internet_gateway" "example" {
+  name = "example-igw"
+}
+
+resource "kakaocloud_internet_gateway_attachment" "example" {
+  internet_gateway_id = kakaocloud_internet_gateway.example.id
+  vpc_id              = kakaocloud_vpc.example.id
+}
+
 resource "kakaocloud_route_table" "example_with_route" {
   name   = "example-rt-with-route"
   vpc_id = kakaocloud_vpc.example.id
@@ -32,10 +41,12 @@ resource "kakaocloud_route_table" "example_with_route" {
   request_routes = [
     {
       destination = "0.0.0.0/0"
-      target_id   = kakaocloud_vpc.example.igw.id
+      target_id   = kakaocloud_internet_gateway.example.id
       target_type = "igw"
     }
   ]
+  
+  depends_on = [kakaocloud_internet_gateway_attachment.example]
 }
 ```
 
@@ -46,6 +57,7 @@ resource "kakaocloud_route_table" "example_with_route" {
 - `name` (Required, String) Route table name
 - `vpc_id` (Required, String) ID of the VPC the route table belongs to
 
+- `description` (Optional, String) Route table description.
 - `is_main` (Optional, Boolean) Indicates whether it is the main route table
 - `request_routes` (Optional, Attributes List) List of routes registered in the route table ( see [below for nested schema](#nestedatt--request_routes))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
@@ -68,7 +80,7 @@ resource "kakaocloud_route_table" "example_with_route" {
 
 - `destination` (Required, String) Destination network address (CIDR format)
 - `target_id` (Required, String) Target resource ID
-- `target_type` (Required, String) Target resource type
+- `target_type` (Required, String) Target resource type. (Possible values: `igw`, `tgw`, `network-interface`)
 - `id` (String) Route ID
 
 
@@ -99,7 +111,7 @@ resource "kakaocloud_route_table" "example_with_route" {
 
 - `destination` (Required, String) Destination network address (CIDR format)
 - `target_id` (Required, String) Target resource ID
-- `target_type` (Required, String) Target resource type
+- `target_type` (Required, String) Target resource type. (Possible values: `igw`, `tgw`, `network-interface`)
 - `id` (String) Route ID
 - `is_local_route` (Boolean) Indicates whether it is a local route<br/>  - `true`: route for communication within the same VPC
 - `provisioning_status` (String) Provisioning status

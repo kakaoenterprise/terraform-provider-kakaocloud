@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/volume"
 )
 
 var (
@@ -194,7 +194,7 @@ func (d *volumesDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	volumesResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*volume.VolumeListModel, *http.Response, error) {
+		func() (*volume.ListVolumesResponse, *http.Response, error) {
 			return volumeApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -203,9 +203,10 @@ func (d *volumesDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
+	config.Volumes = make([]volumeBaseModel, 0, len(volumesResp.Volumes))
 	for _, v := range volumesResp.Volumes {
 		var tmpVolume volumeBaseModel
-		ok := mapVolumeListModel(ctx, &tmpVolume, &v, &resp.Diagnostics)
+		ok := mapVolumeModel(ctx, &tmpVolume, &v, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 var instanceGroupResourceDesiredSubnetInfoSchemaAttributes = map[string]schema.Attribute{

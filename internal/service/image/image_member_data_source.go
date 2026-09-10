@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/image"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/image"
 )
 
 var (
@@ -81,7 +81,7 @@ func (d *imageMemberDataSource) Read(ctx context.Context, req datasource.ReadReq
 	defer cancel()
 
 	imageMemberResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*image.ImageMemberListModel, *http.Response, error) {
+		func() (*image.ListImageSharedProjectsResponse, *http.Response, error) {
 			return d.kc.ApiClient.ImageAPI.
 				ListImageSharedProjects(ctx, config.Id.ValueString()).
 				XAuthToken(d.kc.XAuthToken).

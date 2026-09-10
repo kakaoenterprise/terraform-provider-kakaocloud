@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 var (
@@ -63,8 +63,8 @@ func (d *instanceGroupsDataSource) Read(ctx context.Context, req datasource.Read
 	defer cancel()
 
 	modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*mysqlsdk.GetMySQLInstanceGroupsResponseModel, *http.Response, error) {
-			return d.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.ListMysqlInstanceGroupsResponse, *http.Response, error) {
+			return d.kc.ApiClient.MySQLInstanceGroupAPI.
 				ListMysqlInstanceGroups(ctx).
 				XAuthToken(d.kc.XAuthToken).
 				Execute()

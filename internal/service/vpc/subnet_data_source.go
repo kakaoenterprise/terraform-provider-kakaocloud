@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 var (
@@ -67,7 +67,7 @@ func (d *subnetDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	defer cancel()
 
 	subnetResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*vpc.BnsVpcV1ApiGetSubnetModelResponseSubnetModel, *http.Response, error) {
+		func() (*vpc.GetSubnetResponse, *http.Response, error) {
 			return d.kc.ApiClient.VPCSubnetAPI.GetSubnet(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -78,7 +78,7 @@ func (d *subnetDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 
 	subnetResult := subnetResp.Subnet
 
-	ok := mapSubnetBaseModel(&config.subnetBaseModel, &subnetResult, &resp.Diagnostics)
+	ok := mapSubnetModel(&config.subnetBaseModel, &subnetResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

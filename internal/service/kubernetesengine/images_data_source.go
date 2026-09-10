@@ -15,8 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/image"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/image"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 var (
@@ -105,7 +105,7 @@ func (d *kubernetesImagesDataSource) Read(ctx context.Context, req datasource.Re
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	imageApi := d.kc.ApiClient.ImagesAPI.ListNodePoolImages(ctx)
+	imageApi := d.kc.ApiClient.KubernetesEngineAPI.ListNodePoolImages(ctx)
 
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
@@ -148,7 +148,7 @@ func (d *kubernetesImagesDataSource) Read(ctx context.Context, req datasource.Re
 	}
 
 	imageResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*kubernetesengine.GetK8sImagesResponseModel, *http.Response, error) {
+		func() (*kubernetesengine.ListNodePoolImagesResponse, *http.Response, error) {
 			return imageApi.XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -158,6 +158,7 @@ func (d *kubernetesImagesDataSource) Read(ctx context.Context, req datasource.Re
 		return
 	}
 
+	config.Images = make([]imageBaseModel, 0, len(imageResp.Images))
 	for _, v := range imageResp.Images {
 		var tmpImage imageBaseModel
 		ok := d.mapImages(&tmpImage, &v)
@@ -175,11 +176,11 @@ func (d *kubernetesImagesDataSource) Read(ctx context.Context, req datasource.Re
 	}
 }
 
-func ToInstanceType(v string) (*kubernetesengine.ImageInstanceType, error) {
-	instanceType := kubernetesengine.ImageInstanceType(strings.ToLower(v))
+func ToInstanceType(v string) (*string, error) {
+	instanceType := strings.ToLower(v)
 
-	for _, allowed := range kubernetesengine.AllowedImageInstanceTypeEnumValues {
-		if instanceType == allowed {
+	for _, allowed := range image.AllowedImageInstanceTypeEnumValues {
+		if instanceType == string(allowed) {
 			return &instanceType, nil
 		}
 	}

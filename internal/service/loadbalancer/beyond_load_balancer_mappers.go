@@ -7,18 +7,18 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 	"golang.org/x/net/context"
 )
 
-func mapBeyondLoadBalancerBaseModel(
+func mapBeyondLoadBalancerModel(
 	ctx context.Context,
 	base *beyondLoadBalancerBaseModel,
-	src *loadbalancer.BnsLoadBalancerV1ApiGetHaGroupModelBeyondLoadBalancerModel,
+	src *loadbalancer.BeyondLoadBalancer,
 	diags *diag.Diagnostics,
 ) bool {
 
-	loadBalancers, lbDiags := utils.ConvertListFromModel(ctx, src.LoadBalancers, blbLoadBalancerAttrType, func(lb loadbalancer.BnsLoadBalancerV1ApiGetHaGroupModelLoadBalancerModel) any {
+	loadBalancers, lbDiags := utils.ConvertListFromModel(ctx, src.LoadBalancers, blbLoadBalancerAttrType, func(lb loadbalancer.LoadBalancerDetail) any {
 		return blbLoadBalancerModel{
 			Id:                 types.StringValue(lb.Id),
 			Name:               utils.ConvertNullableString(lb.Name),
@@ -37,7 +37,7 @@ func mapBeyondLoadBalancerBaseModel(
 	})
 	diags.Append(lbDiags...)
 
-	base.Id = types.StringValue(src.Id)
+	base.Id = utils.ConvertNullableString(src.Id)
 	base.Name = utils.ConvertNullableString(src.Name)
 	base.Description = utils.ConvertNullableString(src.Description)
 	base.ProviderName = utils.ConvertNullableString(src.Provider)

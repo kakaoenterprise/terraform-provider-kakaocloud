@@ -8,16 +8,16 @@ import (
 	datasourceTimeouts "github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
-func mapLoadBalancerL7PolicyRuleBaseModel(
+func mapLoadBalancerL7PolicyRuleModel(
 	base *loadBalancerL7PolicyRuleBaseModel,
-	src *loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyRuleModelL7PolicyRuleModel,
+	src *loadbalancer.Rule,
 	l7PolicyId string,
 	diags *diag.Diagnostics,
 ) bool {
-	base.Id = types.StringValue(src.Id)
+	base.Id = ConvertNullableString(src.Id)
 	base.L7PolicyId = types.StringValue(l7PolicyId)
 	base.Type = ConvertNullableString(src.Type)
 	base.CompareType = ConvertNullableString(src.CompareType)
@@ -31,12 +31,12 @@ func mapLoadBalancerL7PolicyRuleBaseModel(
 	return !diags.HasError()
 }
 
-func mapLoadBalancerL7PolicyRuleListFromGetPolicyResponse(src loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyModelResponseL7PolicyModel, l7PolicyId string, timeouts datasourceTimeouts.Value) loadBalancerL7PolicyRulesDataSourceModel {
-	var l7Rules []loadBalancerL7PolicyRuleBaseModel
+func mapLoadBalancerL7PolicyRuleListFromGetPolicyResponse(src loadbalancer.GetL7PolicyResponse, l7PolicyId string, timeouts datasourceTimeouts.Value) loadBalancerL7PolicyRulesDataSourceModel {
+	l7Rules := make([]loadBalancerL7PolicyRuleBaseModel, 0, len(src.L7Policy.Rules))
 
 	for _, rule := range src.L7Policy.Rules {
 		l7Rules = append(l7Rules, loadBalancerL7PolicyRuleBaseModel{
-			Id:                 types.StringValue(rule.Id),
+			Id:                 ConvertNullableString(rule.Id),
 			L7PolicyId:         types.StringValue(l7PolicyId),
 			Type:               ConvertNullableString(rule.Type),
 			CompareType:        ConvertNullableString(rule.CompareType),

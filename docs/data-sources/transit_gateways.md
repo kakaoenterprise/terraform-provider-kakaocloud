@@ -20,7 +20,7 @@ Use this data source to list and filter existing Transit Gateways and reference 
 | `name`                  | string              | Transit Gateway name |
 | `region`                | Region              | Region where the Transit Gateway is located <br/>Possible values: `kr-central-2` |
 | `is_shared`             | boolean             | Whether the Transit Gateway is shared <br/>Example: `true` |
-| `provisioning_status`   | ProvisioningStatus  | Transit Gateway provisioning status <br/>Possible values: `ACTIVE`, `DELETED`, `ERROR`, `PENDING_CREATE`, `PENDING_UPDATE`, `PENDING_DELETE` |
+| `provisioning_status`   | ProvisioningStatus  | Transit Gateway provisioning status <br/>Possible values: `ACTIVE`, `IN_USE`, `INACTIVE`, `AVAILABLE`, `PENDING_CREATE`, `PENDING_UPDATE`, `PENDING_DELETE`, `PENDING_APPROVE`, `DELETED`, `ATTACHING`, `ERROR` |
 | `created_at`            | string              | Resource creation time <br/>- ISO_8601 format <br/>- UTC |
 | `updated_at`            | string              | Last updated time of the resource <br/>- ISO_8601 format <br/>- UTC |
 
@@ -33,12 +33,12 @@ Use this data source to list and filter existing Transit Gateways and reference 
 # List all Transit Gateways
 data "kakaocloud_transit_gateways" "example" {}
 
-# Filter Transit Gateways by project ID
-data "kakaocloud_transit_gateways" "by_project" {
+# Filter Transit Gateways by name
+data "kakaocloud_transit_gateways" "by_name" {
   filter = [
     {
-      name  = "project_id"
-      value = "<your-project-id>"
+      name  = "name"
+      value = "<your-transit-gateway-name>"
     }
   ]
 }
@@ -48,8 +48,8 @@ output "transit_gateways_basic" {
   description = "Transit Gateway IDs and names"
   value = [
     for tgw in data.kakaocloud_transit_gateways.example.transit_gateways : {
-      id   = tgw.id
-      name = tgw.name
+      id     = tgw.id
+      name   = tgw.name
       region = tgw.region
       status = tgw.provisioning_status
     }
@@ -62,6 +62,15 @@ output "transit_gateways_route_tables" {
   value = {
     for tgw in data.kakaocloud_transit_gateways.example.transit_gateways :
     tgw.id => tgw.route_tables
+  }
+}
+
+# Output attachment names for each Transit Gateway
+output "transit_gateway_attachments" {
+  description = "Attachment names associated with each Transit Gateway"
+  value = {
+    for tgw in data.kakaocloud_transit_gateways.example.transit_gateways :
+    tgw.id => [for attachment in tgw.attachments : attachment.name]
   }
 }
 ```
@@ -80,7 +89,7 @@ The following attributes are exported:
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
 
-- `name` (Required, String) Name of the field to filter by (for example, `project_id`).
+- `name` (Required, String) Name of the field to filter by (for example, `name`).
 
 - `value` (Optional, String) Value to match for the specified filter name.
 
@@ -114,6 +123,7 @@ The following attributes are exported:
 
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `id` (String) Transit Gateway attachment ID.
+- `name` (String) Transit Gateway attachment name.
 - `provisioning_status` (String) Provisioning status of the attachment.
 - `resource_id` (String) ID of the attached resource.
 - `resource_name` (String) Name of the attached resource.

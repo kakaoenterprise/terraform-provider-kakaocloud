@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -64,8 +64,8 @@ func (d *transitGatewaySharedProjectsDataSource) Read(ctx context.Context, req d
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwProjectsResponseModel, *http.Response, error) {
-			return d.kc.ApiClient.TgwsAPI.ListTgwSharedProjects(ctx, config.TgwId.ValueString()).
+		func() (*tgw.ListTgwSharedProjectsResponse, *http.Response, error) {
+			return d.kc.ApiClient.TransitGatewayAPI.ListTgwSharedProjects(ctx, config.TgwId.ValueString()).
 				XAuthToken(d.kc.XAuthToken).
 				Execute()
 		},
@@ -75,7 +75,7 @@ func (d *transitGatewaySharedProjectsDataSource) Read(ctx context.Context, req d
 		return
 	}
 
-	config.SharedProjects = make([]sharedProjectModel, 0)
+	config.SharedProjects = make([]sharedProjectModel, 0, len(respModel.Projects))
 	for _, project := range respModel.Projects {
 		projectModel := sharedProjectModel{
 			Id:          types.StringValue(project.Id),
@@ -85,7 +85,7 @@ func (d *transitGatewaySharedProjectsDataSource) Read(ctx context.Context, req d
 			DomainId:    types.StringValue(project.DomainId),
 			IsEnabled:   utils.ConvertNullableBool(project.IsEnabled),
 			CreatedAt:   utils.ConvertNullableTime(project.CreatedAt),
-			DisabledAt:  utils.ConvertNullableTime(project.DisabledAt),
+			DisabledAt:  utils.ConvertNullableString(project.DisabledAt),
 		}
 
 		config.SharedProjects = append(config.SharedProjects, projectModel)

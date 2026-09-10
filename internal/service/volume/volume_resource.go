@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/volume"
 )
 
 var (
@@ -75,8 +75,16 @@ func (r *volumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	result, ok := CheckVolumeStatus(ctx, r.kc, r, plan.Id.ValueString(), StatusesReadyGetOrUpdateForSize, &resp.Diagnostics)
+	volumeId := plan.Id.ValueString()
+	result, ok := CheckVolumeStatus(ctx, r.kc, r, volumeId, StatusesReadyGetOrUpdateForSize, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
+		if volumeId != "" {
+			common.AddGeneralError(ctx, r, &resp.Diagnostics, fmt.Sprintf(
+				"Volume %q was created, but its readiness could not be confirmed, so it was not saved to Terraform state. Check the resource in KakaoCloud. If it should be managed by Terraform, run `terraform import kakaocloud_volume.<name> %s`; otherwise, delete it before applying again.",
+				volumeId,
+				volumeId,
+			))
+		}
 		return
 	}
 
@@ -91,7 +99,7 @@ func (r *volumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		}
 	}
 
-	ok = mapVolumeBaseModel(ctx, &plan.volumeBaseModel, result, &resp.Diagnostics)
+	ok = mapVolumeModel(ctx, &plan.volumeBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -123,7 +131,7 @@ func (r *volumeResource) Read(ctx context.Context, req resource.ReadRequest, res
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*volume.BcsVolumeV1ApiGetVolumeModelResponseVolumeModel, *http.Response, error) {
+		func() (*volume.GetVolumeResponse, *http.Response, error) {
 			return r.kc.ApiClient.VolumeAPI.GetVolume(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
@@ -139,7 +147,7 @@ func (r *volumeResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	volumeResult := respModel.Volume
-	ok := mapVolumeBaseModel(ctx, &state.volumeBaseModel, &volumeResult, &resp.Diagnostics)
+	ok := mapVolumeModel(ctx, &state.volumeBaseModel, &volumeResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -192,22 +200,21 @@ func (r *volumeResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	if plan.Name != state.Name || (!plan.Description.IsUnknown() && plan.Description != state.Description) {
-		editReq := volume.EditVolumeModel{
-			Name: plan.Name.ValueString(),
-		}
+		editReq := volume.UpdateVolume{}
+		editReq.SetName(plan.Name.ValueString())
 		if !plan.Description.IsNull() {
 			editReq.SetDescription(plan.Description.ValueString())
 		} else {
 			editReq.SetDescriptionNil()
 		}
 
-		body := *volume.NewBodyUpdateVolume(editReq)
+		body := *volume.NewUpdateVolumeRequest(editReq)
 
 		volumeResult, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*volume.BcsVolumeV1ApiUpdateVolumeModelResponseVolumeModel, *http.Response, error) {
+			func() (*volume.UpdateVolumeResponse, *http.Response, error) {
 				return r.kc.ApiClient.VolumeAPI.UpdateVolume(ctx, state.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
-					BodyUpdateVolume(body).
+					UpdateVolumeRequest(body).
 					Execute()
 			},
 		)
@@ -223,6 +230,9 @@ func (r *volumeResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 	if !plan.Size.IsNull() && !plan.Size.IsUnknown() && !plan.Size.Equal(state.Size) {
 		if ok := r.UpdateVolumeSize(ctx, r.kc, state.Id.ValueString(), plan.Size.ValueInt32(), &resp.Diagnostics); !ok {
+			return
+		}
+		if ok := r.waitForVolumeSize(ctx, state.Id.ValueString(), plan.Size.ValueInt32(), &resp.Diagnostics); !ok {
 			return
 		}
 
@@ -255,14 +265,52 @@ func (r *volumeResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, ok := CheckVolumeStatus(ctx, r.kc, r, state.Id.ValueString(), StatusesReadyToDelete, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
+	volumeId := state.Id.ValueString()
+	volumeResult, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		func() (*volume.GetVolumeResponse, *http.Response, error) {
+			return r.kc.ApiClient.VolumeAPI.GetVolume(ctx, volumeId).
+				XAuthToken(r.kc.XAuthToken).
+				Execute()
+		},
+	)
+	if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+		return
+	}
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "GetVolume", err, &resp.Diagnostics)
 		return
 	}
 
-	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+	pollUntilDeleted := func() {
+		common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
+			_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+				func() (*volume.GetVolumeResponse, *http.Response, error) {
+					_, httpResp, err := r.kc.ApiClient.VolumeAPI.
+						GetVolume(ctx, volumeId).
+						XAuthToken(r.kc.XAuthToken).
+						Execute()
+					return nil, httpResp, err
+				},
+			)
+			return false, httpResp, err
+		})
+	}
+
+	status := volumeResult.Volume.Status.Get()
+	if status != nil && *status == common.VolumeStatusDeleting {
+		pollUntilDeleted()
+		return
+	}
+	if status == nil || !Contains(StatusesReadyToDelete, *status) {
+		_, ok := CheckVolumeStatus(ctx, r.kc, r, volumeId, StatusesReadyToDelete, &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
+	_, httpResp, err = common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
-			return r.kc.ApiClient.VolumeAPI.DeleteVolume(ctx, state.Id.ValueString()).
+			return r.kc.ApiClient.VolumeAPI.DeleteVolume(ctx, volumeId).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 		},
@@ -276,18 +324,7 @@ func (r *volumeResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
-		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*volume.BcsVolumeV1ApiGetVolumeModelResponseVolumeModel, *http.Response, error) {
-				_, httpResp, err := r.kc.ApiClient.VolumeAPI.
-					GetVolume(ctx, state.Id.ValueString()).
-					XAuthToken(r.kc.XAuthToken).
-					Execute()
-				return nil, httpResp, err
-			},
-		)
-		return false, httpResp, err
-	})
+	pollUntilDeleted()
 }
 
 func (r *volumeResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -315,7 +352,7 @@ func (r *volumeResource) ImportState(ctx context.Context, req resource.ImportSta
 }
 
 func (r *volumeResource) createVolumeFromBody(ctx context.Context, plan *volumeResourceModel, resp *resource.CreateResponse) {
-	createReq := volume.CreateVolumeModel{
+	createReq := volume.CreateVolume{
 		Name:             plan.Name.ValueString(),
 		Size:             plan.Size.ValueInt32(),
 		AvailabilityZone: volume.AvailabilityZone(plan.AvailabilityZone.ValueString()),
@@ -341,13 +378,11 @@ func (r *volumeResource) createVolumeFromBody(ctx context.Context, plan *volumeR
 		createReq.SetSourceVolumeId(plan.SourceVolumeId.ValueString())
 	}
 
-	body := volume.BodyCreateVolume{
-		Volume: createReq,
-	}
+	body := *volume.NewCreateVolumeRequest(createReq)
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*volume.BcsVolumeV1ApiCreateVolumeModelResponseVolumeModel, *http.Response, error) {
-			return r.kc.ApiClient.VolumeAPI.CreateVolume(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateVolume(body).Execute()
+		func() (*volume.CreateVolumeResponse, *http.Response, error) {
+			return r.kc.ApiClient.VolumeAPI.CreateVolume(ctx).XAuthToken(r.kc.XAuthToken).CreateVolumeRequest(body).Execute()
 		},
 	)
 
@@ -374,7 +409,7 @@ func (r *volumeResource) restoreVolumeFromSnapshot(ctx context.Context, plan *vo
 		}
 	}
 
-	restoreReq := volume.RequestRestoreVolumeSnapshotModel{
+	restoreReq := volume.RestoreSnapshot{
 		Name:             plan.Name.ValueString(),
 		AvailabilityZone: volume.AvailabilityZone(plan.AvailabilityZone.ValueString()),
 	}
@@ -383,15 +418,13 @@ func (r *volumeResource) restoreVolumeFromSnapshot(ctx context.Context, plan *vo
 		restoreReq.SetVolumeTypeId(plan.VolumeTypeId.ValueString())
 	}
 
-	body := volume.BodyRestoreSnapshot{
-		Restore: restoreReq,
-	}
+	body := *volume.NewRestoreSnapshotRequest(restoreReq)
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*volume.ResponseRestoreVolumeSnapshotModel, *http.Response, error) {
+		func() (*volume.RestoreSnapshotResponse, *http.Response, error) {
 			return r.kc.ApiClient.VolumeSnapshotAPI.RestoreSnapshot(ctx, plan.VolumeSnapshotId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				BodyRestoreSnapshot(body).
+				RestoreSnapshotRequest(body).
 				Execute()
 		},
 	)
@@ -452,18 +485,54 @@ func (r *volumeResource) validateVolumeConfig(ctx context.Context, config volume
 	}
 }
 
-func (r *volumeResource) UpdateVolumeSize(ctx context.Context, kc *common.KakaoCloudClient, volumeId string, newSize int32, diags *diag.Diagnostics) bool {
-	body := volume.BodyExtendVolume{
-		Volume: volume.ExtendVolumeModel{
-			NewSize: newSize,
+func (r *volumeResource) waitForVolumeSize(ctx context.Context, volumeId string, requestedSize int32, diags *diag.Diagnostics) bool {
+	const sizeObserved = "requested-size-observed"
+
+	_, ok := common.PollUntilResult(
+		ctx,
+		r,
+		3*time.Second,
+		"volume",
+		volumeId,
+		[]string{sizeObserved},
+		diags,
+		func(ctx context.Context) (*volume.Volume, *http.Response, error) {
+			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
+				func() (*volume.GetVolumeResponse, *http.Response, error) {
+					return r.kc.ApiClient.VolumeAPI.
+						GetVolume(ctx, volumeId).
+						XAuthToken(r.kc.XAuthToken).
+						Execute()
+				},
+			)
+			if err != nil {
+				return nil, httpResp, err
+			}
+			return &respModel.Volume, httpResp, nil
 		},
+		func(result *volume.Volume) string {
+			actualSize := result.Size.Get()
+			if actualSize != nil && *actualSize >= requestedSize {
+				return sizeObserved
+			}
+			return "waiting-for-requested-size"
+		},
+	)
+
+	return ok && !diags.HasError()
+}
+
+func (r *volumeResource) UpdateVolumeSize(ctx context.Context, kc *common.KakaoCloudClient, volumeId string, newSize int32, diags *diag.Diagnostics) bool {
+	extendReq := volume.ExtendVolume{
+		NewSize: newSize,
 	}
+	body := *volume.NewExtendVolumeRequest(extendReq)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
 		func() (interface{}, *http.Response, error) {
 			return kc.ApiClient.VolumeAPI.ExtendVolume(ctx, volumeId).
 				XAuthToken(kc.XAuthToken).
-				BodyExtendVolume(body).
+				ExtendVolumeRequest(body).
 				Execute()
 		},
 	)

@@ -22,9 +22,11 @@ func ExecuteWithRetryAndAuth[T any](
 	var zero T
 	maxAuthRetries := 2
 	max429Retries := 1000
+	max404Retries := 2
 	interval := 1000 * time.Millisecond
 
 	action := GetCallerMethodName()
+	notFoundRetries := 0
 
 	for authAttempt := 1; authAttempt <= maxAuthRetries; authAttempt++ {
 		token, err := kc.TokenManager.GetValidToken(ctx)
@@ -35,6 +37,26 @@ func ExecuteWithRetryAndAuth[T any](
 
 		for i := 0; i < max429Retries; i++ {
 			result, httpResp, err := operation()
+
+			if (action == ActionC || action == ActionU || action == ActionR || action == ActionInvoke) &&
+				httpResp != nil && httpResp.StatusCode == http.StatusNotFound && notFoundRetries < max404Retries {
+				notFoundRetries++
+				tflog.Warn(ctx, fmt.Sprintf(
+					"Received 404 Not Found during %s. Retrying %d/%d after %dms...",
+					action, notFoundRetries, max404Retries, interval.Milliseconds(),
+				))
+
+				select {
+				case <-time.After(interval):
+					continue
+				case <-ctx.Done():
+					respDiags.AddError(
+						fmt.Sprintf("Error during %s", action),
+						"Context cancelled while retrying due to 404",
+					)
+					return zero, httpResp, ctx.Err()
+				}
+			}
 
 			if httpResp == nil || httpResp.StatusCode != http.StatusTooManyRequests {
 				if auth.IsAuthError(err) && authAttempt < maxAuthRetries {

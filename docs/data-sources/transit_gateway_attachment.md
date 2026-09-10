@@ -20,7 +20,7 @@ Use this data source to reference an existing attachment by its ID and consume i
 
 # Retrieve a specific Transit Gateway attachment by ID
 data "kakaocloud_transit_gateway_attachment" "example" {
-  id = "<your-tgw-attachment-id>"
+  id = "<your-transit-gateway-attachment-id>"
 }
 
 # Output basic attachment information
@@ -28,6 +28,7 @@ output "tgw_attachment_basic" {
   description = "Basic information of the Transit Gateway attachment"
   value = {
     id                  = data.kakaocloud_transit_gateway_attachment.example.id
+    name                = data.kakaocloud_transit_gateway_attachment.example.name
     provisioning_status = data.kakaocloud_transit_gateway_attachment.example.provisioning_status
     resource_type       = data.kakaocloud_transit_gateway_attachment.example.resource_type
     resource_name       = data.kakaocloud_transit_gateway_attachment.example.resource_name
@@ -58,6 +59,7 @@ output "tgw_attachment_route_table" {
 The following attributes are exported:
 
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
+- `name` (String) Transit Gateway attachment name.
 - `project_id` (String) Project ID that owns the attachment.
 - `project_name` (String) Project name that owns the attachment.
 - `provisioning_status` (String) Current provisioning status of the attachment.

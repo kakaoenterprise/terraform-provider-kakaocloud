@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 var _ action.ActionWithConfigure = &instanceGroupScaleInAction{}
@@ -86,14 +86,14 @@ func (a *instanceGroupScaleInAction) Invoke(ctx context.Context, req action.Invo
 }
 
 func (a *instanceGroupScaleInAction) scaleIn(ctx context.Context, instanceGroupID string, instanceIDs []string, respDiags *diag.Diagnostics) bool {
-	request := mysqlsdk.NewBodyScaleInMysqlInstanceGroup(*mysqlsdk.NewMysqlV1ApiScaleInMysqlInstanceGroupModelInstanceGroupRequestModel(instanceIDs))
+	request := mysqlsdk.NewScaleInMysqlInstanceGroupRequest(*mysqlsdk.NewScaleInMysqlInstanceGroup(instanceIDs))
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, a.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := a.kc.ApiClient.MySQLInstanceGroupsAPI.
+			httpResp, err := a.kc.ApiClient.MySQLInstanceGroupAPI.
 				ScaleInMysqlInstanceGroup(ctx, instanceGroupID).
 				XAuthToken(a.kc.XAuthToken).
-				BodyScaleInMysqlInstanceGroup(*request).
+				ScaleInMysqlInstanceGroupRequest(*request).
 				Execute()
 			return struct{}{}, httpResp, err
 		},
@@ -107,8 +107,8 @@ func (a *instanceGroupScaleInAction) scaleIn(ctx context.Context, instanceGroupI
 
 func (a *instanceGroupScaleInAction) validateScaleInTargets(ctx context.Context, instanceGroupID string, instanceIDs []string, respDiags *diag.Diagnostics) bool {
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, a.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupResponseModel, *http.Response, error) {
-			return a.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.GetMysqlInstanceGroupResponse, *http.Response, error) {
+			return a.kc.ApiClient.MySQLInstanceGroupAPI.
 				GetMysqlInstanceGroup(ctx, instanceGroupID).
 				XAuthToken(a.kc.XAuthToken).
 				Execute()
@@ -200,8 +200,8 @@ func (a *instanceGroupScaleInAction) readScaleInStatus(
 	respDiags *diag.Diagnostics,
 ) (string, bool, bool) {
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, a.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupResponseModel, *http.Response, error) {
-			return a.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.GetMysqlInstanceGroupResponse, *http.Response, error) {
+			return a.kc.ApiClient.MySQLInstanceGroupAPI.
 				GetMysqlInstanceGroup(ctx, instanceGroupID).
 				XAuthToken(a.kc.XAuthToken).
 				Execute()

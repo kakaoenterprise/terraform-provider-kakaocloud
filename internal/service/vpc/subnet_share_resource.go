@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 var (
@@ -137,7 +137,7 @@ func (r *subnetShareResource) Read(ctx context.Context, req resource.ReadRequest
 	defer cancel()
 
 	subnetShareResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*vpc.ResponseSubnetSharedProjectListModel, *http.Response, error) {
+		func() (*vpc.ListSubnetSharedProjectsResponse, *http.Response, error) {
 			return r.kc.ApiClient.VPCSubnetAPI.ListSubnetSharedProjects(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
@@ -156,6 +156,24 @@ func (r *subnetShareResource) Read(ctx context.Context, req resource.ReadRequest
 
 	if state.ProjectIds.IsNull() {
 		state.ProjectIds, diags = types.SetValue(types.StringType, projectIDs)
+	} else {
+		sharedProjectIDs := make(map[string]struct{}, len(projectIDs))
+		for _, projectID := range projectIDs {
+			sharedProjectIDs[projectID.(types.String).ValueString()] = struct{}{}
+		}
+
+		filteredProjectIDs := make([]attr.Value, 0, len(state.ProjectIds.Elements()))
+		for _, projectID := range state.ProjectIds.Elements() {
+			if _, exists := sharedProjectIDs[projectID.(types.String).ValueString()]; exists {
+				filteredProjectIDs = append(filteredProjectIDs, projectID)
+			}
+		}
+
+		state.ProjectIds, diags = types.SetValue(types.StringType, filteredProjectIDs)
+	}
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	diags = resp.State.Set(ctx, &state)

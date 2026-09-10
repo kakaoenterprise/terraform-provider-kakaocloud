@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 var (
@@ -67,7 +67,7 @@ func (d *routeTableDataSource) Read(ctx context.Context, req datasource.ReadRequ
 	defer cancel()
 
 	routeTableResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*vpc.BnsVpcV1ApiGetRouteTableModelResponseRouteTableModel, *http.Response, error) {
+		func() (*vpc.GetRouteTableResponse, *http.Response, error) {
 			return d.kc.ApiClient.VPCRouteTableAPI.GetRouteTable(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -78,7 +78,7 @@ func (d *routeTableDataSource) Read(ctx context.Context, req datasource.ReadRequ
 
 	routeTableResult := routeTableResp.VpcRouteTable
 
-	ok := mapRouteTableBaseModel(ctx, &config.routeTableBaseModel, &routeTableResult, &resp.Diagnostics)
+	ok := mapRouteTableModel(ctx, &config.routeTableBaseModel, &routeTableResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

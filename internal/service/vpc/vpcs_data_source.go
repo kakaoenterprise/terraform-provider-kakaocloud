@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 var (
@@ -155,7 +155,7 @@ func (d *vpcsDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 	vpcResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*vpc.VPCListModel, *http.Response, error) {
+		func() (*vpc.ListVpcsResponse, *http.Response, error) {
 			return vpcApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -164,9 +164,10 @@ func (d *vpcsDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
+	config.Vpcs = make([]vpcBaseModel, 0, len(vpcResp.Vpcs))
 	for _, v := range vpcResp.Vpcs {
 		var tmpVpc vpcBaseModel
-		ok := mapVpcListModel(ctx, &tmpVpc, &v, &resp.Diagnostics)
+		ok := mapVpcModel(ctx, &tmpVpc, &v, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

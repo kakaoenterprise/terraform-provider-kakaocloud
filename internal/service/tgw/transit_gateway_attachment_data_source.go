@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -67,8 +67,8 @@ func (d *transitGatewayAttachmentDataSource) Read(ctx context.Context, req datas
 	defer cancel()
 
 	attachResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwAttachmentResponseModel, *http.Response, error) {
-			return d.kc.ApiClient.AttachmentsAPI.GetTgwAttachment(ctx, config.Id.ValueString()).
+		func() (*tgw.GetTgwAttachmentResponse, *http.Response, error) {
+			return d.kc.ApiClient.TransitGatewayAttachmentAPI.GetTgwAttachment(ctx, config.Id.ValueString()).
 				XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -77,7 +77,7 @@ func (d *transitGatewayAttachmentDataSource) Read(ctx context.Context, req datas
 		return
 	}
 
-	ok := mapTransitGatewayAttachmentModelFromGet(ctx, &config.transitGatewayAttachmentBaseModel, &attachResp.Attachment, &resp.Diagnostics)
+	ok := mapTransitGatewayAttachmentModel(ctx, &config.transitGatewayAttachmentBaseModel, &attachResp.Attachment, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

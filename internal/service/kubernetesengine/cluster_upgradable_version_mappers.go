@@ -7,13 +7,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 func (d *upgradableVersionDataSource) mapUpgradableVersions(
 	ctx context.Context,
 	base *upgradableVersionsDataSourceModel,
-	result *kubernetesengine.UpgradeResponseModel,
+	result *kubernetesengine.Upgrade,
 	respDiags *diag.Diagnostics,
 ) bool {
 	currentVal, currentDiags := types.ObjectValueFrom(ctx, versionAttrTypes, versionBaseModel{

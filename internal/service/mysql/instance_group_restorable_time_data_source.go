@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 var (
@@ -66,8 +66,8 @@ func (d *instanceGroupRestorableTimeDataSource) Read(ctx context.Context, req da
 	defer cancel()
 
 	modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*mysqlsdk.GetMySQLInstanceGroupRestorableTimeResponseModel, *http.Response, error) {
-			return d.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.GetMysqlRestorableTimeResponse, *http.Response, error) {
+			return d.kc.ApiClient.MySQLInstanceGroupAPI.
 				GetMysqlRestorableTime(ctx, data.InstanceGroupId.ValueString()).
 				XAuthToken(d.kc.XAuthToken).
 				Execute()

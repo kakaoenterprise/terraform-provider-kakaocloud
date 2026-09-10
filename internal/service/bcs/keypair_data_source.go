@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/bcs"
 )
 
 var (
@@ -66,7 +66,7 @@ func (d *keypairDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	defer cancel()
 
 	keypairResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*bcs.BcsInstanceV1ApiGetKeypairModelResponseKeypairModel, *http.Response, error) {
+		func() (*bcs.GetKeypairResponse, *http.Response, error) {
 			return d.kc.ApiClient.KeypairAPI.GetKeypair(ctx, config.Name.ValueString()).
 				XAuthToken(d.kc.XAuthToken).
 				Execute()
@@ -77,9 +77,7 @@ func (d *keypairDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	result := keypairResp.Keypair
-
-	ok := mapKeypairBaseModel(ctx, &config.keypairBaseModel, &result, &resp.Diagnostics)
+	ok := mapKeypairBaseModel(&config.keypairBaseModel, new(keypairResp.Keypair), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

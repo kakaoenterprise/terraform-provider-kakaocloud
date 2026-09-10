@@ -12,18 +12,18 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 	"golang.org/x/net/context"
 )
 
-func ToScheme(v string) (*loadbalancer.Scheme, error) {
-	scheme := loadbalancer.Scheme(strings.ToLower(v))
-	for _, allowed := range loadbalancer.AllowedSchemeEnumValues {
+func ToScheme(v string) (*loadbalancer.BeyondLoadBalancerScheme, error) {
+	scheme := loadbalancer.BeyondLoadBalancerScheme(strings.ToLower(v))
+	for _, allowed := range loadbalancer.AllowedBeyondLoadBalancerSchemeEnumValues {
 		if scheme == allowed {
 			return &scheme, nil
 		}
 	}
-	return nil, fmt.Errorf("invalid scheme: %s (allowed: %v)", v, loadbalancer.AllowedSchemeEnumValues)
+	return nil, fmt.Errorf("invalid scheme: %s (allowed: %v)", v, loadbalancer.AllowedBeyondLoadBalancerSchemeEnumValues)
 }
 func ToProvisioningStatus(v string) (*loadbalancer.ProvisioningStatus, error) {
 	ps := loadbalancer.ProvisioningStatus(strings.ToUpper(v))
@@ -78,28 +78,27 @@ func ParseInt32(v string) (*int32, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid integer: %s", v)
 	}
-	result := int32(i)
-	return &result, nil
+	return new(int32(i)), nil
 }
 
-func ToTargetGroupProtocol(v string) (*loadbalancer.TargetGroupProtocol, error) {
-	protocol := loadbalancer.TargetGroupProtocol(strings.ToUpper(v))
-	for _, allowed := range loadbalancer.AllowedTargetGroupProtocolEnumValues {
+func ToLoadBalancerPoolProtocol(v string) (*loadbalancer.LoadBalancerPoolProtocol, error) {
+	protocol := loadbalancer.LoadBalancerPoolProtocol(strings.ToUpper(v))
+	for _, allowed := range loadbalancer.AllowedLoadBalancerPoolProtocolEnumValues {
 		if protocol == allowed {
 			return &protocol, nil
 		}
 	}
-	return nil, fmt.Errorf("invalid TargetGroupProtocol: %s (allowed: %v)", v, loadbalancer.AllowedTargetGroupProtocolEnumValues)
+	return nil, fmt.Errorf("invalid LoadBalancerPoolProtocol: %s (allowed: %v)", v, loadbalancer.AllowedLoadBalancerPoolProtocolEnumValues)
 }
 
-func ToTargetGroupAlgorithm(v string) (*loadbalancer.TargetGroupAlgorithm, error) {
-	algorithm := loadbalancer.TargetGroupAlgorithm(strings.ToUpper(v))
-	for _, allowed := range loadbalancer.AllowedTargetGroupAlgorithmEnumValues {
+func ToLoadBalancerPoolAlgorithm(v string) (*loadbalancer.LoadBalancerPoolAlgorithm, error) {
+	algorithm := loadbalancer.LoadBalancerPoolAlgorithm(strings.ToUpper(v))
+	for _, allowed := range loadbalancer.AllowedLoadBalancerPoolAlgorithmEnumValues {
 		if algorithm == allowed {
 			return &algorithm, nil
 		}
 	}
-	return nil, fmt.Errorf("invalid TargetGroupAlgorithm: %s (allowed: %v)", v, loadbalancer.AllowedTargetGroupAlgorithmEnumValues)
+	return nil, fmt.Errorf("invalid LoadBalancerPoolAlgorithm: %s (allowed: %v)", v, loadbalancer.AllowedLoadBalancerPoolAlgorithmEnumValues)
 }
 
 func ToAvailabilityZone(v string) (*loadbalancer.AvailabilityZone, error) {
@@ -122,14 +121,37 @@ func ToListenerProtocol(v string) (*loadbalancer.Protocol, error) {
 	return nil, fmt.Errorf("invalid Protocol: %s (allowed: %v)", v, loadbalancer.AllowedProtocolEnumValues)
 }
 
-func CheckLoadBalancerStatus(
+var loadBalancerAvailableAndErrorStatuses = []string{
+	common.LoadBalancerProvisioningStatusActive,
+	common.LoadBalancerProvisioningStatusError,
+}
+
+var loadBalancerPollingStatuses = append(
+	append([]string(nil), loadBalancerAvailableAndErrorStatuses...),
+	common.LoadBalancerProvisioningStatusDeleting,
+)
+
+type loadBalancerPollExpectedValues struct {
+	name              *string
+	description       *string
+	accessLogsEnabled *bool
+	accessLogBucket   *string
+}
+
+func pollLoadBalancerStatus(
 	ctx context.Context,
 	loadBalancerId string,
 	allowError bool,
 	r resource.Resource,
 	kc *common.KakaoCloudClient,
 	diags *diag.Diagnostics,
-) bool {
+	expectedValues ...loadBalancerPollExpectedValues,
+) (*loadbalancer.LoadBalancer, bool) {
+	var expected *loadBalancerPollExpectedValues
+	if len(expectedValues) > 0 {
+		expected = &expectedValues[0]
+	}
+
 	interval := 3 * time.Second
 	lbResult, ok := common.PollUntilResult(
 		ctx,
@@ -137,11 +159,11 @@ func CheckLoadBalancerStatus(
 		interval,
 		"load balancer",
 		loadBalancerId,
-		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError, common.LoadBalancerProvisioningStatusDeleting},
+		loadBalancerPollingStatuses,
 		diags,
-		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel, *http.Response, error) {
+		func(ctx context.Context) (*loadbalancer.LoadBalancer, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, kc, diags,
-				func() (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelResponseLoadBalancerModel, *http.Response, error) {
+				func() (*loadbalancer.GetLoadBalancerResponse, *http.Response, error) {
 					return kc.ApiClient.LoadBalancerAPI.
 						GetLoadBalancer(ctx, loadBalancerId).
 						XAuthToken(kc.XAuthToken).
@@ -153,16 +175,48 @@ func CheckLoadBalancerStatus(
 			}
 			return &respModel.LoadBalancer, httpResp, nil
 		},
-		func(lb *loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel) string {
-			return string(*lb.ProvisioningStatus.Get())
+		func(lb *loadbalancer.LoadBalancer) string {
+			if lb == nil || lb.ProvisioningStatus.Get() == nil {
+				return ""
+			}
+
+			status := string(*lb.ProvisioningStatus.Get())
+			if status != common.LoadBalancerProvisioningStatusActive || expected == nil {
+				return status
+			}
+
+			if expected.name != nil && (lb.Name.Get() == nil || *lb.Name.Get() != *expected.name) {
+				return "UPDATING"
+			}
+			if expected.description != nil {
+				actualDescription := ""
+				if lb.Description.Get() != nil {
+					actualDescription = *lb.Description.Get()
+				}
+				if actualDescription != *expected.description {
+					return "UPDATING"
+				}
+			}
+			if expected.accessLogsEnabled != nil {
+				accessLogs := lb.AccessLogs.Get()
+				if *expected.accessLogsEnabled {
+					if accessLogs == nil || expected.accessLogBucket == nil || accessLogs.Bucket != *expected.accessLogBucket {
+						return "UPDATING"
+					}
+				} else if accessLogs != nil {
+					return "UPDATING"
+				}
+			}
+
+			return status
 		},
 	)
 	if !ok {
 		for _, d := range diags.Errors() {
 			if strings.Contains(d.Detail(), "context deadline exceeded") {
 				common.AddGeneralError(ctx, r, diags,
-					fmt.Sprintf("Load balancer %s did not reach one of the following states: '%v'.", loadBalancerId, []string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError}))
-				return false
+					fmt.Sprintf("Load balancer %s did not reach one of the following states: '%v'.", loadBalancerId, loadBalancerAvailableAndErrorStatuses))
+				return nil, false
 			}
 		}
 	}
@@ -170,10 +224,51 @@ func CheckLoadBalancerStatus(
 		!allowError && lbResult != nil && string(*lbResult.ProvisioningStatus.Get()) == common.LoadBalancerProvisioningStatusError {
 		common.AddGeneralError(ctx, r, diags,
 			fmt.Sprintf("Load balancer %s is in %v state", loadBalancerId, string(*lbResult.ProvisioningStatus.Get())))
-		return false
+		return nil, false
 	}
 	if diags.HasError() {
-		return false
+		return nil, false
 	}
-	return true
+	return lbResult, true
+}
+
+func findLbAndListenerByL7PolicyId(ctx context.Context, r resource.Resource, kc *common.KakaoCloudClient, l7PolicyId string, diags *diag.Diagnostics) (*string, *string, bool) {
+	limit := int32(1000)
+	offset := int32(0)
+
+	for {
+		listenersResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, kc, diags,
+			func() (*loadbalancer.ListListenersResponse, *http.Response, error) {
+				return kc.ApiClient.LoadBalancerListenerAPI.ListListeners(ctx).Limit(limit).Offset(offset).XAuthToken(kc.XAuthToken).Execute()
+			},
+		)
+
+		if err != nil {
+			common.AddApiActionError(ctx, r, httpResp, "ListListeners", err, diags)
+			return nil, nil, false
+		}
+
+		for _, listener := range listenersResp.Listeners {
+			protocol := listener.Protocol.Get()
+			if protocol != nil &&
+				(*protocol == loadbalancer.PROTOCOL_HTTP || *protocol == loadbalancer.PROTOCOL_TERMINATED_HTTPS) &&
+				listener.L7Policies != nil {
+				for _, policy := range listener.L7Policies {
+					if policy.Id.Get() != nil && *policy.Id.Get() == l7PolicyId {
+						return listener.LoadBalancerId.Get(), &listener.Id, true
+					}
+				}
+			}
+		}
+
+		pagination := listenersResp.GetPagination()
+		total := pagination.GetTotal()
+		if total <= int64(limit+offset) {
+			break
+		}
+		offset += limit
+	}
+
+	common.AddGeneralError(ctx, r, diags, fmt.Sprintf("L7 policy %s not found in any listener", l7PolicyId))
+	return nil, nil, false
 }

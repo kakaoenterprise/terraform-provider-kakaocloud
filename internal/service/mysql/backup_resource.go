@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 var (
@@ -84,10 +84,6 @@ func (r *backupResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	mutex := common.LockForID("mysql_backup:" + plan.InstanceGroupId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -96,6 +92,12 @@ func (r *backupResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	unlock, ok := common.AcquireLockForID(ctx, "mysql_backup:"+plan.InstanceGroupId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
 
 	state, ok := r.createBackup(ctx, plan, &resp.Diagnostics)
 	if !ok {
@@ -167,19 +169,19 @@ func (r *backupResource) createBackup(
 	plan backupResourceModel,
 	respDiags *diag.Diagnostics,
 ) (backupResourceModel, bool) {
-	request := mysqlsdk.NewBodyCreateMysqlBackup(
-		*mysqlsdk.NewBackupRequestModel(
+	request := mysqlsdk.NewCreateMysqlBackupRequest(
+		*mysqlsdk.NewCreateMysqlBackup(
 			plan.Name.ValueString(),
 			plan.InstanceGroupId.ValueString(),
 		),
 	)
 
 	modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.CreateMySQLBackupResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLBackupsAPI.
+		func() (*mysqlsdk.CreateMysqlBackupResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLBackupAPI.
 				CreateMysqlBackup(ctx).
 				XAuthToken(r.kc.XAuthToken).
-				BodyCreateMysqlBackup(*request).
+				CreateMysqlBackupRequest(*request).
 				Execute()
 		},
 	)
@@ -207,8 +209,8 @@ func (r *backupResource) readBackupState(
 	respDiags *diag.Diagnostics,
 ) (backupResourceModel, bool, bool) {
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLBackupResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLBackupsAPI.
+		func() (*mysqlsdk.GetMysqlBackupResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLBackupAPI.
 				GetMysqlBackup(ctx, current.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -288,7 +290,7 @@ func (r *backupResource) pollBackupUntilStable(
 func (r *backupResource) deleteBackup(ctx context.Context, current backupResourceModel, respDiags *diag.Diagnostics) bool {
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.MySQLBackupsAPI.
+			httpResp, err := r.kc.ApiClient.MySQLBackupAPI.
 				DeleteMysqlBackup(ctx, current.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()

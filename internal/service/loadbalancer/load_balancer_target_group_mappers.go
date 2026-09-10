@@ -10,77 +10,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
-
-func mapLoadBalancerTargetGroupHealthMonitorFromResponse(
-	ctx context.Context,
-	src interface{},
-) (types.Object, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	if src == nil {
-		return types.ObjectNull(loadBalancerTargetGroupHealthMonitorAttrType), diags
-	}
-
-	var healthMonitor loadBalancerTargetGroupHealthMonitorModel
-
-	switch s := src.(type) {
-	case *loadbalancer.BnsLoadBalancerV1ApiListTargetGroupsModelHealthMonitorModel:
-		healthMonitor = loadBalancerTargetGroupHealthMonitorModel{
-			Id:            types.StringValue(s.Id),
-			Type:          utils.ConvertNullableString(s.Type),
-			Delay:         utils.ConvertNullableInt32ToInt64(s.Delay),
-			Timeout:       utils.ConvertNullableInt32ToInt64(s.Timeout),
-			FallThreshold: utils.ConvertNullableInt32ToInt64(s.FallThreshold),
-			RiseThreshold: utils.ConvertNullableInt32ToInt64(s.RiseThreshold),
-			HttpMethod:    utils.ConvertNullableString(s.HttpMethod),
-			HttpVersion: func() types.String {
-				if s.HttpVersion.IsSet() && s.HttpVersion.Get() != nil {
-					return types.StringValue(fmt.Sprintf("%.1f", *s.HttpVersion.Get()))
-				}
-				return types.StringNull()
-			}(),
-			ExpectedCodes:      utils.ConvertNullableString(s.ExpectedCodes),
-			UrlPath:            utils.ConvertNullableString(s.UrlPath),
-			OperatingStatus:    utils.ConvertNullableString(s.OperatingStatus),
-			ProvisioningStatus: utils.ConvertNullableString(s.ProvisioningStatus),
-			ProjectId:          utils.ConvertNullableString(s.ProjectId),
-		}
-	case *loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupModelHealthMonitorModel:
-		healthMonitor = loadBalancerTargetGroupHealthMonitorModel{
-			Id:            types.StringValue(s.Id),
-			Type:          utils.ConvertNullableString(s.Type),
-			Delay:         utils.ConvertNullableInt32ToInt64(s.Delay),
-			Timeout:       utils.ConvertNullableInt32ToInt64(s.Timeout),
-			FallThreshold: utils.ConvertNullableInt32ToInt64(s.FallThreshold),
-			RiseThreshold: utils.ConvertNullableInt32ToInt64(s.RiseThreshold),
-			HttpMethod:    utils.ConvertNullableString(s.HttpMethod),
-			HttpVersion: func() types.String {
-				if s.HttpVersion.IsSet() && s.HttpVersion.Get() != nil {
-					return types.StringValue(fmt.Sprintf("%.1f", *s.HttpVersion.Get()))
-				}
-				return types.StringNull()
-			}(),
-			ExpectedCodes:      utils.ConvertNullableString(s.ExpectedCodes),
-			UrlPath:            utils.ConvertNullableString(s.UrlPath),
-			OperatingStatus:    utils.ConvertNullableString(s.OperatingStatus),
-			ProvisioningStatus: utils.ConvertNullableString(s.ProvisioningStatus),
-			ProjectId:          utils.ConvertNullableString(s.ProjectId),
-		}
-	default:
-		diags.AddError("Invalid health monitor type", fmt.Sprintf("Unsupported health monitor type: %T", src))
-		return types.ObjectNull(loadBalancerTargetGroupHealthMonitorAttrType), diags
-	}
-
-	obj, objDiags := types.ObjectValueFrom(ctx, loadBalancerTargetGroupHealthMonitorAttrType, healthMonitor)
-	diags.Append(objDiags...)
-	return obj, diags
-}
 
 func mapLoadBalancerTargetGroupSessionPersistenceFromResponse(
 	ctx context.Context,
-	src *loadbalancer.SessionPersistenceModel,
+	src *loadbalancer.SessionPersistence,
 ) (types.Object, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -88,8 +23,8 @@ func mapLoadBalancerTargetGroupSessionPersistenceFromResponse(
 		return types.ObjectNull(loadBalancerTargetGroupSessionPersistenceAttrType), diags
 	}
 
-	sessionPersistence := loadBalancerTargetGroupSessionPersistenceModel{
-		Type:                   types.StringValue(src.Type),
+	sessionPersistence := loadBalancerTargetGroupSessionPersistence{
+		Type:                   types.StringValue(string(src.Type)),
 		CookieName:             utils.ConvertNullableString(src.CookieName),
 		PersistenceTimeout:     types.Int64Value(int64(src.PersistenceTimeout)),
 		PersistenceGranularity: utils.ConvertNullableString(src.PersistenceGranularity),
@@ -106,54 +41,54 @@ func mapLoadBalancerTargetGroupToCreateRequest(
 	diags *diag.Diagnostics,
 ) *loadbalancer.CreateTargetGroup {
 
-	protocol := loadbalancer.TargetGroupProtocol(model.Protocol.ValueString())
-	algorithm := loadbalancer.TargetGroupAlgorithm(model.LoadBalancerAlgorithm.ValueString())
+	protocol := loadbalancer.LoadBalancerPoolProtocol(model.Protocol.ValueString())
+	algorithm := loadbalancer.LoadBalancerPoolAlgorithm(model.LoadBalancerAlgorithm.ValueString())
 
 	createReq := loadbalancer.NewCreateTargetGroup(
 		algorithm,
-		model.LoadBalancerId.ValueString(),
 		model.Name.ValueString(),
 		protocol,
 	)
+	createReq.SetLoadBalancerId(model.LoadBalancerId.ValueString())
 
 	if !model.ListenerId.IsNull() {
 		createReq.SetListenerId(model.ListenerId.ValueString())
 	}
 
-	if !model.Description.IsNull() {
+	if !model.Description.IsNull() && !model.Description.IsUnknown() {
 		createReq.SetDescription(model.Description.ValueString())
 	}
 
-	if !model.AlpnProtocols.IsNull() && !model.AlpnProtocols.IsUnknown() {
+	if !model.LoadBalancerAlpnProtocols.IsNull() && !model.LoadBalancerAlpnProtocols.IsUnknown() {
 		var vals []string
-		diags.Append(model.AlpnProtocols.ElementsAs(ctx, &vals, false)...)
+		diags.Append(model.LoadBalancerAlpnProtocols.ElementsAs(ctx, &vals, false)...)
 		if diags.HasError() {
 			return nil
 		}
 
 		if len(vals) == 1 {
-			p := loadbalancer.AlpnProtocol(vals[0])
+			p := loadbalancer.LoadBalancerAlpnProtocol(vals[0])
 			createReq.SetAlpnProtocols(p)
 		}
 	}
 
 	if !model.SessionPersistence.IsNull() {
-		var sessionPersistence loadBalancerTargetGroupSessionPersistenceModel
+		var sessionPersistence loadBalancerTargetGroupSessionPersistence
 		diags.Append(model.SessionPersistence.As(ctx, &sessionPersistence, basetypes.ObjectAsOptions{})...)
 		if !diags.HasError() {
-			sessionPersistenceReq := loadbalancer.SessionPersistenceModel{
-				Type:               sessionPersistence.Type.ValueString(),
-				PersistenceTimeout: int32(sessionPersistence.PersistenceTimeout.ValueInt64()),
-			}
+			sessionPersistenceReq := loadbalancer.NewSessionPersistenceRequest(
+				loadbalancer.LoadBalancerSessionPersistenceType(sessionPersistence.Type.ValueString()),
+				int32(sessionPersistence.PersistenceTimeout.ValueInt64()),
+			)
 
 			if !sessionPersistence.CookieName.IsNull() {
-				sessionPersistenceReq.CookieName.Set(loadbalancer.PtrString(sessionPersistence.CookieName.ValueString()))
+				sessionPersistenceReq.CookieName.Set(new(sessionPersistence.CookieName.ValueString()))
 			}
 			if !sessionPersistence.PersistenceGranularity.IsNull() {
-				sessionPersistenceReq.PersistenceGranularity.Set(loadbalancer.PtrString(sessionPersistence.PersistenceGranularity.ValueString()))
+				sessionPersistenceReq.PersistenceGranularity.Set(new(sessionPersistence.PersistenceGranularity.ValueString()))
 			}
 
-			createReq.SetSessionPersistence(sessionPersistenceReq)
+			createReq.SetSessionPersistence(*sessionPersistenceReq)
 		}
 	}
 
@@ -163,7 +98,7 @@ func mapLoadBalancerTargetGroupToCreateRequest(
 func mapLoadBalancerTargetGroupFromGetResponse(
 	ctx context.Context,
 	model *loadBalancerTargetGroupBaseModel,
-	src *loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupModelTargetGroupModel,
+	src *loadbalancer.LoadBalancerPool,
 	diags *diag.Diagnostics,
 ) bool {
 
@@ -187,11 +122,21 @@ func mapLoadBalancerTargetGroupFromGetResponse(
 	model.SubnetName = utils.ConvertNullableString(src.SubnetName)
 	model.VpcName = utils.ConvertNullableString(src.VpcName)
 	model.MemberCount = utils.ConvertNullableInt32ToInt64(src.MemberCount)
-	model.AlpnProtocols = utils.ConvertNullableStringList(src.AlpnProtocols)
+	if len(src.AlpnProtocols) > 0 {
+		alpnProtocols := make([]string, 0, len(src.AlpnProtocols))
+		for _, protocol := range src.AlpnProtocols {
+			if protocol != nil {
+				alpnProtocols = append(alpnProtocols, string(*protocol))
+			}
+		}
+		model.LoadBalancerAlpnProtocols = utils.ConvertNullableStringList(alpnProtocols)
+	} else {
+		model.LoadBalancerAlpnProtocols = types.ListNull(types.StringType)
+	}
 
-	healthMonitor, healthMonitorDiags := utils.ConvertObjectFromModel(ctx, src.HealthMonitor, loadBalancerTargetGroupHealthMonitorAttrType, func(healthMonitor loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupModelHealthMonitorModel) any {
+	healthMonitor, healthMonitorDiags := utils.ConvertObjectFromModel(ctx, src.HealthMonitor, loadBalancerTargetGroupHealthMonitorAttrType, func(healthMonitor loadbalancer.TargetGroupHealthMonitor) any {
 		return loadBalancerTargetGroupHealthMonitorModel{
-			Id:            types.StringValue(healthMonitor.Id),
+			Id:            utils.ConvertNullableString(healthMonitor.Id),
 			Type:          utils.ConvertNullableString(healthMonitor.Type),
 			Delay:         utils.ConvertNullableInt32ToInt64(healthMonitor.Delay),
 			Timeout:       utils.ConvertNullableInt32ToInt64(healthMonitor.Timeout),
@@ -203,7 +148,8 @@ func mapLoadBalancerTargetGroupFromGetResponse(
 					return types.StringValue(fmt.Sprintf("%.1f", *healthMonitor.HttpVersion.Get()))
 				}
 				return types.StringNull()
-			}(), ExpectedCodes: utils.ConvertNullableString(healthMonitor.ExpectedCodes),
+			}(),
+			ExpectedCodes:      utils.ConvertNullableString(healthMonitor.ExpectedCodes),
 			UrlPath:            utils.ConvertNullableString(healthMonitor.UrlPath),
 			OperatingStatus:    utils.ConvertNullableString(healthMonitor.OperatingStatus),
 			ProvisioningStatus: utils.ConvertNullableString(healthMonitor.ProvisioningStatus),
@@ -225,7 +171,7 @@ func mapLoadBalancerTargetGroupFromGetResponse(
 		listeners := make([]loadBalancerTargetGroupListenerModel, 0, len(src.Listeners))
 		for _, listener := range src.Listeners {
 			listeners = append(listeners, loadBalancerTargetGroupListenerModel{
-				Id:           types.StringValue(listener.Id),
+				Id:           utils.ConvertNullableString(listener.Id),
 				Protocol:     utils.ConvertNullableString(listener.Protocol),
 				ProtocolPort: utils.ConvertNullableInt32ToInt64(listener.ProtocolPort),
 			})

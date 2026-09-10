@@ -4,20 +4,18 @@ package network
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/network"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/network"
 )
 
-func mapSecurityGroupBaseModel(
+func mapSecurityGroupModel(
 	ctx context.Context,
 	base *securityGroupBaseModel,
-	result *network.BnsNetworkV1ApiGetSecurityGroupModelSecurityGroupModel,
+	result *network.SecurityGroup,
 	respDiags *diag.Diagnostics,
 ) bool {
 
@@ -26,7 +24,7 @@ func mapSecurityGroupBaseModel(
 			ctx,
 			result.Rules,
 			securityGroupRuleAttrType,
-			func(src network.BnsNetworkV1ApiGetSecurityGroupModelSecurityGroupRuleModel) any {
+			func(src network.Rule) any {
 
 				portMin := ConvertNullableString(src.PortRangeMin)
 				portMax := ConvertNullableString(src.PortRangeMax)
@@ -53,12 +51,12 @@ func mapSecurityGroupBaseModel(
 				}
 
 				return securityGroupRuleModel{
-					Id:              types.StringValue(src.Id),
+					Id:              ConvertNullableString(src.Id),
 					Description:     ConvertNullableString(src.Description),
 					RemoteGroupId:   ConvertNullableString(src.RemoteGroupId),
 					RemoteGroupName: ConvertNullableString(src.RemoteGroupName),
 					Direction:       ConvertNullableString(src.Direction),
-					Protocol:        types.StringValue(string(src.Protocol)),
+					Protocol:        ConvertNullableString(src.Protocol),
 					PortRangeMin:    portMinInt,
 					PortRangeMax:    portMaxInt,
 					RemoteIpPrefix:  ConvertNullableIPPrefix(src.RemoteIpPrefix),
@@ -75,7 +73,7 @@ func mapSecurityGroupBaseModel(
 		)
 	}
 
-	base.Id = types.StringValue(result.Id)
+	base.Id = ConvertNullableString(result.Id)
 	base.Name = ConvertNullableString(result.Name)
 	base.Description = ConvertNullableString(result.Description)
 	base.ProjectId = ConvertNullableString(result.ProjectId)
@@ -90,27 +88,13 @@ func mapSecurityGroupBaseModel(
 	return true
 }
 
-func mapSecurityGroupBaseModelFromList(
-	ctx context.Context,
-	base *securityGroupBaseModel,
-	sgResult *network.BnsNetworkV1ApiListSecurityGroupsModelSecurityGroupModel,
-	respDiags *diag.Diagnostics,
-) {
-	var getLike network.BnsNetworkV1ApiGetSecurityGroupModelSecurityGroupModel
-	if err := copier.Copy(&getLike, sgResult); err != nil {
-		respDiags.AddError("Mapping failed", fmt.Sprintf("copier.Copy failed: %v", err))
-		return
-	}
-	mapSecurityGroupBaseModel(ctx, base, &getLike, respDiags)
-}
-
 func (d *securityGroupDataSource) mapSecurityGroup(
 	ctx context.Context,
 	model *securityGroupDataSourceModel,
-	sgResult *network.BnsNetworkV1ApiGetSecurityGroupModelSecurityGroupModel,
+	sgResult *network.SecurityGroup,
 	respDiags *diag.Diagnostics,
 ) bool {
-	mapSecurityGroupBaseModel(ctx, &model.securityGroupBaseModel, sgResult, respDiags)
+	mapSecurityGroupModel(ctx, &model.securityGroupBaseModel, sgResult, respDiags)
 
 	if respDiags.HasError() {
 		return false

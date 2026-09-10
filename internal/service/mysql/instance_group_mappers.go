@@ -10,10 +10,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
-func toInstanceGroupModel(ctx context.Context, src mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelInstanceGroupResponseModel, respDiags *diag.Diagnostics) (instanceGroupModel, bool) {
+func toInstanceGroupModel(ctx context.Context, src mysqlsdk.GetMysqlInstanceGroupInstanceGroup, respDiags *diag.Diagnostics) (instanceGroupModel, bool) {
 	endpoint, ok := instanceGroupEndpointValue(ctx, src.Endpoint, respDiags)
 	if !ok {
 		return instanceGroupModel{}, false
@@ -73,7 +73,7 @@ func toInstanceGroupModel(ctx context.Context, src mysqlsdk.MysqlV1ApiGetMysqlIn
 
 func toInstanceGroupModelFromList(
 	ctx context.Context,
-	src mysqlsdk.MysqlV1ApiListMysqlInstanceGroupsModelInstanceGroupResponseModel,
+	src mysqlsdk.ListMysqlInstanceGroupsInstanceGroup,
 	respDiags *diag.Diagnostics,
 ) (instanceGroupListModel, bool) {
 	endpoint, ok := instanceGroupEndpointValue(ctx, src.Endpoint, respDiags)
@@ -142,7 +142,7 @@ func instanceGroupEndpointValue(ctx context.Context, src []string, respDiags *di
 	return endpoint, true
 }
 
-func instanceGroupNetworkInfoValue(ctx context.Context, src mysqlsdk.NullableNetworkInfoResponseModel, respDiags *diag.Diagnostics) (types.Object, bool) {
+func instanceGroupNetworkInfoValue(ctx context.Context, src mysqlsdk.NullableNetworkInfo, respDiags *diag.Diagnostics) (types.Object, bool) {
 	if !src.IsSet() || src.Get() == nil {
 		return types.ObjectNull(networkInfoAttrTypes), true
 	}
@@ -168,7 +168,7 @@ func instanceGroupNetworkInfoValue(ctx context.Context, src mysqlsdk.NullableNet
 		}
 	}
 
-	standbySubnetInfos, diags := utils.ConvertListFromModel(ctx, networkInfoModel.StandbySubnetInfo, subnetInfoAttrTypes, func(subnet mysqlsdk.SubnetInfoResponseModel) any {
+	standbySubnetInfos, diags := utils.ConvertListFromModel(ctx, networkInfoModel.StandbySubnetInfo, subnetInfoAttrTypes, func(subnet mysqlsdk.SubnetInfo) any {
 		return subnetInfoModel{
 			Replicas:         types.Int32Value(subnet.Replicas),
 			AvailabilityZone: types.StringValue(subnet.AvailabilityZone),
@@ -195,7 +195,7 @@ func instanceGroupNetworkInfoValue(ctx context.Context, src mysqlsdk.NullableNet
 
 func instanceGroupSpecContentValue(
 	ctx context.Context,
-	src mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelSpecContentResponseModel,
+	src mysqlsdk.SpecContent,
 	respDiags *diag.Diagnostics,
 ) (types.Object, bool) {
 	specContent, diags := types.ObjectValueFrom(ctx, specContentAttrTypes, specContentModel{
@@ -220,7 +220,7 @@ func instanceGroupSpecContentValue(
 
 func instanceGroupSpecContentFromListValue(
 	ctx context.Context,
-	src mysqlsdk.MysqlV1ApiListMysqlInstanceGroupsModelSpecContentResponseModel,
+	src mysqlsdk.SpecContent,
 	respDiags *diag.Diagnostics,
 ) (types.Object, bool) {
 	specContent, diags := types.ObjectValueFrom(ctx, specContentAttrTypes, specContentModel{
@@ -243,8 +243,8 @@ func instanceGroupSpecContentFromListValue(
 	return specContent, true
 }
 
-func instanceGroupBackupScheduleValue(ctx context.Context, src mysqlsdk.NullableBackupScheduleResponseModel, respDiags *diag.Diagnostics) (types.Object, bool) {
-	backupSchedule, diags := utils.ConvertObjectFromModel(ctx, src, backupScheduleAttrTypes, func(schedule mysqlsdk.BackupScheduleResponseModel) any {
+func instanceGroupBackupScheduleValue(ctx context.Context, src mysqlsdk.NullableBackupSchedule, respDiags *diag.Diagnostics) (types.Object, bool) {
+	backupSchedule, diags := utils.ConvertObjectFromModel(ctx, src, backupScheduleAttrTypes, func(schedule mysqlsdk.BackupSchedule) any {
 		return backupScheduleModel{
 			Id:             types.StringValue(schedule.Id),
 			Type:           utils.ConvertNullableString(schedule.Type),
@@ -260,7 +260,7 @@ func instanceGroupBackupScheduleValue(ctx context.Context, src mysqlsdk.Nullable
 	return backupSchedule, true
 }
 
-func instanceGroupParameterGroupValue(ctx context.Context, src mysqlsdk.ParameterGroupResponseModel, respDiags *diag.Diagnostics) (types.Object, bool) {
+func instanceGroupParameterGroupValue(ctx context.Context, src mysqlsdk.ParameterGroup, respDiags *diag.Diagnostics) (types.Object, bool) {
 	parameterGroup, diags := types.ObjectValueFrom(ctx, parameterGroupAttrTypes, parameterGroupModel{
 		Id:                      types.StringValue(src.Id),
 		Type:                    types.StringValue(string(src.Type)),
@@ -277,10 +277,10 @@ func instanceGroupParameterGroupValue(ctx context.Context, src mysqlsdk.Paramete
 
 func instanceGroupExtraInfoValue(
 	ctx context.Context,
-	src mysqlsdk.NullableMysqlV1ApiGetMysqlInstanceGroupModelExtraInfoResponseModel,
+	src mysqlsdk.NullableExtraInfo,
 	respDiags *diag.Diagnostics,
 ) (types.Object, bool) {
-	extraInfo, diags := utils.ConvertObjectFromModel(ctx, src, extraInfoAttrTypes, func(info mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelExtraInfoResponseModel) any {
+	extraInfo, diags := utils.ConvertObjectFromModel(ctx, src, extraInfoAttrTypes, func(info mysqlsdk.ExtraInfo) any {
 		return extraInfoModel{
 			UseCaseSensitiveTableNames: utils.ConvertNullableBool(info.UseCaseSensitiveTableNames),
 		}
@@ -294,10 +294,10 @@ func instanceGroupExtraInfoValue(
 
 func instanceGroupExtraInfoFromListValue(
 	ctx context.Context,
-	src mysqlsdk.NullableMysqlV1ApiListMysqlInstanceGroupsModelExtraInfoResponseModel,
+	src mysqlsdk.NullableExtraInfo,
 	respDiags *diag.Diagnostics,
 ) (types.Object, bool) {
-	extraInfo, diags := utils.ConvertObjectFromModel(ctx, src, extraInfoAttrTypes, func(info mysqlsdk.MysqlV1ApiListMysqlInstanceGroupsModelExtraInfoResponseModel) any {
+	extraInfo, diags := utils.ConvertObjectFromModel(ctx, src, extraInfoAttrTypes, func(info mysqlsdk.ExtraInfo) any {
 		return extraInfoModel{
 			UseCaseSensitiveTableNames: utils.ConvertNullableBool(info.UseCaseSensitiveTableNames),
 		}
@@ -311,10 +311,10 @@ func instanceGroupExtraInfoFromListValue(
 
 func instanceGroupInstancesValue(
 	ctx context.Context,
-	src mysqlsdk.NullableMysqlV1ApiGetMysqlInstanceGroupModelTopologyResponseModel,
+	src mysqlsdk.NullableGetMysqlInstanceGroupTopology,
 	respDiags *diag.Diagnostics,
 ) (types.Object, bool) {
-	instances, diags := utils.ConvertObjectFromModel(ctx, src, instancesAttrTypes, func(instances mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelTopologyResponseModel) any {
+	instances, diags := utils.ConvertObjectFromModel(ctx, src, instancesAttrTypes, func(instances mysqlsdk.GetMysqlInstanceGroupTopology) any {
 		primary := types.ObjectNull(instanceNodeAttrTypes)
 		if primaryNode, ok := instances.GetPrimaryOk(); ok && primaryNode != nil {
 			var primaryDiags diag.Diagnostics
@@ -322,7 +322,7 @@ func instanceGroupInstancesValue(
 			respDiags.Append(primaryDiags...)
 		}
 
-		standby, standbyDiags := utils.ConvertListFromModel(ctx, instances.Standby, instanceNodeAttrTypes, func(node mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelTopologyInfoResponseModel) any {
+		standby, standbyDiags := utils.ConvertListFromModel(ctx, instances.Standby, instanceNodeAttrTypes, func(node mysqlsdk.GetMysqlInstanceGroupTopologyInfo) any {
 			return instanceNodeModel{
 				InstanceId:       utils.ConvertNullableString(node.InstanceId),
 				SubnetId:         utils.ConvertNullableString(node.SubnetId),
@@ -348,10 +348,10 @@ func instanceGroupInstancesValue(
 
 func instanceGroupInstancesFromListValue(
 	ctx context.Context,
-	src mysqlsdk.NullableMysqlV1ApiListMysqlInstanceGroupsModelTopologyResponseModel,
+	src mysqlsdk.NullableListMysqlInstanceGroupsTopology,
 	respDiags *diag.Diagnostics,
 ) (types.Object, bool) {
-	instances, diags := utils.ConvertObjectFromModel(ctx, src, instanceGroupListInstancesAttrTypes, func(instances mysqlsdk.MysqlV1ApiListMysqlInstanceGroupsModelTopologyResponseModel) any {
+	instances, diags := utils.ConvertObjectFromModel(ctx, src, instanceGroupListInstancesAttrTypes, func(instances mysqlsdk.ListMysqlInstanceGroupsTopology) any {
 		primary := types.ObjectNull(instanceGroupListInstanceNodeAttrTypes)
 		if primaryNode, ok := instances.GetPrimaryOk(); ok && primaryNode != nil {
 			var primaryDiags diag.Diagnostics
@@ -359,7 +359,7 @@ func instanceGroupInstancesFromListValue(
 			respDiags.Append(primaryDiags...)
 		}
 
-		standby, standbyDiags := utils.ConvertListFromModel(ctx, instances.Standby, instanceGroupListInstanceNodeAttrTypes, func(node mysqlsdk.MysqlV1ApiListMysqlInstanceGroupsModelTopologyInfoResponseModel) any {
+		standby, standbyDiags := utils.ConvertListFromModel(ctx, instances.Standby, instanceGroupListInstanceNodeAttrTypes, func(node mysqlsdk.ListMysqlInstanceGroupsTopologyInfo) any {
 			return instanceGroupListNodeModel{
 				InstanceId: utils.ConvertNullableString(node.InstanceId),
 			}
@@ -381,7 +381,7 @@ func instanceGroupInstancesFromListValue(
 	return instances, true
 }
 
-func instanceGroupInstanceNodeValue(ctx context.Context, src mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelTopologyInfoResponseModel) (types.Object, diag.Diagnostics) {
+func instanceGroupInstanceNodeValue(ctx context.Context, src mysqlsdk.GetMysqlInstanceGroupTopologyInfo) (types.Object, diag.Diagnostics) {
 	return types.ObjectValueFrom(ctx, instanceNodeAttrTypes, instanceNodeModel{
 		InstanceId:       utils.ConvertNullableString(src.InstanceId),
 		SubnetId:         utils.ConvertNullableString(src.SubnetId),
@@ -391,7 +391,7 @@ func instanceGroupInstanceNodeValue(ctx context.Context, src mysqlsdk.MysqlV1Api
 
 func instanceGroupInstanceNodeFromListValue(
 	ctx context.Context,
-	src mysqlsdk.MysqlV1ApiListMysqlInstanceGroupsModelTopologyInfoResponseModel,
+	src mysqlsdk.ListMysqlInstanceGroupsTopologyInfo,
 ) (types.Object, diag.Diagnostics) {
 	return types.ObjectValueFrom(ctx, instanceGroupListInstanceNodeAttrTypes, instanceGroupListNodeModel{
 		InstanceId: utils.ConvertNullableString(src.InstanceId),

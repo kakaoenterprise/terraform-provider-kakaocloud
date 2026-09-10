@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var (
@@ -32,6 +32,15 @@ func NewLoadBalancerTargetGroupResource() resource.Resource {
 type loadBalancerTargetGroupResource struct {
 	kc *common.KakaoCloudClient
 }
+
+type targetGroupExpectedState struct {
+	Name                  *types.String
+	Description           *types.String
+	LoadBalancerAlgorithm *types.String
+	SessionPersistence    *types.Object
+}
+
+const targetGroupSynchronizedStatus = "SYNCHRONIZED"
 
 func (r *loadBalancerTargetGroupResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_load_balancer_target_group"
@@ -71,10 +80,6 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 		return
 	}
 
-	mutex := common.LockForID(plan.LoadBalancerId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -84,24 +89,30 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	ok := CheckLoadBalancerStatus(ctx, plan.LoadBalancerId.ValueString(), false, r, r.kc, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, plan.LoadBalancerId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollLoadBalancerStatus(ctx, plan.LoadBalancerId.ValueString(), false, r, r.kc, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
 	createReq := mapLoadBalancerTargetGroupToCreateRequest(ctx, &plan, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
+	if createReq == nil || resp.Diagnostics.HasError() {
 		return
 	}
 
-	body := loadbalancer.BodyCreateTargetGroup{TargetGroup: *createReq}
+	body := loadbalancer.CreateTargetGroupRequest{TargetGroup: *createReq}
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiCreateTargetGroupModelResponseTargetGroupModel, *http.Response, error) {
+		func() (*loadbalancer.CreateTargetGroupResponse, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
 				CreateTargetGroup(ctx).
 				XAuthToken(r.kc.XAuthToken).
-				BodyCreateTargetGroup(body).
+				CreateTargetGroupRequest(body).
 				Execute()
 		},
 	)
@@ -116,7 +127,8 @@ func (r *loadBalancerTargetGroupResource) Create(ctx context.Context, req resour
 	result, ok := r.pollTargetGroupUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
+		loadBalancerAvailableAndErrorStatuses,
+		nil,
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
@@ -159,7 +171,7 @@ func (r *loadBalancerTargetGroupResource) Read(ctx context.Context, req resource
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*loadbalancer.TargetGroupResponseModel, *http.Response, error) {
+		func() (*loadbalancer.GetTargetGroupResponse, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
 				GetTargetGroup(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
@@ -203,10 +215,6 @@ func (r *loadBalancerTargetGroupResource) Update(ctx context.Context, req resour
 		return
 	}
 
-	mutex := common.LockForID(plan.LoadBalancerId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -216,60 +224,73 @@ func (r *loadBalancerTargetGroupResource) Update(ctx context.Context, req resour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	ok := CheckLoadBalancerStatus(ctx, plan.LoadBalancerId.ValueString(), true, r, r.kc, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, plan.LoadBalancerId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollLoadBalancerStatus(ctx, plan.LoadBalancerId.ValueString(), true, r, r.kc, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	updateReq := loadbalancer.NewEditTargetGroup()
+	expected := buildTargetGroupExpectedState(&plan, &state)
 
-	if !plan.Name.Equal(state.Name) {
-		updateReq.SetName(plan.Name.ValueString())
+	updateReq := loadbalancer.NewUpdateTargetGroup()
+
+	if expected.Name != nil {
+		updateReq.SetName(expected.Name.ValueString())
 	}
 
-	if !plan.Description.IsNull() && !plan.Description.Equal(state.Description) {
-		updateReq.SetDescription(plan.Description.ValueString())
-	}
-
-	if !plan.LoadBalancerAlgorithm.Equal(state.LoadBalancerAlgorithm) {
-		algorithm := loadbalancer.TargetGroupAlgorithm(plan.LoadBalancerAlgorithm.ValueString())
-		updateReq.SetLoadBalancerAlgorithm(algorithm)
-	}
-
-	if !plan.SessionPersistence.Equal(state.SessionPersistence) {
-		if plan.SessionPersistence.IsNull() {
-
-			updateReq.SetSessionPersistenceNil()
-		} else {
-
-			var sessionPersistence loadBalancerTargetGroupSessionPersistenceModel
-			diags.Append(plan.SessionPersistence.As(ctx, &sessionPersistence, basetypes.ObjectAsOptions{})...)
-			if !diags.HasError() {
-				sessionPersistenceReq := loadbalancer.SessionPersistenceModel{
-					Type:               sessionPersistence.Type.ValueString(),
-					PersistenceTimeout: int32(sessionPersistence.PersistenceTimeout.ValueInt64()),
-				}
-
-				if !sessionPersistence.CookieName.IsNull() {
-					sessionPersistenceReq.CookieName.Set(loadbalancer.PtrString(sessionPersistence.CookieName.ValueString()))
-				}
-				if !sessionPersistence.PersistenceGranularity.IsNull() {
-					sessionPersistenceReq.PersistenceGranularity.Set(loadbalancer.PtrString(sessionPersistence.PersistenceGranularity.ValueString()))
-				}
-
-				updateReq.SetSessionPersistence(sessionPersistenceReq)
-			}
+	if expected.Description != nil {
+		if expected.Description.IsNull() {
+			updateReq.SetDescriptionNil()
+		} else if !expected.Description.IsUnknown() {
+			updateReq.SetDescription(expected.Description.ValueString())
 		}
 	}
 
-	body := loadbalancer.NewBodyUpdateTargetGroup(*updateReq)
+	if expected.LoadBalancerAlgorithm != nil {
+		algorithm := loadbalancer.LoadBalancerPoolAlgorithm(expected.LoadBalancerAlgorithm.ValueString())
+		updateReq.SetLoadBalancerAlgorithm(algorithm)
+	}
+
+	if expected.SessionPersistence != nil {
+		if expected.SessionPersistence.IsNull() {
+			updateReq.SetSessionPersistenceNil()
+		} else if !expected.SessionPersistence.IsUnknown() {
+			var sessionPersistence loadBalancerTargetGroupSessionPersistence
+			convertDiags := expected.SessionPersistence.As(ctx, &sessionPersistence, basetypes.ObjectAsOptions{})
+			resp.Diagnostics.Append(convertDiags...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			sessionPersistenceReq := loadbalancer.NewSessionPersistenceRequest(
+				loadbalancer.LoadBalancerSessionPersistenceType(sessionPersistence.Type.ValueString()),
+				int32(sessionPersistence.PersistenceTimeout.ValueInt64()),
+			)
+
+			if !sessionPersistence.CookieName.IsNull() && !sessionPersistence.CookieName.IsUnknown() {
+				sessionPersistenceReq.SetCookieName(sessionPersistence.CookieName.ValueString())
+			}
+			if !sessionPersistence.PersistenceGranularity.IsNull() && !sessionPersistence.PersistenceGranularity.IsUnknown() {
+				sessionPersistenceReq.SetPersistenceGranularity(sessionPersistence.PersistenceGranularity.ValueString())
+			}
+
+			updateReq.SetSessionPersistence(*sessionPersistenceReq)
+		}
+	}
+
+	body := loadbalancer.NewUpdateTargetGroupRequest(*updateReq)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateTargetGroupModelResponseTargetGroupModel, *http.Response, error) {
+		func() (*loadbalancer.UpdateTargetGroupResponse, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
 				UpdateTargetGroup(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				BodyUpdateTargetGroup(*body).
+				UpdateTargetGroupRequest(*body).
 				Execute()
 		},
 	)
@@ -279,12 +300,11 @@ func (r *loadBalancerTargetGroupResource) Update(ctx context.Context, req resour
 		return
 	}
 
-	time.Sleep(5 * time.Second)
-
 	result, ok := r.pollTargetGroupUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
+		loadBalancerAvailableAndErrorStatuses,
+		&expected,
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
@@ -310,10 +330,6 @@ func (r *loadBalancerTargetGroupResource) Delete(ctx context.Context, req resour
 		return
 	}
 
-	mutex := common.LockForID(state.LoadBalancerId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -323,7 +339,13 @@ func (r *loadBalancerTargetGroupResource) Delete(ctx context.Context, req resour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	ok := CheckLoadBalancerStatus(ctx, state.LoadBalancerId.ValueString(), true, r, r.kc, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, state.LoadBalancerId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollLoadBalancerStatus(ctx, state.LoadBalancerId.ValueString(), true, r, r.kc, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -369,23 +391,32 @@ func (r *loadBalancerTargetGroupResource) ImportState(ctx context.Context, req r
 
 func (r *loadBalancerTargetGroupResource) pollTargetGroupUntilStatus(
 	ctx context.Context,
-	targetGroupId string,
+	targetGroupID string,
 	targetStatuses []string,
+	expected *targetGroupExpectedState,
 	diags *diag.Diagnostics,
-) (*loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupModelTargetGroupModel, bool) {
+) (*loadbalancer.LoadBalancerPool, bool) {
+	pollingTargetStatuses := targetStatuses
+	if expected != nil {
+		pollingTargetStatuses = []string{
+			targetGroupSynchronizedStatus,
+			common.LoadBalancerProvisioningStatusError,
+		}
+	}
+
 	return common.PollUntilResult(
 		ctx,
 		r,
 		2*time.Second,
 		"target group",
-		targetGroupId,
-		targetStatuses,
+		targetGroupID,
+		pollingTargetStatuses,
 		diags,
-		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupModelTargetGroupModel, *http.Response, error) {
+		func(ctx context.Context) (*loadbalancer.LoadBalancerPool, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
-				func() (*loadbalancer.TargetGroupResponseModel, *http.Response, error) {
+				func() (*loadbalancer.GetTargetGroupResponse, *http.Response, error) {
 					return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
-						GetTargetGroup(ctx, targetGroupId).
+						GetTargetGroup(ctx, targetGroupID).
 						XAuthToken(r.kc.XAuthToken).
 						Execute()
 				},
@@ -395,13 +426,74 @@ func (r *loadBalancerTargetGroupResource) pollTargetGroupUntilStatus(
 			}
 			return &respModel.TargetGroup, httpResp, nil
 		},
-		func(model *loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupModelTargetGroupModel) string {
-			if model.ProvisioningStatus.IsSet() && model.ProvisioningStatus.Get() != nil {
-				return string(*model.ProvisioningStatus.Get())
+		func(model *loadbalancer.LoadBalancerPool) string {
+			if !model.ProvisioningStatus.IsSet() || model.ProvisioningStatus.Get() == nil {
+				return ""
 			}
-			return ""
+
+			status := string(*model.ProvisioningStatus.Get())
+			if status != common.LoadBalancerProvisioningStatusActive || expected == nil {
+				return status
+			}
+
+			if targetGroupMatchesExpectedState(ctx, model, expected, diags) {
+				return targetGroupSynchronizedStatus
+			}
+
+			return status
 		},
 	)
+}
+
+func buildTargetGroupExpectedState(
+	plan *loadBalancerTargetGroupResourceModel,
+	state *loadBalancerTargetGroupResourceModel,
+) targetGroupExpectedState {
+	expected := targetGroupExpectedState{}
+
+	if !plan.Name.Equal(state.Name) {
+		expected.Name = new(plan.Name)
+	}
+	if !plan.Description.IsUnknown() && !plan.Description.Equal(state.Description) {
+		expected.Description = new(plan.Description)
+	}
+	if !plan.LoadBalancerAlgorithm.Equal(state.LoadBalancerAlgorithm) {
+		expected.LoadBalancerAlgorithm = new(plan.LoadBalancerAlgorithm)
+	}
+	if !plan.SessionPersistence.Equal(state.SessionPersistence) {
+		expected.SessionPersistence = new(plan.SessionPersistence)
+	}
+
+	return expected
+}
+
+func targetGroupMatchesExpectedState(
+	ctx context.Context,
+	result *loadbalancer.LoadBalancerPool,
+	expected *targetGroupExpectedState,
+	diags *diag.Diagnostics,
+) bool {
+	var actual loadBalancerTargetGroupBaseModel
+	if !mapLoadBalancerTargetGroupFromGetResponse(ctx, &actual, result, diags) {
+		return false
+	}
+
+	if expected.Name != nil && !expected.Name.Equal(actual.Name) {
+		return false
+	}
+	if expected.Description != nil && !expected.Description.Equal(actual.Description) {
+		return false
+	}
+	if expected.LoadBalancerAlgorithm != nil &&
+		!expected.LoadBalancerAlgorithm.Equal(actual.LoadBalancerAlgorithm) {
+		return false
+	}
+	if expected.SessionPersistence != nil &&
+		!expected.SessionPersistence.Equal(actual.SessionPersistence) {
+		return false
+	}
+
+	return true
 }
 
 func (r *loadBalancerTargetGroupResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
@@ -416,21 +508,21 @@ func (r *loadBalancerTargetGroupResource) ValidateConfig(ctx context.Context, re
 		return
 	}
 
-	var sessionPersistence loadBalancerTargetGroupSessionPersistenceModel
+	var sessionPersistence loadBalancerTargetGroupSessionPersistence
 	diags.Append(config.SessionPersistence.As(ctx, &sessionPersistence, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return
 	}
 
-	if config.Protocol.ValueString() != string(loadbalancer.TARGETGROUPPROTOCOL_HTTP) &&
-		config.Protocol.ValueString() != string(loadbalancer.TARGETGROUPPROTOCOL_TCP) &&
-		config.Protocol.ValueString() != string(loadbalancer.TARGETGROUPPROTOCOL_UDP) {
+	if config.Protocol.ValueString() != string(loadbalancer.LOADBALANCERPOOLPROTOCOL_HTTP) &&
+		config.Protocol.ValueString() != string(loadbalancer.LOADBALANCERPOOLPROTOCOL_TCP) &&
+		config.Protocol.ValueString() != string(loadbalancer.LOADBALANCERPOOLPROTOCOL_UDP) {
 		common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 			fmt.Sprintf("Session persistence is not supported for protocol '%s'", config.Protocol.ValueString()),
 		)
 	}
 
-	if config.Protocol.ValueString() == string(loadbalancer.TARGETGROUPPROTOCOL_HTTP) {
+	if config.Protocol.ValueString() == string(loadbalancer.LOADBALANCERPOOLPROTOCOL_HTTP) {
 		if sessionPersistence.Type.ValueString() != "HTTP_COOKIE" && sessionPersistence.Type.ValueString() != "APP_COOKIE" {
 			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 				fmt.Sprintf("Session persistence type '%s' is not valid for protocol '%s'.", sessionPersistence.Type.ValueString(), config.Protocol.ValueString()),

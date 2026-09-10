@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/image"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/image"
 )
 
 var (
@@ -199,7 +199,7 @@ func (d *imagesDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	}
 
 	imageResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*image.ImageListModel, *http.Response, error) {
+		func() (*image.ListImagesResponse, *http.Response, error) {
 			return imageApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -208,10 +208,11 @@ func (d *imagesDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
+	config.Images = make([]imageBaseModel, 0, len(imageResp.Images))
 	for _, v := range imageResp.Images {
 		var tmpImage imageBaseModel
-		ok := d.mapImages(ctx, &tmpImage, &v, &resp.Diagnostics)
-		if !ok || resp.Diagnostics.HasError() {
+		mapImageModel(ctx, &tmpImage, &v, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
 			return
 		}
 
@@ -226,25 +227,9 @@ func (d *imagesDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 }
 
 func ToInstanceType(v string) (*image.ImageInstanceType, error) {
-	instanceType := image.ImageInstanceType(v)
-
-	for _, allowed := range image.AllowedImageInstanceTypeEnumValues {
-		if instanceType == allowed {
-			return &instanceType, nil
-		}
-	}
-
-	return nil, fmt.Errorf("instance type '%s' is not allowed (allowed: %v)", v, image.AllowedImageInstanceTypeEnumValues)
+	return image.NewImageInstanceTypeFromValue(v)
 }
 
-func ToImageType(v string) (*image.ImageVisibilityType, error) {
-	imageType := image.ImageVisibilityType(strings.ToLower(v))
-
-	for _, allowed := range image.AllowedImageVisibilityTypeEnumValues {
-		if imageType == allowed {
-			return &imageType, nil
-		}
-	}
-
-	return nil, fmt.Errorf("image type '%s' is not allowed (allowed: %v)", v, image.AllowedImageVisibilityTypeEnumValues)
+func ToImageType(v string) (*image.ImageType, error) {
+	return image.NewImageTypeFromValue(strings.ToLower(v))
 }

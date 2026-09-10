@@ -3,17 +3,14 @@
 page_title: "kakaocloud_vpc Resource - kakaocloud"
 subcategory: "VPC"
 description: |-
-  The kakaocloud_vpc resource allows you to create and manage Virtual Private Clouds (VPCs) in KakaoCloud.A VPC defines an isolated network environment with its own IPv4 CIDR block, subnets, route tables, and internet gateway (IGW).You can specify the CIDR block and name, attach subnets, and manage lifecycle operations such as creation and deletion.This resource also provides metadata about default route tables, DNS support, and provisioning status.
+  Creates and manages a Virtual Private Cloud (VPC) in KakaoCloud.
 ---
 
 # kakaocloud_vpc (Resource)
 
-The `kakaocloud_vpc` resource allows you to create and manage Virtual Private Clouds (VPCs) in KakaoCloud.  
-A VPC defines an isolated network environment with its own IPv4 CIDR block, subnets, route tables, and internet
-gateway (IGW).  
-You can specify the CIDR block and name, attach subnets, and manage lifecycle operations such as creation and
-deletion.  
-This resource also provides metadata about default route tables, DNS support, and provisioning status.
+The `kakaocloud_vpc` resource creates and manages a Virtual Private Cloud (VPC) in KakaoCloud.
+
+A VPC provides an isolated network environment with its own IPv4 CIDR block. Use this resource to configure the VPC's name, CIDR block, and description and to retrieve information about its default route table, Internet Gateway, DNS support, and provisioning status.
 
 ## Example Usage
 
@@ -24,11 +21,6 @@ This resource also provides metadata about default route tables, DNS support, an
 resource "kakaocloud_vpc" "example" {
   name       = "example-vpc"
   cidr_block = "10.0.0.0/16"
-
-  subnet = {
-    availability_zone = "kr-central-2-a"
-    cidr_block        = "10.0.0.0/24"
-  }
 }
 ```
 
@@ -39,16 +31,15 @@ resource "kakaocloud_vpc" "example" {
 - `cidr_block` (Required, String) IPv4 CIDR block of the VPC (e.g., `10.0.0.0/16`)
 - `name` (Required, String) Name of the VPC
 
-- `subnet` (Optional, Attributes) Subnet information (see [below for nested schema](#nestedatt--subnet))
+- `description` (Optional, String) Description of the VPC
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
-- `default_route_table` (Attributes) Object containing default route table information ( see [below for nested schema](#nestedatt--default_route_table))
-- `description` (String) Description of the VPC
+- `default_route_table` (Attributes) Object containing default route table information (see [below for nested schema](#nestedatt--default_route_table))
 - `id` (String) Unique ID of the VPC
-- `igw` (Attributes) Object containing information of the attached internet gateway ( see [below for nested schema](#nestedatt--igw))
+- `igw` (Attributes) Object containing information of the attached internet gateway (see [below for nested schema](#nestedatt--igw))
 - `is_default` (Boolean) Indicates whether it is the default VPC
 - `is_enable_dns_support` (Boolean) Indicates whether DNS support is enabled
 - `project_id` (String) ID of the project the VPC belongs to
@@ -56,13 +47,6 @@ resource "kakaocloud_vpc" "example" {
 - `provisioning_status` (String) Provisioning status
 - `region` (String) Region where the VPC resides
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
-
-<a id="nestedatt--subnet"></a>
-### Nested Schema for `subnet`
-
-- `availability_zone` (Required, String) Availability zone to create the subnet in<br/> - `kr-central-2-a`: kr-central-2-a AZ<br/> - `kr-central-2-b`: kr-central-2-b AZ<br/> - `kr-central-2-c`: kr-central-2-c AZ
-- `cidr_block` (Required, String) IP address range of the subnet (CIDR format)<br/> - Example: `10.0.1.0/24`
-
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`

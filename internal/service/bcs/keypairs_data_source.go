@@ -12,9 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/bcs"
 )
 
 var (
@@ -131,7 +129,7 @@ func (d *keypairsDataSource) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	keypairResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*bcs.KeypairListModel, *http.Response, error) {
+		func() (*bcs.ListKeypairsResponse, *http.Response, error) {
 			return keypairApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -140,23 +138,15 @@ func (d *keypairsDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	var keypairResult []bcs.BcsInstanceV1ApiGetKeypairModelKeypairModel
-	err = copier.Copy(&keypairResult, &keypairResp.Keypairs)
-	if err != nil {
-		common.AddGeneralError(ctx, d, &resp.Diagnostics,
-			fmt.Sprintf("Failed to convert keypairResult: %v", err))
-		return
-	}
-
-	for _, v := range keypairResult {
+	config.Keypairs = make([]keypairBaseModel, 0, len(keypairResp.Keypairs))
+	for _, v := range keypairResp.Keypairs {
 		var tmpKeypair keypairBaseModel
-		ok := mapKeypairBaseModel(ctx, &tmpKeypair, &v, &resp.Diagnostics)
+		ok := mapKeypairBaseModel(&tmpKeypair, &v, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
 
 		config.Keypairs = append(config.Keypairs, tmpKeypair)
-
 	}
 
 	diags = resp.State.Set(ctx, &config)
@@ -179,17 +169,4 @@ func (d *keypairsDataSource) Configure(_ context.Context, req datasource.Configu
 		return
 	}
 	d.kc = client
-}
-
-func mapKeypair(
-	model *keypairBaseModel,
-	keypairResult *bcs.BcsInstanceV1ApiListKeypairsModelKeypairModel,
-) {
-	model.Id = types.StringValue(keypairResult.GetId())
-	model.Name = ConvertNullableString(keypairResult.Name)
-	model.Fingerprint = ConvertNullableString(keypairResult.Fingerprint)
-	model.PublicKey = ConvertNullableString(keypairResult.PublicKey)
-	model.UserId = ConvertNullableString(keypairResult.UserId)
-	model.Type = ConvertNullableString(keypairResult.Type)
-	model.CreatedAt = ConvertNullableTime(keypairResult.CreatedAt)
 }

@@ -19,9 +19,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
-	"github.com/kakaoenterprise/kc-sdk-go/services/network"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/network"
 )
 
 var (
@@ -85,7 +85,7 @@ func (r *nodePoolResource) ImportState(
 }
 
 func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan, config NodePoolResourceModel
+	var plan, config nodePoolResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -119,7 +119,7 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 
 	var initialNodeCount int32
 	autoscalingEnabled := false
-	var autoscalingPlan NodePoolAutoscalingModel
+	var autoscalingPlan nodePoolAutoscalingModel
 
 	if !plan.Autoscaling.IsNull() && !plan.Autoscaling.IsUnknown() {
 		_ = plan.Autoscaling.As(ctx, &autoscalingPlan, basetypes.ObjectAsOptions{})
@@ -132,7 +132,7 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		initialNodeCount = autoscalingPlan.AutoscalerDesiredNodeCount.ValueInt32()
 	}
 
-	var vpcInfo NodePoolVpcInfoModelSet
+	var vpcInfo nodePoolVpcInfoModelSet
 	diags = plan.VpcInfo.As(ctx, &vpcInfo, basetypes.ObjectAsOptions{})
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -148,29 +148,29 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		}
 	}
 
-	reqVpcInfo := kubernetesengine.VpcInfoRequestModel{
+	reqVpcInfo := kubernetesengine.VpcInfoRequest{
 		Id:      vpcInfo.Id.ValueString(),
 		Subnets: subnetIds,
 	}
 
-	var labels []kubernetesengine.LabelRequestModel
+	var labels []kubernetesengine.LabelRequest
 	if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
-		var tmp []NodePoolLabelModel
+		var tmp []nodePoolLabelModel
 		_ = plan.Labels.ElementsAs(ctx, &tmp, false)
 		for _, l := range tmp {
-			labels = append(labels, kubernetesengine.LabelRequestModel{
+			labels = append(labels, kubernetesengine.LabelRequest{
 				Key:   l.Key.ValueString(),
 				Value: l.Value.ValueString(),
 			})
 		}
 	}
 
-	var taints []kubernetesengine.TaintRequestModel
+	var taints []kubernetesengine.TaintRequest
 	if !plan.Taints.IsNull() && !plan.Taints.IsUnknown() {
-		var tmp []NodePoolTaintModel
+		var tmp []nodePoolTaintModel
 		_ = plan.Taints.ElementsAs(ctx, &tmp, false)
 		for _, t := range tmp {
-			taints = append(taints, kubernetesengine.TaintRequestModel{
+			taints = append(taints, kubernetesengine.TaintRequest{
 				Key:    t.Key.ValueString(),
 				Value:  t.Value.ValueString(),
 				Effect: kubernetesengine.NodePoolTaintEffect(t.Effect.ValueString()),
@@ -183,7 +183,7 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		_ = plan.RequestSecurityGroups.ElementsAs(ctx, &userSGs, false)
 	}
 
-	createModel := kubernetesengine.NewKubernetesEngineV1ApiCreateNodePoolModelNodePoolRequestModel(
+	createModel := kubernetesengine.NewCreateNodePool(
 		plan.Name.ValueString(),
 		plan.FlavorId.ValueString(),
 		initialNodeCount,
@@ -217,14 +217,13 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 		createModel.SetSecurityGroups(userSGs)
 	}
 
-	reqBody := kubernetesengine.CreateK8sClusterNodePoolRequestModel{NodePool: *createModel}
+	reqBody := kubernetesengine.NewCreateNodePoolRequest(*createModel)
 
 	clusterResp, ok := r.pollClusterUtilAvailableStatus(ctx, plan.ClusterName.ValueString(), &resp.Diagnostics)
 	if !ok {
 		return
 	}
-	status := string(clusterResp.Status.Phase)
-	common.CheckResourceAvailableStatus(ctx, r, &status, []string{common.ClusterStatusProvisioned, common.ClusterStatusFailed}, &resp.Diagnostics)
+	common.CheckResourceAvailableStatus(ctx, r, new(string(clusterResp.Status.Phase)), NodePoolClusterAvailableStatuses, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -238,10 +237,10 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	_, httpRespCreate, errCreate := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
-		return r.kc.ApiClient.NodePoolsAPI.
+		return r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 			CreateNodePool(ctx, plan.ClusterName.ValueString()).
 			XAuthToken(r.kc.XAuthToken).
-			CreateK8sClusterNodePoolRequestModel(reqBody).
+			CreateNodePoolRequest(*reqBody).
 			Execute()
 	})
 	if errCreate != nil {
@@ -278,7 +277,7 @@ func (r *nodePoolResource) Create(ctx context.Context, req resource.CreateReques
 }
 
 func (r *nodePoolResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state NodePoolResourceModel
+	var state nodePoolResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -294,8 +293,8 @@ func (r *nodePoolResource) Read(ctx context.Context, req resource.ReadRequest, r
 	defer cancel()
 
 	detail, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*kubernetesengine.GetK8sClusterNodePoolResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.NodePoolsAPI.
+		func() (*kubernetesengine.GetNodePoolResponse, *http.Response, error) {
+			return r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 				GetNodePool(ctx, state.ClusterName.ValueString(), state.Name.ValueString()).
 				XAuthToken(r.kc.XAuthToken).Execute()
 		},
@@ -316,7 +315,7 @@ func (r *nodePoolResource) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	if state.RequestNodeCount.IsNull() {
-		if !result.Autoscaling.IsAutoscalerEnable {
+		if !result.Autoscaling.GetIsAutoscalerEnable() {
 			state.RequestNodeCount = types.Int32Value(result.NodeCount)
 		}
 	}
@@ -334,8 +333,8 @@ func (r *nodePoolResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 			for _, sgID := range sgIDs {
 				sgResp, httpResp, e := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-					func() (*network.BnsNetworkV1ApiGetSecurityGroupModelResponseSecurityGroupModel, *http.Response, error) {
-						return r.kc.ApiClient.SecurityGroupAPI.
+					func() (*network.GetSecurityGroupResponse, *http.Response, error) {
+						return r.kc.ApiClient.NetworkSecurityGroupAPI.
 							GetSecurityGroup(ctx, sgID).
 							XAuthToken(r.kc.XAuthToken).
 							Execute()
@@ -368,7 +367,7 @@ func (r *nodePoolResource) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state NodePoolResourceModel
+	var plan, state nodePoolResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -388,7 +387,7 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	var result *kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+	var result *kubernetesengine.NodePool
 	var ok bool
 
 	_, ok = r.checkNodePoolReadyAndGetResult(ctx, plan.ClusterName.ValueString(), plan.Name.ValueString(), &resp.Diagnostics)
@@ -401,8 +400,7 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		if !ok {
 			return
 		}
-		status := string(clusterResp.Status.Phase)
-		common.CheckResourceAvailableStatus(ctx, r, &status, []string{common.ClusterStatusProvisioned, common.ClusterStatusFailed}, &resp.Diagnostics)
+		common.CheckResourceAvailableStatus(ctx, r, new(string(clusterResp.Status.Phase)), NodePoolClusterAvailableStatuses, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -415,7 +413,7 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
-				return r.kc.ApiClient.NodePoolsAPI.UpgradeNodePool(ctx, plan.ClusterName.ValueString(), plan.Name.ValueString()).
+				return r.kc.ApiClient.KubernetesEngineNodePoolAPI.UpgradeNodePool(ctx, plan.ClusterName.ValueString(), plan.Name.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
 			},
@@ -440,14 +438,14 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 			userData = plan.UserData.ValueString()
 		}
 
-		script := kubernetesengine.NewNodePoolScriptRequestModel(userData)
-		usrBody := kubernetesengine.UpdateK8sClusterNodePoolUserScriptRequestModel{NodePool: *script}
+		script := kubernetesengine.NewSetNodePoolUserScript(userData)
+		usrBody := kubernetesengine.NewSetNodePoolUserScriptRequest(*script)
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
-			return r.kc.ApiClient.NodePoolsAPI.
+			return r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 				SetNodePoolUserScript(ctx, plan.ClusterName.ValueString(), plan.Name.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				UpdateK8sClusterNodePoolUserScriptRequestModel(usrBody).
+				SetNodePoolUserScriptRequest(*usrBody).
 				Execute()
 		})
 		if err != nil {
@@ -464,10 +462,10 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 	if !plan.Autoscaling.Equal(state.Autoscaling) {
 		needUpdateAutoscaling := false
 
-		var plAuto NodePoolAutoscalingModel
+		var plAuto nodePoolAutoscalingModel
 		if plan.Autoscaling.IsNull() || plan.Autoscaling.IsUnknown() {
 			if !state.Autoscaling.IsNull() && !state.Autoscaling.IsUnknown() {
-				var stAuto NodePoolAutoscalingModel
+				var stAuto nodePoolAutoscalingModel
 				_ = state.Autoscaling.As(ctx, &stAuto, basetypes.ObjectAsOptions{})
 				if stAuto.IsAutoscalerEnable.ValueBool() {
 					plAuto.IsAutoscalerEnable = types.BoolValue(false)
@@ -492,7 +490,7 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		}
 	}
 
-	upd := kubernetesengine.NewKubernetesEngineV1ApiUpdateNodePoolModelNodePoolRequestModel()
+	upd := kubernetesengine.NewUpdateNodePool()
 	needUpdate := false
 
 	if !plan.Description.IsNull() && !plan.Description.IsUnknown() && !plan.Description.Equal(state.Description) {
@@ -521,12 +519,12 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	if needUpdate {
-		reqBody := kubernetesengine.UpdateK8sClusterNodePoolRequestModel{NodePool: *upd}
+		reqBody := kubernetesengine.NewUpdateNodePoolRequest(*upd)
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
-			return r.kc.ApiClient.NodePoolsAPI.
+			return r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 				UpdateNodePool(ctx, plan.ClusterName.ValueString(), plan.Name.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				UpdateK8sClusterNodePoolRequestModel(reqBody).
+				UpdateNodePoolRequest(*reqBody).
 				Execute()
 		})
 		if err != nil {
@@ -552,8 +550,8 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		planLabels := map[string]string{}
 		stateLabels := map[string]string{}
 
-		var labels []kubernetesengine.LabelRequestModel
-		var pl []NodePoolLabelModel
+		var labels []kubernetesengine.LabelRequest
+		var pl []nodePoolLabelModel
 		if !plan.Labels.IsNull() {
 			if err := plan.Labels.ElementsAs(ctx, &pl, false); err != nil {
 				resp.Diagnostics.AddError(
@@ -564,7 +562,7 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 			}
 			for _, l := range pl {
 				planLabels[l.Key.ValueString()] = l.Value.ValueString()
-				labels = append(labels, kubernetesengine.LabelRequestModel{
+				labels = append(labels, kubernetesengine.LabelRequest{
 					Key:   l.Key.ValueString(),
 					Value: l.Value.ValueString(),
 				})
@@ -572,7 +570,7 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 		}
 
 		if !state.Labels.IsNull() {
-			var sl []NodePoolLabelModel
+			var sl []nodePoolLabelModel
 			if err := state.Labels.ElementsAs(ctx, &sl, false); err != nil {
 				resp.Diagnostics.AddError(
 					"Invalid State Labels",
@@ -592,17 +590,17 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 			}
 		}
 
-		labelsReq := kubernetesengine.NewNodeLabelsRequestModel()
+		labelsReq := kubernetesengine.NewSetNodePoolNodeLabel()
 		labelsReq.SetAddOrUpdateLabels(labels)
 		if len(removeKeys) > 0 {
 			labelsReq.SetRemoveLabelKeys(removeKeys)
 		}
-		body := kubernetesengine.NewUpdateK8sClusterNodePoolNodeLabelsRequestModel(*labelsReq)
+		body := kubernetesengine.NewSetNodePoolNodeLabelRequest(*labelsReq)
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics, func() (interface{}, *http.Response, error) {
-			return r.kc.ApiClient.NodePoolsAPI.
+			return r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 				SetNodePoolNodeLabel(ctx, plan.ClusterName.ValueString(), state.Name.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				UpdateK8sClusterNodePoolNodeLabelsRequestModel(*body).
+				SetNodePoolNodeLabelRequest(*body).
 				Execute()
 		})
 		if err != nil {
@@ -631,7 +629,7 @@ func (r *nodePoolResource) Update(ctx context.Context, req resource.UpdateReques
 }
 
 func (r *nodePoolResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state NodePoolResourceModel
+	var state nodePoolResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -647,14 +645,17 @@ func (r *nodePoolResource) Delete(ctx context.Context, req resource.DeleteReques
 	defer cancel()
 
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*kubernetesengine.GetK8sClusterNodePoolResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.NodePoolsAPI.
+		func() (*kubernetesengine.GetNodePoolResponse, *http.Response, error) {
+			return r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 				GetNodePool(ctx, state.ClusterName.ValueString(), state.Name.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 		},
 	)
 	if err != nil {
+		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+			return
+		}
 		common.AddApiActionError(ctx, r, httpResp, "GetNodePool", err, &resp.Diagnostics)
 		return
 	}
@@ -680,7 +681,7 @@ func (r *nodePoolResource) Delete(ctx context.Context, req resource.DeleteReques
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
-				httpResp, err := r.kc.ApiClient.NodePoolsAPI.DeleteNodePool(ctx, state.ClusterName.ValueString(), state.Name.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
+				httpResp, err := r.kc.ApiClient.KubernetesEngineNodePoolAPI.DeleteNodePool(ctx, state.ClusterName.ValueString(), state.Name.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
 				return nil, httpResp, err
 			},
 		)
@@ -696,7 +697,7 @@ func (r *nodePoolResource) Delete(ctx context.Context, req resource.DeleteReques
 	common.PollUntilDeletion(ctx, r, 10*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
-				_, hr, err := r.kc.ApiClient.NodePoolsAPI.
+				_, hr, err := r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 					GetNodePool(ctx, state.ClusterName.ValueString(), state.Name.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
@@ -715,7 +716,7 @@ func (r *nodePoolResource) ValidateConfig(
 	req resource.ValidateConfigRequest,
 	resp *resource.ValidateConfigResponse,
 ) {
-	var config NodePoolResourceModel
+	var config nodePoolResourceModel
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -727,7 +728,7 @@ func (r *nodePoolResource) ValidateConfig(
 	}
 
 	if !config.Autoscaling.IsNull() {
-		var cfAuto NodePoolAutoscalingModel
+		var cfAuto nodePoolAutoscalingModel
 		diags = config.Autoscaling.As(ctx, &cfAuto, basetypes.ObjectAsOptions{})
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
@@ -764,7 +765,7 @@ func (r *nodePoolResource) waitNodePoolSecurityGroupsContains(
 	nodePoolName string,
 	required []string,
 	diagnostics *diag.Diagnostics,
-) (*kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel, bool) {
+) (*kubernetesengine.NodePool, bool) {
 	if len(required) == 0 {
 		return nil, true
 	}
@@ -777,22 +778,22 @@ func (r *nodePoolResource) waitNodePoolSecurityGroupsContains(
 		nodePoolName,
 		[]string{"ok"},
 		diagnostics,
-		func(ctx context.Context) (*kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel, *http.Response, error) {
+		func(ctx context.Context) (*kubernetesengine.NodePool, *http.Response, error) {
 			model, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diagnostics,
 				func() (struct {
-					NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+					NodePool kubernetesengine.NodePool
 				}, *http.Response, error) {
-					apiResp, hr, err := r.kc.ApiClient.NodePoolsAPI.
+					apiResp, hr, err := r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 						GetNodePool(ctx, clusterName, nodePoolName).
 						XAuthToken(r.kc.XAuthToken).
 						Execute()
 					if err != nil {
 						return struct {
-							NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+							NodePool kubernetesengine.NodePool
 						}{}, hr, err
 					}
 					return struct {
-						NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+						NodePool kubernetesengine.NodePool
 					}{NodePool: apiResp.NodePool}, hr, nil
 				},
 			)
@@ -801,7 +802,7 @@ func (r *nodePoolResource) waitNodePoolSecurityGroupsContains(
 			}
 			return &model.NodePool, httpResp, nil
 		},
-		func(v *kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel) string {
+		func(v *kubernetesengine.NodePool) string {
 			present := map[string]struct{}{}
 			for _, id := range v.SecurityGroups {
 				present[id] = struct{}{}
@@ -821,7 +822,7 @@ func (r *nodePoolResource) checkNodePoolReadyAndGetResult(
 	ctx context.Context,
 	clusterName, nodePoolName string,
 	diags *diag.Diagnostics,
-) (*kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel, bool) {
+) (*kubernetesengine.NodePool, bool) {
 	result, ok := waitNodePool(
 		ctx,
 		r.kc,
@@ -834,10 +835,8 @@ func (r *nodePoolResource) checkNodePoolReadyAndGetResult(
 	if !ok || diags.HasError() {
 		return nil, false
 	}
-	status := string(result.Status.Phase)
-	common.CheckResourceAvailableStatus(ctx, r, &status,
-		[]string{string(kubernetesengine.NODEPOOLSTATUS_RUNNING),
-			string(kubernetesengine.NODEPOOLSTATUS_RUNNING__SCHEDULING_DISABLE)},
+	common.CheckResourceAvailableStatus(ctx, r, new(string(result.Status.Phase)),
+		NodePoolStatuesReady,
 		diags)
 	if diags.HasError() {
 		return nil, false
@@ -849,10 +848,10 @@ func (r *nodePoolResource) getInstanceTypeFromFlavor(
 	ctx context.Context,
 	flavorId string,
 	respDiags *diag.Diagnostics,
-) (*bcs.InstanceType, bool) {
+) (*string, bool) {
 	flavorResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*bcs.ResponseFlavorModel, *http.Response, error) {
-			return r.kc.ApiClient.FlavorAPI.GetInstanceType(ctx, flavorId).XAuthToken(r.kc.XAuthToken).Execute()
+		func() (*bcs.GetInstanceTypeResponse, *http.Response, error) {
+			return r.kc.ApiClient.InstanceAPI.GetInstanceType(ctx, flavorId).XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
 	if err != nil {
@@ -864,12 +863,12 @@ func (r *nodePoolResource) getInstanceTypeFromFlavor(
 
 func (r *nodePoolResource) updateAutoScaling(
 	ctx context.Context,
-	plan *NodePoolResourceModel,
-	autoscalingPlan NodePoolAutoscalingModel,
+	plan *nodePoolResourceModel,
+	autoscalingPlan nodePoolAutoscalingModel,
 	diags *diag.Diagnostics,
-) *kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel {
+) *kubernetesengine.NodePool {
 	autoscalingEnabled := autoscalingPlan.IsAutoscalerEnable.ValueBool()
-	scaling := kubernetesengine.NewNodePoolScalingResourceRequestModel(autoscalingEnabled)
+	scaling := kubernetesengine.NewSetNodePoolResourceBasedAutoScaling(autoscalingEnabled)
 
 	if autoscalingEnabled {
 		scaling.SetAutoscalerDesiredNodeCount(autoscalingPlan.AutoscalerDesiredNodeCount.ValueInt32())
@@ -880,12 +879,12 @@ func (r *nodePoolResource) updateAutoScaling(
 		scaling.SetAutoscalerScaleDownUnreadyTime(autoscalingPlan.AutoscalerScaleDownUnreadyTime.ValueInt32())
 	}
 
-	updBody := kubernetesengine.NewUpdateKubernetesEngineClusterNodePoolScalingResourceRequestModel(*scaling)
+	updBody := kubernetesengine.NewSetNodePoolResourceBasedAutoScalingRequest(*scaling)
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags, func() (interface{}, *http.Response, error) {
-		return r.kc.ApiClient.ScalingAPI.
+		return r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 			SetNodePoolResourceBasedAutoScaling(ctx, plan.ClusterName.ValueString(), plan.Name.ValueString()).
 			XAuthToken(r.kc.XAuthToken).
-			UpdateKubernetesEngineClusterNodePoolScalingResourceRequestModel(*updBody).
+			SetNodePoolResourceBasedAutoScalingRequest(*updBody).
 			Execute()
 	})
 	if err != nil {

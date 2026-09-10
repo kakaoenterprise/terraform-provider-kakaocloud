@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 var (
@@ -59,10 +59,6 @@ func (r *routeTableResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	mutex := common.LockForID(plan.VpcId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -73,24 +69,33 @@ func (r *routeTableResource) Create(ctx context.Context, req resource.CreateRequ
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	ok := checkVpcStatus(ctx, r, r.kc, plan.VpcId.ValueString(), &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, plan.VpcId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	ok = pollVpcStatus(ctx, r, r.kc, plan.VpcId.ValueString(), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	createReq := vpc.CreateRouteTableModel{
+	createReq := vpc.CreateRouteTable{
 		Name:  plan.Name.ValueString(),
 		VpcId: plan.VpcId.ValueString(),
 	}
+	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
+		createReq.SetDescription(plan.Description.ValueString())
+	}
 
-	body := vpc.BodyCreateRouteTable{
+	body := vpc.CreateRouteTableRequest{
 		VpcRouteTable: createReq,
 	}
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*vpc.BnsVpcV1ApiCreateRouteTableModelResponseRouteTableModel, *http.Response, error) {
+		func() (*vpc.CreateRouteTableResponse, *http.Response, error) {
 			return r.kc.ApiClient.VPCRouteTableAPI.CreateRouteTable(ctx).
-				XAuthToken(r.kc.XAuthToken).BodyCreateRouteTable(body).Execute()
+				XAuthToken(r.kc.XAuthToken).CreateRouteTableRequest(body).Execute()
 		},
 	)
 	if err != nil {
@@ -131,26 +136,35 @@ func (r *routeTableResource) Create(ctx context.Context, req resource.CreateRequ
 	if !plan.RequestRoutes.IsNull() {
 		planList, planDiags := r.convertListToRouteTableRequestRouteModel(ctx, plan.RequestRoutes)
 		resp.Diagnostics.Append(planDiags...)
+		if resp.Diagnostics.HasError() {
+			r.rollbackCreatedRouteTable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
+			return
+		}
 
-		if !resp.Diagnostics.HasError() {
-			for i := range planList {
-				tmpPlan := planList[i]
-				r.addRoute(ctx, plan.Id.ValueString(), plan.VpcId.ValueString(), &tmpPlan, &resp.Diagnostics)
-				planList[i] = tmpPlan
-			}
-			elemType := types.ObjectType{AttrTypes: routeTableRequestRouteAttrType}
-			plan.RequestRoutes, diags = types.ListValueFrom(ctx, elemType, planList)
-			resp.Diagnostics.Append(diags...)
-
-			result, ok = r.pollRouteTableUntilStatus(
-				ctx,
-				plan.Id.ValueString(),
-				[]string{common.VpcProvisioningStatusActive},
-				&resp.Diagnostics,
-			)
-			if !ok || resp.Diagnostics.HasError() {
+		for i := range planList {
+			if ok := r.addRoute(ctx, plan.Id.ValueString(), plan.VpcId.ValueString(), &planList[i], &resp.Diagnostics); !ok || resp.Diagnostics.HasError() {
+				r.rollbackCreatedRouteTable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
 				return
 			}
+		}
+
+		elemType := types.ObjectType{AttrTypes: routeTableRequestRouteAttrType}
+		plan.RequestRoutes, diags = types.ListValueFrom(ctx, elemType, planList)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			r.rollbackCreatedRouteTable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
+			return
+		}
+
+		result, ok = r.pollRouteTableUntilStatus(
+			ctx,
+			plan.Id.ValueString(),
+			[]string{common.VpcProvisioningStatusActive},
+			&resp.Diagnostics,
+		)
+		if !ok || resp.Diagnostics.HasError() {
+			r.rollbackCreatedRouteTable(ctx, plan.Id.ValueString(), &resp.Diagnostics)
+			return
 		}
 	}
 
@@ -185,7 +199,7 @@ func (r *routeTableResource) Read(ctx context.Context, req resource.ReadRequest,
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*vpc.BnsVpcV1ApiGetRouteTableModelResponseRouteTableModel, *http.Response, error) {
+		func() (*vpc.GetRouteTableResponse, *http.Response, error) {
 			return r.kc.ApiClient.VPCRouteTableAPI.GetRouteTable(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).Execute()
 		},
@@ -227,10 +241,6 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	mutex := common.LockForID(plan.VpcId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -241,9 +251,62 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	ok := checkVpcStatus(ctx, r, r.kc, plan.VpcId.ValueString(), &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, plan.VpcId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	ok = pollVpcStatus(ctx, r, r.kc, plan.VpcId.ValueString(), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
+	}
+
+	nameChanged := !plan.Name.Equal(state.Name)
+	descriptionChanged := false
+	planDescription := ""
+	if !plan.Description.IsUnknown() {
+		planDescription = routeTableDescriptionValue(plan.Description)
+		stateDescription := routeTableDescriptionValue(state.Description)
+		descriptionChanged = planDescription != stateDescription
+	}
+
+	var updatedRouteTable *vpc.UpdatedRouteTable
+	if nameChanged || descriptionChanged {
+		editReq := vpc.UpdateRouteTable{}
+
+		if nameChanged {
+			editReq.SetName(plan.Name.ValueString())
+		}
+		if descriptionChanged {
+			editReq.SetDescription(planDescription)
+		}
+
+		body := *vpc.NewUpdateRouteTableRequest(editReq)
+
+		respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+			func() (*vpc.UpdateRouteTableResponse, *http.Response, error) {
+				return r.kc.ApiClient.VPCRouteTableAPI.UpdateRouteTable(ctx, plan.Id.ValueString()).
+					XAuthToken(r.kc.XAuthToken).
+					UpdateRouteTableRequest(body).
+					Execute()
+			},
+		)
+		if err != nil {
+			common.AddApiActionError(ctx, r, httpResp, "UpdateRouteTable", err, &resp.Diagnostics)
+			return
+		}
+		updatedRouteTable = &respModel.VpcRouteTable
+
+		_, ok := r.pollRouteTableUntilStatus(
+			ctx,
+			plan.Id.ValueString(),
+			[]string{common.VpcProvisioningStatusActive},
+			&resp.Diagnostics,
+		)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	if !plan.IsMain.IsNull() && !plan.IsMain.IsUnknown() {
@@ -283,6 +346,8 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 		if resp.Diagnostics.HasError() {
 			return
 		}
+
+		time.Sleep(3 * time.Second)
 	}
 
 	result, ok := r.pollRouteTableUntilStatus(
@@ -291,17 +356,20 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 		[]string{common.VpcProvisioningStatusActive},
 		&resp.Diagnostics,
 	)
-
-	if !plan.IsMain.IsNull() && !plan.IsMain.IsUnknown() {
-		isMain := plan.IsMain.ValueBool()
-		result.IsMain.Set(&isMain)
-	}
 	if !ok || resp.Diagnostics.HasError() {
 		return
+	}
+
+	if !plan.IsMain.IsNull() && !plan.IsMain.IsUnknown() {
+		result.IsMain.Set(new(plan.IsMain.ValueBool()))
 	}
 	ok = r.mapRouteTableResourceModel(ctx, &plan, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
+	}
+	if updatedRouteTable != nil {
+		plan.Name = types.StringValue(updatedRouteTable.Name)
+		plan.Description = types.StringValue(updatedRouteTable.Description)
 	}
 
 	diags = resp.State.Set(ctx, &plan)
@@ -319,10 +387,6 @@ func (r *routeTableResource) Delete(ctx context.Context, req resource.DeleteRequ
 		return
 	}
 
-	mutex := common.LockForID(state.VpcId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -333,53 +397,104 @@ func (r *routeTableResource) Delete(ctx context.Context, req resource.DeleteRequ
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	ok := checkVpcStatus(ctx, r, r.kc, state.VpcId.ValueString(), &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, state.VpcId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	ok = pollVpcStatus(ctx, r, r.kc, state.VpcId.ValueString(), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	var (
-		err       error
-		httpResp  *http.Response
+	r.deleteRouteTableAndWait(ctx, state.Id.ValueString(), &resp.Diagnostics)
+}
+
+func (r *routeTableResource) rollbackCreatedRouteTable(ctx context.Context, routeTableID string, respDiags *diag.Diagnostics) {
+	if routeTableID == "" {
+		return
+	}
+
+	const rollbackTimeout = 5 * time.Minute
+	rollbackCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), rollbackTimeout)
+	defer cancel()
+
+	var rollbackDiags diag.Diagnostics
+	if r.deleteRouteTableAndWait(rollbackCtx, routeTableID, &rollbackDiags) {
+		respDiags.AddWarning(
+			"Rolled back route table creation",
+			fmt.Sprintf("Route table %q was created, but adding its routes failed. The provider deleted it to avoid leaving an unmanaged resource.", routeTableID),
+		)
+		return
+	}
+
+	for _, rollbackDiag := range rollbackDiags.Errors() {
+		respDiags.AddError(
+			"Route table rollback failed",
+			fmt.Sprintf(
+				"Route table %q was created, but adding its routes failed and the provider could not confirm its deletion: %s Delete the route table manually or import it into Terraform.",
+				routeTableID,
+				rollbackDiag.Detail(),
+			),
+		)
+	}
+}
+
+func (r *routeTableResource) deleteRouteTableAndWait(ctx context.Context, routeTableID string, respDiags *diag.Diagnostics) bool {
+	const (
 		maxRetry  = 3
 		retryWait = 2 * time.Second
 	)
 
-	for i := 0; i < maxRetry; i++ {
-		_, httpResp, err = common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+	var (
+		err      error
+		httpResp *http.Response
+	)
+
+	for attempt := 0; attempt < maxRetry; attempt++ {
+		_, httpResp, err = common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
 			func() (interface{}, *http.Response, error) {
-				httpResp, err := r.kc.ApiClient.VPCRouteTableAPI.DeleteRouteTable(ctx, state.Id.ValueString()).
+				httpResp, err := r.kc.ApiClient.VPCRouteTableAPI.DeleteRouteTable(ctx, routeTableID).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
 				return nil, httpResp, err
 			},
 		)
-
-		if err == nil || (httpResp != nil && httpResp.StatusCode != http.StatusBadRequest) {
+		if err == nil {
 			break
 		}
-		time.Sleep(retryWait)
-	}
-	if err != nil {
 		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
-			return
+			return true
 		}
-		common.AddApiActionError(ctx, r, httpResp, "DeleteRouteTable", err, &resp.Diagnostics)
-		return
+		if httpResp == nil || httpResp.StatusCode != http.StatusBadRequest || attempt == maxRetry-1 {
+			common.AddApiActionError(ctx, r, httpResp, "DeleteRouteTable", err, respDiags)
+			return false
+		}
+
+		timer := time.NewTimer(retryWait)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			respDiags.AddError("Route table deletion interrupted", fmt.Sprintf("Could not delete route table %q: %v", routeTableID, ctx.Err()))
+			return false
+		case <-timer.C:
+		}
 	}
 
-	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
-		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*vpc.BnsVpcV1ApiGetRouteTableModelResponseRouteTableModel, *http.Response, error) {
-				_, httpResp, err := r.kc.ApiClient.VPCRouteTableAPI.
-					GetRouteTable(ctx, state.Id.ValueString()).
+	common.PollUntilDeletion(ctx, r, 2*time.Second, respDiags, func(ctx context.Context) (bool, *http.Response, error) {
+		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+			func() (*vpc.GetRouteTableResponse, *http.Response, error) {
+				return r.kc.ApiClient.VPCRouteTableAPI.
+					GetRouteTable(ctx, routeTableID).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
-				return nil, httpResp, err
 			},
 		)
 		return false, httpResp, err
 	})
+
+	return !respDiags.HasError()
 }
 
 func (r *routeTableResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -423,10 +538,10 @@ func (r *routeTableResource) setMainRouteTable(ctx context.Context, routeTableId
 func (r *routeTableResource) mapRouteTableResourceModel(
 	ctx context.Context,
 	model *routeTableResourceModel,
-	result *vpc.BnsVpcV1ApiGetRouteTableModelRouteTableModel,
+	result *vpc.VpcRouteTable,
 	diags *diag.Diagnostics,
 ) bool {
-	ok := mapRouteTableBaseModel(ctx, &model.routeTableBaseModel, result, diags)
+	ok := mapRouteTableModel(ctx, &model.routeTableBaseModel, result, diags)
 	if !ok || diags.HasError() {
 		return false
 	}
@@ -491,6 +606,13 @@ func (r *routeTableResource) mapRouteTableResourceModel(
 	return true
 }
 
+func routeTableDescriptionValue(value types.String) string {
+	if value.IsNull() {
+		return ""
+	}
+	return value.ValueString()
+}
+
 func (r *routeTableResource) convertListToRouteTableRequestRouteModel(
 	ctx context.Context,
 	list types.List,
@@ -514,7 +636,7 @@ func (r *routeTableResource) pollRouteTableUntilStatus(
 	routeTableId string,
 	targetStatuses []string,
 	resp *diag.Diagnostics,
-) (*vpc.BnsVpcV1ApiGetRouteTableModelRouteTableModel, bool) {
+) (*vpc.VpcRouteTable, bool) {
 	return common.PollUntilResult(
 		ctx,
 		r,
@@ -523,9 +645,9 @@ func (r *routeTableResource) pollRouteTableUntilStatus(
 		routeTableId,
 		targetStatuses,
 		resp,
-		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetRouteTableModelRouteTableModel, *http.Response, error) {
+		func(ctx context.Context) (*vpc.VpcRouteTable, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
-				func() (*vpc.BnsVpcV1ApiGetRouteTableModelResponseRouteTableModel, *http.Response, error) {
+				func() (*vpc.GetRouteTableResponse, *http.Response, error) {
 					return r.kc.ApiClient.VPCRouteTableAPI.
 						GetRouteTable(ctx, routeTableId).
 						XAuthToken(r.kc.XAuthToken).
@@ -537,7 +659,7 @@ func (r *routeTableResource) pollRouteTableUntilStatus(
 			}
 			return &respModel.VpcRouteTable, httpResp, nil
 		},
-		func(v *vpc.BnsVpcV1ApiGetRouteTableModelRouteTableModel) string {
+		func(v *vpc.VpcRouteTable) string {
 			return string(*v.ProvisioningStatus.Get())
 		},
 	)

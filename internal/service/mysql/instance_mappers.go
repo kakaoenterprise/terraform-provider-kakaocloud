@@ -9,12 +9,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 func toInstanceModel(
 	ctx context.Context,
-	item mysqlsdk.InstanceResponseModel,
+	item mysqlsdk.Instance,
 	respDiags *diag.Diagnostics,
 ) (instanceModel, bool) {
 	specContent, ok := instanceSpecContentValue(ctx, item.SpecContent, respDiags)
@@ -48,7 +48,7 @@ func toInstanceModel(
 
 func instanceSpecContentValue(
 	ctx context.Context,
-	src mysqlsdk.MysqlV1ApiListMysqlInstancesModelSpecContentResponseModel,
+	src mysqlsdk.ListMysqlInstancesSpecContent,
 	respDiags *diag.Diagnostics,
 ) (types.Object, bool) {
 	networkPorts, ok := instanceNetworkPortsValue(ctx, src.NetworkPorts, respDiags)
@@ -72,8 +72,8 @@ func instanceSpecContentValue(
 	return specContent, true
 }
 
-func instanceNetworkPortsValue(ctx context.Context, src []mysqlsdk.NetworkPortResponseModel, respDiags *diag.Diagnostics) (types.List, bool) {
-	networkPorts, diags := utils.ConvertListFromModel(ctx, src, networkPortAttrTypes, func(port mysqlsdk.NetworkPortResponseModel) any {
+func instanceNetworkPortsValue(ctx context.Context, src []mysqlsdk.NetworkPort, respDiags *diag.Diagnostics) (types.List, bool) {
+	networkPorts, diags := utils.ConvertListFromModel(ctx, src, networkPortAttrTypes, func(port mysqlsdk.NetworkPort) any {
 		securityGroupIds, portDiags := utils.SetFromStrings(ctx, port.SecurityGroupIds)
 		respDiags.Append(portDiags...)
 
@@ -90,7 +90,7 @@ func instanceNetworkPortsValue(ctx context.Context, src []mysqlsdk.NetworkPortRe
 	return networkPorts, true
 }
 
-func instanceStatusContentValue(ctx context.Context, src mysqlsdk.StatusContentResponseModel, respDiags *diag.Diagnostics) (types.Object, bool) {
+func instanceStatusContentValue(ctx context.Context, src mysqlsdk.StatusContent, respDiags *diag.Diagnostics) (types.Object, bool) {
 	needsRestartReason, diags := utils.ListFromStrings(ctx, src.NeedsRestartReason)
 	respDiags.Append(diags...)
 	if respDiags.HasError() {

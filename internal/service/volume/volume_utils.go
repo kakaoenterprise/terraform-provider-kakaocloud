@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/volume"
 )
 
 var (
@@ -42,7 +42,7 @@ func CheckVolumeStatus(
 	volumeId string,
 	targetStatuses []string,
 	diags *diag.Diagnostics,
-) (*volume.BcsVolumeV1ApiGetVolumeModelVolumeModel, bool) {
+) (*volume.Volume, bool) {
 	result, ok := common.PollUntilResult(
 		ctx,
 		r,
@@ -58,9 +58,9 @@ func CheckVolumeStatus(
 			common.VolumeStatusReserved,
 		},
 		diags,
-		func(ctx context.Context) (*volume.BcsVolumeV1ApiGetVolumeModelVolumeModel, *http.Response, error) {
+		func(ctx context.Context) (*volume.Volume, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, kc, diags,
-				func() (*volume.BcsVolumeV1ApiGetVolumeModelResponseVolumeModel, *http.Response, error) {
+				func() (*volume.GetVolumeResponse, *http.Response, error) {
 					return kc.ApiClient.VolumeAPI.
 						GetVolume(ctx, volumeId).
 						XAuthToken(kc.XAuthToken).
@@ -72,7 +72,7 @@ func CheckVolumeStatus(
 			}
 			return &respModel.Volume, httpResp, nil
 		},
-		func(v *volume.BcsVolumeV1ApiGetVolumeModelVolumeModel) string {
+		func(v *volume.Volume) string {
 			return *v.Status.Get()
 		},
 	)
@@ -101,7 +101,7 @@ func CheckVolumeSnapshotStatus(
 	volumeSnapshotId string,
 	allowError bool,
 	diags *diag.Diagnostics,
-) (*volume.BcsVolumeV1ApiGetSnapshotModelVolumeSnapshotModel, bool) {
+) (*volume.Snapshot, bool) {
 	snapshotResult, ok := common.PollUntilResult(
 		ctx,
 		r,
@@ -110,9 +110,9 @@ func CheckVolumeSnapshotStatus(
 		volumeSnapshotId,
 		[]string{common.VolumeSnapshotStatusAvailable, common.VolumeSnapshotStatusError, common.VolumeSnapshotStatusDeleting},
 		diags,
-		func(ctx context.Context) (*volume.BcsVolumeV1ApiGetSnapshotModelVolumeSnapshotModel, *http.Response, error) {
+		func(ctx context.Context) (*volume.Snapshot, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, kc, diags,
-				func() (*volume.BcsVolumeV1ApiGetSnapshotModelResponseVolumeSnapshotModel, *http.Response, error) {
+				func() (*volume.GetSnapshotResponse, *http.Response, error) {
 					return kc.ApiClient.VolumeSnapshotAPI.GetSnapshot(ctx, volumeSnapshotId).
 						XAuthToken(kc.XAuthToken).Execute()
 				},
@@ -122,7 +122,7 @@ func CheckVolumeSnapshotStatus(
 			}
 			return &respModel.Snapshot, httpResp, nil
 		},
-		func(v *volume.BcsVolumeV1ApiGetSnapshotModelVolumeSnapshotModel) string {
+		func(v *volume.Snapshot) string {
 			return *v.Status.Get()
 		},
 	)

@@ -9,10 +9,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
-func toBackupModelFromList(ctx context.Context, src mysqlsdk.MysqlV1ApiListMysqlBackupsModelMySQLBackupResponseModel, respDiags *diag.Diagnostics) (backupModel, bool) {
+func toBackupModelFromList(ctx context.Context, src mysqlsdk.MySQLBackup, respDiags *diag.Diagnostics) (backupModel, bool) {
 	extraInfo, ok := backupExtraInfoFromListValue(ctx, src.ExtraInfo, respDiags)
 	if !ok {
 		return backupModel{}, false
@@ -40,7 +40,7 @@ func toBackupModelFromList(ctx context.Context, src mysqlsdk.MysqlV1ApiListMysql
 	}, true
 }
 
-func toBackupModelFromGet(ctx context.Context, src mysqlsdk.MysqlV1ApiGetMysqlBackupModelMySQLBackupResponseModel, respDiags *diag.Diagnostics) (backupModel, bool) {
+func toBackupModelFromGet(ctx context.Context, src mysqlsdk.MySQLBackup, respDiags *diag.Diagnostics) (backupModel, bool) {
 	extraInfo, ok := backupExtraInfoFromGetValue(ctx, src.ExtraInfo, respDiags)
 	if !ok {
 		return backupModel{}, false
@@ -68,8 +68,8 @@ func toBackupModelFromGet(ctx context.Context, src mysqlsdk.MysqlV1ApiGetMysqlBa
 	}, true
 }
 
-func backupExtraInfoFromListValue(ctx context.Context, src mysqlsdk.NullableMysqlV1ApiListMysqlBackupsModelExtraInfoResponseModel, respDiags *diag.Diagnostics) (types.Object, bool) {
-	extraInfo, diags := utils.ConvertObjectFromModel(ctx, src, backupExtraInfoAttrTypes, func(info mysqlsdk.MysqlV1ApiListMysqlBackupsModelExtraInfoResponseModel) any {
+func backupExtraInfoFromListValue(ctx context.Context, src mysqlsdk.NullableExtraInfo, respDiags *diag.Diagnostics) (types.Object, bool) {
+	extraInfo, diags := utils.ConvertObjectFromModel(ctx, src, backupExtraInfoAttrTypes, func(info mysqlsdk.ExtraInfo) any {
 		return backupExtraInfoModel{
 			UseCaseSensitiveTableNames: utils.ConvertNullableBool(info.UseCaseSensitiveTableNames),
 		}
@@ -83,10 +83,10 @@ func backupExtraInfoFromListValue(ctx context.Context, src mysqlsdk.NullableMysq
 
 func backupExtraInfoFromGetValue(
 	ctx context.Context,
-	src mysqlsdk.NullableMysqlV1ApiGetMysqlBackupModelExtraInfoResponseModel,
+	src mysqlsdk.NullableExtraInfo,
 	respDiags *diag.Diagnostics,
 ) (types.Object, bool) {
-	extraInfo, diags := utils.ConvertObjectFromModel(ctx, src, backupExtraInfoAttrTypes, func(info mysqlsdk.MysqlV1ApiGetMysqlBackupModelExtraInfoResponseModel) any {
+	extraInfo, diags := utils.ConvertObjectFromModel(ctx, src, backupExtraInfoAttrTypes, func(info mysqlsdk.ExtraInfo) any {
 		return backupExtraInfoModel{
 			UseCaseSensitiveTableNames: utils.ConvertNullableBool(info.UseCaseSensitiveTableNames),
 		}

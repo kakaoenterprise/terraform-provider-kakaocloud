@@ -13,8 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/bcs"
 )
 
 var (
@@ -87,7 +86,7 @@ func (d *instanceFlavorsDataSource) Read(ctx context.Context, req datasource.Rea
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	flavorApi := d.kc.ApiClient.FlavorAPI.ListInstanceTypes(ctx)
+	flavorApi := d.kc.ApiClient.InstanceAPI.ListInstanceTypes(ctx)
 
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
@@ -125,8 +124,8 @@ func (d *instanceFlavorsDataSource) Read(ctx context.Context, req datasource.Rea
 					resp.Diagnostics.AddError("Invalid memory_mb value", fmt.Sprintf("expected integer but got %q (error: %s)", v, err))
 				}
 			case "instance_type":
-				if instanceType, err := ToInstanceType(v); err == nil {
-					flavorApi = flavorApi.InstanceType(*instanceType)
+				if _, err := ToInstanceType(v); err == nil {
+					flavorApi = flavorApi.InstanceType(v)
 				} else {
 					resp.Diagnostics.AddError("Invalid instance_type", err.Error())
 				}
@@ -165,7 +164,7 @@ func (d *instanceFlavorsDataSource) Read(ctx context.Context, req datasource.Rea
 	}
 
 	flavorResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*bcs.FlavorListModel, *http.Response, error) {
+		func() (*bcs.ListInstanceTypesResponse, *http.Response, error) {
 			return flavorApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -174,15 +173,8 @@ func (d *instanceFlavorsDataSource) Read(ctx context.Context, req datasource.Rea
 		return
 	}
 
-	var instanceFlavorResult []bcs.BcsInstanceV1ApiGetInstanceTypeModelFlavorModel
-	err = copier.Copy(&instanceFlavorResult, &flavorResp.Flavors)
-	if err != nil {
-		common.AddGeneralError(ctx, d, &resp.Diagnostics,
-			fmt.Sprintf("Failed to convert instanceFlavorResult: %v", err))
-		return
-	}
-
-	for _, v := range instanceFlavorResult {
+	config.InstanceFlavors = make([]instanceFlavorBaseModel, 0, len(flavorResp.Flavors))
+	for _, v := range flavorResp.Flavors {
 		var tmpFlavor instanceFlavorBaseModel
 		ok := mapInstanceFlavorBaseModel(ctx, &tmpFlavor, &v, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {

@@ -61,6 +61,9 @@ func getNetworkInterfaceResourceSchema() map[string]rschema.Attribute {
 			Optional:   true,
 			Computed:   true,
 			Validators: common.DescriptionValidator(),
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"project_id": rschema.StringAttribute{
 			Computed: true,

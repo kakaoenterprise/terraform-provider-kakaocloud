@@ -3,6 +3,8 @@
 package bcs
 
 import (
+	"terraform-provider-kakaocloud/internal/common"
+
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -26,7 +28,8 @@ var keypairResourceSchemaAttributes = map[string]rschema.Attribute{
 		},
 	},
 	"name": rschema.StringAttribute{
-		Required: true,
+		Required:   true,
+		Validators: common.NameValidator(250),
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.RequiresReplace(),
 		},
@@ -47,6 +50,9 @@ var keypairResourceSchemaAttributes = map[string]rschema.Attribute{
 	},
 	"fingerprint": rschema.StringAttribute{
 		Computed: true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	},
 	"user_id": rschema.StringAttribute{
 		Computed: true,
@@ -56,6 +62,9 @@ var keypairResourceSchemaAttributes = map[string]rschema.Attribute{
 	},
 	"type": rschema.StringAttribute{
 		Computed: true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
 	},
 	"created_at": rschema.StringAttribute{
 		Computed: true,

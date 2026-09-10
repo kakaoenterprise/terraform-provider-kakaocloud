@@ -9,7 +9,7 @@ import (
 	"terraform-provider-kakaocloud/internal/common"
 
 	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -76,15 +76,15 @@ func (d *loadBalancerSecretsDataSource) Schema(ctx context.Context, _ datasource
 }
 
 func (d *loadBalancerSecretsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data loadBalancerSecretsDataSourceModel
+	var config loadBalancerSecretsDataSourceModel
 
-	diags := req.Config.Get(ctx, &data)
+	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	timeout, diags := data.Timeouts.Read(ctx, common.DefaultReadTimeout)
+	timeout, diags := config.Timeouts.Read(ctx, common.DefaultReadTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -93,9 +93,9 @@ func (d *loadBalancerSecretsDataSource) Read(ctx context.Context, req datasource
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	lbsApi := d.kc.ApiClient.LoadBalancerEtcAPI.ListTlsCertificates(ctx)
+	lbsApi := d.kc.ApiClient.LoadBalancerAPI.ListTlsCertificates(ctx)
 
-	for _, f := range data.Filter {
+	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
 			continue
 		}
@@ -109,9 +109,23 @@ func (d *loadBalancerSecretsDataSource) Read(ctx context.Context, req datasource
 			case "name":
 				lbsApi = lbsApi.Name(v)
 			case "created_at":
-				lbsApi = lbsApi.CreatedAt(v)
+				if err := common.ValidateRFC3339(v); err == nil {
+					lbsApi = lbsApi.CreatedAt(v)
+				} else {
+					resp.Diagnostics.AddError(
+						"Invalid created_at value",
+						err.Error(),
+					)
+				}
 			case "updated_at":
-				lbsApi = lbsApi.UpdatedAt(v)
+				if err := common.ValidateRFC3339(v); err == nil {
+					lbsApi = lbsApi.UpdatedAt(v)
+				} else {
+					resp.Diagnostics.AddError(
+						"Invalid updated_at value",
+						err.Error(),
+					)
+				}
 			case "expiration":
 				lbsApi = lbsApi.Expiration(v)
 			default:
@@ -128,7 +142,7 @@ func (d *loadBalancerSecretsDataSource) Read(ctx context.Context, req datasource
 	}
 
 	lbsResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*loadbalancer.SecretListModel, *http.Response, error) {
+		func() (*loadbalancer.ListTlsCertificatesResponse, *http.Response, error) {
 			return lbsApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -138,7 +152,7 @@ func (d *loadBalancerSecretsDataSource) Read(ctx context.Context, req datasource
 		return
 	}
 
-	var lbssResult []loadbalancer.BnsLoadBalancerV1ApiListTlsCertificatesModelSecretModel
+	var lbssResult []loadbalancer.ListTlsCertificatesSecret
 	err = copier.Copy(&lbssResult, &lbsResp.Secrets)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
@@ -146,15 +160,16 @@ func (d *loadBalancerSecretsDataSource) Read(ctx context.Context, req datasource
 		return
 	}
 
+	config.LoadBalancerSecrets = make([]loadBalancerSecretBaseModel, 0, len(lbssResult))
 	for _, secret := range lbssResult {
 		var lbsModel loadBalancerSecretBaseModel
-		ok := mapLoadBalancerSecretsBaseModel(ctx, &lbsModel, &secret, &resp.Diagnostics)
+		ok := mapLoadBalancerSecretsModel(ctx, &lbsModel, &secret, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
-		data.LoadBalancerSecrets = append(data.LoadBalancerSecrets, lbsModel)
+		config.LoadBalancerSecrets = append(config.LoadBalancerSecrets, lbsModel)
 	}
 
-	diags = resp.State.Set(ctx, &data)
+	diags = resp.State.Set(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 }

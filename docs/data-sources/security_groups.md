@@ -138,7 +138,7 @@ The following attributes are exported:
 - `id` (String) ID of the security group rule
 - `port_range_max` (Number) End value of the allowed port range
 - `port_range_min` (Number) Start value of the allowed port range
-- `protocol` (String) Allowed network protocol <br/> - `TCP`: Transmission Control Protocol <br/> - `UDP`: User Datagram Protocol <br/> - `ICMP`: Internet Control Message Protocol <br/> - `IPIP`: IP-in-IP tunneling <br/> - `ALL`: All protocols
+- `protocol` (String) Allowed network protocol <br/> - `TCP`: Transmission Control Protocol <br/> - `UDP`: User Datagram Protocol <br/> - `ICMP`: Internet Control Message Protocol <br/> - `ALL`: All protocols
 - `remote_group_id` (String) ID of the source or destination security group for allowed traffic <br/> - Specify when the source/destination is another security group
 - `remote_group_name` (String) Name of the source or destination security group for allowed traffic
 - `remote_ip_prefix` (String) Source or destination IP range in CIDR format

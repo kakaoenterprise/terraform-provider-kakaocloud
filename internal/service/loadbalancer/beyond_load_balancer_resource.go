@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"sync"
 	"terraform-provider-kakaocloud/internal/common"
 	"terraform-provider-kakaocloud/internal/utils"
 	"time"
@@ -19,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var (
@@ -33,6 +32,13 @@ func NewBeyondLoadBalancerResource() resource.Resource {
 
 type beyondLoadBalancerResource struct {
 	kc *common.KakaoCloudClient
+}
+
+const beyondLoadBalancerSynchronizedStatus = "SYNCHRONIZED"
+
+type beyondLoadBalancerExpectedState struct {
+	description           *string
+	attachedLoadBalancers map[string]struct{}
 }
 
 func (r *beyondLoadBalancerResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -68,10 +74,10 @@ func (r *beyondLoadBalancerResource) Create(ctx context.Context, req resource.Cr
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	createReq := loadbalancer.BnsLoadBalancerV1ApiCreateHaGroupModelCreateBeyondLoadBalancerModel{
+	createReq := loadbalancer.CreateHaGroup{
 		Name:   plan.Name.ValueString(),
 		TypeId: plan.TypeId.ValueString(),
-		Scheme: loadbalancer.Scheme(plan.Scheme.ValueString()),
+		Scheme: loadbalancer.BeyondLoadBalancerScheme(plan.Scheme.ValueString()),
 		VpcId:  plan.VpcId.ValueString(),
 	}
 
@@ -79,35 +85,32 @@ func (r *beyondLoadBalancerResource) Create(ctx context.Context, req resource.Cr
 		createReq.SetDescription(plan.Description.ValueString())
 	}
 
-	var mutexes []*sync.Mutex
 	lbList, planDiags := r.convertSetToBlbLoadBalancerModel(ctx, plan.AttachedLoadBalancers)
 	resp.Diagnostics.Append(planDiags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	loadBalancerIDs := make([]string, 0, len(lbList))
 	for _, lb := range lbList {
-		mutex := common.LockForID(lb.Id.ValueString())
-		mutex.Lock()
-		mutexes = append(mutexes, mutex)
+		loadBalancerIDs = append(loadBalancerIDs, lb.Id.ValueString())
 	}
-	defer func() {
-
-		for i := len(mutexes) - 1; i >= 0; i-- {
-			mutexes[i].Unlock()
-		}
-	}()
+	unlock, ok := common.AcquireLocksForIDs(ctx, loadBalancerIDs, &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
 
 	for _, lb := range lbList {
-		ok := CheckLoadBalancerStatus(ctx, lb.Id.ValueString(), false, r, r.kc, &resp.Diagnostics)
+		_, ok := pollLoadBalancerStatus(ctx, lb.Id.ValueString(), false, r, r.kc, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
 	}
 
-	var lbs []loadbalancer.BnsLoadBalancerV1ApiCreateHaGroupModelSubnetModel
+	var lbs []loadbalancer.VpcSubnetRequest
 	for _, lb := range lbList {
-		tmpLb := loadbalancer.BnsLoadBalancerV1ApiCreateHaGroupModelSubnetModel{
+		tmpLb := loadbalancer.VpcSubnetRequest{
 			LoadBalancerId:   lb.Id.ValueString(),
 			AvailabilityZone: loadbalancer.AvailabilityZone(lb.AvailabilityZone.ValueString()),
 		}
@@ -115,12 +118,12 @@ func (r *beyondLoadBalancerResource) Create(ctx context.Context, req resource.Cr
 	}
 	createReq.SetSubnets(lbs)
 
-	body := *loadbalancer.NewBodyCreateHaGroup(createReq)
+	body := *loadbalancer.NewCreateHaGroupRequest(createReq)
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiCreateHaGroupModelResponseBeyondLoadBalancerModel, *http.Response, error) {
-			return r.kc.ApiClient.BeyondLoadBalancerAPI.CreateHaGroup(ctx).
-				XAuthToken(r.kc.XAuthToken).BodyCreateHaGroup(body).Execute()
+		func() (*loadbalancer.CreateHaGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.LoadBalancerHighAvailabilityGroupAPI.CreateHaGroup(ctx).
+				XAuthToken(r.kc.XAuthToken).CreateHaGroupRequest(body).Execute()
 		},
 	)
 
@@ -134,7 +137,8 @@ func (r *beyondLoadBalancerResource) Create(ctx context.Context, req resource.Cr
 	result, ok := r.pollBeyondLoadBalancerUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
+		loadBalancerAvailableAndErrorStatuses,
+		nil,
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
@@ -145,7 +149,7 @@ func (r *beyondLoadBalancerResource) Create(ctx context.Context, req resource.Cr
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	ok = mapBeyondLoadBalancerBaseModel(ctx, &plan.beyondLoadBalancerBaseModel, result, &resp.Diagnostics)
+	ok = mapBeyondLoadBalancerModel(ctx, &plan.beyondLoadBalancerBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -176,8 +180,8 @@ func (r *beyondLoadBalancerResource) Read(ctx context.Context, req resource.Read
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiGetHaGroupModelResponseBeyondLoadBalancerModel, *http.Response, error) {
-			return r.kc.ApiClient.BeyondLoadBalancerAPI.GetHaGroup(ctx, state.Id.ValueString()).
+		func() (*loadbalancer.GetHaGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.LoadBalancerHighAvailabilityGroupAPI.GetHaGroup(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
@@ -191,7 +195,7 @@ func (r *beyondLoadBalancerResource) Read(ctx context.Context, req resource.Read
 		return
 	}
 
-	ok := mapBeyondLoadBalancerBaseModel(ctx, &state.beyondLoadBalancerBaseModel, &respModel.BeyondLoadBalancer, &resp.Diagnostics)
+	ok := mapBeyondLoadBalancerModel(ctx, &state.beyondLoadBalancerBaseModel, &respModel.BeyondLoadBalancer, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -262,20 +266,21 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	var result *loadbalancer.BnsLoadBalancerV1ApiGetHaGroupModelBeyondLoadBalancerModel
+	var result *loadbalancer.BeyondLoadBalancer
 	var ok bool
+	var expectedDescription *string
 
 	if !plan.Description.Equal(state.Description) && !plan.Description.IsNull() && !plan.Description.IsUnknown() {
-		var editReq loadbalancer.EditBeyondLoadBalancerModel
+		editReq := loadbalancer.NewUpdateHaGroup()
 		editReq.SetDescription(plan.Description.ValueString())
 
-		body := *loadbalancer.NewBodyUpdateHaGroup(editReq)
+		body := *loadbalancer.NewUpdateHaGroupRequest(*editReq)
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
-				return r.kc.ApiClient.BeyondLoadBalancerAPI.UpdateHaGroup(ctx, plan.Id.ValueString()).
+				return r.kc.ApiClient.LoadBalancerHighAvailabilityGroupAPI.UpdateHaGroup(ctx, plan.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
-					BodyUpdateHaGroup(body).
+					UpdateHaGroupRequest(body).
 					Execute()
 			},
 		)
@@ -285,10 +290,15 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 			return
 		}
 
+		description := plan.Description.ValueString()
+		expectedDescription = &description
 		result, ok = r.pollBeyondLoadBalancerUntilStatus(
 			ctx,
 			plan.Id.ValueString(),
-			[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
+			loadBalancerAvailableAndErrorStatuses,
+			&beyondLoadBalancerExpectedState{
+				description: expectedDescription,
+			},
 			&resp.Diagnostics,
 		)
 		if !ok || resp.Diagnostics.HasError() {
@@ -308,21 +318,18 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 			return
 		}
 
-		var mutexes []*sync.Mutex
+		loadBalancerIDs := make([]string, 0, len(planList))
 		for _, lb := range planList {
-			mutex := common.LockForID(lb.Id.ValueString())
-			mutex.Lock()
-			mutexes = append(mutexes, mutex)
+			loadBalancerIDs = append(loadBalancerIDs, lb.Id.ValueString())
 		}
-		defer func() {
-
-			for i := len(mutexes) - 1; i >= 0; i-- {
-				mutexes[i].Unlock()
-			}
-		}()
+		unlock, ok := common.AcquireLocksForIDs(ctx, loadBalancerIDs, &resp.Diagnostics)
+		if !ok {
+			return
+		}
+		defer unlock()
 
 		for _, lb := range planList {
-			ok := CheckLoadBalancerStatus(ctx, lb.Id.ValueString(), false, r, r.kc, &resp.Diagnostics)
+			_, ok := pollLoadBalancerStatus(ctx, lb.Id.ValueString(), false, r, r.kc, &resp.Diagnostics)
 			if !ok || resp.Diagnostics.HasError() {
 				return
 			}
@@ -335,7 +342,11 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 		result, ok = r.pollBeyondLoadBalancerUntilStatus(
 			ctx,
 			plan.Id.ValueString(),
-			[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
+			loadBalancerAvailableAndErrorStatuses,
+			&beyondLoadBalancerExpectedState{
+				description:           expectedDescription,
+				attachedLoadBalancers: buildBeyondLoadBalancerExpectedAttachments(planList),
+			},
 			&resp.Diagnostics,
 		)
 		if !ok || resp.Diagnostics.HasError() {
@@ -348,9 +359,11 @@ func (r *beyondLoadBalancerResource) Update(ctx context.Context, req resource.Up
 		}
 	}
 
-	ok = mapBeyondLoadBalancerBaseModel(ctx, &plan.beyondLoadBalancerBaseModel, result, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
-		return
+	if result != nil {
+		ok = mapBeyondLoadBalancerModel(ctx, &plan.beyondLoadBalancerBaseModel, result, &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	diags = resp.State.Set(ctx, &plan)
@@ -378,13 +391,15 @@ func (r *beyondLoadBalancerResource) Delete(ctx context.Context, req resource.De
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	mutex := common.LockForID(state.Id.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
+	unlock, ok := common.AcquireLockForID(ctx, state.Id.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.BeyondLoadBalancerAPI.DeleteHaGroup(ctx, state.Id.ValueString()).
+			httpResp, err := r.kc.ApiClient.LoadBalancerHighAvailabilityGroupAPI.DeleteHaGroup(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 			return nil, httpResp, err
@@ -400,7 +415,7 @@ func (r *beyondLoadBalancerResource) Delete(ctx context.Context, req resource.De
 	}
 
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
-		_, httpResp, err := r.kc.ApiClient.BeyondLoadBalancerAPI.
+		_, httpResp, err := r.kc.ApiClient.LoadBalancerHighAvailabilityGroupAPI.
 			GetHaGroup(ctx, state.Id.ValueString()).
 			XAuthToken(r.kc.XAuthToken).
 			Execute()
@@ -440,20 +455,29 @@ func (r *beyondLoadBalancerResource) pollBeyondLoadBalancerUntilStatus(
 	ctx context.Context,
 	blbId string,
 	targetStatuses []string,
+	expected *beyondLoadBalancerExpectedState,
 	resp *diag.Diagnostics,
-) (*loadbalancer.BnsLoadBalancerV1ApiGetHaGroupModelBeyondLoadBalancerModel, bool) {
+) (*loadbalancer.BeyondLoadBalancer, bool) {
+	pollingTargetStatuses := targetStatuses
+	if expected != nil {
+		pollingTargetStatuses = []string{
+			beyondLoadBalancerSynchronizedStatus,
+			common.LoadBalancerProvisioningStatusError,
+		}
+	}
+
 	return common.PollUntilResult(
 		ctx,
 		r,
 		2*time.Second,
 		"beyond load balancer",
 		blbId,
-		targetStatuses,
+		pollingTargetStatuses,
 		resp,
-		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetHaGroupModelBeyondLoadBalancerModel, *http.Response, error) {
+		func(ctx context.Context) (*loadbalancer.BeyondLoadBalancer, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
-				func() (*loadbalancer.BnsLoadBalancerV1ApiGetHaGroupModelResponseBeyondLoadBalancerModel, *http.Response, error) {
-					return r.kc.ApiClient.BeyondLoadBalancerAPI.
+				func() (*loadbalancer.GetHaGroupResponse, *http.Response, error) {
+					return r.kc.ApiClient.LoadBalancerHighAvailabilityGroupAPI.
 						GetHaGroup(ctx, blbId).
 						XAuthToken(r.kc.XAuthToken).
 						Execute()
@@ -464,10 +488,76 @@ func (r *beyondLoadBalancerResource) pollBeyondLoadBalancerUntilStatus(
 			}
 			return &respModel.BeyondLoadBalancer, httpResp, nil
 		},
-		func(v *loadbalancer.BnsLoadBalancerV1ApiGetHaGroupModelBeyondLoadBalancerModel) string {
-			return string(*v.ProvisioningStatus.Get())
+		func(v *loadbalancer.BeyondLoadBalancer) string {
+			if v == nil || v.ProvisioningStatus.Get() == nil {
+				return ""
+			}
+
+			status := string(*v.ProvisioningStatus.Get())
+			if status != common.LoadBalancerProvisioningStatusActive || expected == nil {
+				return status
+			}
+			if beyondLoadBalancerMatchesExpectedState(v, expected) {
+				return beyondLoadBalancerSynchronizedStatus
+			}
+			return status
 		},
 	)
+}
+
+func buildBeyondLoadBalancerExpectedAttachments(loadBalancers []attachedLoadBalancerModel) map[string]struct{} {
+	expected := make(map[string]struct{}, len(loadBalancers))
+	for _, lb := range loadBalancers {
+		expected[beyondLoadBalancerAttachmentKey(lb.Id.ValueString(), lb.AvailabilityZone.ValueString())] = struct{}{}
+	}
+	return expected
+}
+
+func beyondLoadBalancerMatchesExpectedState(
+	model *loadbalancer.BeyondLoadBalancer,
+	expected *beyondLoadBalancerExpectedState,
+) bool {
+	if expected.description != nil {
+		actualDescription := ""
+		if model.Description.Get() != nil {
+			actualDescription = *model.Description.Get()
+		}
+		if actualDescription != *expected.description {
+			return false
+		}
+	}
+
+	if expected.attachedLoadBalancers != nil {
+		actual := make(map[string]struct{}, len(model.LoadBalancers))
+		for _, lb := range model.LoadBalancers {
+			availabilityZone := ""
+			if lb.AvailabilityZone.Get() != nil {
+				availabilityZone = string(*lb.AvailabilityZone.Get())
+			}
+			actual[beyondLoadBalancerAttachmentKey(lb.Id, availabilityZone)] = struct{}{}
+		}
+		if !equalBeyondLoadBalancerAttachments(actual, expected.attachedLoadBalancers) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func beyondLoadBalancerAttachmentKey(loadBalancerId, availabilityZone string) string {
+	return loadBalancerId + "\x00" + availabilityZone
+}
+
+func equalBeyondLoadBalancerAttachments(left, right map[string]struct{}) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for key := range left {
+		if _, ok := right[key]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func (r *beyondLoadBalancerResource) pollLoadBalancerUntilStatus(
@@ -475,7 +565,7 @@ func (r *beyondLoadBalancerResource) pollLoadBalancerUntilStatus(
 	loadBalancerId string,
 	targetStatuses []string,
 	resp *diag.Diagnostics,
-) (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel, bool) {
+) (*loadbalancer.LoadBalancer, bool) {
 	return common.PollUntilResult(
 		ctx,
 		r,
@@ -484,9 +574,9 @@ func (r *beyondLoadBalancerResource) pollLoadBalancerUntilStatus(
 		loadBalancerId,
 		targetStatuses,
 		resp,
-		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel, *http.Response, error) {
+		func(ctx context.Context) (*loadbalancer.LoadBalancer, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
-				func() (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelResponseLoadBalancerModel, *http.Response, error) {
+				func() (*loadbalancer.GetLoadBalancerResponse, *http.Response, error) {
 					return r.kc.ApiClient.LoadBalancerAPI.
 						GetLoadBalancer(ctx, loadBalancerId).
 						XAuthToken(r.kc.XAuthToken).
@@ -498,7 +588,7 @@ func (r *beyondLoadBalancerResource) pollLoadBalancerUntilStatus(
 			}
 			return &respModel.LoadBalancer, httpResp, nil
 		},
-		func(lb *loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel) string {
+		func(lb *loadbalancer.LoadBalancer) string {
 			return string(*lb.ProvisioningStatus.Get())
 		},
 	)
@@ -528,25 +618,25 @@ func (r *beyondLoadBalancerResource) updateLoadBalancers(
 	planList *[]attachedLoadBalancerModel,
 	diags *diag.Diagnostics,
 ) bool {
-	var lbs []loadbalancer.BnsLoadBalancerV1ApiUpdateHaGroupLoadBalancerModelSubnetModel
+	var lbs []loadbalancer.VpcSubnetRequest
 	for _, lb := range *planList {
-		tmpLb := loadbalancer.BnsLoadBalancerV1ApiUpdateHaGroupLoadBalancerModelSubnetModel{
+		tmpLb := loadbalancer.VpcSubnetRequest{
 			LoadBalancerId:   lb.Id.ValueString(),
 			AvailabilityZone: loadbalancer.AvailabilityZone(lb.AvailabilityZone.ValueString()),
 		}
 		lbs = append(lbs, tmpLb)
 	}
 
-	body := loadbalancer.BodyUpdateHaGroupLoadBalancer{
-		BeyondLoadBalancer: *loadbalancer.NewBnsLoadBalancerV1ApiUpdateHaGroupLoadBalancerModelCreateBeyondLoadBalancerModel(lbs),
+	body := loadbalancer.UpdateHaGroupLoadBalancerRequest{
+		BeyondLoadBalancer: *loadbalancer.NewUpdateHaGroupLoadBalancer(lbs),
 	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
 		func() (interface{}, *http.Response, error) {
-			return r.kc.ApiClient.BeyondLoadBalancerAPI.
+			return r.kc.ApiClient.LoadBalancerHighAvailabilityGroupAPI.
 				UpdateHaGroupLoadBalancer(ctx, blbId).
 				XAuthToken(r.kc.XAuthToken).
-				BodyUpdateHaGroupLoadBalancer(body).
+				UpdateHaGroupLoadBalancerRequest(body).
 				Execute()
 		},
 	)
@@ -571,11 +661,11 @@ func (r *beyondLoadBalancerResource) ValidateConfig(ctx context.Context, req res
 		return
 	}
 
-	r.validateAvailabilityZoneConfig(ctx, configLbList, resp)
+	r.validateAvailabilityZoneConfig(configLbList, resp)
 	r.validateAttachedLoadBalancersConfig(ctx, configLbList, resp)
 }
 
-func (r *beyondLoadBalancerResource) validateAvailabilityZoneConfig(ctx context.Context, configLbList []attachedLoadBalancerModel, resp *resource.ValidateConfigResponse) {
+func (r *beyondLoadBalancerResource) validateAvailabilityZoneConfig(configLbList []attachedLoadBalancerModel, resp *resource.ValidateConfigResponse) {
 	for _, configLb := range configLbList {
 		common.ValidateAvailabilityZone(
 			path.Root("availability_zone"),

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 func getBeyondLoadBalancerResourceSchema() map[string]rschema.Attribute {
@@ -33,7 +33,8 @@ func getBeyondLoadBalancerResourceSchema() map[string]rschema.Attribute {
 		},
 		"description": rschema.StringAttribute{
 			Optional:   true,
-			Validators: common.DescriptionValidator(),
+			Computed:   true,
+			Validators: common.DescriptionValidatorWithMaxLength(255),
 		},
 		"provider_name": rschema.StringAttribute{
 			Computed: true,
@@ -41,8 +42,8 @@ func getBeyondLoadBalancerResourceSchema() map[string]rschema.Attribute {
 		"scheme": rschema.StringAttribute{
 			Required: true,
 			Validators: []validator.String{stringvalidator.OneOf(
-				string(loadbalancer.SCHEME_INTERNET_FACING),
-				string(loadbalancer.SCHEME_INTERNAL),
+				string(loadbalancer.BEYONDLOADBALANCERSCHEME_INTERNET_FACING),
+				string(loadbalancer.BEYONDLOADBALANCERSCHEME_INTERNAL),
 			)},
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),

@@ -17,8 +17,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 var (
@@ -79,7 +79,7 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	if *instanceType == bcs.INSTANCETYPE_BM {
+	if *instanceType == string(bcs.INSTANCETYPE_BM) {
 		if !plan.Volumes.IsNull() {
 			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 				fmt.Sprintf("Invalid Configuration: BM instances cannot have volume definitions."))
@@ -93,8 +93,9 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		}
 	}
 
-	createReq := bcs.CreateInstanceModel{
+	createReq := bcs.CreateInstance{
 		Name:     plan.Name.ValueString(),
+		Count:    bcs.PtrInt32(1),
 		ImageId:  plan.ImageId.ValueString(),
 		FlavorId: plan.FlavorId.ValueString(),
 	}
@@ -130,12 +131,11 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	var subnets []bcs.CreateInstanceSubnetModel
+	var subnets []bcs.SubnetRequest
 	for _, subnet := range configSubnetList {
 		if subnet.NetworkInterfaceId.IsNull() {
-			v := bcs.CreateInstanceSubnetModel{
-				Id: subnet.Id.ValueString(),
-			}
+			v := bcs.SubnetRequest{}
+			v.SetId(subnet.Id.ValueString())
 			if !subnet.PrivateIp.IsNull() && !subnet.PrivateIp.IsUnknown() {
 				v.SetPrivateIp(subnet.PrivateIp.ValueString())
 			}
@@ -145,9 +145,8 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 	if len(subnets) == 0 {
 		attachNicExceptOne = true
 		subnet1st := configSubnetList[0]
-		v := bcs.CreateInstanceSubnetModel{
-			Id: subnet1st.Id.ValueString(),
-		}
+		v := bcs.SubnetRequest{}
+		v.SetId(subnet1st.Id.ValueString())
 		v.SetNetworkInterfaceId(subnet1st.NetworkInterfaceId.ValueString())
 		if !subnet1st.PrivateIp.IsNull() && !subnet1st.PrivateIp.IsUnknown() {
 			v.SetPrivateIp(subnet1st.PrivateIp.ValueString())
@@ -162,7 +161,7 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	var volumes []bcs.CreateInstanceVolumeModel
+	var volumes []bcs.BlockDeviceMappingRequest
 	for _, volume := range volumeList {
 
 		var val bool
@@ -183,10 +182,9 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 			size = 50
 		}
 
-		v := bcs.CreateInstanceVolumeModel{
-			Size:                  size,
-			IsDeleteOnTermination: &val,
-		}
+		v := bcs.BlockDeviceMappingRequest{}
+		v.SetSize(size)
+		v.SetIsDeleteOnTermination(val)
 		if !volume.Id.IsNull() && !volume.Id.IsUnknown() {
 			v.SetUuid(volume.Id.ValueString())
 			v.SetSourceType(bcs.SOURCETYPE_VOLUME)
@@ -214,9 +212,9 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 			return
 		}
 
-		var sg []bcs.CreateInstanceSecurityGroupModel
+		var sg []bcs.SecurityGroupRequest
 		for _, tfv := range tfSg {
-			v := bcs.CreateInstanceSecurityGroupModel{
+			v := bcs.SecurityGroupRequest{
 				Name: tfv.Name.ValueString(),
 			}
 			sg = append(sg, v)
@@ -224,14 +222,14 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		createReq.SetSecurityGroups(sg)
 	}
 
-	body := bcs.BodyCreateInstance{
+	body := bcs.CreateInstanceRequest{
 		Instance: createReq,
 	}
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*bcs.ResponseCreateInstanceModel, *http.Response, error) {
+		func() (*bcs.CreateInstanceResponse, *http.Response, error) {
 			return r.kc.ApiClient.InstanceAPI.CreateInstance(ctx).
-				XAuthToken(r.kc.XAuthToken).BodyCreateInstance(body).Execute()
+				XAuthToken(r.kc.XAuthToken).CreateInstanceRequest(body).Execute()
 		},
 	)
 	if err != nil {
@@ -243,7 +241,7 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 	result, ok := r.pollInstanceUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{common.InstanceStatusActive, common.InstanceStatusError},
+		instanceFixedStatuses,
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
@@ -252,7 +250,7 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 
 	common.CheckResourceAvailableStatus(ctx, r, result.Status.Get(), []string{common.InstanceStatusActive}, &resp.Diagnostics)
 
-	ok = r.mapInstance(ctx, &plan, result, &resp.Diagnostics)
+	ok = r.mapInstanceResource(ctx, &plan, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -267,7 +265,7 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		subnet := configSubnetList[i]
 		if !subnet.NetworkInterfaceId.IsNull() {
 			nicAttached = true
-			ok := r.attacheNetworkInterface(ctx, plan.Id.ValueString(), subnet.NetworkInterfaceId.ValueString(), &resp.Diagnostics)
+			ok := r.attachNetworkInterface(ctx, plan.Id.ValueString(), subnet.NetworkInterfaceId.ValueString(), &resp.Diagnostics)
 			if !ok {
 				return
 			}
@@ -277,7 +275,7 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		result, ok = r.pollInstanceUntilStatus(
 			ctx,
 			plan.Id.ValueString(),
-			[]string{common.InstanceStatusActive, common.InstanceStatusError},
+			instanceFixedStatuses,
 			&resp.Diagnostics,
 		)
 		if !ok || resp.Diagnostics.HasError() {
@@ -286,7 +284,7 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 
 		common.CheckResourceAvailableStatus(ctx, r, result.Status.Get(), []string{common.InstanceStatusActive}, &resp.Diagnostics)
 
-		ok = r.mapInstance(ctx, &plan, result, &resp.Diagnostics)
+		ok = r.mapInstanceResource(ctx, &plan, result, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
@@ -294,6 +292,9 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 
 	if !config.Status.IsNull() && !config.Status.IsUnknown() && config.Status.ValueString() != common.InstanceStatusActive {
 		r.updateStatus(ctx, plan.Id.ValueString(), config.Status.ValueString(), plan.Status.ValueString(), &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 		plan.Status = config.Status
 	}
 
@@ -323,7 +324,7 @@ func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, r
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*bcs.ResponseInstanceModel, *http.Response, error) {
+		func() (*bcs.GetInstanceResponse, *http.Response, error) {
 			return r.kc.ApiClient.InstanceAPI.
 				GetInstance(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).Execute()
@@ -339,8 +340,7 @@ func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	result := respModel.Instance
-	ok := mapInstanceBaseModel(ctx, &state.instanceBaseModel, &result, &resp.Diagnostics)
+	ok := mapInstanceModel(ctx, &state.instanceBaseModel, new(respModel.Instance), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -355,14 +355,12 @@ func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, r
 		}
 	}
 
-	if state.FlavorId.IsNull() {
-		if idAttr, ok := state.Flavor.Attributes()["id"].(types.String); ok {
-			state.FlavorId = idAttr
-		} else {
-			common.AddGeneralError(ctx, r, &resp.Diagnostics,
-				"Invalid FlavorId Attribute Type: Expected 'id' attribute to be types.String")
-			return
-		}
+	if idAttr, ok := state.Flavor.Attributes()["id"].(types.String); ok {
+		state.FlavorId = idAttr
+	} else {
+		common.AddGeneralError(ctx, r, &resp.Diagnostics,
+			"Invalid FlavorId Attribute Type: Expected 'id' attribute to be types.String")
+		return
 	}
 
 	if state.Subnets.IsNull() {
@@ -376,8 +374,8 @@ func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, r
 		var subnetList []instanceSubnetModel
 		for _, address := range addresses {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-				func() (*vpc.BnsVpcV1ApiGetNetworkInterfaceModelResponseNetworkInterfaceModel, *http.Response, error) {
-					return r.kc.ApiClient.NetworkInterfaceAPI.GetNetworkInterface(ctx, address.NetworkInterfaceId.ValueString()).
+				func() (*vpc.GetNetworkInterfaceResponse, *http.Response, error) {
+					return r.kc.ApiClient.VPCNetworkInterfaceAPI.GetNetworkInterface(ctx, address.NetworkInterfaceId.ValueString()).
 						XAuthToken(r.kc.XAuthToken).Execute()
 				},
 			)
@@ -410,7 +408,7 @@ func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, r
 		}
 	}
 
-	if state.Volumes.IsNull() {
+	if state.Volumes.IsNull() && state.InstanceType.ValueString() == common.InstanceTypeVM {
 		var attachedVolumes []instanceAttachedVolumeModel
 		diags := state.AttachedVolumes.ElementsAs(ctx, &attachedVolumes, false)
 		resp.Diagnostics.Append(diags...)
@@ -430,7 +428,11 @@ func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, r
 
 		var volumeList []instanceVolumeModel
 		for _, attachedVolume := range attachedVolumes {
-			volumeList = append(volumeList, instanceVolumeModel{Id: attachedVolume.Id})
+			volume := instanceVolumeModel{Id: attachedVolume.Id}
+			if attachedVolume.IsRoot.ValueBool() {
+				volume.Size = attachedVolume.Size
+			}
+			volumeList = append(volumeList, volume)
 		}
 
 		elemType := types.ObjectType{AttrTypes: instanceVolumeAttrType}
@@ -471,6 +473,7 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+	expected := instanceExpectedState{}
 
 	var desiredState string
 	if !plan.Status.IsNull() && !plan.Status.IsUnknown() {
@@ -492,23 +495,25 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 		newName = plan.Name
 		newDescription = plan.Description
 
-		editReq := bcs.EditInstanceModel{}
+		editReq := bcs.UpdateInstance{}
 		if plan.Name != state.Name {
 			editReq.SetName(plan.Name.ValueString())
 		}
-		if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
-			editReq.SetDescription(plan.Description.ValueString())
-		} else {
-			editReq.SetDescriptionNil()
+		if !plan.Description.IsUnknown() && plan.Description != state.Description {
+			if plan.Description.IsNull() {
+				editReq.SetDescriptionNil()
+			} else {
+				editReq.SetDescription(plan.Description.ValueString())
+			}
 		}
 
-		body := *bcs.NewBodyUpdateInstance(editReq)
+		body := *bcs.NewUpdateInstanceRequest(editReq)
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*bcs.InstanceModelResponse, *http.Response, error) {
+			func() (*bcs.UpdateInstanceResponse, *http.Response, error) {
 				return r.kc.ApiClient.InstanceAPI.UpdateInstance(ctx, plan.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
-					BodyUpdateInstance(body).
+					UpdateInstanceRequest(body).
 					Execute()
 			},
 		)
@@ -516,19 +521,30 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 			common.AddApiActionError(ctx, r, httpResp, "UpdateInstance", err, &resp.Diagnostics)
 			return
 		}
-	}
 
-	if !plan.FlavorId.Equal(state.FlavorId) {
-		instanceType, ok := r.getInstanceTypeFromFlavor(ctx, plan.FlavorId.ValueString(), &resp.Diagnostics)
+		if plan.Name != state.Name {
+			expected.name = &plan.Name
+		}
+		if !plan.Description.IsUnknown() && plan.Description != state.Description {
+			expected.description = &plan.Description
+		}
+		result, ok := r.pollInstanceUntilStatus(
+			ctx,
+			plan.Id.ValueString(),
+			[]string{desiredState, common.InstanceStatusError},
+			&resp.Diagnostics,
+			expected,
+		)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
-
-		if *instanceType == bcs.INSTANCETYPE_BM {
-			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
-				fmt.Sprintf("Invalid Configuration: Instances can only be resized to flavors of type 'vm'."))
+		common.CheckResourceAvailableStatus(ctx, r, result.Status.Get(), []string{desiredState}, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
 			return
 		}
+	}
+
+	if !plan.FlavorId.Equal(state.FlavorId) {
 
 		if desiredState != common.InstanceStatusStopped {
 			r.updateStatus(ctx, plan.Id.ValueString(), common.InstanceStatusStopped, desiredState, &resp.Diagnostics)
@@ -536,17 +552,21 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 				return
 			}
 		}
-		req := bcs.ResizeInstanceModel{
+		req := bcs.ResizeInstance{
 			Id: plan.FlavorId.ValueString(),
 		}
 
-		body := *bcs.NewBodyResizeInstance(req)
+		if !plan.IsHyperThreading.IsNull() && !plan.IsHyperThreading.IsUnknown() {
+			req.SetIsDisableHyperThreading(!plan.IsHyperThreading.ValueBool())
+		}
+
+		body := *bcs.NewResizeInstanceRequest(req)
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
-				return r.kc.ApiClient.InstanceRunAnActionAPI.ResizeInstance(ctx, plan.Id.ValueString()).
+				return r.kc.ApiClient.InstanceAPI.ResizeInstance(ctx, plan.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
-					BodyResizeInstance(body).
+					ResizeInstanceRequest(body).
 					Execute()
 			},
 		)
@@ -555,11 +575,19 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 			return
 		}
 
+		flavorID := plan.FlavorId.ValueString()
+		expected.flavorID = &flavorID
+		if !plan.IsHyperThreading.IsNull() && !plan.IsHyperThreading.IsUnknown() {
+			isHyperThreading := plan.IsHyperThreading.ValueBool()
+			expected.isHyperThreading = &isHyperThreading
+		}
+
 		result, ok := r.pollInstanceUntilStatus(
 			ctx,
 			plan.Id.ValueString(),
 			[]string{common.InstanceStatusStopped, common.InstanceStatusError},
 			&resp.Diagnostics,
+			expected,
 		)
 		if !ok || resp.Diagnostics.HasError() {
 			return
@@ -576,23 +604,32 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 
 	if !plan.Volumes.Equal(state.Volumes) {
 		planList, planDiags := r.convertListToInstanceVolumeModel(ctx, plan.Volumes)
-		stateList, stateDiags := r.convertListToInstanceVolumeModel(ctx, state.Volumes)
 		resp.Diagnostics.Append(planDiags...)
+
+		var attachedVolumes []instanceAttachedVolumeModel
+		if state.AttachedVolumes.IsNull() || state.AttachedVolumes.IsUnknown() {
+			common.AddGeneralError(ctx, r, &resp.Diagnostics,
+				"Invalid Instance Volumes: VM instance must have exactly one root volume")
+			return
+		}
+		stateDiags := state.AttachedVolumes.ElementsAs(ctx, &attachedVolumes, false)
 		resp.Diagnostics.Append(stateDiags...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
-		ok := r.updateAttachedVolumes(ctx, plan.Id.ValueString(), &planList, &stateList, &resp.Diagnostics)
+		ok := r.updateAttachedVolumes(ctx, plan.Id.ValueString(), &planList, &attachedVolumes, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
+		expected.volumes = buildInstanceExpectedVolumes(planList)
 
 		result, ok := r.pollInstanceUntilStatus(
 			ctx,
 			plan.Id.ValueString(),
 			[]string{desiredState, common.InstanceStatusError},
 			&resp.Diagnostics,
+			expected,
 		)
 		if !ok || resp.Diagnostics.HasError() {
 			return
@@ -613,16 +650,18 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 			return
 		}
 
-		ok := r.updateNetworkInterface(ctx, plan.Id.ValueString(), &planList, &stateList, &resp.Diagnostics)
+		ok := r.updateNetworkInterface(ctx, plan.Id.ValueString(), planList, stateList, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
+		expected.networkInterfaceIDs = buildInstanceExpectedNetworkInterfaceIDs(planList)
 
 		result, ok := r.pollInstanceUntilStatus(
 			ctx,
 			plan.Id.ValueString(),
 			[]string{desiredState, common.InstanceStatusError},
 			&resp.Diagnostics,
+			expected,
 		)
 		if !ok || resp.Diagnostics.HasError() {
 			return
@@ -635,7 +674,7 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*bcs.ResponseInstanceModel, *http.Response, error) {
+		func() (*bcs.GetInstanceResponse, *http.Response, error) {
 			return r.kc.ApiClient.InstanceAPI.
 				GetInstance(ctx, plan.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).Execute()
@@ -646,7 +685,7 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	ok := r.mapInstance(ctx, &plan, &result.Instance, &resp.Diagnostics)
+	ok := r.mapInstanceResource(ctx, &plan, &result.Instance, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -738,21 +777,23 @@ func (r *instanceResource) ImportState(ctx context.Context, req resource.ImportS
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (r *instanceResource) mapInstance(
+func (r *instanceResource) mapInstanceResource(
 	ctx context.Context,
 	plan *instanceResourceModel,
-	instanceResult *bcs.BcsInstanceV1ApiGetInstanceModelInstanceModel,
+	instanceResult *bcs.Instance,
 	respDiags *diag.Diagnostics,
 ) bool {
-	ok := mapInstanceBaseModel(ctx, &plan.instanceBaseModel, instanceResult, respDiags)
+	ok := mapInstanceModel(ctx, &plan.instanceBaseModel, instanceResult, respDiags)
 	if !ok || respDiags.HasError() {
 		return false
 	}
 
 	r.setRequestVolumeId(ctx, plan, respDiags)
+	if respDiags.HasError() {
+		return false
+	}
 
 	r.setNetworkInterfaceId(ctx, plan, respDiags)
-
 	if respDiags.HasError() {
 		return false
 	}
@@ -764,14 +805,18 @@ func (r *instanceResource) getInstanceTypeFromFlavor(
 	ctx context.Context,
 	flavorId string,
 	respDiags *diag.Diagnostics,
-) (*bcs.InstanceType, bool) {
+) (*string, bool) {
 	flavorResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*bcs.ResponseFlavorModel, *http.Response, error) {
-			return r.kc.ApiClient.FlavorAPI.GetInstanceType(ctx, flavorId).XAuthToken(r.kc.XAuthToken).Execute()
+		func() (*bcs.GetInstanceTypeResponse, *http.Response, error) {
+			return r.kc.ApiClient.InstanceAPI.GetInstanceType(ctx, flavorId).XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
 	if err != nil {
 		common.AddApiActionError(ctx, r, httpResp, "GetInstanceType", err, respDiags)
+		return nil, false
+	}
+	if flavorResp.Flavor.InstanceType.Get() == nil {
+		common.AddGeneralError(ctx, r, respDiags, "Instance type is empty in flavor response")
 		return nil, false
 	}
 	return flavorResp.Flavor.InstanceType.Get(), true

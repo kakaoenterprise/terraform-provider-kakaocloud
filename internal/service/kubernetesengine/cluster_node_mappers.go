@@ -10,12 +10,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 func mapClusterNodeBaseModel(
 	base *nodeBaseModel,
-	result *kubernetesengine.KubernetesEngineV1ApiListClusterNodesModelNodeResponseModel,
+	result *kubernetesengine.Node,
 	respDiags *diag.Diagnostics,
 ) bool {
 	base.IsCordon = types.BoolValue(result.IsCordon)
@@ -99,7 +99,7 @@ func mapClusterNodeBaseModel(
 
 func mapNodePoolNodeBaseModel(
 	base *nodeBaseModel,
-	result *kubernetesengine.KubernetesEngineV1ApiListNodePoolNodesModelNodeResponseModel,
+	result *kubernetesengine.Node,
 	respDiags *diag.Diagnostics,
 ) bool {
 	base.IsCordon = types.BoolValue(result.IsCordon)

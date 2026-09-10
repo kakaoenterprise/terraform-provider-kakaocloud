@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -67,8 +67,8 @@ func (d *transitGatewayRouteTableDataSource) Read(ctx context.Context, req datas
 	defer cancel()
 
 	routeTableResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwRouteTableResponseModel, *http.Response, error) {
-			return d.kc.ApiClient.RouteTablesAPI.GetTgwRouteTable(ctx, config.Id.ValueString()).
+		func() (*tgw.GetTgwRouteTableResponse, *http.Response, error) {
+			return d.kc.ApiClient.TransitGatewayRouteTableAPI.GetTgwRouteTable(ctx, config.Id.ValueString()).
 				XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)

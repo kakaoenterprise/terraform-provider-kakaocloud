@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 var (
@@ -124,9 +124,9 @@ func (a *instanceExportLogsAction) Invoke(ctx context.Context, req action.Invoke
 		return
 	}
 
-	logInfos := make([]mysqlsdk.LogInfoRequestModel, 0, len(logInfoModels))
+	logInfos := make([]mysqlsdk.LogInfoRequest, 0, len(logInfoModels))
 	for _, item := range logInfoModels {
-		logInfo := mysqlsdk.NewLogInfoRequestModel(mysqlsdk.LogType(item.LogType.ValueString()))
+		logInfo := mysqlsdk.NewLogInfoRequest(mysqlsdk.LogType(item.LogType.ValueString()))
 		if !item.StartDate.IsNull() && !item.StartDate.IsUnknown() && item.StartDate.ValueString() != "" {
 			logInfo.SetStartDate(item.StartDate.ValueString())
 		}
@@ -136,21 +136,21 @@ func (a *instanceExportLogsAction) Invoke(ctx context.Context, req action.Invoke
 		logInfos = append(logInfos, *logInfo)
 	}
 
-	instance := mysqlsdk.NewInstanceRequestModel(
+	instance := mysqlsdk.NewExportMysqlInstanceLogs(
 		config.Bucket.ValueString(),
 		logInfos,
 		config.Path.ValueString(),
 		config.UserCredentialId.ValueString(),
 		config.UserCredentialSecret.ValueString(),
 	)
-	request := mysqlsdk.NewBodyExportMysqlInstanceLogs(*instance)
+	request := mysqlsdk.NewExportMysqlInstanceLogsRequest(*instance)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, a.kc, &resp.Diagnostics,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := a.kc.ApiClient.MySQLInstanceGroupsInstancesAPI.
+			httpResp, err := a.kc.ApiClient.MySQLInstanceAPI.
 				ExportMysqlInstanceLogs(ctx, config.InstanceGroupId.ValueString(), config.InstanceId.ValueString()).
 				XAuthToken(a.kc.XAuthToken).
-				BodyExportMysqlInstanceLogs(*request).
+				ExportMysqlInstanceLogsRequest(*request).
 				Execute()
 			return struct{}{}, httpResp, err
 		},

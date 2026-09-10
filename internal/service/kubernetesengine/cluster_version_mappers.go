@@ -7,13 +7,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 func (d *kubernetesVersionsDataSource) mapVersions(
 	ctx context.Context,
 	base *versionBaseModel,
-	result *kubernetesengine.KubernetesEngineV1ApiListAvailableKubernetesVersionsModelUpgradableVersionResponseModel,
+	result *kubernetesengine.UpgradableVersion,
 	respDiags *diag.Diagnostics,
 ) bool {
 	base.IsDeprecated = types.BoolValue(result.IsDeprecated)

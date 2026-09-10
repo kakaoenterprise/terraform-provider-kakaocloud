@@ -13,6 +13,7 @@ import (
 
 type tgwAttachmentNestedModel struct {
 	Id                 types.String `tfsdk:"id"`
+	Name               types.String `tfsdk:"name"`
 	ResourceType       types.String `tfsdk:"resource_type"`
 	ResourceId         types.String `tfsdk:"resource_id"`
 	ResourceName       types.String `tfsdk:"resource_name"`
@@ -80,6 +81,7 @@ type tgwOptionsModel struct {
 
 var tgwAttachmentAttrType = map[string]attr.Type{
 	"id":                  types.StringType,
+	"name":                types.StringType,
 	"resource_type":       types.StringType,
 	"resource_id":         types.StringType,
 	"resource_name":       types.StringType,

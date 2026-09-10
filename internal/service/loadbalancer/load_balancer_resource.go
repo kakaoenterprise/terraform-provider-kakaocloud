@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var (
@@ -72,11 +72,6 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	ok := r.validateAccessLog(ctx, plan, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
-		return
-	}
-
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -87,24 +82,24 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	var result *loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel
+	var result *loadbalancer.LoadBalancer
 
-	createReq := loadbalancer.CreateLoadBalancerModel{
-		Name:             plan.Name.ValueString(),
-		SubnetId:         plan.SubnetId.ValueString(),
-		AvailabilityZone: loadbalancer.AvailabilityZone(plan.AvailabilityZone.ValueString()),
-		FlavorId:         plan.FlavorId.ValueString(),
-	}
+	createReq := loadbalancer.NewCreateLoadBalancer(
+		plan.Name.ValueString(),
+		plan.SubnetId.ValueString(),
+		loadbalancer.AvailabilityZone(plan.AvailabilityZone.ValueString()),
+		plan.FlavorId.ValueString(),
+	)
 
 	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		createReq.SetDescription(plan.Description.ValueString())
 	}
 
-	body := loadbalancer.BodyCreateLoadBalancer{LoadBalancer: createReq}
+	body := *loadbalancer.NewCreateLoadBalancerRequest(*createReq)
 
 	lb, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiCreateLoadBalancerModelResponseLoadBalancerModel, *http.Response, error) {
-			return r.kc.ApiClient.LoadBalancerAPI.CreateLoadBalancer(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateLoadBalancer(body).Execute()
+		func() (*loadbalancer.CreateLoadBalancerResponse, *http.Response, error) {
+			return r.kc.ApiClient.LoadBalancerAPI.CreateLoadBalancer(ctx).XAuthToken(r.kc.XAuthToken).CreateLoadBalancerRequest(body).Execute()
 		},
 	)
 	if err != nil {
@@ -114,31 +109,47 @@ func (r *loadBalancerResource) Create(ctx context.Context, req resource.CreateRe
 
 	plan.Id = types.StringValue(lb.LoadBalancer.Id)
 
-	result, ok = r.pollLoadBalancerUntilStatus(
-		ctx,
-		plan.Id.ValueString(),
-		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
-		&resp.Diagnostics,
-	)
+	result, ok := pollLoadBalancerStatus(ctx, plan.Id.ValueString(), false, r, r.kc, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
+	plannedAccessLogs := plan.AccessLogs
+
+	ok = mapLoadBalancerResource(ctx, &plan.loadBalancerBaseModel, result, &resp.Diagnostics)
+	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	if !plan.AccessLogs.IsNull() && !plan.AccessLogs.IsUnknown() {
-		result, ok = r.updateLoadBalancerAccessLogs(ctx, &plan, &resp.Diagnostics)
-		if !ok {
-			return
+	plan.AccessLogs = plannedAccessLogs
+
+	if !plannedAccessLogs.IsNull() &&
+		!plannedAccessLogs.IsUnknown() {
+		var updateDiags diag.Diagnostics
+
+		updated, updatedOK := r.updateLoadBalancerAccessLogs(
+			ctx,
+			&plan,
+			&updateDiags,
+		)
+
+		if updatedOK && !updateDiags.HasError() {
+			ok = mapLoadBalancerResource(ctx, &plan.loadBalancerBaseModel, updated, &resp.Diagnostics)
+			if !ok || resp.Diagnostics.HasError() {
+				return
+			}
+		} else {
+
+			resp.Diagnostics.AddWarning(
+				"Load balancer created without access logs",
+				fmt.Sprintf(
+					"Load balancer %q was created successfully, but access logs could not be configured. ",
+					plan.Id.ValueString(),
+				),
+			)
+
+			plan.AccessLogs = plannedAccessLogs
 		}
-	}
-
-	ok = mapLoadBalancer(ctx, &plan.loadBalancerBaseModel, result, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
-		return
 	}
 
 	diags = resp.State.Set(ctx, plan)
@@ -168,7 +179,7 @@ func (r *loadBalancerResource) Read(ctx context.Context, req resource.ReadReques
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelResponseLoadBalancerModel, *http.Response, error) {
+		func() (*loadbalancer.GetLoadBalancerResponse, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerAPI.
 				GetLoadBalancer(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
@@ -186,16 +197,15 @@ func (r *loadBalancerResource) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	loadBalancerResult := respModel.LoadBalancer
-	ok := mapLoadBalancer(ctx, &state.loadBalancerBaseModel, &loadBalancerResult, &resp.Diagnostics)
+	ok := mapLoadBalancerResource(ctx, &state.loadBalancerBaseModel, new(respModel.LoadBalancer), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
 	if state.FlavorId.IsNull() {
 		lbfs, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.FlavorListModel, *http.Response, error) {
-				resp, httpResp, err := r.kc.ApiClient.LoadBalancerEtcAPI.ListLoadBalancerTypes(ctx).XAuthToken(r.kc.XAuthToken).Execute()
+			func() (*loadbalancer.ListLoadBalancerTypesResponse, *http.Response, error) {
+				resp, httpResp, err := r.kc.ApiClient.LoadBalancerAPI.ListLoadBalancerTypes(ctx).XAuthToken(r.kc.XAuthToken).Execute()
 				return resp, httpResp, err
 			},
 		)
@@ -227,11 +237,6 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	ok := r.validateAccessLog(ctx, plan, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
-		return
-	}
-
 	diags = req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -246,42 +251,44 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	var result *loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel
+	var result *loadbalancer.LoadBalancer
 
-	mutex := common.LockForID(plan.Id.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
+	unlock, ok := common.AcquireLockForID(ctx, plan.Id.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
 
-	ok = CheckLoadBalancerStatus(ctx, plan.Id.ValueString(), true, r, r.kc, &resp.Diagnostics)
+	_, ok = pollLoadBalancerStatus(ctx, plan.Id.ValueString(), true, r, r.kc, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
 	if !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) {
+		expected := loadBalancerPollExpectedValues{}
 
-		editReq := loadbalancer.EditLoadBalancerModel{}
+		editReq := loadbalancer.NewUpdateLoadBalancer()
 
 		if !plan.Name.Equal(state.Name) {
-			editReq.SetName(plan.Name.ValueString())
+			name := plan.Name.ValueString()
+			editReq.SetName(name)
+			expected.name = &name
 		}
 
-		if !plan.Description.Equal(state.Description) {
-			if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
-				editReq.SetDescription(plan.Description.ValueString())
-			} else {
-
-				editReq.SetDescription("")
-			}
+		if !plan.Description.IsNull() && !plan.Description.IsUnknown() && !plan.Description.Equal(state.Description) {
+			description := plan.Description.ValueString()
+			editReq.SetDescription(description)
+			expected.description = &description
 		}
 
-		body := *loadbalancer.NewBodyUpdateLoadBalancer(editReq)
+		body := *loadbalancer.NewUpdateLoadBalancerRequest(*editReq)
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateLoadBalancerModelResponseLoadBalancerModel, *http.Response, error) {
+			func() (*loadbalancer.UpdateLoadBalancerResponse, *http.Response, error) {
 				return r.kc.ApiClient.LoadBalancerAPI.
 					UpdateLoadBalancer(ctx, state.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
-					BodyUpdateLoadBalancer(body).
+					UpdateLoadBalancerRequest(body).
 					Execute()
 			},
 		)
@@ -291,18 +298,8 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 			return
 		}
 
-		result, ok = r.pollLoadBalancerUntilStatus(
-			ctx,
-			state.Id.ValueString(),
-			[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
-			&resp.Diagnostics,
-		)
+		result, ok = pollLoadBalancerStatus(ctx, state.Id.ValueString(), false, r, r.kc, &resp.Diagnostics, expected)
 		if !ok || resp.Diagnostics.HasError() {
-			return
-		}
-
-		common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, &resp.Diagnostics)
-		if resp.Diagnostics.HasError() {
 			return
 		}
 	}
@@ -315,7 +312,7 @@ func (r *loadBalancerResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	if result != nil {
-		ok = mapLoadBalancer(ctx, &plan.loadBalancerBaseModel, result, &resp.Diagnostics)
+		ok = mapLoadBalancerResource(ctx, &plan.loadBalancerBaseModel, result, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
@@ -333,11 +330,21 @@ func (r *loadBalancerResource) Delete(ctx context.Context, req resource.DeleteRe
 		return
 	}
 
-	mutex := common.LockForID(state.Id.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
+	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
-	ok := CheckLoadBalancerStatus(ctx, state.Id.ValueString(), true, r, r.kc, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, state.Id.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollLoadBalancerStatus(ctx, state.Id.ValueString(), true, r, r.kc, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -374,7 +381,7 @@ func (r *loadBalancerResource) pollLoadBalancerUntilStatus(
 	loadBalancerId string,
 	targetStatuses []string,
 	resp *diag.Diagnostics,
-) (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel, bool) {
+) (*loadbalancer.LoadBalancer, bool) {
 	return common.PollUntilResult(
 		ctx,
 		r,
@@ -383,9 +390,9 @@ func (r *loadBalancerResource) pollLoadBalancerUntilStatus(
 		loadBalancerId,
 		targetStatuses,
 		resp,
-		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel, *http.Response, error) {
+		func(ctx context.Context) (*loadbalancer.LoadBalancer, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
-				func() (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelResponseLoadBalancerModel, *http.Response, error) {
+				func() (*loadbalancer.GetLoadBalancerResponse, *http.Response, error) {
 					return r.kc.ApiClient.LoadBalancerAPI.
 						GetLoadBalancer(ctx, loadBalancerId).
 						XAuthToken(r.kc.XAuthToken).
@@ -397,7 +404,7 @@ func (r *loadBalancerResource) pollLoadBalancerUntilStatus(
 			}
 			return &respModel.LoadBalancer, httpResp, nil
 		},
-		func(lb *loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel) string {
+		func(lb *loadbalancer.LoadBalancer) string {
 			return string(*lb.ProvisioningStatus.Get())
 		},
 	)
@@ -407,12 +414,14 @@ func (r *loadBalancerResource) updateLoadBalancerAccessLogs(
 	ctx context.Context,
 	plan *loadBalancerResourceModel,
 	diag *diag.Diagnostics,
-) (*loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel, bool) {
+) (*loadbalancer.LoadBalancer, bool) {
 	var accessLog accessLogModel
-	body := loadbalancer.NewBodyUpdateAccessLog()
+	expected := loadBalancerPollExpectedValues{}
+	body := loadbalancer.NewUpdateAccessLogRequest()
 
 	if plan.AccessLogs.IsNull() {
 		body.SetAccessLogsNil()
+		expected.accessLogsEnabled = new(false)
 	} else {
 		diags := plan.AccessLogs.As(ctx, &accessLog, basetypes.ObjectAsOptions{})
 		diag.Append(diags...)
@@ -420,18 +429,20 @@ func (r *loadBalancerResource) updateLoadBalancerAccessLogs(
 			return nil, false
 		}
 
-		accessLogReq := loadbalancer.EditLoadBalancerAccessLogModel{
-			Bucket:    accessLog.Bucket.ValueString(),
-			AccessKey: accessLog.AccessKey.ValueString(),
-			SecretKey: accessLog.SecretKey.ValueString(),
-		}
+		accessLogReq := loadbalancer.NewUpdateAccessLog(
+			accessLog.Bucket.ValueString(),
+			accessLog.AccessKey.ValueString(),
+			accessLog.SecretKey.ValueString(),
+		)
 
-		body.SetAccessLogs(accessLogReq)
+		body.SetAccessLogs(*accessLogReq)
+		expected.accessLogsEnabled = new(true)
+		expected.accessLogBucket = new(accessLog.Bucket.ValueString())
 	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiUpdateAccessLogModelResponseLoadBalancerModel, *http.Response, error) {
-			return r.kc.ApiClient.LoadBalancerAPI.UpdateAccessLog(ctx, plan.Id.ValueString()).XAuthToken(r.kc.XAuthToken).BodyUpdateAccessLog(*body).Execute()
+		func() (*loadbalancer.UpdateAccessLogResponse, *http.Response, error) {
+			return r.kc.ApiClient.LoadBalancerAPI.UpdateAccessLog(ctx, plan.Id.ValueString()).XAuthToken(r.kc.XAuthToken).UpdateAccessLogRequest(*body).Execute()
 		},
 	)
 
@@ -440,18 +451,8 @@ func (r *loadBalancerResource) updateLoadBalancerAccessLogs(
 		return nil, false
 	}
 
-	result, ok := r.pollLoadBalancerUntilStatus(
-		ctx,
-		plan.Id.ValueString(),
-		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
-		diag,
-	)
+	result, ok := pollLoadBalancerStatus(ctx, plan.Id.ValueString(), false, r, r.kc, diag, expected)
 	if !ok || diag.HasError() {
-		return nil, false
-	}
-
-	common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.LoadBalancerProvisioningStatusActive}, diag)
-	if diag.HasError() {
 		return nil, false
 	}
 
@@ -471,6 +472,7 @@ func (r *loadBalancerResource) ValidateConfig(ctx context.Context, req resource.
 	}
 
 	r.validateAvailabilityZoneConfig(config, resp)
+	r.validateAccessLog(ctx, config, &resp.Diagnostics)
 }
 
 func (r *loadBalancerResource) validateAvailabilityZoneConfig(config loadBalancerResourceModel, resp *resource.ValidateConfigResponse) {
@@ -485,12 +487,12 @@ func (r *loadBalancerResource) validateAvailabilityZoneConfig(config loadBalance
 
 func (r *loadBalancerResource) validateAccessLog(
 	ctx context.Context,
-	plan loadBalancerResourceModel,
+	config loadBalancerResourceModel,
 	diag *diag.Diagnostics,
 ) bool {
-	if !plan.AccessLogs.IsNull() {
+	if !config.AccessLogs.IsNull() {
 		var accessLogs accessLogModel
-		diags := plan.AccessLogs.As(ctx, &accessLogs, basetypes.ObjectAsOptions{})
+		diags := config.AccessLogs.As(ctx, &accessLogs, basetypes.ObjectAsOptions{})
 		diag.Append(diags...)
 		if diag.HasError() {
 			return false

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/bcs"
 )
 
 var (
@@ -67,7 +67,7 @@ func (d *instanceDataSource) Read(ctx context.Context, req datasource.ReadReques
 	defer cancel()
 
 	instanceResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*bcs.ResponseInstanceModel, *http.Response, error) {
+		func() (*bcs.GetInstanceResponse, *http.Response, error) {
 			return d.kc.ApiClient.InstanceAPI.GetInstance(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -78,7 +78,7 @@ func (d *instanceDataSource) Read(ctx context.Context, req datasource.ReadReques
 
 	result := instanceResp.Instance
 
-	ok := mapInstanceBaseModel(ctx, &config.instanceBaseModel, &result, &resp.Diagnostics)
+	ok := mapInstanceModel(ctx, &config.instanceBaseModel, &result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

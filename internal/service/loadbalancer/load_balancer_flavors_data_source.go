@@ -9,7 +9,7 @@ import (
 	"terraform-provider-kakaocloud/internal/common"
 
 	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -63,15 +63,15 @@ func (d *loadBalancerFlavorsDataSource) Schema(ctx context.Context, _ datasource
 }
 
 func (d *loadBalancerFlavorsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data loadBalancerFlavorsDataSourceModel
+	var config loadBalancerFlavorsDataSourceModel
 
-	diags := req.Config.Get(ctx, &data)
+	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	timeout, diags := data.Timeouts.Read(ctx, common.DefaultReadTimeout)
+	timeout, diags := config.Timeouts.Read(ctx, common.DefaultReadTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -81,8 +81,8 @@ func (d *loadBalancerFlavorsDataSource) Read(ctx context.Context, req datasource
 	defer cancel()
 
 	lbfs, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*loadbalancer.FlavorListModel, *http.Response, error) {
-			resp, httpResp, err := d.kc.ApiClient.LoadBalancerEtcAPI.ListLoadBalancerTypes(ctx).XAuthToken(d.kc.XAuthToken).Execute()
+		func() (*loadbalancer.ListLoadBalancerTypesResponse, *http.Response, error) {
+			resp, httpResp, err := d.kc.ApiClient.LoadBalancerAPI.ListLoadBalancerTypes(ctx).XAuthToken(d.kc.XAuthToken).Execute()
 			return resp, httpResp, err
 		},
 	)
@@ -92,7 +92,7 @@ func (d *loadBalancerFlavorsDataSource) Read(ctx context.Context, req datasource
 		return
 	}
 
-	var lbfsResult []loadbalancer.FlavorModel
+	var lbfsResult []loadbalancer.Flavor
 	err = copier.Copy(&lbfsResult, &lbfs.Flavors)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
@@ -100,15 +100,16 @@ func (d *loadBalancerFlavorsDataSource) Read(ctx context.Context, req datasource
 		return
 	}
 
+	config.LoadBalancerFlavors = make([]loadBalancerFlavorBaseModel, 0, len(lbfsResult))
 	for _, flavor := range lbfsResult {
 		var lbfModel loadBalancerFlavorBaseModel
 		ok := mapLoadBalancerFlavor(ctx, &lbfModel, &flavor, &resp.Diagnostics)
 		if !ok {
 			return
 		}
-		data.LoadBalancerFlavors = append(data.LoadBalancerFlavors, lbfModel)
+		config.LoadBalancerFlavors = append(config.LoadBalancerFlavors, lbfModel)
 	}
 
-	diags = resp.State.Set(ctx, &data)
+	diags = resp.State.Set(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 }

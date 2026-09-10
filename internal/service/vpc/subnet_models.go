@@ -13,6 +13,7 @@ import (
 type subnetBaseModel struct {
 	Id                 types.String       `tfsdk:"id"`
 	Name               types.String       `tfsdk:"name"`
+	Description        types.String       `tfsdk:"description"`
 	IsShared           types.Bool         `tfsdk:"is_shared"`
 	AvailabilityZone   types.String       `tfsdk:"availability_zone"`
 	CidrBlock          cidrtypes.IPPrefix `tfsdk:"cidr_block"`

@@ -4,17 +4,16 @@ package volume
 
 import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/volume"
 	. "terraform-provider-kakaocloud/internal/utils"
 )
 
-func mapVolumeSnapshotBaseModel(
+func mapVolumeSnapshotModel(
 	originSnapshot *volumeSnapshotBaseModel,
-	snapshotResult *volume.BcsVolumeV1ApiGetSnapshotModelVolumeSnapshotModel,
+	snapshotResult *volume.Snapshot,
 	respDiags *diag.Diagnostics,
 ) bool {
-	originSnapshot.Id = types.StringValue(snapshotResult.Id)
+	originSnapshot.Id = ConvertNullableString(snapshotResult.Id)
 	originSnapshot.Name = ConvertNullableString(snapshotResult.Name)
 	originSnapshot.Description = ConvertNullableString(snapshotResult.Description)
 	originSnapshot.Size = ConvertNullableInt64(snapshotResult.Size)

@@ -41,20 +41,36 @@ func PollUntilResultWithTimeout[T any](
 	defer ticker.Stop()
 
 	retry404Count := 0
+	retry500Count := 0
 	maxRetries := 300
 	max404Retries := 10
+	max500Retries := 3
 
 	typeName, _ := ExtractTypeMetadata(ctx, obj)
 
 	for {
 		select {
 		case <-ctxWithTimeout.Done():
-			AddGeneralError(ctx, obj, respDiags, "context deadline exceeded")
+			AddPollingTimeoutError(ctx, obj, respDiags, targetName, targetId)
 			return zero, false
 
 		case <-ticker.C:
 			result, httpResp, err := fetch(ctxWithTimeout)
 			if err != nil {
+				if httpResp != nil && httpResp.StatusCode == http.StatusInternalServerError {
+					if retry500Count < max500Retries {
+						retry500Count++
+						tflog.Warn(ctxWithTimeout, fmt.Sprintf(
+							"Polling received HTTP 500 (%v). Retrying %d/%d...",
+							err,
+							retry500Count,
+							max500Retries,
+						))
+						continue
+					}
+					AddApiActionError(ctx, obj, httpResp, "PollForStatus", err, respDiags)
+					return zero, false
+				}
 
 				if isTransientPollError(err) {
 					tflog.Warn(ctxWithTimeout, fmt.Sprintf(
@@ -93,6 +109,7 @@ func PollUntilResultWithTimeout[T any](
 				AddApiActionError(ctx, obj, httpResp, "PollForStatus", err, respDiags)
 				return zero, false
 			}
+			retry500Count = 0
 
 			status := getStatus(result)
 			for _, s := range targetStatuses {

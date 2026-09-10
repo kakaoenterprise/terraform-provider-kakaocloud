@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/volume"
 )
 
 var (
@@ -66,7 +66,7 @@ func (d *volumeSnapshotDataSource) Read(ctx context.Context, req datasource.Read
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*volume.BcsVolumeV1ApiGetSnapshotModelResponseVolumeSnapshotModel, *http.Response, error) {
+		func() (*volume.GetSnapshotResponse, *http.Response, error) {
 			return d.kc.ApiClient.VolumeSnapshotAPI.GetSnapshot(ctx, config.Id.ValueString()).
 				XAuthToken(d.kc.XAuthToken).Execute()
 		},
@@ -77,7 +77,7 @@ func (d *volumeSnapshotDataSource) Read(ctx context.Context, req datasource.Read
 	}
 
 	volumeSnapshotResult := respModel.Snapshot
-	ok := mapVolumeSnapshotBaseModel(&config.volumeSnapshotBaseModel, &volumeSnapshotResult, &resp.Diagnostics)
+	ok := mapVolumeSnapshotModel(&config.volumeSnapshotBaseModel, &volumeSnapshotResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

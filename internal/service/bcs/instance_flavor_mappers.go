@@ -7,17 +7,17 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/bcs"
 	"golang.org/x/net/context"
 )
 
 func mapInstanceFlavorBaseModel(
 	ctx context.Context,
 	origin *instanceFlavorBaseModel,
-	result *bcs.BcsInstanceV1ApiGetInstanceTypeModelFlavorModel,
+	result *bcs.Flavor,
 	respDiags *diag.Diagnostics,
 ) bool {
-	origin.Id = types.StringValue(result.Id)
+	origin.Id = ConvertNullableString(result.Id)
 	origin.Name = ConvertNullableString(result.Name)
 	origin.Vcpus = ConvertNullableInt32(result.Vcpus)
 	origin.Description = ConvertNullableString(result.Description)

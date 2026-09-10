@@ -42,11 +42,11 @@ resource "kakaocloud_volume" "example_restore" {
 
 - `description` (Optional, String) Description of the volume <br/> - Ignored if `volume_snapshot_id` is specified.
 - `encryption_secret_id` (Optional, String) Encryption key ID used to encrypt the volume
-- `image_id` (Optional, String) Unique ID of the image <br/> - See ⚠️ Constraints section below for mutual exclusivity.
+- `image_id` (Optional, String) Unique ID of the image <br/> - Cannot be specified together with `volume_snapshot_id` or `source_volume_id`.
 - `size` (Optional, Number) Volume size (in GB) <br/> - Required if `volume_snapshot_id` is not specified <br/> - Linux: 1–16,384 GB <br/> - Windows: 1–2,048 GB
 - `source_volume_id` (Optional, String) ID of an existing volume to clone from <br/> - Cannot be specified together with `volume_snapshot_id` or `image_id`.
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
-- `volume_snapshot_id` (Optional, String) ID of the snapshot to restore from <br/> - See ⚠️ Constraints section below for mutual exclusivity.
+- `volume_snapshot_id` (Optional, String) ID of the snapshot to restore from <br/> - Cannot be specified together with `image_id` or `source_volume_id`.
 - `volume_type_id` (Optional, String) Volume type ID
 
 ## Attribute Reference

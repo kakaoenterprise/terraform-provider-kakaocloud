@@ -6,21 +6,20 @@ import (
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 	"golang.org/x/net/context"
 )
 
-func mapRouteTableBaseModel(
+func mapRouteTableModel(
 	ctx context.Context,
 	base *routeTableBaseModel,
-	result *vpc.BnsVpcV1ApiGetRouteTableModelRouteTableModel,
+	result *vpc.VpcRouteTable,
 	diags *diag.Diagnostics,
 ) bool {
 
-	associations, assocDiags := ConvertListFromModel(ctx, result.Associations, routeTableAssociationAttrType, func(item vpc.BnsVpcV1ApiGetRouteTableModelAssociationModel) any {
+	associations, assocDiags := ConvertListFromModel(ctx, result.Associations, routeTableAssociationAttrType, func(item vpc.VpcAssociation) any {
 		return routeTableAssociationModel{
-			Id:                 types.StringValue(item.Id),
+			Id:                 ConvertNullableString(item.Id),
 			ProvisioningStatus: ConvertNullableString(item.ProvisioningStatus),
 			VpcId:              ConvertNullableString(item.VpcId),
 			VpcName:            ConvertNullableString(item.VpcName),
@@ -32,9 +31,9 @@ func mapRouteTableBaseModel(
 	})
 	diags.Append(assocDiags...)
 
-	routes, routeDiags := ConvertListFromModel(ctx, result.Routes, routeTableRouteAttrType, func(item vpc.BnsVpcV1ApiGetRouteTableModelRouteModel) any {
+	routes, routeDiags := ConvertListFromModel(ctx, result.Routes, routeTableRouteAttrType, func(item vpc.VpcRoute) any {
 		return routeTableRouteModel{
-			Id:                 types.StringValue(item.Id),
+			Id:                 ConvertNullableString(item.Id),
 			Destination:        ConvertNullableString(item.Destination),
 			ProvisioningStatus: ConvertNullableString(item.ProvisioningStatus),
 			TargetType:         ConvertNullableString(item.TargetType),
@@ -45,8 +44,9 @@ func mapRouteTableBaseModel(
 	})
 	diags.Append(routeDiags...)
 
-	base.Id = types.StringValue(result.Id)
+	base.Id = ConvertNullableString(result.Id)
 	base.Name = ConvertNullableString(result.Name)
+	base.Description = ConvertNullableString(result.Description)
 	base.Associations = associations
 	base.Routes = routes
 	base.VpcId = ConvertNullableString(result.VpcId)

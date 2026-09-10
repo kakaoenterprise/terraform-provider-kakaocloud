@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var (
@@ -80,7 +80,7 @@ func (d *loadBalancerTargetGroupDataSource) Read(ctx context.Context, req dataso
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*loadbalancer.TargetGroupResponseModel, *http.Response, error) {
+		func() (*loadbalancer.GetTargetGroupResponse, *http.Response, error) {
 			return d.kc.ApiClient.LoadBalancerTargetGroupAPI.GetTargetGroup(ctx, data.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)

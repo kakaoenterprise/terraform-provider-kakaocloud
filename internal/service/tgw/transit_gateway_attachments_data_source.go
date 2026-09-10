@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -85,7 +85,7 @@ func (d *transitGatewayAttachmentsDataSource) Read(ctx context.Context, req data
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	attachmentApi := d.kc.ApiClient.AttachmentsAPI.ListTgwAttachments(ctx)
+	attachmentApi := d.kc.ApiClient.TransitGatewayAttachmentAPI.ListTgwAttachments(ctx)
 
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
@@ -100,12 +100,14 @@ func (d *transitGatewayAttachmentsDataSource) Read(ctx context.Context, req data
 			switch filterName {
 			case "id":
 				attachmentApi = attachmentApi.Id(v)
+			case "name":
+				attachmentApi = attachmentApi.Name(v)
 			case "tgw_id":
 				attachmentApi = attachmentApi.TgwId(v)
 			case "tgw_name":
 				attachmentApi = attachmentApi.TgwName(v)
 			case "provisioning_status":
-				if ps, err := ToTgwProvisioningStatus(v); err == nil {
+				if ps, err := ToTGWAttachmentProvisioningStatus(v); err == nil {
 					attachmentApi = attachmentApi.ProvisioningStatus(*ps)
 				} else {
 					resp.Diagnostics.AddError(
@@ -153,7 +155,7 @@ func (d *transitGatewayAttachmentsDataSource) Read(ctx context.Context, req data
 	}
 
 	attachResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwAttachmentsResponseModel, *http.Response, error) {
+		func() (*tgw.ListTgwAttachmentsResponse, *http.Response, error) {
 			return attachmentApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -162,10 +164,10 @@ func (d *transitGatewayAttachmentsDataSource) Read(ctx context.Context, req data
 		return
 	}
 
-	config.TransitGatewayAttachments = make([]transitGatewayAttachmentBaseModel, 0)
+	config.TransitGatewayAttachments = make([]transitGatewayAttachmentBaseModel, 0, len(attachResp.Attachments))
 	for _, item := range attachResp.Attachments {
 		var attachModel transitGatewayAttachmentBaseModel
-		ok := mapTransitGatewayAttachmentModelFromList(ctx, &attachModel, &item, &resp.Diagnostics)
+		ok := mapTransitGatewayAttachmentModel(ctx, &attachModel, &item, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

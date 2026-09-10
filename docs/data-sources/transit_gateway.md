@@ -37,8 +37,13 @@ output "tgw_basic" {
 
 # Output attached resources
 output "tgw_attachments" {
-  description = "Attachments connected to the Transit Gateway"
-  value       = data.kakaocloud_transit_gateway.example.attachments
+  description = "Names and IDs of attachments connected to the Transit Gateway"
+  value = [
+    for attachment in data.kakaocloud_transit_gateway.example.attachments : {
+      id   = attachment.id
+      name = attachment.name
+    }
+  ]
 }
 
 # Output associated route tables
@@ -83,6 +88,7 @@ The following attributes are exported:
 
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `id` (String) Transit Gateway attachment ID.
+- `name` (String) Transit Gateway attachment name.
 - `provisioning_status` (String) Provisioning status of the attachment.
 - `resource_id` (String) ID of the attached resource.
 - `resource_name` (String) Name of the attached resource.

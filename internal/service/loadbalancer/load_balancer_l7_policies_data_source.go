@@ -12,7 +12,7 @@ import (
 	"terraform-provider-kakaocloud/internal/common"
 	"terraform-provider-kakaocloud/internal/utils"
 
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -94,7 +94,7 @@ func (d *loadBalancerL7PoliciesDataSource) Read(ctx context.Context, req datasou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	l7PolicyApi := d.kc.ApiClient.LoadBalancerL7PoliciesAPI.ListL7Policies(
+	l7PolicyApi := d.kc.ApiClient.LoadBalancerL7PolicyAPI.ListL7Policies(
 		ctx,
 		config.LoadBalancerId.ValueString(),
 		config.ListenerId.ValueString(),
@@ -162,7 +162,7 @@ func (d *loadBalancerL7PoliciesDataSource) Read(ctx context.Context, req datasou
 	}
 
 	lbL7PoliciesResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*loadbalancer.L7PolicyListModel, *http.Response, error) {
+		func() (*loadbalancer.ListL7PoliciesResponse, *http.Response, error) {
 			return l7PolicyApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -171,7 +171,7 @@ func (d *loadBalancerL7PoliciesDataSource) Read(ctx context.Context, req datasou
 		return
 	}
 
-	var lbL7PoliciesResult []loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyModelL7PolicyModel
+	var lbL7PoliciesResult []loadbalancer.L7Policy
 	err = copier.Copy(&lbL7PoliciesResult, &lbL7PoliciesResp.L7Policies)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
@@ -179,6 +179,7 @@ func (d *loadBalancerL7PoliciesDataSource) Read(ctx context.Context, req datasou
 		return
 	}
 
+	config.L7Policies = make([]loadBalancerL7PolicyBaseModel, 0, len(lbL7PoliciesResult))
 	for _, v := range lbL7PoliciesResult {
 		var tmplb7Policy loadBalancerL7PolicyBaseModel
 		ok := mapLoadBalancerL7PolicyFromGetResponse(ctx, &tmplb7Policy, &v, &resp.Diagnostics)

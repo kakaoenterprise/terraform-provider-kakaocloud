@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/network"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/network"
 )
 
 var (
@@ -99,7 +99,7 @@ func (d *securityGroupsDataSource) Read(ctx context.Context, req datasource.Read
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	sgApi := d.kc.ApiClient.SecurityGroupAPI.ListSecurityGroups(ctx)
+	sgApi := d.kc.ApiClient.NetworkSecurityGroupAPI.ListSecurityGroups(ctx)
 
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() || f.Value.IsNull() || f.Value.IsUnknown() {
@@ -139,7 +139,7 @@ func (d *securityGroupsDataSource) Read(ctx context.Context, req datasource.Read
 	}
 
 	sgResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*network.SecurityGroupListModel, *http.Response, error) {
+		func() (*network.ListSecurityGroupsResponse, *http.Response, error) {
 			return sgApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -148,17 +148,15 @@ func (d *securityGroupsDataSource) Read(ctx context.Context, req datasource.Read
 		return
 	}
 
-	var resultSgs []securityGroupBaseModel
+	config.SecurityGroups = make([]securityGroupBaseModel, 0, len(sgResp.SecurityGroups))
 	for i := range sgResp.SecurityGroups {
 		var base securityGroupBaseModel
-		mapSecurityGroupBaseModelFromList(ctx, &base, &sgResp.SecurityGroups[i], &resp.Diagnostics)
+		mapSecurityGroupModel(ctx, &base, &sgResp.SecurityGroups[i], &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
-		resultSgs = append(resultSgs, base)
+		config.SecurityGroups = append(config.SecurityGroups, base)
 	}
-
-	config.SecurityGroups = resultSgs
 
 	diags = resp.State.Set(ctx, &config)
 	resp.Diagnostics.Append(diags...)

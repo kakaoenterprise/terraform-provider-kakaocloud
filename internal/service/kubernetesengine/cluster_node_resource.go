@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 var (
@@ -104,19 +104,16 @@ func (r *clusterNodeResource) Create(ctx context.Context, req resource.CreateReq
 	case isRemoveKnown:
 		isRemove := plan.IsRemove.ValueBool()
 
-		body := kubernetesengine.DeleteK8sClusterNodesRequestModel{
-			Cluster: kubernetesengine.KubernetesEngineV1ApiDeleteClusterNodesModelClusterRequestModel{
-				IsRemove:  isRemove,
-				NodeNames: nodeNames,
-			},
-		}
+		body := kubernetesengine.NewDeleteClusterNodesRequest(
+			*kubernetesengine.NewDeleteClusterNodes(isRemove, nodeNames),
+		)
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
-				req := r.kc.ApiClient.ClustersAPI.
+				req := r.kc.ApiClient.KubernetesEngineClusterAPI.
 					DeleteClusterNodes(ctx, cluster).
 					XAuthToken(r.kc.XAuthToken).
-					DeleteK8sClusterNodesRequestModel(body)
+					DeleteClusterNodesRequest(*body)
 
 				httpResp, err := req.Execute()
 				return nil, httpResp, err
@@ -139,8 +136,8 @@ func (r *clusterNodeResource) Create(ctx context.Context, req resource.CreateReq
 			&resp.Diagnostics,
 			func(ctx context.Context) (pollResult, *http.Response, error) {
 				modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-					func() (*kubernetesengine.GetK8sClusterNodesResponseModel, *http.Response, error) {
-						return r.kc.ApiClient.ClustersAPI.
+					func() (*kubernetesengine.ListClusterNodesResponse, *http.Response, error) {
+						return r.kc.ApiClient.KubernetesEngineClusterAPI.
 							ListClusterNodes(ctx, cluster).
 							XAuthToken(r.kc.XAuthToken).
 							Execute()
@@ -179,19 +176,16 @@ func (r *clusterNodeResource) Create(ctx context.Context, req resource.CreateReq
 	case isCordonKnown:
 		desired := plan.IsCordon.ValueBool()
 
-		body := kubernetesengine.UpdateK8sClusterNodesCordonRequestModel{
-			Cluster: kubernetesengine.KubernetesEngineV1ApiSetClusterNodesCordonModelClusterRequestModel{
-				IsCordon:  desired,
-				NodeNames: nodeNames,
-			},
-		}
+		body := kubernetesengine.NewSetClusterNodesCordonRequest(
+			*kubernetesengine.NewSetClusterNodesCordon(desired, nodeNames),
+		)
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
-				req := r.kc.ApiClient.ClustersAPI.
+				req := r.kc.ApiClient.KubernetesEngineClusterAPI.
 					SetClusterNodesCordon(ctx, cluster).
 					XAuthToken(r.kc.XAuthToken).
-					UpdateK8sClusterNodesCordonRequestModel(body)
+					SetClusterNodesCordonRequest(*body)
 
 				httpResp, err := req.Execute()
 				return nil, httpResp, err
@@ -212,8 +206,8 @@ func (r *clusterNodeResource) Create(ctx context.Context, req resource.CreateReq
 			&resp.Diagnostics,
 			func(ctx context.Context) (bool, *http.Response, error) {
 				modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-					func() (*kubernetesengine.GetK8sClusterNodesResponseModel, *http.Response, error) {
-						return r.kc.ApiClient.ClustersAPI.
+					func() (*kubernetesengine.ListClusterNodesResponse, *http.Response, error) {
+						return r.kc.ApiClient.KubernetesEngineClusterAPI.
 							ListClusterNodes(ctx, cluster).
 							XAuthToken(r.kc.XAuthToken).
 							Execute()

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 var (
@@ -91,8 +91,8 @@ func (d *clustersDataSource) Read(ctx context.Context, req datasource.ReadReques
 	defer cancel()
 
 	clusterResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*kubernetesengine.GetK8sClustersResponseModel, *http.Response, error) {
-			return d.kc.ApiClient.ClustersAPI.ListClusters(ctx).XAuthToken(d.kc.XAuthToken).Execute()
+		func() (*kubernetesengine.ListClustersResponse, *http.Response, error) {
+			return d.kc.ApiClient.KubernetesEngineClusterAPI.ListClusters(ctx).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
 	if err != nil {
@@ -100,9 +100,10 @@ func (d *clustersDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
+	config.Clusters = make([]ClusterBaseModel, 0, len(clusterResp.Clusters))
 	for _, c := range clusterResp.Clusters {
 		var tmpCluster ClusterBaseModel
-		ok := d.mapClusters(ctx, &tmpCluster, &c, &resp.Diagnostics)
+		ok := mapClusterBaseModel(ctx, &tmpCluster, &c, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/bcs"
 )
 
 var (
@@ -67,8 +67,8 @@ func (d *instanceFlavorDataSource) Read(ctx context.Context, req datasource.Read
 	defer cancel()
 
 	flavorResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*bcs.ResponseFlavorModel, *http.Response, error) {
-			return d.kc.ApiClient.FlavorAPI.GetInstanceType(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
+		func() (*bcs.GetInstanceTypeResponse, *http.Response, error) {
+			return d.kc.ApiClient.InstanceAPI.GetInstanceType(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
 	if err != nil {

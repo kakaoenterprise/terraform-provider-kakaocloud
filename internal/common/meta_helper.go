@@ -41,7 +41,7 @@ func ExtractTypeMetadata(ctx context.Context, obj interface{}) (string, string) 
 
 func GetCallerMethodName() string {
 	const maxDepth = 10
-	actions := []string{ActionC, ActionR, ActionU, ActionD, ActionInvoke}
+	callerActions := []string{ActionC, ActionR, ActionU, ActionD, ActionInvoke}
 
 	for i := 2; i < 2+maxDepth; i++ {
 		pc, _, _, ok := runtime.Caller(i)
@@ -63,9 +63,9 @@ func GetCallerMethodName() string {
 			funcName = fullName[lastDot+1:]
 		}
 
-		for _, action := range actions {
-			if funcName == action {
-				return action
+		for _, callerAction := range callerActions {
+			if funcName == callerAction {
+				return callerAction
 			}
 		}
 	}

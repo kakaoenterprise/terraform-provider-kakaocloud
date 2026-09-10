@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/image"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/image"
 )
 
 var (
@@ -74,7 +74,7 @@ func (r *imageMemberResource) Create(ctx context.Context, req resource.CreateReq
 	imageId := plan.Id.ValueString()
 
 	currentResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*image.ImageMemberListModel, *http.Response, error) {
+		func() (*image.ListImageSharedProjectsResponse, *http.Response, error) {
 			return r.kc.ApiClient.ImageAPI.
 				ListImageSharedProjects(ctx, imageId).
 				XAuthToken(r.kc.XAuthToken).
@@ -105,7 +105,7 @@ func (r *imageMemberResource) Create(ctx context.Context, req resource.CreateReq
 
 	for _, sharedMemberId := range sharedMemberIds {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*image.ResponseImageMemberModel, *http.Response, error) {
+			func() (*image.AddImageShareResponse, *http.Response, error) {
 				return r.kc.ApiClient.ImageAPI.
 					AddImageShare(ctx, imageId, sharedMemberId).
 					XAuthToken(r.kc.XAuthToken).
@@ -144,7 +144,7 @@ func (r *imageMemberResource) Read(ctx context.Context, req resource.ReadRequest
 	}
 
 	imageMemberResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*image.ImageMemberListModel, *http.Response, error) {
+		func() (*image.ListImageSharedProjectsResponse, *http.Response, error) {
 			return r.kc.ApiClient.ImageAPI.
 				ListImageSharedProjects(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
@@ -244,7 +244,7 @@ func (r *imageMemberResource) Update(ctx context.Context, req resource.UpdateReq
 		for _, memberId := range planSharedMemberIds {
 			if !stateMap[memberId] {
 				_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-					func() (*image.ResponseImageMemberModel, *http.Response, error) {
+					func() (*image.AddImageShareResponse, *http.Response, error) {
 						return r.kc.ApiClient.ImageAPI.
 							AddImageShare(ctx, imageId, memberId).
 							XAuthToken(r.kc.XAuthToken).
@@ -315,7 +315,7 @@ func (r *imageMemberResource) Delete(ctx context.Context, req resource.DeleteReq
 		)
 		if err != nil {
 			if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
-				return
+				continue
 			}
 			common.AddApiActionError(ctx, r, httpResp, "RemoveImageShare", err, &resp.Diagnostics)
 			return
@@ -360,12 +360,12 @@ func (r *imageMemberResource) convertSetToMembersModel(
 	return result, diags
 }
 
-func (r *imageMemberResource) pollUntilAllMembers(ctx context.Context, imageId string, memberIds []string, respDiags *diag.Diagnostics) (*image.ImageMemberListModel, bool) {
+func (r *imageMemberResource) pollUntilAllMembers(ctx context.Context, imageId string, memberIds []string, respDiags *diag.Diagnostics) (*image.ListImageSharedProjectsResponse, bool) {
 	memberCount := len(memberIds)
 
 	for {
 		imageMemberResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-			func() (*image.ImageMemberListModel, *http.Response, error) {
+			func() (*image.ListImageSharedProjectsResponse, *http.Response, error) {
 				return r.kc.ApiClient.ImageAPI.
 					ListImageSharedProjects(ctx, imageId).
 					XAuthToken(r.kc.XAuthToken).
@@ -411,7 +411,7 @@ func (r *imageMemberResource) pollUntilAllMembers(ctx context.Context, imageId s
 func (r *imageMemberResource) mapImageMemberModel(
 	ctx context.Context,
 	model *imageMemberResourceModel,
-	membersResult []image.BcsImageV1ApiListImageSharedProjectsModelImageMemberModel,
+	membersResult []image.ListImageSharedProjectsMember,
 	respDiags *diag.Diagnostics,
 ) bool {
 	ok := mapImageMemberModel(ctx, &model.imageMemberBaseModel, membersResult, respDiags)

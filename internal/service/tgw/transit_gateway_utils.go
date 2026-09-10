@@ -10,19 +10,28 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 	"golang.org/x/net/context"
 )
 
-func ToTgwProvisioningStatus(v string) (*tgw.ProvisioningStatus, error) {
-	ps := tgw.ProvisioningStatus(strings.ToUpper(v))
+func ToTGWProvisioningStatus(v string) (*tgw.TGWProvisioningStatus, error) {
+	return tgw.NewTGWProvisioningStatusFromValue(strings.ToUpper(v))
+}
 
-	for _, allowed := range tgw.AllowedProvisioningStatusEnumValues {
-		if ps == allowed {
-			return &ps, nil
-		}
-	}
-	return nil, fmt.Errorf("invalid provisioning status: %s (allowed: %v)", v, tgw.AllowedProvisioningStatusEnumValues)
+func ToTGWAttachmentProvisioningStatus(v string) (*tgw.TGWAttachmentProvisioningStatus, error) {
+	return tgw.NewTGWAttachmentProvisioningStatusFromValue(strings.ToUpper(v))
+}
+
+func ToTGWRouteTableProvisioningStatus(v string) (*tgw.TGWRouteTableProvisioningStatus, error) {
+	return tgw.NewTGWRouteTableProvisioningStatusFromValue(strings.ToUpper(v))
+}
+
+func ToTGWRouteProvisioningStatus(v string) (*tgw.TGWRouteProvisioningStatus, error) {
+	return tgw.NewTGWRouteProvisioningStatusFromValue(strings.ToUpper(v))
+}
+
+func ToTGWAssociationProvisioningStatus(v string) (*tgw.TGWAssociationProvisioningStatus, error) {
+	return tgw.NewTGWAssociationProvisioningStatusFromValue(strings.ToUpper(v))
 }
 
 func ToRegion(v string) (*tgw.Region, error) {
@@ -47,6 +56,28 @@ func ToResourceType(v string) (*tgw.ResourceType, error) {
 	return nil, fmt.Errorf("invalid resource type: %s (allowed: %v)", v, tgw.AllowedResourceTypeEnumValues)
 }
 
+var tgwAvailableStatuses = []string{
+	common.TgwStatusActive,
+	common.TgwStatusInUse,
+	common.TgwStatusInactive,
+	common.TgwStatusAvailable,
+}
+
+var tgwAvailableAndErrorStatuses = append(
+	append([]string(nil), tgwAvailableStatuses...),
+	common.TgwStatusError,
+)
+
+var tgwDeleteStatuses = append(
+	append([]string(nil), tgwAvailableAndErrorStatuses...),
+	common.TgwStatusDeleting,
+)
+
+var tgwAttachmentAvailableAndErrorStatuses = append(
+	append([]string(nil), tgwAvailableAndErrorStatuses...),
+	common.TgwStatusPendingApprove,
+)
+
 func pollTgw(
 	ctx context.Context,
 	kc *common.KakaoCloudClient,
@@ -54,13 +85,13 @@ func pollTgw(
 	tgwId string,
 	targetStatuses []string,
 	diags *diag.Diagnostics,
-) (*tgw.BnsTgwV1ApiGetTransitGatewayModelTgwResponseModel, bool) {
+) (*tgw.Tgw, bool) {
 	result, ok := common.PollUntilResult(
 		ctx, resource, 3*time.Second, "transit gateway", tgwId, targetStatuses, diags,
-		func(ctx context.Context) (*tgw.BnsTgwV1ApiGetTransitGatewayModelTgwResponseModel, *http.Response, error) {
+		func(ctx context.Context) (*tgw.Tgw, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, kc, diags,
-				func() (*tgw.GetTgwResponseModel, *http.Response, error) {
-					return kc.ApiClient.TgwsAPI.
+				func() (*tgw.GetTransitGatewayResponse, *http.Response, error) {
+					return kc.ApiClient.TransitGatewayAPI.
 						GetTransitGateway(ctx, tgwId).
 						XAuthToken(kc.XAuthToken).
 						Execute()
@@ -71,7 +102,7 @@ func pollTgw(
 			}
 			return &respModel.Tgw, httpResp, nil
 		},
-		func(v *tgw.BnsTgwV1ApiGetTransitGatewayModelTgwResponseModel) string {
+		func(v *tgw.Tgw) string {
 			return string(*v.ProvisioningStatus.Get())
 		},
 	)

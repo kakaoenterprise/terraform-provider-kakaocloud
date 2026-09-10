@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var (
@@ -84,15 +84,15 @@ func (d *loadBalancersDataSource) Schema(ctx context.Context, _ datasource.Schem
 }
 
 func (d *loadBalancersDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data loadBalancersDataSourceModel
+	var config loadBalancersDataSourceModel
 
-	diags := req.Config.Get(ctx, &data)
+	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	timeout, diags := data.Timeouts.Read(ctx, common.DefaultReadTimeout)
+	timeout, diags := config.Timeouts.Read(ctx, common.DefaultReadTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -103,7 +103,7 @@ func (d *loadBalancersDataSource) Read(ctx context.Context, req datasource.ReadR
 
 	lbApi := d.kc.ApiClient.LoadBalancerAPI.ListLoadBalancers(ctx)
 
-	for _, f := range data.Filter {
+	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() || f.Value.IsNull() || f.Value.IsUnknown() {
 			continue
 		}
@@ -117,7 +117,14 @@ func (d *loadBalancersDataSource) Read(ctx context.Context, req datasource.ReadR
 			case "name":
 				lbApi = lbApi.Name(filterValue)
 			case "type":
-				lbApi = lbApi.Type_(filterValue)
+				if t, err := ToLoadBalancerType(filterValue); err == nil {
+					lbApi = lbApi.Type_(*t)
+				} else {
+					resp.Diagnostics.AddError(
+						"Invalid type value",
+						err.Error(),
+					)
+				}
 			case "private_vip":
 				lbApi = lbApi.PrivateVip(filterValue)
 			case "public_vip":
@@ -197,13 +204,13 @@ func (d *loadBalancersDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	lbsTyped, ok := lbs.(*loadbalancer.LoadBalancerListModel)
+	lbsTyped, ok := lbs.(*loadbalancer.ListLoadBalancersResponse)
 	if !ok {
 		resp.Diagnostics.AddError("Type assertion failed", "Failed to cast API response to expected type")
 		return
 	}
 
-	var loadBalancersResult []loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel
+	var loadBalancersResult []loadbalancer.LoadBalancer
 	err = copier.Copy(&loadBalancersResult, &lbsTyped.LoadBalancers)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
@@ -211,15 +218,16 @@ func (d *loadBalancersDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
+	config.LoadBalancers = make([]loadBalancerBaseModel, 0, len(loadBalancersResult))
 	for _, lb := range loadBalancersResult {
 		var lbModel loadBalancerBaseModel
-		ok := mapLoadBalancerBaseForDataSource(ctx, &lbModel, &lb, &resp.Diagnostics)
+		ok := mapLoadBalancerDataSource(ctx, &lbModel, &lb, &resp.Diagnostics)
 		if !ok {
 			return
 		}
-		data.LoadBalancers = append(data.LoadBalancers, lbModel)
+		config.LoadBalancers = append(config.LoadBalancers, lbModel)
 	}
 
-	diags = resp.State.Set(ctx, &data)
+	diags = resp.State.Set(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 }

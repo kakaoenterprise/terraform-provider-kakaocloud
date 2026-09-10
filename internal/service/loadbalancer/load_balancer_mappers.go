@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var accessLogResourceAttrType = map[string]attr.Type{
@@ -24,13 +24,13 @@ var accessLogDataSourceAttrType = map[string]attr.Type{
 	"bucket": types.StringType,
 }
 
-func mapLoadBalancer(
+func mapLoadBalancerBaseModel(
 	ctx context.Context,
 	base *loadBalancerBaseModel,
-	lb *loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel,
+	lb *loadbalancer.LoadBalancer,
 	diags *diag.Diagnostics,
 ) bool {
-	base.Id = types.StringValue(lb.Id)
+	base.Id = utils.ConvertNullableString(lb.Id)
 	base.Name = utils.ConvertNullableString(lb.Name)
 	base.Description = utils.ConvertNullableString(lb.Description)
 	base.Type = utils.ConvertNullableString(lb.Type)
@@ -56,6 +56,19 @@ func mapLoadBalancer(
 	listenerIds, d := types.ListValueFrom(ctx, types.StringType, lb.ListenerIds)
 	diags.Append(d...)
 	base.ListenerIds = listenerIds
+
+	return !diags.HasError()
+}
+
+func mapLoadBalancerResource(
+	ctx context.Context,
+	base *loadBalancerBaseModel,
+	lb *loadbalancer.LoadBalancer,
+	diags *diag.Diagnostics,
+) bool {
+	if !mapLoadBalancerBaseModel(ctx, base, lb, diags) {
+		return false
+	}
 
 	if lb.AccessLogs.Get() == nil {
 		base.AccessLogs = types.ObjectNull(accessLogResourceAttrType)
@@ -82,47 +95,23 @@ func mapLoadBalancer(
 	return !diags.HasError()
 }
 
-func mapLoadBalancerBaseForDataSource(
+func mapLoadBalancerDataSource(
 	ctx context.Context,
 	base *loadBalancerBaseModel,
-	lb *loadbalancer.BnsLoadBalancerV1ApiGetLoadBalancerModelLoadBalancerModel,
+	lb *loadbalancer.LoadBalancer,
 	diags *diag.Diagnostics,
 ) bool {
-	base.Id = types.StringValue(lb.Id)
-	base.Name = utils.ConvertNullableString(lb.Name)
-	base.Description = utils.ConvertNullableString(lb.Description)
-	base.Type = utils.ConvertNullableString(lb.Type)
-	base.ProjectId = utils.ConvertNullableString(lb.ProjectId)
-	base.ProvisioningStatus = utils.ConvertNullableString(lb.ProvisioningStatus)
-	base.OperatingStatus = utils.ConvertNullableString(lb.OperatingStatus)
-	base.CreatedAt = utils.ConvertNullableTime(lb.CreatedAt)
-	base.UpdatedAt = utils.ConvertNullableTime(lb.UpdatedAt)
-	base.AvailabilityZone = utils.ConvertNullableString(lb.AvailabilityZone)
+	if !mapLoadBalancerBaseModel(ctx, base, lb, diags) {
+		return false
+	}
 
-	accessLogsObj, accessLogsDiags := utils.ConvertObjectFromModel(ctx, lb.AccessLogs, accessLogDataSourceAttrType, func(src loadbalancer.AccessLogsModel) any {
+	accessLogsObj, accessLogsDiags := utils.ConvertObjectFromModel(ctx, lb.AccessLogs, accessLogDataSourceAttrType, func(src loadbalancer.AccessLog) any {
 		return accessLogDataSourceModel{
 			Bucket: types.StringValue(src.Bucket),
 		}
 	})
 	diags.Append(accessLogsDiags...)
 	base.AccessLogs = accessLogsObj
-
-	base.BeyondLoadBalancerId = utils.ConvertNullableString(lb.BeyondLoadBalancerId)
-	base.BeyondLoadBalancerName = utils.ConvertNullableString(lb.BeyondLoadBalancerName)
-	base.BeyondLoadBalancerDnsName = utils.ConvertNullableString(lb.BeyondLoadBalancerDnsName)
-	base.TargetGroupCount = utils.ConvertNullableInt64(lb.TargetGroupCount)
-	base.ListenerCount = utils.ConvertNullableInt64(lb.ListenerCount)
-	base.PrivateVip = utils.ConvertNullableString(lb.PrivateVip)
-	base.PublicVip = utils.ConvertNullableString(lb.PublicVip)
-	base.SubnetName = utils.ConvertNullableString(lb.SubnetName)
-	base.SubnetCidrBlock = utils.ConvertNullableString(lb.SubnetCidrBlock)
-	base.VpcId = utils.ConvertNullableString(lb.VpcId)
-	base.VpcName = utils.ConvertNullableString(lb.VpcName)
-	base.SubnetId = utils.ConvertNullableString(lb.SubnetId)
-
-	listenerIds, d := types.ListValueFrom(ctx, types.StringType, lb.ListenerIds)
-	diags.Append(d...)
-	base.ListenerIds = listenerIds
 
 	return !diags.HasError()
 }

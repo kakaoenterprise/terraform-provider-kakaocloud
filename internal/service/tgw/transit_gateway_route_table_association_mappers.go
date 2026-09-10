@@ -8,13 +8,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 func mapTransitGatewayRouteTableAssociationBaseModel(
 	ctx context.Context,
 	base *transitGatewayRouteTableAssociationBaseModel,
-	assocResult *tgw.BnsTgwV1ApiListTgwRouteTableAssociationsModelAssociationResponseModel,
+	assocResult *tgw.Association,
 	routeTableId string,
 	respDiags *diag.Diagnostics,
 ) bool {
@@ -26,17 +26,16 @@ func mapTransitGatewayRouteTableAssociationBaseModel(
 	base.TgwRouteTableId = utils.ConvertNullableString(assocResult.TgwRouteTableId)
 	base.ProvisioningStatus = utils.ConvertNullableString(assocResult.ProvisioningStatus)
 
-	resource := assocResult.Resource
-	resourceModel := tgwRouteTableResourceNestedModel{
-		Id:                 utils.ConvertNullableString(resource.Id),
-		Name:               utils.ConvertNullableString(resource.Name),
-		CidrBlock:          utils.ConvertNullableString(resource.CidrBlock),
-		ProjectId:          utils.ConvertNullableString(resource.ProjectId),
-		ProjectName:        utils.ConvertNullableString(resource.ProjectName),
-		ProvisioningStatus: utils.ConvertNullableString(resource.ProvisioningStatus),
-	}
-
-	resourceObj, diags := types.ObjectValueFrom(ctx, tgwRouteTableResourceAttrType, resourceModel)
+	resourceObj, diags := utils.ConvertObjectFromModel(ctx, assocResult.Resource, tgwRouteTableResourceAttrType, func(resource tgw.Resource) any {
+		return tgwRouteTableResourceNestedModel{
+			Id:                 utils.ConvertNullableString(resource.Id),
+			Name:               utils.ConvertNullableString(resource.Name),
+			CidrBlock:          utils.ConvertNullableString(resource.CidrBlock),
+			ProjectId:          utils.ConvertNullableString(resource.ProjectId),
+			ProjectName:        utils.ConvertNullableString(resource.ProjectName),
+			ProvisioningStatus: utils.ConvertNullableString(resource.ProvisioningStatus),
+		}
+	})
 	respDiags.Append(diags...)
 	base.Resource = resourceObj
 

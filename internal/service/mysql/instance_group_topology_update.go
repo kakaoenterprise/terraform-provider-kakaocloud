@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 type instanceGroupScaleOutSubnetInfo struct {
@@ -253,7 +253,7 @@ func topologyReplicaCounts(
 	return replicasBySubnetID, true
 }
 
-func topologyReplicaCountsFromRemoteNetworkInfo(networkInfo mysqlsdk.NullableNetworkInfoResponseModel) map[string]int32 {
+func topologyReplicaCountsFromRemoteNetworkInfo(networkInfo mysqlsdk.NullableNetworkInfo) map[string]int32 {
 	replicasBySubnetID := map[string]int32{}
 	if !networkInfo.IsSet() || networkInfo.Get() == nil {
 		return replicasBySubnetID
@@ -269,7 +269,7 @@ func topologyReplicaCountsFromRemoteNetworkInfo(networkInfo mysqlsdk.NullableNet
 	return replicasBySubnetID
 }
 
-func addRemoteSubnetReplicaCount(replicasBySubnetID map[string]int32, subnet mysqlsdk.SubnetInfoResponseModel) {
+func addRemoteSubnetReplicaCount(replicasBySubnetID map[string]int32, subnet mysqlsdk.SubnetInfo) {
 	if subnet.SubnetId == "" {
 		return
 	}
@@ -376,28 +376,28 @@ func (r *instanceGroupResource) scaleOut(
 	subnets []instanceGroupScaleOutSubnetInfo,
 	respDiags *diag.Diagnostics,
 ) bool {
-	subnetInfos := make([]mysqlsdk.MysqlV1ApiScaleOutMysqlInstanceGroupModelSubnetInfoRequestModel, 0, len(subnets))
+	subnetInfos := make([]mysqlsdk.SubnetInfoRequest, 0, len(subnets))
 	for _, subnet := range subnets {
-		subnetInfos = append(subnetInfos, *mysqlsdk.NewMysqlV1ApiScaleOutMysqlInstanceGroupModelSubnetInfoRequestModel(
+		subnetInfos = append(subnetInfos, *mysqlsdk.NewSubnetInfoRequest(
 			subnet.Replicas,
 			subnet.SubnetId,
 		))
 	}
 
-	requestGroup := mysqlsdk.NewMysqlV1ApiScaleOutMysqlInstanceGroupModelInstanceGroupRequestModel(subnetInfos)
+	requestGroup := mysqlsdk.NewScaleOutMysqlInstanceGroup(subnetInfos)
 	if standbyPort.IsNull() || standbyPort.IsUnknown() {
 		requestGroup.UnsetStandbyPort()
 	} else {
 		requestGroup.SetStandbyPort(standbyPort.ValueInt32())
 	}
-	request := mysqlsdk.NewBodyScaleOutMysqlInstanceGroup(*requestGroup)
+	request := mysqlsdk.NewScaleOutMysqlInstanceGroupRequest(*requestGroup)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupsAPI.
+			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupAPI.
 				ScaleOutMysqlInstanceGroup(ctx, instanceGroupID).
 				XAuthToken(r.kc.XAuthToken).
-				BodyScaleOutMysqlInstanceGroup(*request).
+				ScaleOutMysqlInstanceGroupRequest(*request).
 				Execute()
 			return struct{}{}, httpResp, err
 		},
@@ -420,14 +420,14 @@ func (r *instanceGroupResource) scaleIn(
 		"instance_ids":      instanceIDs,
 	})
 
-	request := mysqlsdk.NewBodyScaleInMysqlInstanceGroup(*mysqlsdk.NewMysqlV1ApiScaleInMysqlInstanceGroupModelInstanceGroupRequestModel(instanceIDs))
+	request := mysqlsdk.NewScaleInMysqlInstanceGroupRequest(*mysqlsdk.NewScaleInMysqlInstanceGroup(instanceIDs))
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupsAPI.
+			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupAPI.
 				ScaleInMysqlInstanceGroup(ctx, instanceGroupID).
 				XAuthToken(r.kc.XAuthToken).
-				BodyScaleInMysqlInstanceGroup(*request).
+				ScaleInMysqlInstanceGroupRequest(*request).
 				Execute()
 			return struct{}{}, httpResp, err
 		},
@@ -446,8 +446,8 @@ func (r *instanceGroupResource) selectScaleInTargetInstanceIDs(
 	respDiags *diag.Diagnostics,
 ) ([]string, bool) {
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.GetMysqlInstanceGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLInstanceGroupAPI.
 				GetMysqlInstanceGroup(ctx, instanceGroupID).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -459,8 +459,8 @@ func (r *instanceGroupResource) selectScaleInTargetInstanceIDs(
 	}
 
 	instancesResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupInstancesResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.ListMysqlInstancesResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLInstanceAPI.
 				ListMysqlInstances(ctx, instanceGroupID).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -471,7 +471,7 @@ func (r *instanceGroupResource) selectScaleInTargetInstanceIDs(
 		return nil, false
 	}
 
-	instanceDetailsByID := map[string]mysqlsdk.InstanceResponseModel{}
+	instanceDetailsByID := map[string]mysqlsdk.Instance{}
 	for _, instance := range instancesResp.Instances {
 		instanceDetailsByID[instance.Id] = instance
 	}
@@ -654,8 +654,8 @@ func (r *instanceGroupResource) readScaleInStatus(
 	respDiags *diag.Diagnostics,
 ) (string, bool, bool) {
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.GetMysqlInstanceGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLInstanceGroupAPI.
 				GetMysqlInstanceGroup(ctx, instanceGroupID).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()

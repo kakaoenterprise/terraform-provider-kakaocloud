@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 var (
@@ -33,6 +33,17 @@ var (
 		string(kubernetesengine.NODEPOOLSTATUS_FAILED),
 		string(kubernetesengine.NODEPOOLSTATUS_PENDING),
 	}
+
+	ClusterAvailableStatuses = []string{
+		common.ClusterStatusProvisioned,
+		common.ClusterStatusFailed,
+		common.ClusterStatusDeleting,
+	}
+
+	NodePoolClusterAvailableStatuses = []string{
+		common.ClusterStatusProvisioned,
+		common.ClusterStatusFailed,
+	}
 )
 
 func waitNodePool(
@@ -43,7 +54,7 @@ func waitNodePool(
 	nodePoolName string,
 	targetStatuses []string,
 	diags *diag.Diagnostics,
-) (*kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel, bool) {
+) (*kubernetesengine.NodePool, bool) {
 	return pollNodePool(
 		ctx,
 		client,
@@ -63,7 +74,7 @@ func pollNodePool(
 	nodePoolName string,
 	targetStatuses []string,
 	diags *diag.Diagnostics,
-) (*kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel, bool) {
+) (*kubernetesengine.NodePool, bool) {
 	result, ok := common.PollUntilResult(
 		ctx,
 		resource,
@@ -72,10 +83,10 @@ func pollNodePool(
 		nodePoolName,
 		targetStatuses,
 		diags,
-		func(ctx context.Context) (*kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel, *http.Response, error) {
+		func(ctx context.Context) (*kubernetesengine.NodePool, *http.Response, error) {
 			model, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, client, diags,
-				func() (*kubernetesengine.GetK8sClusterNodePoolResponseModel, *http.Response, error) {
-					return client.ApiClient.NodePoolsAPI.
+				func() (*kubernetesengine.GetNodePoolResponse, *http.Response, error) {
+					return client.ApiClient.KubernetesEngineNodePoolAPI.
 						GetNodePool(ctx, clusterName, nodePoolName).
 						XAuthToken(client.XAuthToken).
 						Execute()
@@ -85,7 +96,7 @@ func pollNodePool(
 			}
 			return &model.NodePool, httpResp, nil
 		},
-		func(v *kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel) string {
+		func(v *kubernetesengine.NodePool) string {
 			return string(v.Status.Phase)
 		},
 	)

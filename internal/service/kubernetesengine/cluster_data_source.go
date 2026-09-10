@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 var (
@@ -82,8 +82,8 @@ func (d *clusterDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*kubernetesengine.GetK8sClusterResponseModel, *http.Response, error) {
-			return d.kc.ApiClient.ClustersAPI.
+		func() (*kubernetesengine.GetClusterResponse, *http.Response, error) {
+			return d.kc.ApiClient.KubernetesEngineClusterAPI.
 				GetCluster(ctx, config.Name.ValueString()).
 				XAuthToken(d.kc.XAuthToken).
 				Execute()

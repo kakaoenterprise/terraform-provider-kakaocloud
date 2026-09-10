@@ -18,9 +18,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
-	"github.com/kakaoenterprise/kc-sdk-go/services/network"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/network"
 )
 
 var (
@@ -84,16 +84,16 @@ func (r *publicIpResource) Create(ctx context.Context, req resource.CreateReques
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	createReq := network.CreatePublicIpModel{}
+	createReq := network.CreatePublicIp{}
 
 	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		createReq.SetDescription(plan.Description.ValueString())
 	}
-	body := network.BodyCreatePublicIp{PublicIp: createReq}
+	body := *network.NewCreatePublicIpRequest(createReq)
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*network.BnsNetworkV1ApiCreatePublicIpModelResponsePublicIpModel, *http.Response, error) {
-			return r.kc.ApiClient.PublicIPAPI.CreatePublicIp(ctx).XAuthToken(r.kc.XAuthToken).BodyCreatePublicIp(body).Execute()
+		func() (*network.CreatePublicIpResponse, *http.Response, error) {
+			return r.kc.ApiClient.NetworkPublicIPAPI.CreatePublicIp(ctx).XAuthToken(r.kc.XAuthToken).CreatePublicIpRequest(body).Execute()
 		},
 	)
 	if err != nil {
@@ -110,6 +110,14 @@ func (r *publicIpResource) Create(ctx context.Context, req resource.CreateReques
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
+		publicIpId := plan.Id.ValueString()
+		if publicIpId != "" {
+			common.AddGeneralError(ctx, r, &resp.Diagnostics, fmt.Sprintf(
+				"Public IP %q was created, but its readiness could not be confirmed, so it was not saved to Terraform state. Check the resource in KakaoCloud. If it should be managed by Terraform, run `terraform import kakaocloud_public_ip.<name> %s`; otherwise, delete it before applying again.",
+				publicIpId,
+				publicIpId,
+			))
+		}
 		return
 	}
 
@@ -127,7 +135,13 @@ func (r *publicIpResource) Create(ctx context.Context, req resource.CreateReques
 		networkInterfaceId := relatedResource.Id.ValueString()
 
 		if !r.attachPublicIPByType(ctx, &resp.Diagnostics, deviceType, networkInterfaceId, deviceId, publicIpId) {
-			_ = r.cleanupCreateFailurePublicIP(ctx, plan.Id.ValueString(), &resp.Diagnostics)
+			if publicIpId != "" {
+				common.AddGeneralError(ctx, r, &resp.Diagnostics, fmt.Sprintf(
+					"Public IP %q was created, but it could not be attached to the related resource, so it was not saved to Terraform state. Check the resource in KakaoCloud. If it should be managed by Terraform, run `terraform import kakaocloud_public_ip.<name> %s`; otherwise, delete it before applying again.",
+					publicIpId,
+					publicIpId,
+				))
+			}
 			return
 		}
 
@@ -144,8 +158,8 @@ func (r *publicIpResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*network.BnsNetworkV1ApiGetPublicIpModelResponsePublicIpModel, *http.Response, error) {
-			return r.kc.ApiClient.PublicIPAPI.
+		func() (*network.GetPublicIpResponse, *http.Response, error) {
+			return r.kc.ApiClient.NetworkPublicIPAPI.
 				GetPublicIp(ctx, plan.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -156,7 +170,7 @@ func (r *publicIpResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	ok = mapPublicIpBaseModel(ctx, &plan.publicIpBaseModel, &result.PublicIp, &resp.Diagnostics)
+	ok = mapPublicIpModel(ctx, &plan.publicIpBaseModel, &result.PublicIp, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -187,8 +201,8 @@ func (r *publicIpResource) Read(ctx context.Context, req resource.ReadRequest, r
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*network.BnsNetworkV1ApiGetPublicIpModelResponsePublicIpModel, *http.Response, error) {
-			return r.kc.ApiClient.PublicIPAPI.
+		func() (*network.GetPublicIpResponse, *http.Response, error) {
+			return r.kc.ApiClient.NetworkPublicIPAPI.
 				GetPublicIp(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -205,7 +219,7 @@ func (r *publicIpResource) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 	result := respModel.PublicIp
 
-	ok := mapPublicIpBaseModel(ctx, &state.publicIpBaseModel, &result, &resp.Diagnostics)
+	ok := mapPublicIpModel(ctx, &state.publicIpBaseModel, &result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -242,7 +256,7 @@ func (r *publicIpResource) Update(ctx context.Context, req resource.UpdateReques
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	editReq := network.EditPublicIpModel{}
+	editReq := network.UpdatePublicIp{}
 
 	var newDescription types.String
 
@@ -250,13 +264,13 @@ func (r *publicIpResource) Update(ctx context.Context, req resource.UpdateReques
 		newDescription = plan.Description
 		editReq.SetDescription(plan.Description.ValueString())
 
-		body := *network.NewBodyUpdatePublicIp(editReq)
+		body := *network.NewUpdatePublicIpRequest(editReq)
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*network.BnsNetworkV1ApiUpdatePublicIpModelResponsePublicIpModel, *http.Response, error) {
-				return r.kc.ApiClient.PublicIPAPI.
+			func() (*network.UpdatePublicIpResponse, *http.Response, error) {
+				return r.kc.ApiClient.NetworkPublicIPAPI.
 					UpdatePublicIp(ctx, plan.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
-					BodyUpdatePublicIp(body).
+					UpdatePublicIpRequest(body).
 					Execute()
 			},
 		)
@@ -331,8 +345,8 @@ func (r *publicIpResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*network.BnsNetworkV1ApiGetPublicIpModelResponsePublicIpModel, *http.Response, error) {
-			return r.kc.ApiClient.PublicIPAPI.
+		func() (*network.GetPublicIpResponse, *http.Response, error) {
+			return r.kc.ApiClient.NetworkPublicIPAPI.
 				GetPublicIp(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -343,7 +357,7 @@ func (r *publicIpResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	ok := mapPublicIpBaseModel(ctx, &plan.publicIpBaseModel, &respModel.PublicIp, &resp.Diagnostics)
+	ok := mapPublicIpModel(ctx, &plan.publicIpBaseModel, &respModel.PublicIp, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -411,7 +425,7 @@ func (r *publicIpResource) Delete(ctx context.Context, req resource.DeleteReques
 		r.kc,
 		&resp.Diagnostics,
 		func() (struct{}, *http.Response, error) {
-			resp, err := r.kc.ApiClient.PublicIPAPI.
+			resp, err := r.kc.ApiClient.NetworkPublicIPAPI.
 				DeletePublicIp(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -430,8 +444,8 @@ func (r *publicIpResource) Delete(ctx context.Context, req resource.DeleteReques
 
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*network.BnsNetworkV1ApiGetPublicIpModelResponsePublicIpModel, *http.Response, error) {
-				_, httpResp, err := r.kc.ApiClient.PublicIPAPI.
+			func() (*network.GetPublicIpResponse, *http.Response, error) {
+				_, httpResp, err := r.kc.ApiClient.NetworkPublicIPAPI.
 					GetPublicIp(ctx, state.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
@@ -474,8 +488,8 @@ func (r *publicIpResource) attachPublicIPByType(
 	switch deviceType {
 	case "instance":
 		_, httpResp, err = common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-			func() (*bcs.BcsInstanceV1ApiAssociatePublicIpModelResponsePublicIpModel, *http.Response, error) {
-				return r.kc.ApiClient.InstancePublicIPAPI.
+			func() (*bcs.AssociatePublicIpResponse, *http.Response, error) {
+				return r.kc.ApiClient.InstanceAPI.
 					AssociatePublicIp(ctx, deviceId, networkInterfaceId, publicIpId).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
@@ -484,7 +498,7 @@ func (r *publicIpResource) attachPublicIPByType(
 
 	case "load-balancer":
 		_, httpResp, err = common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiAssociatePublicIpModelResponsePublicIpModel, *http.Response, error) {
+			func() (*loadbalancer.AssociatePublicIpResponse, *http.Response, error) {
 				return r.kc.ApiClient.LoadBalancerAPI.
 					AssociatePublicIp(ctx, deviceId, publicIpId).
 					XAuthToken(r.kc.XAuthToken).
@@ -520,8 +534,8 @@ func (r *publicIpResource) detachPublicIPByType(
 	switch deviceType {
 	case "instance":
 		_, httpResp, err = common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-			func() (*bcs.BcsInstanceV1ApiRemovePublicIpModelResponsePublicIpModel, *http.Response, error) {
-				return r.kc.ApiClient.InstancePublicIPAPI.
+			func() (*bcs.RemovePublicIpResponse, *http.Response, error) {
+				return r.kc.ApiClient.InstanceAPI.
 					RemovePublicIp(ctx, deviceId, networkInterfaceId).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
@@ -530,7 +544,7 @@ func (r *publicIpResource) detachPublicIPByType(
 
 	case "load-balancer":
 		_, httpResp, err = common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-			func() (*loadbalancer.BnsLoadBalancerV1ApiRemovePublicIpModelResponsePublicIpModel, *http.Response, error) {
+			func() (*loadbalancer.RemovePublicIpResponse, *http.Response, error) {
 				return r.kc.ApiClient.LoadBalancerAPI.
 					RemovePublicIp(ctx, deviceId).
 					XAuthToken(r.kc.XAuthToken).
@@ -631,42 +645,4 @@ func shouldReattachRelatedResource(ctx context.Context, planObj, stateObj types.
 		return true, diags
 	}
 	return false, diags
-}
-
-func (r *publicIpResource) cleanupCreateFailurePublicIP(
-	ctx context.Context,
-	publicIpId string,
-	diags *diag.Diagnostics,
-) error {
-	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, diags,
-		func() (struct{}, *http.Response, error) {
-			resp, err := r.kc.ApiClient.PublicIPAPI.
-				DeletePublicIp(ctx, publicIpId).
-				XAuthToken(r.kc.XAuthToken).
-				Execute()
-			return struct{}{}, resp, err
-		},
-	)
-	if err != nil {
-		common.AddApiActionError(ctx, r, httpResp, "DeletePublicIp", err, diags)
-		return err
-	}
-
-	common.PollUntilDeletion(ctx, r, 2*time.Second, diags, func(ctx context.Context) (bool, *http.Response, error) {
-		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
-			func() (*network.BnsNetworkV1ApiGetPublicIpModelResponsePublicIpModel, *http.Response, error) {
-				_, hr, err := r.kc.ApiClient.PublicIPAPI.
-					GetPublicIp(ctx, publicIpId).
-					XAuthToken(r.kc.XAuthToken).
-					Execute()
-				return nil, hr, err
-			},
-		)
-		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
-			return true, httpResp, nil
-		}
-		return false, httpResp, err
-	})
-
-	return nil
 }

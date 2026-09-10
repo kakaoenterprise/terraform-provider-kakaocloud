@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/volume"
 )
 
 var (
@@ -65,7 +65,7 @@ func (r *volumeSnapshotResource) Create(ctx context.Context, req resource.Create
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	createReq := volume.CreateVolumeSnapshotModel{
+	createReq := volume.CreateSnapshot{
 		Name:          plan.Name.ValueString(),
 		IsIncremental: plan.IsIncremental.ValueBool(),
 	}
@@ -74,18 +74,16 @@ func (r *volumeSnapshotResource) Create(ctx context.Context, req resource.Create
 		createReq.SetDescription(plan.Description.ValueString())
 	}
 
-	body := volume.BodyCreateSnapshot{
-		Snapshot: createReq,
-	}
+	body := *volume.NewCreateSnapshotRequest(createReq)
 	_, ok := CheckVolumeStatus(ctx, r.kc, r, plan.VolumeId.ValueString(), StatusesReadyGetOrUpdateForSize, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*volume.ResponseCreateVolumeSnapshotModel, *http.Response, error) {
-			return r.kc.ApiClient.VolumeAPI.CreateSnapshot(ctx, plan.VolumeId.ValueString()).
-				XAuthToken(r.kc.XAuthToken).BodyCreateSnapshot(body).Execute()
+		func() (*volume.CreateSnapshotResponse, *http.Response, error) {
+			return r.kc.ApiClient.VolumeSnapshotAPI.CreateSnapshot(ctx, plan.VolumeId.ValueString()).
+				XAuthToken(r.kc.XAuthToken).CreateSnapshotRequest(body).Execute()
 		},
 	)
 	if err != nil {
@@ -97,10 +95,18 @@ func (r *volumeSnapshotResource) Create(ctx context.Context, req resource.Create
 
 	result, ok := CheckVolumeSnapshotStatus(ctx, r.kc, r, plan.Id.ValueString(), false, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Volume snapshot creation status could not be confirmed",
+			fmt.Sprintf(
+				"Volume snapshot %q was created, but it was not saved to Terraform state because readiness polling did not complete. Check the snapshot in KakaoCloud. If it should be managed by this configuration, run `terraform import <resource-address> %s`. Otherwise, delete it before applying again.",
+				plan.Id.ValueString(),
+				plan.Id.ValueString(),
+			),
+		)
 		return
 	}
 
-	ok = mapVolumeSnapshotBaseModel(&plan.volumeSnapshotBaseModel, result, &resp.Diagnostics)
+	ok = mapVolumeSnapshotModel(&plan.volumeSnapshotBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -132,7 +138,7 @@ func (r *volumeSnapshotResource) Read(ctx context.Context, req resource.ReadRequ
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*volume.BcsVolumeV1ApiGetSnapshotModelResponseVolumeSnapshotModel, *http.Response, error) {
+		func() (*volume.GetSnapshotResponse, *http.Response, error) {
 			return r.kc.ApiClient.VolumeSnapshotAPI.GetSnapshot(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).Execute()
 		},
@@ -148,7 +154,7 @@ func (r *volumeSnapshotResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	volumeSnapshotResult := respModel.Snapshot
-	ok := mapVolumeSnapshotBaseModel(&state.volumeSnapshotBaseModel, &volumeSnapshotResult, &resp.Diagnostics)
+	ok := mapVolumeSnapshotModel(&state.volumeSnapshotBaseModel, &volumeSnapshotResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -191,7 +197,7 @@ func (r *volumeSnapshotResource) Update(ctx context.Context, req resource.Update
 
 	if !plan.Name.Equal(state.Name) ||
 		(!plan.Description.IsNull() && !plan.Description.IsUnknown() && !plan.Description.Equal(state.Description)) {
-		editReq := volume.EditVolumeSnapshotModel{}
+		editReq := volume.UpdateSnapshot{}
 		if !plan.Name.Equal(state.Name) {
 			editReq.SetName(plan.Name.ValueString())
 			state.Name = plan.Name
@@ -201,13 +207,13 @@ func (r *volumeSnapshotResource) Update(ctx context.Context, req resource.Update
 			state.Description = plan.Description
 		}
 
-		body := *volume.NewBodyUpdateSnapshot(editReq)
+		body := *volume.NewUpdateSnapshotRequest(editReq)
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*volume.BcsVolumeV1ApiUpdateSnapshotModelResponseVolumeSnapshotModel, *http.Response, error) {
+			func() (*volume.UpdateSnapshotResponse, *http.Response, error) {
 				return r.kc.ApiClient.VolumeSnapshotAPI.UpdateSnapshot(ctx, plan.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
-					BodyUpdateSnapshot(body).
+					UpdateSnapshotRequest(body).
 					Execute()
 			},
 		)
@@ -217,6 +223,7 @@ func (r *volumeSnapshotResource) Update(ctx context.Context, req resource.Update
 		}
 	}
 
+	state.Timeouts = plan.Timeouts
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -242,12 +249,50 @@ func (r *volumeSnapshotResource) Delete(ctx context.Context, req resource.Delete
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, ok := CheckVolumeSnapshotStatus(ctx, r.kc, r, state.Id.ValueString(), true, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
+	snapshotResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+		func() (*volume.GetSnapshotResponse, *http.Response, error) {
+			return r.kc.ApiClient.VolumeSnapshotAPI.GetSnapshot(ctx, state.Id.ValueString()).
+				XAuthToken(r.kc.XAuthToken).
+				Execute()
+		},
+	)
+	if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+		return
+	}
+	if err != nil {
+		common.AddApiActionError(ctx, r, httpResp, "GetSnapshot", err, &resp.Diagnostics)
 		return
 	}
 
-	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+	pollUntilDeleted := func() {
+		common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
+			_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
+				func() (*volume.GetSnapshotResponse, *http.Response, error) {
+					_, httpResp, err := r.kc.ApiClient.VolumeSnapshotAPI.
+						GetSnapshot(ctx, state.Id.ValueString()).
+						XAuthToken(r.kc.XAuthToken).
+						Execute()
+					return nil, httpResp, err
+				},
+			)
+			return false, httpResp, err
+		})
+	}
+
+	status := snapshotResp.Snapshot.Status.Get()
+	if status != nil && *status == common.VolumeSnapshotStatusDeleting {
+		pollUntilDeleted()
+		return
+	}
+
+	if status == nil || (*status != common.VolumeSnapshotStatusAvailable && *status != common.VolumeSnapshotStatusError) {
+		_, ok := CheckVolumeSnapshotStatus(ctx, r.kc, r, state.Id.ValueString(), true, &resp.Diagnostics)
+		if !ok || resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
+	_, httpResp, err = common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
 			return r.kc.ApiClient.VolumeSnapshotAPI.DeleteSnapshot(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
@@ -262,18 +307,7 @@ func (r *volumeSnapshotResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
-		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*volume.BcsVolumeV1ApiGetSnapshotModelResponseVolumeSnapshotModel, *http.Response, error) {
-				_, httpResp, err := r.kc.ApiClient.VolumeSnapshotAPI.
-					GetSnapshot(ctx, state.Id.ValueString()).
-					XAuthToken(r.kc.XAuthToken).
-					Execute()
-				return nil, httpResp, err
-			},
-		)
-		return false, httpResp, err
-	})
+	pollUntilDeleted()
 }
 
 func (r *volumeSnapshotResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -314,9 +348,9 @@ func (r *volumeSnapshotResource) checkVolumeStatus(
 		volumeId,
 		[]string{common.VolumeStatusAvailable, common.VolumeStatusInUse, common.VolumeStatusError, common.VolumeStatusErrorRestore, common.VolumeStatusDeleting},
 		&resp.Diagnostics,
-		func(ctx context.Context) (*volume.BcsVolumeV1ApiGetVolumeModelVolumeModel, *http.Response, error) {
+		func(ctx context.Context) (*volume.Volume, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-				func() (*volume.BcsVolumeV1ApiGetVolumeModelResponseVolumeModel, *http.Response, error) {
+				func() (*volume.GetVolumeResponse, *http.Response, error) {
 					return r.kc.ApiClient.VolumeAPI.
 						GetVolume(ctx, volumeId).
 						XAuthToken(r.kc.XAuthToken).
@@ -328,7 +362,7 @@ func (r *volumeSnapshotResource) checkVolumeStatus(
 			}
 			return &respModel.Volume, httpResp, nil
 		},
-		func(v *volume.BcsVolumeV1ApiGetVolumeModelVolumeModel) string {
+		func(v *volume.Volume) string {
 			return *v.Status.Get()
 		},
 	)

@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 func getNodePoolDataSourceSchema() map[string]dschema.Attribute {
@@ -407,17 +407,10 @@ func getNodePoolResourceSchema() map[string]rschema.Attribute {
 		"is_upgradable": rschema.BoolAttribute{
 			Computed: true,
 		},
-		"flavor": rschema.StringAttribute{
-			Computed: true,
-		},
 		"status": rschema.SingleNestedAttribute{
 			Computed: true,
 
 			Attributes: getNodePoolStatusResourceSchemaAttributes(),
-		},
-		"image": rschema.SingleNestedAttribute{
-			Computed:   true,
-			Attributes: getNodePoolImageResourceSchemaAttributes(),
 		},
 		"version": rschema.StringAttribute{
 			Computed: true,

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 var (
@@ -50,15 +50,15 @@ func (d *flavorsDataSource) Schema(ctx context.Context, _ datasource.SchemaReque
 }
 
 func (d *flavorsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data flavorsDataSourceModel
+	var config flavorsDataSourceModel
 
-	diags := req.Config.Get(ctx, &data)
+	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	timeout, diags := data.Timeouts.Read(ctx, common.DefaultReadTimeout)
+	timeout, diags := config.Timeouts.Read(ctx, common.DefaultReadTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -68,12 +68,12 @@ func (d *flavorsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	defer cancel()
 
 	modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*mysqlsdk.GetMySQLFlavorsResponseModel, *http.Response, error) {
-			req := d.kc.ApiClient.MySQLFlavorsAPI.
+		func() (*mysqlsdk.ListMysqlInstanceTypesFlavorsResponse, *http.Response, error) {
+			req := d.kc.ApiClient.MySQLInstanceAPI.
 				ListMysqlInstanceTypesFlavors(ctx).
 				XAuthToken(d.kc.XAuthToken)
-			if !data.ShowAll.IsNull() && !data.ShowAll.IsUnknown() {
-				req = req.ShowAll(data.ShowAll.ValueBool())
+			if !config.ShowAll.IsNull() && !config.ShowAll.IsUnknown() {
+				req = req.ShowAll(config.ShowAll.ValueBool())
 			}
 			return req.Execute()
 		},
@@ -83,11 +83,12 @@ func (d *flavorsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
+	config.Flavors = make([]flavorModel, 0, len(modelResp.Flavors))
 	for _, flavor := range modelResp.Flavors {
-		data.Flavors = append(data.Flavors, toFlavorModel(flavor))
+		config.Flavors = append(config.Flavors, toFlavorModel(flavor))
 	}
 
-	diags = resp.State.Set(ctx, &data)
+	diags = resp.State.Set(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -108,7 +109,7 @@ func (d *flavorsDataSource) Configure(_ context.Context, req datasource.Configur
 	d.kc = client
 }
 
-func toFlavorModel(flavor mysqlsdk.FlavorResponseModel) flavorModel {
+func toFlavorModel(flavor mysqlsdk.Flavor) flavorModel {
 	availabilityZones, _ := utils.ListFromStrings(context.Background(), flavor.AvailabilityZones)
 
 	return flavorModel{

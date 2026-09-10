@@ -109,6 +109,9 @@ func getBaseMemberAttributes() map[string]rschema.Attribute {
 		},
 		"vpc_id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"subnet": rschema.SingleNestedAttribute{
 			Computed: true,
@@ -427,8 +430,6 @@ func getLoadBalancerTargetGroupMemberListResourceSchema() map[string]rschema.Att
 }
 
 var loadBalancerTargetGroupMemberResourceSchema = getLoadBalancerTargetGroupMemberResourceSchema()
-
-var loadBalancerTargetGroupMemberDataSourceSchema = getLoadBalancerTargetGroupMemberDataSourceSchema()
 
 var loadBalancerTargetGroupMemberListDataSourceSchema = getLoadBalancerTargetGroupMemberListDataSourceSchema()
 

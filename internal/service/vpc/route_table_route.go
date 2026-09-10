@@ -4,13 +4,12 @@ package vpc
 
 import (
 	"net/http"
-	"strings"
 	"terraform-provider-kakaocloud/internal/common"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 	"golang.org/x/net/context"
 )
 
@@ -60,24 +59,24 @@ func (r *routeTableResource) updateRouteTableRoutes(
 }
 
 func (r *routeTableResource) addRoute(ctx context.Context, routeTableId, vpcId string, route *routeTableRequestRouteModel, diag *diag.Diagnostics) bool {
-	req := vpc.CreateRouteModel{
-		RouteType:   vpc.RouteTableRouteType(route.TargetType.ValueString()),
+	req := vpc.AddRoute{
+		RouteType:   vpc.RouteType(route.TargetType.ValueString()),
 		TargetId:    route.TargetId.ValueString(),
 		Destination: route.Destination.ValueString(),
 	}
 
-	body := *vpc.NewBodyAddRoute(req)
+	body := *vpc.NewAddRouteRequest(req)
 
-	ok := checkVpcStatus(ctx, r, r.kc, vpcId, diag)
+	ok := pollVpcStatus(ctx, r, r.kc, vpcId, diag)
 	if !ok || diag.HasError() {
 		return false
 	}
 
 	resp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
-		func() (*vpc.BnsVpcV1ApiAddRouteModelResponseRouteModel, *http.Response, error) {
-			return r.kc.ApiClient.VPCRouteTableRouteAPI.AddRoute(ctx, routeTableId).
+		func() (*vpc.AddRouteResponse, *http.Response, error) {
+			return r.kc.ApiClient.VPCRouteTableAPI.AddRoute(ctx, routeTableId).
 				XAuthToken(r.kc.XAuthToken).
-				BodyAddRoute(body).
+				AddRouteRequest(body).
 				Execute()
 		},
 	)
@@ -90,23 +89,23 @@ func (r *routeTableResource) addRoute(ctx context.Context, routeTableId, vpcId s
 }
 
 func (r *routeTableResource) updateRoute(ctx context.Context, routeTableId, vpcId string, route *routeTableRequestRouteModel, diag *diag.Diagnostics) bool {
-	req := vpc.EditRouteModel{
-		RouteType:   vpc.RouteTableRouteType(strings.ToLower(route.TargetType.ValueString())),
+	req := vpc.UpdateRoute{
+		RouteType:   vpc.RouteType(route.TargetType.ValueString()),
 		TargetId:    route.TargetId.ValueString(),
 		Destination: route.Destination.ValueString(),
 	}
 
-	ok := checkVpcStatus(ctx, r, r.kc, vpcId, diag)
+	ok := pollVpcStatus(ctx, r, r.kc, vpcId, diag)
 	if !ok || diag.HasError() {
 		return false
 	}
 
-	body := *vpc.NewBodyUpdateRoute(req)
+	body := *vpc.NewUpdateRouteRequest(req)
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
-		func() (*vpc.BnsVpcV1ApiUpdateRouteModelResponseRouteModel, *http.Response, error) {
-			return r.kc.ApiClient.VPCRouteTableRouteAPI.UpdateRoute(ctx, routeTableId, route.Id.ValueString()).
+		func() (*vpc.UpdateRouteResponse, *http.Response, error) {
+			return r.kc.ApiClient.VPCRouteTableAPI.UpdateRoute(ctx, routeTableId, route.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				BodyUpdateRoute(body).
+				UpdateRouteRequest(body).
 				Execute()
 		},
 	)
@@ -118,14 +117,14 @@ func (r *routeTableResource) updateRoute(ctx context.Context, routeTableId, vpcI
 }
 
 func (r *routeTableResource) deleteRoute(ctx context.Context, routeTableId, vpcId, routeId string, diag *diag.Diagnostics) bool {
-	ok := checkVpcStatus(ctx, r, r.kc, vpcId, diag)
+	ok := pollVpcStatus(ctx, r, r.kc, vpcId, diag)
 	if !ok || diag.HasError() {
 		return false
 	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
 		func() (interface{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.VPCRouteTableRouteAPI.DeleteRoute(ctx, routeTableId, routeId).
+			httpResp, err := r.kc.ApiClient.VPCRouteTableAPI.DeleteRoute(ctx, routeTableId, routeId).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 			return nil, httpResp, err
@@ -154,7 +153,7 @@ func (r *routeTableResource) pollRouteDelete(
 ) bool {
 	for {
 		respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
-			func() (*vpc.BnsVpcV1ApiGetRouteTableModelResponseRouteTableModel, *http.Response, error) {
+			func() (*vpc.GetRouteTableResponse, *http.Response, error) {
 				return r.kc.ApiClient.VPCRouteTableAPI.
 					GetRouteTable(ctx, routeTableId).
 					XAuthToken(r.kc.XAuthToken).
@@ -172,7 +171,7 @@ func (r *routeTableResource) pollRouteDelete(
 
 		deleted := true
 		for _, respRoute := range respModel.VpcRouteTable.Routes {
-			if respRoute.Id == routeId {
+			if respRoute.Id.Get() != nil && *respRoute.Id.Get() == routeId {
 				deleted = false
 				break
 			}

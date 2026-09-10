@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 func getInsertHeadersResourceSchema() map[string]rschema.Attribute {
@@ -165,11 +165,7 @@ func getListenerResourceSchema() map[string]rschema.Attribute {
 		"tls_min_version": rschema.StringAttribute{
 			Optional: true,
 			Validators: []validator.String{
-				stringvalidator.OneOf(
-					string(loadbalancer.TLSVERSION_TLSV1),
-					string(loadbalancer.TLSVERSION_TLSV1_1),
-					string(loadbalancer.TLSVERSION_TLSV1_2),
-				),
+				stringvalidator.OneOf(allowedTLSVersions()...),
 			},
 		},
 		"secrets": rschema.ListNestedAttribute{
@@ -185,6 +181,17 @@ func getListenerResourceSchema() map[string]rschema.Attribute {
 			},
 		},
 	}
+}
+
+func allowedTLSVersions() []string {
+	values := loadbalancer.AllowedTLSVersionEnumValues
+	result := make([]string, len(values))
+
+	for i, value := range values {
+		result[i] = string(value)
+	}
+
+	return result
 }
 
 func getListenerSecretSchema() map[string]rschema.Attribute {

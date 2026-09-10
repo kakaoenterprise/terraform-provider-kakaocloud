@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -58,10 +58,6 @@ func (r *transitGatewayRouteTableResource) Create(ctx context.Context, req resou
 		return
 	}
 
-	mutex := common.LockForID(plan.TgwId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -72,25 +68,29 @@ func (r *transitGatewayRouteTableResource) Create(ctx context.Context, req resou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, ok := pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, plan.TgwId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	createReq := tgw.BnsTgwV1ApiCreateTgwRouteTableModelTgwRouteTableRequestModel{
+	createReq := tgw.CreateTgwRouteTable{
 		TgwId: plan.TgwId.ValueString(),
 		Name:  plan.Name.ValueString(),
 	}
 
-	body := tgw.CreateTgwRouteTableRequestModel{
-		RouteTable: createReq,
-	}
+	body := *tgw.NewCreateTgwRouteTableRequest(createReq)
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*tgw.BnsTgwV1ApiCreateTgwRouteTableModelCreateTgwRouteTableResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.RouteTablesAPI.CreateTgwRouteTable(ctx).
+		func() (*tgw.CreateTgwRouteTableResponse, *http.Response, error) {
+			return r.kc.ApiClient.TransitGatewayRouteTableAPI.CreateTgwRouteTable(ctx).
 				XAuthToken(r.kc.XAuthToken).
-				CreateTgwRouteTableRequestModel(body).
+				CreateTgwRouteTableRequest(body).
 				Execute()
 		},
 	)
@@ -104,7 +104,7 @@ func (r *transitGatewayRouteTableResource) Create(ctx context.Context, req resou
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
-	_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+	_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -126,7 +126,7 @@ func (r *transitGatewayRouteTableResource) Create(ctx context.Context, req resou
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
-		_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+		_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
@@ -163,8 +163,8 @@ func (r *transitGatewayRouteTableResource) Read(ctx context.Context, req resourc
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwRouteTableResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.RouteTablesAPI.GetTgwRouteTable(ctx, state.Id.ValueString()).
+		func() (*tgw.GetTgwRouteTableResponse, *http.Response, error) {
+			return r.kc.ApiClient.TransitGatewayRouteTableAPI.GetTgwRouteTable(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 		},
@@ -224,10 +224,6 @@ func (r *transitGatewayRouteTableResource) Update(ctx context.Context, req resou
 		return
 	}
 
-	mutex := common.LockForID(plan.TgwId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -238,24 +234,28 @@ func (r *transitGatewayRouteTableResource) Update(ctx context.Context, req resou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, ok := pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, plan.TgwId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	var result *tgw.BnsTgwV1ApiGetTgwRouteTableModelTgwRouteTableResponseModel
+	var result *tgw.TgwRouteTable
 	if !plan.Name.Equal(state.Name) {
-		updateReq := tgw.NewBnsTgwV1ApiUpdateTgwRouteTableModelTgwRouteTableRequestModel(plan.Name.ValueString())
+		updateReq := tgw.NewUpdateTgwRouteTable(plan.Name.ValueString())
 
-		body := tgw.UpdateTgwRouteTableRequestModel{
-			RouteTable: *updateReq,
-		}
+		body := *tgw.NewUpdateTgwRouteTableRequest(*updateReq)
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*tgw.BnsTgwV1ApiUpdateTgwRouteTableModelCreateTgwRouteTableResponseModel, *http.Response, error) {
-				return r.kc.ApiClient.RouteTablesAPI.UpdateTgwRouteTable(ctx, plan.Id.ValueString()).
+			func() (*tgw.UpdateTgwRouteTableResponse, *http.Response, error) {
+				return r.kc.ApiClient.TransitGatewayRouteTableAPI.UpdateTgwRouteTable(ctx, plan.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
-					UpdateTgwRouteTableRequestModel(body).
+					UpdateTgwRouteTableRequest(body).
 					Execute()
 			},
 		)
@@ -270,7 +270,7 @@ func (r *transitGatewayRouteTableResource) Update(ctx context.Context, req resou
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
-		_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+		_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
@@ -293,7 +293,7 @@ func (r *transitGatewayRouteTableResource) Update(ctx context.Context, req resou
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
-		_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+		_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
@@ -318,10 +318,6 @@ func (r *transitGatewayRouteTableResource) Delete(ctx context.Context, req resou
 		return
 	}
 
-	mutex := common.LockForID(state.TgwId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -332,7 +328,13 @@ func (r *transitGatewayRouteTableResource) Delete(ctx context.Context, req resou
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, ok := pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, state.TgwId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -343,7 +345,7 @@ func (r *transitGatewayRouteTableResource) Delete(ctx context.Context, req resou
 		resp.Diagnostics.Append(diags...)
 
 		r.updateRouteTableRoutes(ctx, state.TgwId.ValueString(), state.Id.ValueString(), nil, &routes, &resp.Diagnostics)
-		_, ok = pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+		_, ok = pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
@@ -354,10 +356,10 @@ func (r *transitGatewayRouteTableResource) Delete(ctx context.Context, req resou
 		diags := state.Associations.ElementsAs(ctx, &associations, false)
 		resp.Diagnostics.Append(diags...)
 		for _, association := range associations {
-			_, ok = pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+			_, ok = pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 			deleteRouteTableAssociation(ctx, r.kc, r, state.Id.ValueString(), association.Id.ValueString(), &resp.Diagnostics)
 		}
-		_, ok = pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+		_, ok = pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
@@ -365,7 +367,7 @@ func (r *transitGatewayRouteTableResource) Delete(ctx context.Context, req resou
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.RouteTablesAPI.DeleteTgwRouteTable(ctx, state.Id.ValueString()).
+			httpResp, err := r.kc.ApiClient.TransitGatewayRouteTableAPI.DeleteTgwRouteTable(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 			return nil, httpResp, err
@@ -382,7 +384,7 @@ func (r *transitGatewayRouteTableResource) Delete(ctx context.Context, req resou
 	common.PollUntilDeletion(ctx, r, 5*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
-				_, httpResp, err := r.kc.ApiClient.RouteTablesAPI.
+				_, httpResp, err := r.kc.ApiClient.TransitGatewayRouteTableAPI.
 					GetTgwRouteTable(ctx, state.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
@@ -420,7 +422,7 @@ func pollRouteTableUntilAvailable(
 	resource interface{},
 	routeTableId string,
 	diags *diag.Diagnostics,
-) (*tgw.BnsTgwV1ApiGetTgwRouteTableModelTgwRouteTableResponseModel, bool) {
+) (*tgw.TgwRouteTable, bool) {
 
 	result, ok := common.PollUntilResult(
 		ctx,
@@ -428,18 +430,12 @@ func pollRouteTableUntilAvailable(
 		3*time.Second,
 		"transit gateway route table",
 		routeTableId,
-		[]string{
-			common.TgwStatusActive,
-			common.TgwStatusError,
-			common.TgwStatusInUse,
-			common.TgwStatusInactive,
-			common.TgwStatusAvaliable,
-		},
+		tgwAvailableAndErrorStatuses,
 		diags,
-		func(ctx context.Context) (*tgw.BnsTgwV1ApiGetTgwRouteTableModelTgwRouteTableResponseModel, *http.Response, error) {
+		func(ctx context.Context) (*tgw.TgwRouteTable, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, kc, diags,
-				func() (*tgw.GetTgwRouteTableResponseModel, *http.Response, error) {
-					return kc.ApiClient.RouteTablesAPI.
+				func() (*tgw.GetTgwRouteTableResponse, *http.Response, error) {
+					return kc.ApiClient.TransitGatewayRouteTableAPI.
 						GetTgwRouteTable(ctx, routeTableId).
 						XAuthToken(kc.XAuthToken).
 						Execute()
@@ -450,7 +446,7 @@ func pollRouteTableUntilAvailable(
 			}
 			return &respModel.TgwRouteTable, httpResp, nil
 		},
-		func(v *tgw.BnsTgwV1ApiGetTgwRouteTableModelTgwRouteTableResponseModel) string {
+		func(v *tgw.TgwRouteTable) string {
 			if v.ProvisioningStatus.IsSet() {
 				return string(*v.ProvisioningStatus.Get())
 			}
@@ -466,12 +462,7 @@ func pollRouteTableUntilAvailable(
 		ctx,
 		resource,
 		(*string)(result.ProvisioningStatus.Get()),
-		[]string{
-			common.TgwStatusActive,
-			common.TgwStatusInUse,
-			common.TgwStatusInactive,
-			common.TgwStatusAvaliable,
-		},
+		tgwAvailableStatuses,
 		diags,
 	)
 

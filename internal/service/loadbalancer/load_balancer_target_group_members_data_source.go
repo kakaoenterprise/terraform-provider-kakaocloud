@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var _ datasource.DataSourceWithConfigure = &loadBalancerTargetGroupMembersDataSource{}
@@ -109,9 +109,23 @@ func (d *loadBalancerTargetGroupMembersDataSource) Read(ctx context.Context, req
 			case "ip":
 				memberApi = memberApi.Ip(v)
 			case "protocol_port":
-				memberApi = memberApi.ProtocolPort(v)
+				if port, err := ParseInt32(v); err == nil {
+					memberApi = memberApi.ProtocolPort(*port)
+				} else {
+					resp.Diagnostics.AddError(
+						"Invalid protocol_port value",
+						err.Error(),
+					)
+				}
 			case "weight":
-				memberApi = memberApi.Weight(v)
+				if weight, err := ParseInt32(v); err == nil {
+					memberApi = memberApi.Weight(*weight)
+				} else {
+					resp.Diagnostics.AddError(
+						"Invalid weight value",
+						err.Error(),
+					)
+				}
 			case "provisioning_status":
 				if ps, err := ToProvisioningStatus(v); err == nil {
 					memberApi = memberApi.ProvisioningStatus(*ps)
@@ -174,7 +188,7 @@ func (d *loadBalancerTargetGroupMembersDataSource) Read(ctx context.Context, req
 	}
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*loadbalancer.TargetGroupMemberListModel, *http.Response, error) {
+		func() (*loadbalancer.ListTargetsInTargetGroupResponse, *http.Response, error) {
 			return memberApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)

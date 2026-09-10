@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
@@ -38,11 +38,11 @@ var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 		Required: true,
 		Validators: []validator.String{
 			stringvalidator.OneOf(
-				string(loadbalancer.TARGETGROUPPROTOCOL_HTTP),
-				string(loadbalancer.TARGETGROUPPROTOCOL_HTTPS),
-				string(loadbalancer.TARGETGROUPPROTOCOL_TCP),
-				string(loadbalancer.TARGETGROUPPROTOCOL_UDP),
-				string(loadbalancer.TARGETGROUPPROTOCOL_PROXY),
+				string(loadbalancer.LOADBALANCERPOOLPROTOCOL_HTTP),
+				string(loadbalancer.LOADBALANCERPOOLPROTOCOL_HTTPS),
+				string(loadbalancer.LOADBALANCERPOOLPROTOCOL_TCP),
+				string(loadbalancer.LOADBALANCERPOOLPROTOCOL_UDP),
+				string(loadbalancer.LOADBALANCERPOOLPROTOCOL_PROXY),
 			),
 		},
 		PlanModifiers: []planmodifier.String{
@@ -53,9 +53,9 @@ var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 		Required: true,
 		Validators: []validator.String{
 			stringvalidator.OneOf(
-				string(loadbalancer.TARGETGROUPALGORITHM_ROUND_ROBIN),
-				string(loadbalancer.TARGETGROUPALGORITHM_LEAST_CONNECTIONS),
-				string(loadbalancer.TARGETGROUPALGORITHM_SOURCE_IP),
+				string(loadbalancer.LOADBALANCERPOOLALGORITHM_ROUND_ROBIN),
+				string(loadbalancer.LOADBALANCERPOOLALGORITHM_LEAST_CONNECTIONS),
+				string(loadbalancer.LOADBALANCERPOOLALGORITHM_SOURCE_IP),
 			),
 		},
 	},
@@ -219,8 +219,8 @@ var loadBalancerTargetGroupResourceSchema = map[string]rschema.Attribute{
 			listvalidator.SizeAtMost(1),
 			listvalidator.ValueStringsAre(
 				stringvalidator.OneOf(
-					string(loadbalancer.ALPNPROTOCOL_H2),
-					string(loadbalancer.ALPNPROTOCOL_HTTP_1_1),
+					string(loadbalancer.LOADBALANCERALPNPROTOCOL_H2),
+					string(loadbalancer.LOADBALANCERALPNPROTOCOL_HTTP_1_1),
 				),
 			),
 		},

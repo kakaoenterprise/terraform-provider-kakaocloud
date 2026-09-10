@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 var (
@@ -72,7 +72,7 @@ func (r *scheduledScalingResource) Schema(ctx context.Context, _ resource.Schema
 
 type scheduleLookup struct {
 	Found bool
-	Item  *kubernetesengine.ScheduledScaleResponseModel
+	Item  *kubernetesengine.ScheduledScale
 }
 
 func (r *scheduledScalingResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -95,36 +95,35 @@ func (r *scheduledScalingResource) Create(ctx context.Context, req resource.Crea
 	clusterName := plan.ClusterName.ValueString()
 	nodePoolName := plan.NodePoolName.ValueString()
 
-	mutex := common.LockForID(fmt.Sprintf("%s/%s", clusterName, nodePoolName))
-	mutex.Lock()
-	defer mutex.Unlock()
+	unlock, ok := common.AcquireLockForID(ctx, fmt.Sprintf("%s/%s", clusterName, nodePoolName), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
 
-	var ok bool
 	_, ok = r.checkNodePoolReadyAndGetResult(ctx, clusterName, nodePoolName, &resp.Diagnostics)
 	if !ok {
 		return
 	}
 
-	createReq := kubernetesengine.ScheduleRequestModel{
-		Name:         plan.Name.ValueString(),
-		ScheduleType: kubernetesengine.SchedulingType(plan.ScheduleType.ValueString()),
-		DesiredNodes: plan.DesiredNodes.ValueInt32(),
-		StartTime:    stripSecondsForAPI(plan.StartTime.ValueString()),
-	}
+	createReq := kubernetesengine.NewCreateNodePoolScheduledScaling(
+		plan.Name.ValueString(),
+		kubernetesengine.SchedulingType(plan.ScheduleType.ValueString()),
+		plan.DesiredNodes.ValueInt32(),
+		stripSecondsForAPI(plan.StartTime.ValueString()),
+	)
 	if !plan.Schedule.IsNull() {
 		createReq.SetSchedule(plan.Schedule.ValueString())
 	}
 
-	body := kubernetesengine.CreateK8sClusterNodePoolScalingScheduleRequestModel{
-		ScheduledScaling: createReq,
-	}
+	body := kubernetesengine.NewCreateNodePoolScheduledScalingRequest(*createReq)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
-			return r.kc.ApiClient.ScalingAPI.
+			return r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 				CreateNodePoolScheduledScaling(ctx, clusterName, nodePoolName).
 				XAuthToken(r.kc.XAuthToken).
-				CreateK8sClusterNodePoolScalingScheduleRequestModel(body).
+				CreateNodePoolScheduledScalingRequest(*body).
 				Execute()
 		},
 	)
@@ -143,8 +142,8 @@ func (r *scheduledScalingResource) Create(ctx context.Context, req resource.Crea
 		&resp.Diagnostics,
 		func(ctx context.Context) (scheduleLookup, *http.Response, error) {
 			modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-				func() (*kubernetesengine.GetK8sClusterNodePoolScalingScheduleResponseModel, *http.Response, error) {
-					return r.kc.ApiClient.ScalingAPI.
+				func() (*kubernetesengine.ListNodePoolScheduledScalingsResponse, *http.Response, error) {
+					return r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 						ListNodePoolScheduledScalings(ctx, clusterName, nodePoolName).
 						XAuthToken(r.kc.XAuthToken).
 						Execute()
@@ -209,8 +208,8 @@ func (r *scheduledScalingResource) Read(ctx context.Context, req resource.ReadRe
 	nodeName := state.Name.ValueString()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*kubernetesengine.GetK8sClusterNodePoolScalingScheduleResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.ScalingAPI.
+		func() (*kubernetesengine.ListNodePoolScheduledScalingsResponse, *http.Response, error) {
+			return r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 				ListNodePoolScheduledScalings(ctx, clusterName, nodePoolName).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -225,7 +224,7 @@ func (r *scheduledScalingResource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	var found *kubernetesengine.ScheduledScaleResponseModel
+	var found *kubernetesengine.ScheduledScale
 	for i := range respModel.ScheduledScaling {
 		if respModel.ScheduledScaling[i].Name == nodeName {
 			found = &respModel.ScheduledScaling[i]
@@ -280,7 +279,7 @@ func (r *scheduledScalingResource) Delete(ctx context.Context, req resource.Dele
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.ScalingAPI.
+			httpResp, err := r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 				DeleteNodePoolScheduledScaling(ctx, clusterName, nodePoolName, scheduleName).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -291,14 +290,14 @@ func (r *scheduledScalingResource) Delete(ctx context.Context, req resource.Dele
 		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
 			return
 		}
-		common.AddApiActionError(ctx, r, httpResp, "DeleteVolume", err, &resp.Diagnostics)
+		common.AddApiActionError(ctx, r, httpResp, "DeleteNodePoolScheduledScaling", err, &resp.Diagnostics)
 		return
 	}
 
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*kubernetesengine.GetK8sClusterNodePoolScalingScheduleResponseModel, *http.Response, error) {
-				return r.kc.ApiClient.ScalingAPI.
+			func() (*kubernetesengine.ListNodePoolScheduledScalingsResponse, *http.Response, error) {
+				return r.kc.ApiClient.KubernetesEngineNodePoolAPI.
 					ListNodePoolScheduledScalings(ctx, clusterName, nodePoolName).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
@@ -373,7 +372,7 @@ func (r *scheduledScalingResource) checkNodePoolReadyAndGetResult(
 	ctx context.Context,
 	clusterName, nodePoolName string,
 	diags *diag.Diagnostics,
-) (*kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel, bool) {
+) (*kubernetesengine.NodePool, bool) {
 	result, ok := waitNodePool(
 		ctx,
 		r.kc,
@@ -386,10 +385,8 @@ func (r *scheduledScalingResource) checkNodePoolReadyAndGetResult(
 	if !ok || diags.HasError() {
 		return nil, false
 	}
-	status := string(result.Status.Phase)
-	common.CheckResourceAvailableStatus(ctx, r, &status,
-		[]string{string(kubernetesengine.NODEPOOLSTATUS_RUNNING),
-			string(kubernetesengine.NODEPOOLSTATUS_RUNNING__SCHEDULING_DISABLE)},
+	common.CheckResourceAvailableStatus(ctx, r, new(string(result.Status.Phase)),
+		NodePoolStatuesReady,
 		diags)
 	if diags.HasError() {
 		return nil, false

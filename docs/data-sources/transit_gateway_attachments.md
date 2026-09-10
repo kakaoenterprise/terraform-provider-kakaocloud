@@ -17,9 +17,10 @@ Use this data source to list and filter existing TGW attachments and reference t
 | Filter                | Type                | Description |
 |-----------------------|---------------------|-------------|
 | `id`                  | string              | TGW attachment ID |
+| `name`                | string              | Transit Gateway attachment name |
 | `tgw_id`              | string              | Transit Gateway ID |
 | `tgw_name`            | string              | Transit Gateway name |
-| `provisioning_status` | ProvisioningStatus  | Attachment provisioning status <br/>Possible values: `ACTIVE`, `DELETED`, `ERROR`, `PENDING_CREATE`, `PENDING_UPDATE`, `PENDING_DELETE` |
+| `provisioning_status` | ProvisioningStatus  | Attachment provisioning status <br/>Possible values: `ACTIVE`, `IN_USE`, `INACTIVE`, `AVAILABLE`, `PENDING_CREATE`, `PENDING_UPDATE`, `PENDING_DELETE`, `PENDING_APPROVE`, `REJECTED`, `DELETED`, `ATTACHING`, `ERROR` |
 | `resource_id`         | string              | ID of the attached resource |
 | `resource_name`       | string              | Name of the attached resource |
 | `route_table_id`      | string              | ID of the associated route table |
@@ -36,12 +37,12 @@ Use this data source to list and filter existing TGW attachments and reference t
 # List all Transit Gateway attachments
 data "kakaocloud_transit_gateway_attachments" "all" {}
 
-# List Transit Gateway attachments filtered by project ID
-data "kakaocloud_transit_gateway_attachments" "by_project" {
+# List Transit Gateway attachments filtered by name
+data "kakaocloud_transit_gateway_attachments" "by_name" {
   filter = [
     {
-      name  = "project_id"
-      value = "<your-project-id>"
+      name  = "name"
+      value = "<your-transit-gateway-attachment-name>"
     }
   ]
 }
@@ -54,10 +55,11 @@ output "all_tgw_attachments" {
 
 # Output filtered attachments
 output "filtered_tgw_attachments" {
-  description = "Transit Gateway attachments filtered by project ID"
+  description = "Transit Gateway attachments filtered by name"
   value = [
-    for att in data.kakaocloud_transit_gateway_attachments.by_project.transit_gateway_attachments : {
+    for att in data.kakaocloud_transit_gateway_attachments.by_name.transit_gateway_attachments : {
       id                  = att.id
+      name                = att.name
       provisioning_status = att.provisioning_status
       resource_type       = att.resource_type
       resource_name       = att.resource_name
@@ -81,7 +83,7 @@ The following attributes are exported:
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
 
-- `name` (Required, String) Filter field name (for example, `project_id`).
+- `name` (Required, String) Filter field name (for example, `name`).
 
 - `value` (Optional, String) Filter value to match.
 
@@ -97,6 +99,7 @@ The following attributes are exported:
 
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `id` (String) TGW attachment ID.
+- `name` (String) Transit Gateway attachment name.
 - `project_id` (String) Project ID that owns the attachment.
 - `project_name` (String) Project name that owns the attachment.
 - `provisioning_status` (String) Current provisioning status of the attachment.

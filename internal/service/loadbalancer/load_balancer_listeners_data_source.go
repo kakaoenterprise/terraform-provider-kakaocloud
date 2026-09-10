@@ -9,7 +9,7 @@ import (
 	"terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 
 	"terraform-provider-kakaocloud/internal/common"
 
@@ -185,7 +185,7 @@ func (d *loadBalancerListenersDataSource) Read(ctx context.Context, req datasour
 		return
 	}
 	lblResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*loadbalancer.ListenerListModel, *http.Response, error) {
+		func() (*loadbalancer.ListListenersResponse, *http.Response, error) {
 			return lblApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -195,7 +195,7 @@ func (d *loadBalancerListenersDataSource) Read(ctx context.Context, req datasour
 		return
 	}
 
-	var lblsResult []loadbalancer.BnsLoadBalancerV1ApiGetListenerModelListenerModel
+	var lblsResult []loadbalancer.LoadBalancerListener
 	err = copier.Copy(&lblsResult, &lblResp.Listeners)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
@@ -203,9 +203,10 @@ func (d *loadBalancerListenersDataSource) Read(ctx context.Context, req datasour
 		return
 	}
 
+	config.Listeners = make([]loadBalancerListenerBaseModel, 0, len(lblsResult))
 	for _, v := range lblsResult {
 		var tmpLbl loadBalancerListenerBaseModel
-		ok := mapLoadBalancerListenerBaseModel(ctx, &tmpLbl, &v, &resp.Diagnostics)
+		ok := mapLoadBalancerListenerModel(ctx, &tmpLbl, &v, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

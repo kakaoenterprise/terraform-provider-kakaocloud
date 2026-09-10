@@ -61,10 +61,10 @@ func (d *kubernetesKubeconfigDataSource) Read(ctx context.Context, req datasourc
 
 	clusterName := config.ClusterName.ValueString()
 
-	kubeYAML, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (string, *http.Response, error) {
+	kubeYAMLResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
+		func() (interface{}, *http.Response, error) {
 			return d.kc.ApiClient.
-				ClustersAPI.
+				KubernetesEngineClusterAPI.
 				GetClusterKubeconfig(ctx, clusterName).
 				XAuthToken(d.kc.XAuthToken).
 				Execute()
@@ -72,6 +72,14 @@ func (d *kubernetesKubeconfigDataSource) Read(ctx context.Context, req datasourc
 	)
 	if err != nil {
 		common.AddApiActionError(ctx, d, httpResp, "GetClusterKubeconfig", err, &resp.Diagnostics)
+		return
+	}
+	kubeYAML, ok := kubeYAMLResp.(string)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected kubeconfig response type",
+			fmt.Sprintf("Expected string, got: %T. Please report this issue to the provider developers.", kubeYAMLResp),
+		)
 		return
 	}
 

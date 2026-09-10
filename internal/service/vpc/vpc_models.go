@@ -31,7 +31,6 @@ type vpcBaseModel struct {
 
 type vpcResourceModel struct {
 	vpcBaseModel
-	Subnet   types.Object           `tfsdk:"subnet"`
 	Timeouts resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
@@ -88,9 +87,4 @@ var defaultRouteTableAttrType = map[string]attr.Type{
 	"provisioning_status": types.StringType,
 	"created_at":          types.StringType,
 	"updated_at":          types.StringType,
-}
-
-type vpcSubnetModel struct {
-	CidrBlock        cidrtypes.IPPrefix `tfsdk:"cidr_block"`
-	AvailabilityZone types.String       `tfsdk:"availability_zone"`
 }

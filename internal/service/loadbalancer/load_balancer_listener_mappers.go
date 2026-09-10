@@ -9,22 +9,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 	"golang.org/x/net/context"
 )
 
-func mapLoadBalancerListenerBaseModel(
+func mapLoadBalancerListenerModel(
 	ctx context.Context,
 	base *loadBalancerListenerBaseModel,
-	src *loadbalancer.BnsLoadBalancerV1ApiGetListenerModelListenerModel,
+	src *loadbalancer.LoadBalancerListener,
 	diags *diag.Diagnostics,
 ) bool {
 
-	secrets, secretsDiags := utils.ConvertListFromModel(ctx, src.Secrets, loadBalancerListenerSecretAttrType, func(secret loadbalancer.BnsLoadBalancerV1ApiGetListenerModelSecretModel) any {
+	secrets, secretsDiags := utils.ConvertListFromModel(ctx, src.Secrets, loadBalancerListenerSecretAttrType, func(secret loadbalancer.Secret) any {
 		return loadBalancerListenerSecretsModel{
-			Id:         types.StringValue(secret.Id),
+			Id:         utils.ConvertNullableString(secret.Id),
 			Name:       utils.ConvertNullableString(secret.Name),
-			Expiration: utils.ConvertNullableString(secret.Expiration),
+			Expiration: utils.ConvertNullableTime(secret.Expiration),
 			Status:     utils.ConvertNullableString(secret.Status),
 			SecretType: utils.ConvertNullableString(secret.SecretType),
 			CreatorId:  utils.ConvertNullableString(secret.CreatorId),
@@ -34,14 +34,14 @@ func mapLoadBalancerListenerBaseModel(
 
 	diags.Append(secretsDiags...)
 
-	l7Policies, l7PolicyDiags := utils.ConvertListFromModel(ctx, src.L7Policies, loadBalancerListenerL7PolicyAttrType, func(policy loadbalancer.BnsLoadBalancerV1ApiGetListenerModelL7PolicyModel) any {
-		if policy.Id == "" {
+	l7Policies, l7PolicyDiags := utils.ConvertListFromModel(ctx, src.L7Policies, loadBalancerListenerL7PolicyAttrType, func(policy loadbalancer.L7Policy) any {
+		if policy.Id.Get() == nil || *policy.Id.Get() == "" {
 
 			return nil
 		}
-		rules, ruleDiags := utils.ConvertListFromModel(ctx, policy.Rules, loadBalancerListenerL7PolicyRuleAttrType, func(rule loadbalancer.BnsLoadBalancerV1ApiGetListenerModelRuleModel) any {
+		rules, ruleDiags := utils.ConvertListFromModel(ctx, policy.Rules, loadBalancerListenerL7PolicyRuleAttrType, func(rule loadbalancer.Rule) any {
 			return loadBalancerListenerL7PolicyRuleModel{
-				Id:                 types.StringValue(rule.Id),
+				Id:                 utils.ConvertNullableString(rule.Id),
 				CompareType:        utils.ConvertNullableString(rule.CompareType),
 				IsInverted:         types.BoolValue(rule.IsInverted),
 				Key:                utils.ConvertNullableString(rule.Key),
@@ -55,7 +55,7 @@ func mapLoadBalancerListenerBaseModel(
 		diags.Append(ruleDiags...)
 
 		return loadBalancerListenerL7PolicyModel{
-			Id:                    types.StringValue(policy.Id),
+			Id:                    utils.ConvertNullableString(policy.Id),
 			Name:                  utils.ConvertNullableString(policy.Name),
 			Description:           utils.ConvertNullableString(policy.Description),
 			ProvisioningStatus:    utils.ConvertNullableString(policy.ProvisioningStatus),
@@ -120,7 +120,9 @@ func mapLoadBalancerListenerBaseModel(
 	if len(src.TlsVersions) > 0 {
 		tlsVersionStrings := make([]string, len(src.TlsVersions))
 		for i, version := range src.TlsVersions {
-			tlsVersionStrings[i] = string(version)
+			if version != nil {
+				tlsVersionStrings[i] = string(*version)
+			}
 		}
 		base.TlsVersions = utils.ConvertNullableStringList(tlsVersionStrings)
 	} else {

@@ -18,6 +18,9 @@ func getSubnetDataSourceSchema() map[string]dschema.Attribute {
 		"name": dschema.StringAttribute{
 			Computed: true,
 		},
+		"description": dschema.StringAttribute{
+			Computed: true,
+		},
 		"is_shared": dschema.BoolAttribute{
 			Computed: true,
 		},
@@ -72,6 +75,14 @@ func getSubnetResourceSchemaAttributes() map[string]rschema.Attribute {
 		"name": rschema.StringAttribute{
 			Required:   true,
 			Validators: common.NameValidator(200),
+		},
+		"description": rschema.StringAttribute{
+			Optional:   true,
+			Computed:   true,
+			Validators: common.DescriptionValidator(),
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"is_shared": rschema.BoolAttribute{
 			Computed: true,

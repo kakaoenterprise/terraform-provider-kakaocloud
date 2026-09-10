@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var (
@@ -81,8 +81,8 @@ func (d *loadBalancerL7PolicyRuleDataSource) Read(ctx context.Context, req datas
 	defer cancel()
 
 	ruleResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*loadbalancer.Responsel7PolicyRuleModel, *http.Response, error) {
-			return d.kc.ApiClient.LoadBalancerL7PoliciesAPI.GetL7PolicyRule(ctx, config.L7PolicyId.ValueString(), config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
+		func() (*loadbalancer.GetL7PolicyRuleResponse, *http.Response, error) {
+			return d.kc.ApiClient.LoadBalancerL7RuleAPI.GetL7PolicyRule(ctx, config.L7PolicyId.ValueString(), config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
 	if err != nil {
@@ -90,7 +90,7 @@ func (d *loadBalancerL7PolicyRuleDataSource) Read(ctx context.Context, req datas
 		return
 	}
 
-	ok := mapLoadBalancerL7PolicyRuleBaseModel(&config.loadBalancerL7PolicyRuleBaseModel, &ruleResp.L7Rule, config.L7PolicyId.ValueString(), &resp.Diagnostics)
+	ok := mapLoadBalancerL7PolicyRuleModel(&config.loadBalancerL7PolicyRuleBaseModel, &ruleResp.L7Rule, config.L7PolicyId.ValueString(), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -48,10 +47,6 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 		"is_hyper_threading": schema.BoolAttribute{
 			Optional: true,
 			Computed: true,
-			PlanModifiers: []planmodifier.Bool{
-				boolplanmodifier.UseStateForUnknown(),
-				boolplanmodifier.RequiresReplace(),
-			},
 		},
 		"is_hadoop": schema.BoolAttribute{
 			Computed: true,
@@ -66,10 +61,7 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 			},
 		},
 		"image": schema.SingleNestedAttribute{
-			Computed: true,
-			PlanModifiers: []planmodifier.Object{
-				objectplanmodifier.UseStateForUnknown(),
-			},
+			Computed:   true,
 			Attributes: getInstanceImageResourceSchemaAttributes(),
 		},
 		"vm_state": schema.StringAttribute{
@@ -86,9 +78,7 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 			Computed: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(
-					common.InstanceStatusActive,
-					common.InstanceStatusStopped,
-					common.InstanceStatusShelved,
+					instanceAvailableStatuses...,
 				),
 			},
 		},
@@ -151,6 +141,9 @@ func getInstanceResourceSchema() map[string]schema.Attribute {
 		},
 		"created_at": schema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"updated_at": schema.StringAttribute{
 			Computed: true,

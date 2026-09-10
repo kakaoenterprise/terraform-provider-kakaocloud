@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/network"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/network"
 )
 
 var (
@@ -85,8 +85,8 @@ func (d *publicIpDataSource) Read(ctx context.Context, req datasource.ReadReques
 	defer cancel()
 
 	publicIpResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*network.BnsNetworkV1ApiGetPublicIpModelResponsePublicIpModel, *http.Response, error) {
-			return d.kc.ApiClient.PublicIPAPI.GetPublicIp(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
+		func() (*network.GetPublicIpResponse, *http.Response, error) {
+			return d.kc.ApiClient.NetworkPublicIPAPI.GetPublicIp(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
 	if err != nil {
@@ -96,7 +96,7 @@ func (d *publicIpDataSource) Read(ctx context.Context, req datasource.ReadReques
 
 	result := publicIpResp.PublicIp
 
-	ok := mapPublicIpBaseModel(ctx, &config.publicIpBaseModel, &result, &resp.Diagnostics)
+	ok := mapPublicIpModel(ctx, &config.publicIpBaseModel, &result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

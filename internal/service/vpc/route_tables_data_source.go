@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"terraform-provider-kakaocloud/internal/common"
 	. "terraform-provider-kakaocloud/internal/utils"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 var (
@@ -129,7 +130,11 @@ func (d *routeTablesDataSource) Read(ctx context.Context, req datasource.ReadReq
 			case "subnet_name":
 				routeTableApi = routeTableApi.SubnetName(v)
 			case "association_count":
-				routeTableApi = routeTableApi.AssociationCount(v)
+				if i, err := strconv.Atoi(v); err == nil {
+					routeTableApi = routeTableApi.AssociationCount(int32(i))
+				} else {
+					resp.Diagnostics.AddError("Invalid association_count value", fmt.Sprintf("expected integer but got %q (error: %s)", v, err))
+				}
 			case "destination":
 				routeTableApi = routeTableApi.Destination(v)
 			case "created_at":
@@ -163,7 +168,7 @@ func (d *routeTablesDataSource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 	routeTableResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*vpc.RouteTableListModel, *http.Response, error) {
+		func() (*vpc.ListRouteTablesResponse, *http.Response, error) {
 			return routeTableApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -172,7 +177,7 @@ func (d *routeTablesDataSource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
-	var routeTableResult []vpc.BnsVpcV1ApiGetRouteTableModelRouteTableModel
+	var routeTableResult []vpc.VpcRouteTable
 	err = copier.Copy(&routeTableResult, &routeTableResp.VpcRouteTables)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
@@ -180,9 +185,10 @@ func (d *routeTablesDataSource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
+	config.RouteTables = make([]routeTableBaseModel, 0, len(routeTableResult))
 	for _, v := range routeTableResult {
 		var tmpRouteTable routeTableBaseModel
-		ok := mapRouteTableBaseModel(ctx, &tmpRouteTable, &v, &resp.Diagnostics)
+		ok := mapRouteTableModel(ctx, &tmpRouteTable, &v, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

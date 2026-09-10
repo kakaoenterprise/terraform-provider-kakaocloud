@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 func (r *instanceGroupResource) extendVolume(
@@ -19,8 +19,8 @@ func (r *instanceGroupResource) extendVolume(
 	plan instanceGroupExtendVolumeModel,
 	respDiags *diag.Diagnostics,
 ) bool {
-	request := mysqlsdk.NewBodyExtendMysqlInstanceGroupVolume(
-		*mysqlsdk.NewMysqlV1ApiExtendMysqlInstanceGroupVolumeModelInstanceGroupRequestModel(
+	request := mysqlsdk.NewExtendMysqlInstanceGroupVolumeRequest(
+		*mysqlsdk.NewExtendMysqlInstanceGroupVolume(
 			plan.LogDiskSize.ValueInt32(),
 			plan.DataDiskSize.ValueInt32(),
 		),
@@ -28,10 +28,10 @@ func (r *instanceGroupResource) extendVolume(
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupsAPI.
+			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupAPI.
 				ExtendMysqlInstanceGroupVolume(ctx, plan.InstanceGroupId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				BodyExtendMysqlInstanceGroupVolume(*request).
+				ExtendMysqlInstanceGroupVolumeRequest(*request).
 				Execute()
 			return struct{}{}, httpResp, err
 		},
@@ -50,8 +50,8 @@ func (r *instanceGroupResource) readExtendVolumeState(
 	respDiags *diag.Diagnostics,
 ) (instanceGroupExtendVolumeModel, bool, bool) {
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.GetMysqlInstanceGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLInstanceGroupAPI.
 				GetMysqlInstanceGroup(ctx, current.InstanceGroupId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()

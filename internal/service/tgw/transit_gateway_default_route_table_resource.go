@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	_ "github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -87,8 +87,8 @@ func (r *transitGatewayDefaultRouteTableResource) Create(ctx context.Context, re
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.TgwsAPI.GetTransitGateway(ctx, plan.TgwId.ValueString()).
+		func() (*tgw.GetTransitGatewayResponse, *http.Response, error) {
+			return r.kc.ApiClient.TransitGatewayAPI.GetTransitGateway(ctx, plan.TgwId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 		},
@@ -131,8 +131,8 @@ func (r *transitGatewayDefaultRouteTableResource) Read(ctx context.Context, req 
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.TgwsAPI.GetTransitGateway(ctx, state.TgwId.ValueString()).
+		func() (*tgw.GetTransitGatewayResponse, *http.Response, error) {
+			return r.kc.ApiClient.TransitGatewayAPI.GetTransitGateway(ctx, state.TgwId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
@@ -173,8 +173,8 @@ func (r *transitGatewayDefaultRouteTableResource) Update(ctx context.Context, re
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.TgwsAPI.GetTransitGateway(ctx, plan.TgwId.ValueString()).
+		func() (*tgw.GetTransitGatewayResponse, *http.Response, error) {
+			return r.kc.ApiClient.TransitGatewayAPI.GetTransitGateway(ctx, plan.TgwId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 		},
@@ -217,8 +217,8 @@ func (r *transitGatewayDefaultRouteTableResource) Delete(ctx context.Context, re
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.TgwsAPI.GetTransitGateway(ctx, state.TgwId.ValueString()).
+		func() (*tgw.GetTransitGatewayResponse, *http.Response, error) {
+			return r.kc.ApiClient.TransitGatewayAPI.GetTransitGateway(ctx, state.TgwId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 		},
@@ -265,22 +265,24 @@ func (r *transitGatewayDefaultRouteTableResource) updateDefaultRouteTable(
 	ctx context.Context,
 	tgwID string,
 	routeTableID *string,
-	respOption tgw.OptionResponseModel,
+	respOption tgw.Option,
 	diags *diag.Diagnostics,
 ) bool {
-	mutex := common.LockForID(tgwID)
-	mutex.Lock()
-	defer mutex.Unlock()
+	unlock, ok := common.AcquireLockForID(ctx, tgwID, diags)
+	if !ok {
+		return false
+	}
+	defer unlock()
 
-	_, ok := pollTgw(ctx, r.kc, r, tgwID, []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, diags)
+	_, ok = pollTgw(ctx, r.kc, r, tgwID, tgwAvailableAndErrorStatuses, diags)
 	if !ok || diags.HasError() {
 		return false
 	}
 
 	isAutoAcceptSharedAttachments := respOption.IsAutoAcceptSharedAttachments.Get()
 
-	updateReq := tgw.NewBnsTgwV1ApiUpdateTransitGatewayModelTgwRequestModel()
-	optionsReq := tgw.BnsTgwV1ApiUpdateTransitGatewayModelTgwOptionRequestModel{
+	updateReq := tgw.NewUpdateTransitGateway()
+	optionsReq := tgw.UpdateTransitGatewayTgwOptionRequest{
 		IsAutoAcceptSharedAttachments: *isAutoAcceptSharedAttachments,
 	}
 
@@ -293,15 +295,13 @@ func (r *transitGatewayDefaultRouteTableResource) updateDefaultRouteTable(
 	}
 	updateReq.SetOptions(optionsReq)
 
-	body := tgw.UpdateTgwRequestModel{
-		Tgw: *updateReq,
-	}
+	body := *tgw.NewUpdateTransitGatewayRequest(*updateReq)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
-		func() (*tgw.BnsTgwV1ApiUpdateTransitGatewayModelCreateTgwResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.TgwsAPI.UpdateTransitGateway(ctx, tgwID).
+		func() (*tgw.UpdateTransitGatewayResponse, *http.Response, error) {
+			return r.kc.ApiClient.TransitGatewayAPI.UpdateTransitGateway(ctx, tgwID).
 				XAuthToken(r.kc.XAuthToken).
-				UpdateTgwRequestModel(body).
+				UpdateTransitGatewayRequest(body).
 				Execute()
 		},
 	)
@@ -313,7 +313,7 @@ func (r *transitGatewayDefaultRouteTableResource) updateDefaultRouteTable(
 
 	time.Sleep(3 * time.Second)
 
-	result, ok := pollTgw(ctx, r.kc, r, tgwID, []string{common.TgwStatusActive, common.TgwStatusError}, diags)
+	result, ok := pollTgw(ctx, r.kc, r, tgwID, tgwAvailableAndErrorStatuses, diags)
 	if !ok || diags.HasError() {
 		return ok
 	}

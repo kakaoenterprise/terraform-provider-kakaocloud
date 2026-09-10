@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -85,7 +85,7 @@ func (d *transitGatewayRouteTablesDataSource) Read(ctx context.Context, req data
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	routeTableApi := d.kc.ApiClient.RouteTablesAPI.ListTgwRouteTables(ctx)
+	routeTableApi := d.kc.ApiClient.TransitGatewayRouteTableAPI.ListTgwRouteTables(ctx)
 
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
@@ -107,7 +107,7 @@ func (d *transitGatewayRouteTablesDataSource) Read(ctx context.Context, req data
 			case "tgw_name":
 				routeTableApi = routeTableApi.TgwName(v)
 			case "provisioning_status":
-				if ps, err := ToTgwProvisioningStatus(v); err == nil {
+				if ps, err := ToTGWRouteTableProvisioningStatus(v); err == nil {
 					routeTableApi = routeTableApi.ProvisioningStatus(*ps)
 				} else {
 					resp.Diagnostics.AddError(
@@ -149,7 +149,7 @@ func (d *transitGatewayRouteTablesDataSource) Read(ctx context.Context, req data
 	config.TransitGatewayRouteTables = make([]transitGatewayRouteTableDataSourceBaseModel, 0)
 
 	routeTablesResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwRouteTablesResponseModel, *http.Response, error) {
+		func() (*tgw.ListTgwRouteTablesResponse, *http.Response, error) {
 			return routeTableApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -158,10 +158,11 @@ func (d *transitGatewayRouteTablesDataSource) Read(ctx context.Context, req data
 		return
 	}
 
+	config.TransitGatewayRouteTables = make([]transitGatewayRouteTableDataSourceBaseModel, 0, len(routeTablesResp.TgwRouteTables))
 	for _, item := range routeTablesResp.TgwRouteTables {
 		var routeTableModel transitGatewayRouteTableDataSourceBaseModel
 
-		if !mapTransitGatewayRouteTableListModel(ctx, &routeTableModel, &item, &resp.Diagnostics) {
+		if !mapTransitGatewayRouteTableDataSourceModel(ctx, &routeTableModel, &item, &resp.Diagnostics) {
 			return
 		}
 		config.TransitGatewayRouteTables = append(config.TransitGatewayRouteTables, routeTableModel)

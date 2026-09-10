@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/volume"
 )
 
 var (
@@ -77,7 +77,7 @@ func (d *volumeTypesDataSource) Read(ctx context.Context, req datasource.ReadReq
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*volume.VolumeTypeListModel, *http.Response, error) {
+		func() (*volume.ListVolumeTypesResponse, *http.Response, error) {
 			return d.kc.ApiClient.VolumeAPI.ListVolumeTypes(ctx).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -86,6 +86,7 @@ func (d *volumeTypesDataSource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
+	config.VolumeTypes = make([]volumeTypeModel, 0, len(respModel.VolumeTypes))
 	for _, v := range respModel.VolumeTypes {
 		config.VolumeTypes = append(config.VolumeTypes, volumeTypeModel{
 			Id:          types.StringValue(v.Id),

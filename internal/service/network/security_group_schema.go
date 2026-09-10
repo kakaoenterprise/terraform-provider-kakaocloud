@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/kakaoenterprise/kc-sdk-go/services/network"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/network"
 )
 
 func getSecurityGroupRuleInlineResourceSchema() map[string]rschema.Attribute {
@@ -36,8 +36,8 @@ func getSecurityGroupRuleInlineResourceSchema() map[string]rschema.Attribute {
 			Required: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(
-					string(network.SECURITYGROUPRULEDIRECTION_INGRESS),
-					string(network.SECURITYGROUPRULEDIRECTION_EGRESS),
+					string(network.RULEDIRECTION_INGRESS),
+					string(network.RULEDIRECTION_EGRESS),
 				),
 			},
 		},
@@ -45,10 +45,10 @@ func getSecurityGroupRuleInlineResourceSchema() map[string]rschema.Attribute {
 			Required: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(
-					string(network.SECURITYGROUPRULEPROTOCOL_TCP),
-					string(network.SECURITYGROUPRULEPROTOCOL_UDP),
-					string(network.SECURITYGROUPRULEPROTOCOL_ICMP),
-					string(network.SECURITYGROUPRULEPROTOCOL_ALL),
+					string(network.RULEPROTOCOL_TCP),
+					string(network.RULEPROTOCOL_UDP),
+					string(network.RULEPROTOCOL_ICMP),
+					string(network.RULEPROTOCOL_ALL),
 				),
 			},
 		},

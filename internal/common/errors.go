@@ -69,6 +69,24 @@ func AddGeneralError(ctx context.Context, obj interface{}, diags *diag.Diagnosti
 	diags.AddError(fmt.Sprintf("%s %s: %s", action, tfObjectType, typeName), errorMsg)
 }
 
+func AddPollingError(ctx context.Context, obj interface{}, diags *diag.Diagnostics, idName, id string) {
+	typeName, tfObjectType := ExtractTypeMetadata(ctx, obj)
+
+	diags.AddError(
+		fmt.Sprintf("Polling %s: %s failed", tfObjectType, typeName),
+		fmt.Sprintf("%s with %s: %q entered the ERROR provisioning status while polling.", typeName, idName, id),
+	)
+}
+
+func AddPollingTimeoutError(ctx context.Context, obj interface{}, diags *diag.Diagnostics, idName, id string) {
+	typeName, tfObjectType := ExtractTypeMetadata(ctx, obj)
+
+	diags.AddError(
+		fmt.Sprintf("Polling %s: %s timed out", tfObjectType, typeName),
+		fmt.Sprintf("Timed out while polling %s with %s: %q: context deadline exceeded.", typeName, idName, id),
+	)
+}
+
 func AddValidationConfigError(ctx context.Context, obj interface{}, diags *diag.Diagnostics, errorMsg string) {
 	typeName, tfObjectType := ExtractTypeMetadata(ctx, obj)
 

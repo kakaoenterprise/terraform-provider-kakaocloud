@@ -39,7 +39,7 @@ data "kakaocloud_instance_flavors" "vm_flavor_m2a_large" {
   ]
 }
 
-data "kakaocloud_kubernetes_engine_images" "vm_image_k8s_v1_31_ubuntu_2204" {
+data "kakaocloud_kubernetes_engine_images" "vm_image_k8s_v1_32_ubuntu_2204" {
   filter = [
     {
       name  = "instance_type"
@@ -47,7 +47,7 @@ data "kakaocloud_kubernetes_engine_images" "vm_image_k8s_v1_31_ubuntu_2204" {
     },
     {
       name  = "k8s_version"
-      value = "1.31"
+      value = "1.32"
     },
     {
       name  = "is_gpu_type"
@@ -60,7 +60,7 @@ resource "kakaocloud_kubernetes_engine_node_pool" "example" {
   name         = "example-node-pool"
   cluster_name = kakaocloud_kubernetes_engine_cluster.example.name
 
-  image_id  = data.kakaocloud_kubernetes_engine_images.vm_image_k8s_v1_31_ubuntu_2204.images[0].id
+  image_id  = data.kakaocloud_kubernetes_engine_images.vm_image_k8s_v1_32_ubuntu_2204.images[0].id
   flavor_id = data.kakaocloud_instance_flavors.vm_flavor_m2a_large.instance_flavors[0].id
 
   request_node_count = 2
@@ -81,7 +81,7 @@ resource "kakaocloud_kubernetes_engine_node_pool" "example_sg" {
   name         = "example-node-pool-sg"
   cluster_name = kakaocloud_kubernetes_engine_cluster.example.name
 
-  image_id  = data.kakaocloud_kubernetes_engine_images.vm_image_k8s_v1_31_ubuntu_2204.images[0].id
+  image_id  = data.kakaocloud_kubernetes_engine_images.vm_image_k8s_v1_32_ubuntu_2204.images[0].id
   flavor_id = data.kakaocloud_instance_flavors.vm_flavor_m2a_large.instance_flavors[0].id
 
   request_node_count = 2
@@ -127,9 +127,7 @@ resource "kakaocloud_kubernetes_engine_node_pool" "example_sg" {
 
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
 - `failure_message` (String) Failure message if a node in the node pool changes to `Failed`
-- `flavor` (String) Instance type
 - `id` (String) Unique ID of the node pool
-- `image` (Attributes) Image information (see [below for nested schema](#nestedatt--image))
 - `is_bare_metal` (Boolean) Whether the node pool is bare metal type
 - `is_cordon` (Boolean) Whether all nodes in the node pool are in cordon (scheduling disabled) state
 - `is_gpu` (Boolean) Whether the node pool is GPU type
@@ -189,21 +187,6 @@ resource "kakaocloud_kubernetes_engine_node_pool" "example_sg" {
 - `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
 - `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 - `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
-
-
-<a id="nestedatt--image"></a>
-### Nested Schema for `image`
-
-- `architecture` (String) Image architecture
-- `id` (String) Unique ID of the image
-- `instance_type` (String) Supported instance type for the image
-- `is_gpu_type` (Boolean) Whether the image supports GPU
-- `kernel_version` (String) Kernel version
-- `key_package` (String) Key package information included in the image
-- `name` (String) Image name
-- `os_distro` (String) Operating system distribution
-- `os_type` (String) Operating system type
-- `os_version` (String) Operating system version
 
 
 <a id="nestedatt--status"></a>

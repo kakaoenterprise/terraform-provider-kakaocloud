@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var (
@@ -71,10 +71,6 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 		return
 	}
 
-	mutex := common.LockForID(plan.LoadBalancerId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -85,7 +81,13 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	ok := CheckLoadBalancerStatus(ctx, plan.LoadBalancerId.ValueString(), false, r, r.kc, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, plan.LoadBalancerId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollLoadBalancerStatus(ctx, plan.LoadBalancerId.ValueString(), false, r, r.kc, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -108,13 +110,13 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 		createReq.SetTlsMinVersion(loadbalancer.TLSVersion(plan.TlsMinVersion.ValueString()))
 	}
 
-	body := loadbalancer.BodyCreateListener{
+	body := loadbalancer.CreateListenerRequest{
 		Listener: createReq,
 	}
 
 	lbl, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiCreateListenerModelResponseListenerModel, *http.Response, error) {
-			return r.kc.ApiClient.LoadBalancerListenerAPI.CreateListener(ctx).XAuthToken(r.kc.XAuthToken).BodyCreateListener(body).Execute()
+		func() (*loadbalancer.CreateListenerResponse, *http.Response, error) {
+			return r.kc.ApiClient.LoadBalancerListenerAPI.CreateListener(ctx).XAuthToken(r.kc.XAuthToken).CreateListenerRequest(body).Execute()
 		},
 	)
 
@@ -128,7 +130,7 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 	result, ok := r.pollListenerUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
+		loadBalancerAvailableAndErrorStatuses,
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
@@ -150,7 +152,7 @@ func (r *loadBalancerListenerResource) Create(ctx context.Context, req resource.
 		result = finalResult
 	}
 
-	ok = mapLoadBalancerListenerBaseModel(ctx, &plan.loadBalancerListenerBaseModel, result, &resp.Diagnostics)
+	ok = mapLoadBalancerListenerModel(ctx, &plan.loadBalancerListenerBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -178,7 +180,7 @@ func (r *loadBalancerListenerResource) Read(ctx context.Context, req resource.Re
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelResponseListenerModel, *http.Response, error) {
+		func() (*loadbalancer.GetListenerResponse, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerListenerAPI.GetListener(ctx, state.Id.ValueString()).XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
@@ -192,8 +194,7 @@ func (r *loadBalancerListenerResource) Read(ctx context.Context, req resource.Re
 		common.AddApiActionError(ctx, r, httpResp, "GetListener", err, &resp.Diagnostics)
 		return
 	}
-	loadBalancerListenerResult := respModel.Listener
-	ok := mapLoadBalancerListenerBaseModel(ctx, &state.loadBalancerListenerBaseModel, &loadBalancerListenerResult, &resp.Diagnostics)
+	ok := mapLoadBalancerListenerModel(ctx, &state.loadBalancerListenerBaseModel, new(respModel.Listener), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -219,10 +220,6 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 		return
 	}
 
-	mutex := common.LockForID(plan.LoadBalancerId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -231,7 +228,13 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	ok := CheckLoadBalancerStatus(ctx, plan.LoadBalancerId.ValueString(), true, r, r.kc, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, plan.LoadBalancerId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollLoadBalancerStatus(ctx, plan.LoadBalancerId.ValueString(), true, r, r.kc, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -242,7 +245,7 @@ func (r *loadBalancerListenerResource) Update(ctx context.Context, req resource.
 		return
 	}
 
-	ok = mapLoadBalancerListenerBaseModel(ctx, &plan.loadBalancerListenerBaseModel, result, &resp.Diagnostics)
+	ok = mapLoadBalancerListenerModel(ctx, &plan.loadBalancerListenerBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -259,11 +262,21 @@ func (r *loadBalancerListenerResource) Delete(ctx context.Context, req resource.
 		return
 	}
 
-	mutex := common.LockForID(state.LoadBalancerId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
+	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
-	ok := CheckLoadBalancerStatus(ctx, state.LoadBalancerId.ValueString(), true, r, r.kc, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, state.LoadBalancerId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollLoadBalancerStatus(ctx, state.LoadBalancerId.ValueString(), true, r, r.kc, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -297,7 +310,7 @@ func (r *loadBalancerListenerResource) pollListenerUntilStatus(
 	listenerId string,
 	targetStatuses []string,
 	resp *diag.Diagnostics,
-) (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelListenerModel, bool) {
+) (*loadbalancer.LoadBalancerListener, bool) {
 	return common.PollUntilResult(
 		ctx,
 		r,
@@ -306,9 +319,9 @@ func (r *loadBalancerListenerResource) pollListenerUntilStatus(
 		listenerId,
 		targetStatuses,
 		resp,
-		func(ctx context.Context) (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelListenerModel, *http.Response, error) {
+		func(ctx context.Context) (*loadbalancer.LoadBalancerListener, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
-				func() (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelResponseListenerModel, *http.Response, error) {
+				func() (*loadbalancer.GetListenerResponse, *http.Response, error) {
 					return r.kc.ApiClient.LoadBalancerListenerAPI.GetListener(ctx, listenerId).XAuthToken(r.kc.XAuthToken).Execute()
 				},
 			)
@@ -317,7 +330,7 @@ func (r *loadBalancerListenerResource) pollListenerUntilStatus(
 			}
 			return &respModel.Listener, httpResp, nil
 		},
-		func(lb *loadbalancer.BnsLoadBalancerV1ApiGetListenerModelListenerModel) string {
+		func(lb *loadbalancer.LoadBalancerListener) string {
 			return string(*lb.ProvisioningStatus.Get())
 		},
 	)
@@ -327,20 +340,23 @@ func (r *loadBalancerListenerResource) updateListenerAttributes(
 	ctx context.Context,
 	plan, state *loadBalancerListenerResourceModel,
 	diag *diag.Diagnostics,
-) (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelListenerModel, bool) {
+) (*loadbalancer.LoadBalancerListener, bool) {
 	needsUpdate := false
-	editReq := loadbalancer.EditListener{}
+	editReq := loadbalancer.NewUpdateListener()
 
 	if state != nil && !plan.DefaultTlsContainerRef.Equal(state.DefaultTlsContainerRef) {
-		if !plan.DefaultTlsContainerRef.IsNull() {
+		if !plan.DefaultTlsContainerRef.IsNull() && !plan.DefaultTlsContainerRef.IsUnknown() {
 			editReq.SetDefaultTlsContainerRef(plan.DefaultTlsContainerRef.ValueString())
+		} else {
+			editReq.SetDefaultTlsContainerRefNil()
 		}
 		needsUpdate = true
 	}
 
 	if state == nil || !plan.SniContainerRefs.Equal(state.SniContainerRefs) {
-		if !plan.SniContainerRefs.IsNull() {
-			var sniRefs []string
+		var sniRefs []string
+
+		if !plan.SniContainerRefs.IsNull() && !plan.SniContainerRefs.IsUnknown() {
 			diags := plan.SniContainerRefs.ElementsAs(ctx, &sniRefs, false)
 			diag.Append(diags...)
 			if diag.HasError() {
@@ -348,11 +364,16 @@ func (r *loadBalancerListenerResource) updateListenerAttributes(
 			}
 			editReq.SetSniContainerRefs(sniRefs)
 			needsUpdate = true
+		} else {
+			if state != nil {
+				editReq.SetSniContainerRefs(sniRefs)
+				needsUpdate = true
+			}
 		}
 	}
 
-	if state != nil && !plan.TargetGroupId.Equal(state.TargetGroupId) && !plan.TargetGroupId.Equal(state.DefaultTargetGroupId) {
-		if !plan.TargetGroupId.IsNull() {
+	if state != nil && !plan.TargetGroupId.Equal(state.DefaultTargetGroupId) {
+		if !plan.TargetGroupId.IsNull() && !plan.TargetGroupId.IsUnknown() {
 			editReq.SetTargetGroupId(plan.TargetGroupId.ValueString())
 		} else {
 			editReq.SetTargetGroupIdNil()
@@ -360,7 +381,7 @@ func (r *loadBalancerListenerResource) updateListenerAttributes(
 		needsUpdate = true
 	}
 
-	if state != nil && !plan.TlsMinVersion.Equal(state.TlsMinVersion) {
+	if state != nil && !plan.TlsMinVersion.IsNull() && !plan.TlsMinVersion.IsUnknown() && !plan.TlsMinVersion.Equal(state.TlsMinVersion) {
 		tlsVersionEnum := loadbalancer.TLSVersion(plan.TlsMinVersion.ValueString())
 		editReq.SetTlsMinVersion(tlsVersionEnum)
 		needsUpdate = true
@@ -374,7 +395,7 @@ func (r *loadBalancerListenerResource) updateListenerAttributes(
 	}
 
 	if state == nil || !plan.InsertHeaders.Equal(state.InsertHeaders) {
-		sdkHeaders := &loadbalancer.InsertHeaderModel{}
+		sdkHeaders := loadbalancer.NewInsertHeaderRequest()
 
 		if !plan.InsertHeaders.IsNull() && !plan.InsertHeaders.IsUnknown() {
 			attrs := plan.InsertHeaders.Attributes()
@@ -384,28 +405,28 @@ func (r *loadBalancerListenerResource) updateListenerAttributes(
 
 			if !xForwardedFor.IsNull() && !xForwardedFor.IsUnknown() {
 				enumVal := loadbalancer.XForwardedFor(xForwardedFor.ValueString())
-				sdkHeaders.XForwardedFor = *loadbalancer.NewNullableXForwardedFor(&enumVal)
+				sdkHeaders.SetXForwardedFor(enumVal)
 			}
 			if !xForwardedProto.IsNull() && !xForwardedProto.IsUnknown() {
 				enumVal := loadbalancer.XForwardedProto(xForwardedProto.ValueString())
-				sdkHeaders.XForwardedProto = *loadbalancer.NewNullableXForwardedProto(&enumVal)
+				sdkHeaders.SetXForwardedProto(enumVal)
 			}
 			if !xForwardedPort.IsNull() && !xForwardedPort.IsUnknown() {
-				enumVal := loadbalancer.XForwardedPort(xForwardedPort.ValueString())
-				sdkHeaders.XForwardedPort = *loadbalancer.NewNullableXForwardedPort(&enumVal)
+				enumVal := loadbalancer.XForwardedProto(xForwardedPort.ValueString())
+				sdkHeaders.SetXForwardedPort(enumVal)
 			}
-			editReq.InsertHeaders = *loadbalancer.NewNullableInsertHeaderModel(sdkHeaders)
+			editReq.SetInsertHeaders(*sdkHeaders)
 			needsUpdate = true
 		}
 	}
 
 	if needsUpdate {
-		body := *loadbalancer.NewBodyUpdateListener(editReq)
+		body := *loadbalancer.NewUpdateListenerRequest(*editReq)
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
 			func() (interface{}, *http.Response, error) {
 				return r.kc.ApiClient.LoadBalancerListenerAPI.UpdateListener(ctx, plan.Id.ValueString()).
-					XAuthToken(r.kc.XAuthToken).BodyUpdateListener(body).Execute()
+					XAuthToken(r.kc.XAuthToken).UpdateListenerRequest(body).Execute()
 			},
 		)
 		if err != nil {
@@ -419,7 +440,7 @@ func (r *loadBalancerListenerResource) updateListenerAttributes(
 	result, ok := r.pollListenerUntilStatus(
 		ctx,
 		plan.Id.ValueString(),
-		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
+		loadBalancerAvailableAndErrorStatuses,
 		diag,
 	)
 	if !ok || diag.HasError() {
@@ -456,7 +477,9 @@ func (r *loadBalancerListenerResource) ValidateConfig(ctx context.Context, req r
 				"tls_min_version and default_tls_container_ref must be provided for TERMINATED_HTTPS protocol.")
 		}
 	} else {
-		if !config.DefaultTlsContainerRef.IsNull() || !config.TlsMinVersion.IsNull() || !config.SniContainerRefs.IsNull() {
+		if !config.DefaultTlsContainerRef.IsNull() ||
+			!config.TlsMinVersion.IsNull() ||
+			!config.SniContainerRefs.IsNull() {
 			common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 				"tls_min_version and default_tls_container_ref and sni_container_refs must only be specified when using the TERMINATED_HTTPS protocol.")
 		}

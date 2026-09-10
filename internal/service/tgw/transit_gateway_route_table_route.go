@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 func (r *transitGatewayRouteTableResource) updateRouteTableRoutes(
@@ -41,7 +41,7 @@ func (r *transitGatewayRouteTableResource) updateRouteTableRoutes(
 	if states != nil {
 		for _, stateRoute := range *states {
 			if _, exists := planMap[stateRoute.Id.ValueString()]; !exists || !stateRoute.DestinationCidrBlock.Equal(planMap[stateRoute.Id.ValueString()].DestinationCidrBlock) {
-				_, ok := pollTgw(ctx, r.kc, r, tgwId, []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, resp)
+				_, ok := pollTgw(ctx, r.kc, r, tgwId, tgwAvailableAndErrorStatuses, resp)
 				if !ok || resp.HasError() {
 					return false
 				}
@@ -57,7 +57,7 @@ func (r *transitGatewayRouteTableResource) updateRouteTableRoutes(
 		for i := range *plans {
 			planRoute := &(*plans)[i]
 
-			_, ok := pollTgw(ctx, r.kc, r, tgwId, []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, resp)
+			_, ok := pollTgw(ctx, r.kc, r, tgwId, tgwAvailableAndErrorStatuses, resp)
 			if !ok || resp.HasError() {
 				return false
 			}
@@ -81,20 +81,18 @@ func (r *transitGatewayRouteTableResource) updateRouteTableRoutes(
 }
 
 func (r *transitGatewayRouteTableResource) addRoute(ctx context.Context, tgwRouteTableId string, route *tgwRouteTableRequestRouteModel, diag *diag.Diagnostics) bool {
-	createReq := tgw.NewBnsTgwV1ApiCreateTgwRouteModelTgwRouteRequestModel(
+	createReq := tgw.NewCreateTgwRoute(
 		route.DestinationCidrBlock.ValueString(),
 		route.TgwAttachmentId.ValueString(),
 	)
 
-	body := tgw.CreateTgwRouteTableRouteRequestModel{
-		Route: *createReq,
-	}
+	body := *tgw.NewCreateTgwRouteRequest(*createReq)
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
-		func() (*tgw.BnsTgwV1ApiCreateTgwRouteModelCreateTgwRouteTableRouteResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.RouteTablesAPI.CreateTgwRoute(ctx, tgwRouteTableId).
+		func() (*tgw.CreateTgwRouteResponse, *http.Response, error) {
+			return r.kc.ApiClient.TransitGatewayRouteTableAPI.CreateTgwRoute(ctx, tgwRouteTableId).
 				XAuthToken(r.kc.XAuthToken).
-				CreateTgwRouteTableRouteRequestModel(body).
+				CreateTgwRouteRequest(body).
 				Execute()
 		},
 	)
@@ -112,25 +110,23 @@ func (r *transitGatewayRouteTableResource) addRoute(ctx context.Context, tgwRout
 }
 
 func (r *transitGatewayRouteTableResource) updateRoute(ctx context.Context, tgwRouteTableId string, route *tgwRouteTableRequestRouteModel, diag *diag.Diagnostics) bool {
-	updateReq := tgw.NewBnsTgwV1ApiUpdateTgwRouteModelTgwRouteRequestModel(
+	updateReq := tgw.NewUpdateTgwRoute(
 		route.TgwAttachmentId.ValueString(),
 	)
 
-	body := tgw.UpdateTgwRouteTableRouteRequestModel{
-		Route: *updateReq,
-	}
+	body := *tgw.NewUpdateTgwRouteRequest(*updateReq)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
-		func() (*tgw.BnsTgwV1ApiUpdateTgwRouteModelCreateTgwRouteTableRouteResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.RouteTablesAPI.UpdateTgwRouteTableRoute(
+		func() (*tgw.UpdateTgwRouteResponse, *http.Response, error) {
+			return r.kc.ApiClient.TransitGatewayRouteTableAPI.UpdateTgwRoute(
 				ctx, tgwRouteTableId, route.Id.ValueString(),
 			).XAuthToken(r.kc.XAuthToken).
-				UpdateTgwRouteTableRouteRequestModel(body).
+				UpdateTgwRouteRequest(body).
 				Execute()
 		},
 	)
 	if err != nil {
-		common.AddApiActionError(ctx, r, httpResp, "UpdateTgwRouteTableRoute", err, diag)
+		common.AddApiActionError(ctx, r, httpResp, "UpdateTgwRoute", err, diag)
 		return false
 	}
 
@@ -144,7 +140,7 @@ func (r *transitGatewayRouteTableResource) updateRoute(ctx context.Context, tgwR
 func (r *transitGatewayRouteTableResource) deleteRoute(ctx context.Context, tgwRouteTableId, routeId string, diag *diag.Diagnostics) bool {
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
 		func() (interface{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.RouteTablesAPI.DeleteTgwRoute(ctx, tgwRouteTableId, routeId).
+			httpResp, err := r.kc.ApiClient.TransitGatewayRouteTableAPI.DeleteTgwRoute(ctx, tgwRouteTableId, routeId).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 			return nil, httpResp, err
@@ -170,10 +166,9 @@ func (r *transitGatewayRouteTableResource) pollRouteActive(
 	for {
 		time.Sleep(5 * time.Second)
 		respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
-			func() (*tgw.GetTgwRouteTableRoutesResponseModel, *http.Response, error) {
-				return r.kc.ApiClient.RouteTablesAPI.
+			func() (*tgw.ListTgwRoutesResponse, *http.Response, error) {
+				return r.kc.ApiClient.TransitGatewayRouteTableAPI.
 					ListTgwRoutes(ctx, tgwRouteTableId).
-					SortKeys("resource_id").
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
 			},
@@ -203,10 +198,9 @@ func (r *transitGatewayRouteTableResource) pollRouteDelete(
 	for {
 		time.Sleep(5 * time.Second)
 		respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
-			func() (*tgw.GetTgwRouteTableRoutesResponseModel, *http.Response, error) {
-				return r.kc.ApiClient.RouteTablesAPI.
+			func() (*tgw.ListTgwRoutesResponse, *http.Response, error) {
+				return r.kc.ApiClient.TransitGatewayRouteTableAPI.
 					ListTgwRoutes(ctx, tgwRouteTableId).
-					SortKeys("resource_id").
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
 			},

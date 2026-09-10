@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/kakaoenterprise/kc-sdk-go/services/network"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/network"
 )
 
 func (r *publicIpResource) pollPublicIpUtilsStatus(
@@ -17,7 +17,7 @@ func (r *publicIpResource) pollPublicIpUtilsStatus(
 	publicIpId string,
 	targetStatuses []string,
 	resp *diag.Diagnostics,
-) (*network.BnsNetworkV1ApiGetPublicIpModelFloatingIpModel, bool) {
+) (*network.PublicIp, bool) {
 	return common.PollUntilResult(
 		ctx,
 		r,
@@ -26,10 +26,10 @@ func (r *publicIpResource) pollPublicIpUtilsStatus(
 		publicIpId,
 		targetStatuses,
 		resp,
-		func(ctx context.Context) (*network.BnsNetworkV1ApiGetPublicIpModelFloatingIpModel, *http.Response, error) {
+		func(ctx context.Context) (*network.PublicIp, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
-				func() (*network.BnsNetworkV1ApiGetPublicIpModelResponsePublicIpModel, *http.Response, error) {
-					return r.kc.ApiClient.PublicIPAPI.
+				func() (*network.GetPublicIpResponse, *http.Response, error) {
+					return r.kc.ApiClient.NetworkPublicIPAPI.
 						GetPublicIp(ctx, publicIpId).
 						XAuthToken(r.kc.XAuthToken).
 						Execute()
@@ -40,6 +40,11 @@ func (r *publicIpResource) pollPublicIpUtilsStatus(
 			}
 			return &respModel.PublicIp, httpResp, nil
 		},
-		func(v *network.BnsNetworkV1ApiGetPublicIpModelFloatingIpModel) string { return string(*v.Status.Get()) },
+		func(v *network.PublicIp) string {
+			if v.Status.Get() == nil {
+				return ""
+			}
+			return string(*v.Status.Get())
+		},
 	)
 }

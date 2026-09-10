@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var (
@@ -83,7 +83,7 @@ func (d *loadBalancerListenerDataSource) Read(ctx context.Context, req datasourc
 	defer cancel()
 
 	lbl, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiGetListenerModelResponseListenerModel, *http.Response, error) {
+		func() (*loadbalancer.GetListenerResponse, *http.Response, error) {
 			return d.kc.ApiClient.LoadBalancerListenerAPI.GetListener(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -93,7 +93,7 @@ func (d *loadBalancerListenerDataSource) Read(ctx context.Context, req datasourc
 		return
 	}
 
-	ok := mapLoadBalancerListenerBaseModel(ctx, &config.loadBalancerListenerBaseModel, &lbl.Listener, &resp.Diagnostics)
+	ok := mapLoadBalancerListenerModel(ctx, &config.loadBalancerListenerBaseModel, &lbl.Listener, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

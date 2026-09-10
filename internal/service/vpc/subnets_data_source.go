@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"terraform-provider-kakaocloud/internal/common"
 	. "terraform-provider-kakaocloud/internal/utils"
 
@@ -15,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 var (
@@ -121,13 +120,6 @@ func (d *subnetsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 					resp.Diagnostics.AddError("Invalid provisioning_status", err.Error())
 				}
 
-			case "operating_status":
-				if os, err := ToSubnetOperatingStatus(v); err == nil {
-					subnetApi = subnetApi.OperatingStatus(*os)
-				} else {
-					resp.Diagnostics.AddError("Invalid operating_status", err.Error())
-				}
-
 			case "cidr_block":
 				subnetApi = subnetApi.CidrBlock(v)
 
@@ -177,7 +169,7 @@ func (d *subnetsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 	subnetResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*vpc.SubnetListModel, *http.Response, error) {
+		func() (*vpc.ListSubnetsResponse, *http.Response, error) {
 			return subnetApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -186,7 +178,7 @@ func (d *subnetsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	var subnetsResult []vpc.BnsVpcV1ApiGetSubnetModelSubnetModel
+	var subnetsResult []vpc.Subnet
 	err = copier.Copy(&subnetsResult, &subnetResp.Subnets)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
@@ -194,9 +186,10 @@ func (d *subnetsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
+	config.Subnets = make([]subnetBaseModel, 0, len(subnetsResult))
 	for _, v := range subnetsResult {
 		var tmpSubnet subnetBaseModel
-		ok := mapSubnetBaseModel(&tmpSubnet, &v, &resp.Diagnostics)
+		ok := mapSubnetModel(&tmpSubnet, &v, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
@@ -239,14 +232,4 @@ func ToAvailabilityZone(v string) (*vpc.AvailabilityZone, error) {
 		}
 	}
 	return nil, fmt.Errorf("invalid availability_zone: %s (allowed: %v)", v, vpc.AllowedAvailabilityZoneEnumValues)
-}
-
-func ToSubnetOperatingStatus(v string) (*vpc.SubnetOperatingStatus, error) {
-	os := vpc.SubnetOperatingStatus(strings.ToUpper(v))
-	for _, allowed := range vpc.AllowedSubnetOperatingStatusEnumValues {
-		if os == allowed {
-			return &os, nil
-		}
-	}
-	return nil, fmt.Errorf("invalid subnet operating status: %s (allowed: %v)", v, vpc.AllowedSubnetOperatingStatusEnumValues)
 }

@@ -12,14 +12,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 func mapScheduledScalingBaseModel(
 	ctx context.Context,
 	clusterName, nodePoolName string,
 	base *scheduledScalingBaseModel,
-	scheduledScalingResult *kubernetesengine.ScheduledScaleResponseModel,
+	scheduledScalingResult *kubernetesengine.ScheduledScale,
 	respDiags *diag.Diagnostics,
 ) bool {
 	base.ClusterName = types.StringValue(clusterName)
@@ -42,7 +42,7 @@ func mapScheduledScalingBaseModel(
 		ctx,
 		scheduledScalingResult.Status,
 		scheduledScalingStatusAttrTypes,
-		func(s kubernetesengine.ScalingStatusResponseModel) any {
+		func(s kubernetesengine.ScalingStatus) any {
 			hVals := make([]attr.Value, 0, len(s.Histories))
 			for _, h := range s.Histories {
 				hObj, hObjDiags := types.ObjectValue(

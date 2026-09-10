@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 var (
@@ -85,19 +85,19 @@ func (d *nodePoolDataSource) Read(ctx context.Context, req datasource.ReadReques
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
 		func() (struct {
-			NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+			NodePool kubernetesengine.NodePool
 		}, *http.Response, error) {
-			apiResp, httpResp, err := d.kc.ApiClient.NodePoolsAPI.
+			apiResp, httpResp, err := d.kc.ApiClient.KubernetesEngineNodePoolAPI.
 				GetNodePool(ctx, config.ClusterName.ValueString(), config.Name.ValueString()).
 				XAuthToken(d.kc.XAuthToken).
 				Execute()
 			if err != nil {
 				return struct {
-					NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+					NodePool kubernetesengine.NodePool
 				}{}, httpResp, err
 			}
 			return struct {
-				NodePool kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+				NodePool kubernetesengine.NodePool
 			}{NodePool: apiResp.NodePool}, httpResp, nil
 		},
 	)
@@ -107,8 +107,7 @@ func (d *nodePoolDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	result := respModel.NodePool
-	ok := mapNodePoolFromResponse(ctx, &config.NodePoolBaseModel, &result, &resp.Diagnostics)
+	ok := mapNodePoolDataSource(ctx, &config.nodePoolDataSourceBaseModel, new(respModel.NodePool), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

@@ -7,17 +7,17 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
-func mapSubnetBaseModel(
+func mapSubnetModel(
 	base *subnetBaseModel,
-	result *vpc.BnsVpcV1ApiGetSubnetModelSubnetModel,
+	result *vpc.Subnet,
 	respDiags *diag.Diagnostics,
 ) bool {
-	base.Id = types.StringValue(result.Id)
+	base.Id = ConvertNullableString(result.Id)
 	base.Name = ConvertNullableString(result.Name)
+	base.Description = ConvertNullableString(result.Description)
 	base.IsShared = ConvertNullableBool(result.IsShared)
 	base.AvailabilityZone = ConvertNullableString(result.AvailabilityZone)
 	base.CidrBlock = cidrtypes.NewIPPrefixValue(*result.CidrBlock.Get())

@@ -11,11 +11,10 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/bcs"
 )
 
 var (
@@ -63,7 +62,7 @@ func (r *keypairResource) Create(ctx context.Context, req resource.CreateRequest
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	createReq := bcs.CreateKeypairModel{
+	createReq := bcs.CreateKeypair{
 		Name: plan.Name.ValueString(),
 	}
 
@@ -71,15 +70,15 @@ func (r *keypairResource) Create(ctx context.Context, req resource.CreateRequest
 		createReq.SetPublicKey(plan.PublicKey.ValueString())
 	}
 
-	body := bcs.BodyCreateKeypair{
+	body := bcs.CreateKeypairRequest{
 		Keypair: createReq,
 	}
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*bcs.BcsInstanceV1ApiCreateKeypairModelResponseKeypairModel, *http.Response, error) {
+		func() (*bcs.CreateKeypairResponse, *http.Response, error) {
 			return r.kc.ApiClient.KeypairAPI.CreateKeypair(ctx).
 				XAuthToken(r.kc.XAuthToken).
-				BodyCreateKeypair(body).
+				CreateKeypairRequest(body).
 				Execute()
 		},
 	)
@@ -98,12 +97,12 @@ func (r *keypairResource) Create(ctx context.Context, req resource.CreateRequest
 		plan.Name.ValueString(),
 		[]string{"found"},
 		&resp.Diagnostics,
-		func(c context.Context) (*bcs.BcsInstanceV1ApiGetKeypairModelResponseKeypairModel, *http.Response, error) {
+		func(c context.Context) (*bcs.GetKeypairResponse, *http.Response, error) {
 			return r.kc.ApiClient.KeypairAPI.
 				GetKeypair(c, plan.Name.ValueString()).
 				XAuthToken(r.kc.XAuthToken).Execute()
 		},
-		func(_ *bcs.BcsInstanceV1ApiGetKeypairModelResponseKeypairModel) string {
+		func(_ *bcs.GetKeypairResponse) string {
 			return "found"
 		},
 	)
@@ -111,7 +110,7 @@ func (r *keypairResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	ok = r.mapKeypair(ctx, &plan, &result.Keypair, &resp.Diagnostics)
+	ok = mapKeypairBaseModel(&plan.keypairBaseModel, &result.Keypair, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -129,8 +128,18 @@ func (r *keypairResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
+	timeout, diags := state.Timeouts.Read(ctx, common.DefaultReadTimeout)
+
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*bcs.BcsInstanceV1ApiGetKeypairModelResponseKeypairModel, *http.Response, error) {
+		func() (*bcs.GetKeypairResponse, *http.Response, error) {
 			return r.kc.ApiClient.KeypairAPI.GetKeypair(ctx, state.Name.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -146,8 +155,7 @@ func (r *keypairResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	result := respModel.Keypair
-	ok := r.mapKeypair(ctx, &state, &result, &resp.Diagnostics)
+	ok := mapKeypairBaseModel(&state.keypairBaseModel, new(respModel.Keypair), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -190,13 +198,16 @@ func (r *keypairResource) Delete(ctx context.Context, req resource.DeleteRequest
 		},
 	)
 	if err != nil {
+		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+			return
+		}
 		common.AddApiActionError(ctx, r, httpResp, "DeleteKeypair", err, &resp.Diagnostics)
 		return
 	}
 
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*bcs.BcsInstanceV1ApiGetKeypairModelResponseKeypairModel, *http.Response, error) {
+			func() (*bcs.GetKeypairResponse, *http.Response, error) {
 				_, httpResp, err := r.kc.ApiClient.KeypairAPI.
 					GetKeypair(ctx, state.Name.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
@@ -226,18 +237,4 @@ func (r *keypairResource) Configure(_ context.Context, req resource.ConfigureReq
 func (r *keypairResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
-}
-
-func (r *keypairResource) mapKeypair(
-	ctx context.Context,
-	model *keypairResourceModel,
-	keypairResult *bcs.BcsInstanceV1ApiGetKeypairModelKeypairModel,
-	respDiags *diag.Diagnostics,
-) bool {
-	mapKeypairBaseModel(ctx, &model.keypairBaseModel, keypairResult, respDiags)
-
-	if respDiags.HasError() {
-		return false
-	}
-	return true
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 var (
@@ -90,8 +90,8 @@ func (d *nodePoolsDataSource) Read(ctx context.Context, req datasource.ReadReque
 	defer cancel()
 
 	listResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*kubernetesengine.GetK8sClusterNodePoolsResponseModel, *http.Response, error) {
-			return d.kc.ApiClient.NodePoolsAPI.ListNodePools(ctx, config.ClusterName.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
+		func() (*kubernetesengine.ListNodePoolsResponse, *http.Response, error) {
+			return d.kc.ApiClient.KubernetesEngineNodePoolAPI.ListNodePools(ctx, config.ClusterName.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
 	if err != nil {
@@ -99,7 +99,7 @@ func (d *nodePoolsDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	var nodePools []kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel
+	var nodePools []kubernetesengine.NodePool
 	err = copier.Copy(&nodePools, &listResp.NodePools)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
@@ -107,9 +107,10 @@ func (d *nodePoolsDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
+	config.NodePools = make([]nodePoolDataSourceBaseModel, 0, len(nodePools))
 	for _, nodePool := range nodePools {
-		var model NodePoolBaseModel
-		ok := mapNodePoolFromResponse(ctx, &model, &nodePool, &resp.Diagnostics)
+		var model nodePoolDataSourceBaseModel
+		ok := mapNodePoolDataSource(ctx, &model, &nodePool, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

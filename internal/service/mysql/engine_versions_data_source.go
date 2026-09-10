@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 var (
@@ -45,15 +45,15 @@ func (d *engineVersionsDataSource) Schema(ctx context.Context, _ datasource.Sche
 }
 
 func (d *engineVersionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data engineVersionsDataSourceModel
+	var config engineVersionsDataSourceModel
 
-	diags := req.Config.Get(ctx, &data)
+	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	timeout, diags := data.Timeouts.Read(ctx, common.DefaultReadTimeout)
+	timeout, diags := config.Timeouts.Read(ctx, common.DefaultReadTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -63,8 +63,8 @@ func (d *engineVersionsDataSource) Read(ctx context.Context, req datasource.Read
 	defer cancel()
 
 	modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*mysqlsdk.GetMySQLEngineVersionsResponseModel, *http.Response, error) {
-			return d.kc.ApiClient.MySQLEngineVersionsAPI.
+		func() (*mysqlsdk.ListAvailableMysqlEngineVersionsResponse, *http.Response, error) {
+			return d.kc.ApiClient.MySQLEngineVersionAPI.
 				ListAvailableMysqlEngineVersions(ctx).
 				XAuthToken(d.kc.XAuthToken).
 				Execute()
@@ -75,14 +75,15 @@ func (d *engineVersionsDataSource) Read(ctx context.Context, req datasource.Read
 		return
 	}
 
+	config.EngineVersions = make([]engineVersionModel, 0, len(modelResp.EngineVersions))
 	for _, version := range modelResp.EngineVersions {
-		data.EngineVersions = append(data.EngineVersions, engineVersionModel{
+		config.EngineVersions = append(config.EngineVersions, engineVersionModel{
 			EngineVersion: types.StringValue(version.EngineVersion),
 			License:       types.StringValue(version.License),
 		})
 	}
 
-	diags = resp.State.Set(ctx, &data)
+	diags = resp.State.Set(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 }
 

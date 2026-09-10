@@ -8,7 +8,7 @@ import (
 	"terraform-provider-kakaocloud/internal/common"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 func (r *instanceGroupResource) applyBackupSchedule(
@@ -16,7 +16,7 @@ func (r *instanceGroupResource) applyBackupSchedule(
 	plan instanceGroupBackupScheduleModel,
 	respDiags *diag.Diagnostics,
 ) bool {
-	backupSchedule := mysqlsdk.NewMysqlV1ApiUpdateMysqlInstanceGroupBackupScheduleModelBackupScheduleRequestModel(plan.Enabled.ValueBool())
+	backupSchedule := mysqlsdk.NewUpdateMysqlInstanceGroupBackupSchedule(plan.Enabled.ValueBool())
 	if !plan.Type.IsNull() && !plan.Type.IsUnknown() && plan.Type.ValueString() != "" {
 		backupSchedule.SetType(mysqlsdk.BackupScheduleType(plan.Type.ValueString()))
 	}
@@ -27,14 +27,14 @@ func (r *instanceGroupResource) applyBackupSchedule(
 		backupSchedule.SetExpiryDuration(plan.ExpiryDuration.ValueInt32())
 	}
 
-	request := mysqlsdk.NewBodyUpdateMysqlInstanceGroupBackupSchedule(*backupSchedule)
+	request := mysqlsdk.NewUpdateMysqlInstanceGroupBackupScheduleRequest(*backupSchedule)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupsBackupSchedulesAPI.
+			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupAPI.
 				UpdateMysqlInstanceGroupBackupSchedule(ctx, plan.InstanceGroupId.ValueString(), plan.BackupScheduleId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				BodyUpdateMysqlInstanceGroupBackupSchedule(*request).
+				UpdateMysqlInstanceGroupBackupScheduleRequest(*request).
 				Execute()
 			return struct{}{}, httpResp, err
 		},

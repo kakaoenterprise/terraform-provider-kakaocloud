@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"terraform-provider-kakaocloud/internal/common"
 	"terraform-provider-kakaocloud/internal/utils"
@@ -17,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/network"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/network"
 )
 
 var (
@@ -89,7 +90,7 @@ func (r *securityGroupResource) ValidateConfig(ctx context.Context, req resource
 		}
 
 		switch proto {
-		case string(network.SECURITYGROUPRULEPROTOCOL_TCP), string(network.SECURITYGROUPRULEPROTOCOL_UDP):
+		case string(network.RULEPROTOCOL_TCP), string(network.RULEPROTOCOL_UDP):
 			if rule.PortRangeMin.IsNull() {
 				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 					fmt.Sprintf("port_range_min is required when protocol is '%s'", proto),
@@ -100,12 +101,18 @@ func (r *securityGroupResource) ValidateConfig(ctx context.Context, req resource
 					fmt.Sprintf("port_range_max is required when protocol is '%s'", proto),
 				)
 			}
+
+			if rule.PortRangeMin.IsNull() || rule.PortRangeMin.IsUnknown() ||
+				rule.PortRangeMax.IsNull() || rule.PortRangeMax.IsUnknown() {
+				continue
+			}
+
 			if rule.PortRangeMin.ValueInt32() > rule.PortRangeMax.ValueInt32() {
 				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 					fmt.Sprintf("port_range_max must be greater than or equal to port_range_min when protocol is '%s'", proto),
 				)
 			}
-		case string(network.SECURITYGROUPRULEPROTOCOL_ALL), string(network.SECURITYGROUPRULEPROTOCOL_ICMP):
+		case string(network.RULEPROTOCOL_ALL), string(network.RULEPROTOCOL_ICMP):
 			if !rule.PortRangeMin.IsNull() || !rule.PortRangeMax.IsNull() {
 				common.AddValidationConfigError(ctx, r, &resp.Diagnostics,
 					fmt.Sprintf("port_range_min and port_range_max must be null when protocol is '%s'", proto),
@@ -132,8 +139,8 @@ func (r *securityGroupResource) Read(ctx context.Context, req resource.ReadReque
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*network.BnsNetworkV1ApiGetSecurityGroupModelResponseSecurityGroupModel, *http.Response, error) {
-			return r.kc.ApiClient.SecurityGroupAPI.
+		func() (*network.GetSecurityGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.NetworkSecurityGroupAPI.
 				GetSecurityGroup(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -149,7 +156,7 @@ func (r *securityGroupResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	ok := mapSecurityGroupBaseModel(ctx, &state.securityGroupBaseModel, &respModel.SecurityGroup, &resp.Diagnostics)
+	ok := mapSecurityGroupModel(ctx, &state.securityGroupBaseModel, &respModel.SecurityGroup, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -166,19 +173,26 @@ func (r *securityGroupResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	createReq := network.CreateSecurityGroupModel{
-		Name: plan.Name.ValueString(),
+	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	createReq := *network.NewCreateSecurityGroup(plan.Name.ValueString())
 	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		createReq.SetDescription(plan.Description.ValueString())
 	}
 
-	body := network.BodyCreateSecurityGroup{SecurityGroup: createReq}
+	body := *network.NewCreateSecurityGroupRequest(createReq)
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*network.BnsNetworkV1ApiCreateSecurityGroupModelResponseSecurityGroupModel, *http.Response, error) {
-			return r.kc.ApiClient.SecurityGroupAPI.CreateSecurityGroup(ctx).
+		func() (*network.CreateSecurityGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.NetworkSecurityGroupAPI.CreateSecurityGroup(ctx).
 				XAuthToken(r.kc.XAuthToken).
-				BodyCreateSecurityGroup(body).
+				CreateSecurityGroupRequest(body).
 				Execute()
 		},
 	)
@@ -187,36 +201,49 @@ func (r *securityGroupResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	desiredRuleCount := 0
+	desiredRuleIDs := []string{}
 	if !plan.Rules.IsNull() && !plan.Rules.IsUnknown() {
 		var desired []securityGroupRuleModel
 		dDiags := plan.Rules.ElementsAs(ctx, &desired, false)
 		resp.Diagnostics.Append(dDiags...)
+		if resp.Diagnostics.HasError() {
+			_ = r.cleanupCreateFailureSecurityGroup(ctx, respModel.SecurityGroup.Id, &resp.Diagnostics)
+			return
+		}
 
-		if !resp.Diagnostics.HasError() {
-			for i := range desired {
-				dr := &desired[i]
-				if ok := r.addSecurityGroupRule(ctx, respModel.SecurityGroup.Id, dr, &resp.Diagnostics); !ok {
-					return
-				}
+		for i := range desired {
+			dr := &desired[i]
+			if ok := r.addSecurityGroupRule(ctx, respModel.SecurityGroup.Id, dr, &resp.Diagnostics); !ok {
+				_ = r.cleanupCreateFailureSecurityGroup(ctx, respModel.SecurityGroup.Id, &resp.Diagnostics)
+				return
 			}
 		}
-		desiredRuleCount = len(desired)
+
+		var idErr error
+		desiredRuleIDs, idErr = securityGroupRuleModelIDs(desired)
+		if idErr != nil {
+			common.AddGeneralError(ctx, r, &resp.Diagnostics, idErr.Error())
+			_ = r.cleanupCreateFailureSecurityGroup(ctx, respModel.SecurityGroup.Id, &resp.Diagnostics)
+			return
+		}
 	}
 
-	finalSg, ok := r.waitForRulesToPropagate(ctx, respModel.SecurityGroup.Id, desiredRuleCount, &resp.Diagnostics)
+	finalSg, ok := r.waitForRulesToPropagate(ctx, respModel.SecurityGroup.Id, desiredRuleIDs, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
+		_ = r.cleanupCreateFailureSecurityGroup(ctx, respModel.SecurityGroup.Id, &resp.Diagnostics)
 		return
 	}
 
-	ok = mapSecurityGroupBaseModel(ctx, &plan.securityGroupBaseModel, finalSg, &resp.Diagnostics)
+	ok = mapSecurityGroupModel(ctx, &plan.securityGroupBaseModel, finalSg, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
+		_ = r.cleanupCreateFailureSecurityGroup(ctx, respModel.SecurityGroup.Id, &resp.Diagnostics)
 		return
 	}
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
+		_ = r.cleanupCreateFailureSecurityGroup(ctx, respModel.SecurityGroup.Id, &resp.Diagnostics)
 		return
 	}
 }
@@ -234,9 +261,18 @@ func (r *securityGroupResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
+	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	var newName, newDescription types.String
 	if !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) && !plan.Description.IsNull() && !plan.Description.IsUnknown() {
-		editReq := network.EditSecurityGroupModel{}
+		editReq := *network.NewUpdateSecurityGroup()
 		if !plan.Name.Equal(state.Name) {
 			editReq.SetName(plan.Name.ValueString())
 			newName = plan.Name
@@ -247,13 +283,13 @@ func (r *securityGroupResource) Update(ctx context.Context, req resource.UpdateR
 			newDescription = plan.Description
 		}
 
-		body := network.BodyUpdateSecurityGroup{SecurityGroup: editReq}
+		body := *network.NewUpdateSecurityGroupRequest(editReq)
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
-				return r.kc.ApiClient.SecurityGroupAPI.
+				return r.kc.ApiClient.NetworkSecurityGroupAPI.
 					UpdateSecurityGroup(ctx, state.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
-					BodyUpdateSecurityGroup(body).
+					UpdateSecurityGroupRequest(body).
 					Execute()
 			},
 		)
@@ -273,15 +309,15 @@ func (r *securityGroupResource) Update(ctx context.Context, req resource.UpdateR
 		}
 	}
 
-	if !plan.Rules.Equal(state.Rules) {
+	planRules, pDiags := expandSecurityGroupRules(ctx, plan.Rules)
+	resp.Diagnostics.Append(pDiags...)
+	stateRules, sDiags := expandSecurityGroupRules(ctx, state.Rules)
+	resp.Diagnostics.Append(sDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-		planRules, pDiags := expandSecurityGroupRules(ctx, plan.Rules)
-		resp.Diagnostics.Append(pDiags...)
-		stateRules, sDiags := expandSecurityGroupRules(ctx, state.Rules)
-		resp.Diagnostics.Append(sDiags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
+	if !plan.Rules.Equal(state.Rules) {
 
 		planRulesMap := make(map[string]securityGroupRuleModel)
 		for _, rule := range planRules {
@@ -310,17 +346,18 @@ func (r *securityGroupResource) Update(ctx context.Context, req resource.UpdateR
 		}
 	}
 
-	desiredRuleCount := 0
-	if !plan.Rules.IsNull() {
-		desiredRuleCount = len(plan.Rules.Elements())
+	desiredRuleIDs, err := securityGroupRuleModelIDs(planRules)
+	if err != nil {
+		common.AddGeneralError(ctx, r, &resp.Diagnostics, err.Error())
+		return
 	}
 
-	finalSg, ok := r.waitForRulesToPropagate(ctx, state.Id.ValueString(), desiredRuleCount, &resp.Diagnostics)
+	finalSg, ok := r.waitForRulesToPropagate(ctx, state.Id.ValueString(), desiredRuleIDs, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
-	ok = mapSecurityGroupBaseModel(ctx, &plan.securityGroupBaseModel, finalSg, &resp.Diagnostics)
+	ok = mapSecurityGroupModel(ctx, &plan.securityGroupBaseModel, finalSg, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -354,7 +391,7 @@ func (r *securityGroupResource) Delete(ctx context.Context, req resource.DeleteR
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.SecurityGroupAPI.
+			httpResp, err := r.kc.ApiClient.NetworkSecurityGroupAPI.
 				DeleteSecurityGroup(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -392,11 +429,11 @@ func (r *securityGroupResource) ImportState(ctx context.Context, req resource.Im
 func (r *securityGroupResource) waitForRulesToPropagate(
 	ctx context.Context,
 	securityGroupId string,
-	desiredRuleCount int,
+	desiredRuleIDs []string,
 	respDiags *diag.Diagnostics,
-) (*network.BnsNetworkV1ApiGetSecurityGroupModelSecurityGroupModel, bool) {
+) (*network.SecurityGroup, bool) {
 
-	targetStatus := fmt.Sprintf("%d rules", desiredRuleCount)
+	targetStatus := securityGroupRuleIDStatus(desiredRuleIDs)
 
 	result, ok := common.PollUntilResult(
 		ctx,
@@ -406,10 +443,10 @@ func (r *securityGroupResource) waitForRulesToPropagate(
 		securityGroupId,
 		[]string{targetStatus},
 		respDiags,
-		func(ctx context.Context) (*network.BnsNetworkV1ApiGetSecurityGroupModelSecurityGroupModel, *http.Response, error) {
+		func(ctx context.Context) (*network.SecurityGroup, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-				func() (*network.BnsNetworkV1ApiGetSecurityGroupModelResponseSecurityGroupModel, *http.Response, error) {
-					return r.kc.ApiClient.SecurityGroupAPI.
+				func() (*network.GetSecurityGroupResponse, *http.Response, error) {
+					return r.kc.ApiClient.NetworkSecurityGroupAPI.
 						GetSecurityGroup(ctx, securityGroupId).
 						XAuthToken(r.kc.XAuthToken).
 						Execute()
@@ -421,19 +458,67 @@ func (r *securityGroupResource) waitForRulesToPropagate(
 			return &respModel.SecurityGroup, httpResp, nil
 		},
 
-		func(sg *network.BnsNetworkV1ApiGetSecurityGroupModelSecurityGroupModel) string {
-			return fmt.Sprintf("%d rules", len(sg.Rules))
+		func(sg *network.SecurityGroup) string {
+			return securityGroupRuleAPIIDStatus(sg.Rules)
 		},
 	)
 
 	return result, ok
 }
 
-func (r *securityGroupResource) addSecurityGroupRule(ctx context.Context, sgId string, rule *securityGroupRuleModel, diags *diag.Diagnostics) bool {
-	creq := network.CreateSecurityGroupRuleModel{
-		Direction: network.SecurityGroupRuleDirection(rule.Direction.ValueString()),
-		Protocol:  network.SecurityGroupRuleProtocol(rule.Protocol.ValueString()),
+func securityGroupRuleModelIDs(rules []securityGroupRuleModel) ([]string, error) {
+	ids := make([]string, 0, len(rules))
+	seen := make(map[string]struct{}, len(rules))
+	for i, rule := range rules {
+		if rule.Id.IsNull() || rule.Id.IsUnknown() {
+			return nil, fmt.Errorf("security group rule ID at index %d is null or unknown", i)
+		}
+
+		id := rule.Id.ValueString()
+		if strings.TrimSpace(id) == "" {
+			return nil, fmt.Errorf("security group rule ID at index %d is empty", i)
+		}
+		if _, exists := seen[id]; exists {
+			return nil, fmt.Errorf("duplicate security group rule ID %q", id)
+		}
+
+		seen[id] = struct{}{}
+		ids = append(ids, id)
 	}
+	return ids, nil
+}
+
+func securityGroupRuleIDStatus(ids []string) string {
+	sortedIds := append([]string(nil), ids...)
+	sort.Strings(sortedIds)
+	return fmt.Sprintf("%q", sortedIds)
+}
+
+const invalidSecurityGroupRuleIDStatus = "invalid security group rule IDs"
+
+func securityGroupRuleAPIIDStatus(rules []network.Rule) string {
+	ids := make([]string, 0, len(rules))
+	seen := make(map[string]struct{}, len(rules))
+	for i := range rules {
+		id, ok := rules[i].GetIdOk()
+		if !ok || id == nil || strings.TrimSpace(*id) == "" {
+			return invalidSecurityGroupRuleIDStatus
+		}
+		if _, exists := seen[*id]; exists {
+			return invalidSecurityGroupRuleIDStatus
+		}
+
+		seen[*id] = struct{}{}
+		ids = append(ids, *id)
+	}
+	return securityGroupRuleIDStatus(ids)
+}
+
+func (r *securityGroupResource) addSecurityGroupRule(ctx context.Context, sgId string, rule *securityGroupRuleModel, diags *diag.Diagnostics) bool {
+	creq := *network.NewCreateSecurityGroupRule(
+		network.RuleDirection(rule.Direction.ValueString()),
+		network.RuleProtocol(rule.Protocol.ValueString()),
+	)
 	if !rule.Description.IsNull() && !rule.Description.IsUnknown() {
 		creq.SetDescription(rule.Description.ValueString())
 	}
@@ -451,11 +536,11 @@ func (r *securityGroupResource) addSecurityGroupRule(ctx context.Context, sgId s
 	}
 
 	crResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
-		func() (*network.ResponseSecurityGroupRuleModel, *http.Response, error) {
-			return r.kc.ApiClient.SecurityGroupAPI.
+		func() (*network.CreateSecurityGroupRuleResponse, *http.Response, error) {
+			return r.kc.ApiClient.NetworkSecurityGroupAPI.
 				CreateSecurityGroupRule(ctx, sgId).
 				XAuthToken(r.kc.XAuthToken).
-				BodyCreateSecurityGroupRule(network.BodyCreateSecurityGroupRule{SecurityGroupRule: creq}).
+				CreateSecurityGroupRuleRequest(*network.NewCreateSecurityGroupRuleRequest(creq)).
 				Execute()
 		},
 	)
@@ -463,14 +548,46 @@ func (r *securityGroupResource) addSecurityGroupRule(ctx context.Context, sgId s
 		common.AddApiActionError(ctx, r, httpResp, "CreateSecurityGroupRule", err, diags)
 		return false
 	}
+	if crResp == nil || strings.TrimSpace(crResp.SecurityGroupRule.Id) == "" {
+		common.AddGeneralError(ctx, r, diags, "CreateSecurityGroupRule returned an empty security group rule ID")
+		return false
+	}
 	rule.Id = types.StringValue(crResp.SecurityGroupRule.Id)
 	return true
+}
+
+func (r *securityGroupResource) cleanupCreateFailureSecurityGroup(
+	ctx context.Context,
+	securityGroupId string,
+	diags *diag.Diagnostics,
+) error {
+	cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), common.DefaultDeleteTimeout)
+	defer cancel()
+
+	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](cleanupCtx, r.kc, diags,
+		func() (struct{}, *http.Response, error) {
+			httpResp, err := r.kc.ApiClient.NetworkSecurityGroupAPI.
+				DeleteSecurityGroup(cleanupCtx, securityGroupId).
+				XAuthToken(r.kc.XAuthToken).
+				Execute()
+			return struct{}{}, httpResp, err
+		},
+	)
+	if err != nil {
+		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+			return nil
+		}
+		common.AddApiActionError(cleanupCtx, r, httpResp, "DeleteSecurityGroup", err, diags)
+		return err
+	}
+
+	return nil
 }
 
 func (r *securityGroupResource) deleteSecurityGroupRule(ctx context.Context, sgId string, ruleId string, diags *diag.Diagnostics) bool {
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diags,
 		func() (interface{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.SecurityGroupAPI.
+			httpResp, err := r.kc.ApiClient.NetworkSecurityGroupAPI.
 				DeleteSecurityGroupRule(ctx, sgId, ruleId).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -478,6 +595,9 @@ func (r *securityGroupResource) deleteSecurityGroupRule(ctx context.Context, sgI
 		},
 	)
 	if err != nil {
+		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+			return true
+		}
 		common.AddApiActionError(ctx, r, httpResp, "DeleteSecurityGroupRule", err, diags)
 		return false
 	}

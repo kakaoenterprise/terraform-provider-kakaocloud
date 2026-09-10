@@ -13,13 +13,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
-func mapNodePoolFromResponse(
+func mapNodePoolBaseModel(
 	ctx context.Context,
-	dst *NodePoolBaseModel,
-	src *kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel,
+	dst *nodePoolBaseModel,
+	src *kubernetesengine.NodePool,
 	diags *diag.Diagnostics,
 ) bool {
 
@@ -31,7 +31,6 @@ func mapNodePoolFromResponse(
 	dst.FailureMessage = ConvertNullableString(src.FailureMessage)
 	dst.NodeCount = types.Int32Value(src.NodeCount)
 	dst.FlavorId = types.StringValue(src.FlavorId)
-	dst.Flavor = types.StringValue(src.Flavor)
 	dst.SshKeyName = types.StringValue(src.SshKeyName)
 	dst.IsGpu = types.BoolValue(src.IsGpu)
 	dst.IsBareMetal = types.BoolValue(src.IsBareMetal)
@@ -45,13 +44,6 @@ func mapNodePoolFromResponse(
 	statusVal, statusDiag := buildNodePoolStatus(ctx, src.Status)
 	diags.Append(statusDiag...)
 	dst.Status = statusVal
-	if diags.HasError() {
-		return false
-	}
-
-	imageVal, imageDiag := buildImageInfo(ctx, src.Image)
-	diags.Append(imageDiag...)
-	dst.Image = imageVal
 	if diags.HasError() {
 		return false
 	}
@@ -105,13 +97,36 @@ func mapNodePoolFromResponse(
 	return true
 }
 
-func (r *nodePoolResource) mapNodePoolResource(
+func mapNodePoolDataSource(
 	ctx context.Context,
-	dst *NodePoolResourceModel,
-	src *kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelNodePoolResponseModel,
+	dst *nodePoolDataSourceBaseModel,
+	src *kubernetesengine.NodePool,
 	diags *diag.Diagnostics,
 ) bool {
-	ok := mapNodePoolFromResponse(ctx, &dst.NodePoolBaseModel, src, diags)
+	ok := mapNodePoolBaseModel(ctx, &dst.nodePoolBaseModel, src, diags)
+	if !ok {
+		return false
+	}
+
+	dst.Flavor = types.StringValue(src.Flavor)
+
+	imageVal, imageDiag := buildImageInfo(ctx, src.Image)
+	diags.Append(imageDiag...)
+	dst.Image = imageVal
+	if diags.HasError() {
+		return false
+	}
+
+	return true
+}
+
+func (r *nodePoolResource) mapNodePoolResource(
+	ctx context.Context,
+	dst *nodePoolResourceModel,
+	src *kubernetesengine.NodePool,
+	diags *diag.Diagnostics,
+) bool {
+	ok := mapNodePoolBaseModel(ctx, &dst.nodePoolBaseModel, src, diags)
 	if !ok {
 		return false
 	}
@@ -126,7 +141,7 @@ func (r *nodePoolResource) mapNodePoolResource(
 	return true
 }
 
-func buildNodePoolStatus(ctx context.Context, st kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelStatusInfoResponseModel) (types.Object, diag.Diagnostics) {
+func buildNodePoolStatus(ctx context.Context, st kubernetesengine.NodePoolStatusInfo) (types.Object, diag.Diagnostics) {
 	return types.ObjectValueFrom(ctx, nodePoolStatusAttrTypes, nodePoolStatusModel{
 		Phase:            types.StringValue(string(st.Phase)),
 		AvailableNodes:   types.Int32Value(st.AvailableNodes),
@@ -134,7 +149,7 @@ func buildNodePoolStatus(ctx context.Context, st kubernetesengine.KubernetesEngi
 	})
 }
 
-func buildImageInfo(ctx context.Context, img kubernetesengine.ImageInfoResponseModel) (types.Object, diag.Diagnostics) {
+func buildImageInfo(ctx context.Context, img kubernetesengine.ImageInfo) (types.Object, diag.Diagnostics) {
 	return types.ObjectValueFrom(ctx, imageInfoAttrTypes, imageInfoModel{
 		Id:            types.StringValue(img.Id),
 		Name:          types.StringValue(img.Name),
@@ -149,7 +164,7 @@ func buildImageInfo(ctx context.Context, img kubernetesengine.ImageInfoResponseM
 	})
 }
 
-func buildLabelsSet(labels []kubernetesengine.LabelInfoResponseModel) (types.Set, diag.Diagnostics) {
+func buildLabelsSet(labels []kubernetesengine.LabelInfo) (types.Set, diag.Diagnostics) {
 	lbls := make([]attr.Value, 0, len(labels))
 	for _, l := range labels {
 		obj, _ := types.ObjectValue(nodePoolLabelAttrTypes, map[string]attr.Value{
@@ -162,7 +177,7 @@ func buildLabelsSet(labels []kubernetesengine.LabelInfoResponseModel) (types.Set
 	return set, d
 }
 
-func buildTaintsSet(taints []kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelTaintInfoResponseModel) (types.Set, diag.Diagnostics) {
+func buildTaintsSet(taints []kubernetesengine.TaintInfo) (types.Set, diag.Diagnostics) {
 	tnts := make([]attr.Value, 0, len(taints))
 	for _, t := range taints {
 		obj, _ := types.ObjectValue(nodePoolTaintAttrTypes, map[string]attr.Value{
@@ -176,7 +191,7 @@ func buildTaintsSet(taints []kubernetesengine.KubernetesEngineV1ApiGetNodePoolMo
 	return set, d
 }
 
-func buildVpcInfo(ctx context.Context, vpc kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelVpcInfoResponseModel) (types.Object, diag.Diagnostics) {
+func buildVpcInfo(ctx context.Context, vpc kubernetesengine.VpcInfo) (types.Object, diag.Diagnostics) {
 	subnetObjs := make([]attr.Value, 0, len(vpc.Subnets))
 	for _, s := range vpc.Subnets {
 		obj, _ := types.ObjectValue(
@@ -203,9 +218,9 @@ func buildVpcInfo(ctx context.Context, vpc kubernetesengine.KubernetesEngineV1Ap
 	return v, all
 }
 
-func buildAutoscaling(ctx context.Context, a kubernetesengine.KubernetesEngineV1ApiGetNodePoolModelAutoscalingResponseModel) (types.Object, diag.Diagnostics) {
-	return types.ObjectValueFrom(ctx, nodePoolAutoscalingAttrTypes, NodePoolAutoscalingModel{
-		IsAutoscalerEnable:              types.BoolValue(a.IsAutoscalerEnable),
+func buildAutoscaling(ctx context.Context, a kubernetesengine.Autoscaling) (types.Object, diag.Diagnostics) {
+	return types.ObjectValueFrom(ctx, nodePoolAutoscalingAttrTypes, nodePoolAutoscalingModel{
+		IsAutoscalerEnable:              types.BoolValue(a.GetIsAutoscalerEnable()),
 		AutoscalerDesiredNodeCount:      ConvertNullableInt32(a.AutoscalerDesiredNodeCount),
 		AutoscalerMaxNodeCount:          ConvertNullableInt32(a.AutoscalerMaxNodeCount),
 		AutoscalerMinNodeCount:          ConvertNullableInt32(a.AutoscalerMinNodeCount),

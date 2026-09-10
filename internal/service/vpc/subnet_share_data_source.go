@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 var (
@@ -69,7 +69,7 @@ func (d *subnetShareDataSource) Read(ctx context.Context, req datasource.ReadReq
 	defer cancel()
 
 	subnetShareResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*vpc.ResponseSubnetSharedProjectListModel, *http.Response, error) {
+		func() (*vpc.ListSubnetSharedProjectsResponse, *http.Response, error) {
 			return d.kc.ApiClient.VPCSubnetAPI.ListSubnetSharedProjects(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)

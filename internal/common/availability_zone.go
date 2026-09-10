@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/kakaoenterprise/kc-sdk-go/services/config"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/config"
 	"golang.org/x/net/context"
 )
 

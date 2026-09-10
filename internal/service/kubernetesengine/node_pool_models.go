@@ -9,28 +9,23 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type NodePoolVpcInfoModelSet struct {
+type nodePoolVpcInfoModelSet struct {
 	Id      types.String `tfsdk:"id"`
 	Subnets types.Set    `tfsdk:"subnets"`
 }
 
-type NodePoolVpcInfoModelList struct {
-	Id      types.String `tfsdk:"id"`
-	Subnets types.Set    `tfsdk:"subnets"`
-}
-
-type NodePoolLabelModel struct {
+type nodePoolLabelModel struct {
 	Key   types.String `tfsdk:"key"`
 	Value types.String `tfsdk:"value"`
 }
 
-type NodePoolTaintModel struct {
+type nodePoolTaintModel struct {
 	Key    types.String `tfsdk:"key"`
 	Value  types.String `tfsdk:"value"`
 	Effect types.String `tfsdk:"effect"`
 }
 
-type NodePoolBaseModel struct {
+type nodePoolBaseModel struct {
 	Id          types.String `tfsdk:"id"`
 	ClusterName types.String `tfsdk:"cluster_name"`
 	Name        types.String `tfsdk:"name"`
@@ -53,16 +48,14 @@ type NodePoolBaseModel struct {
 	IsGpu          types.Bool   `tfsdk:"is_gpu"`
 	IsBareMetal    types.Bool   `tfsdk:"is_bare_metal"`
 	IsUpgradable   types.Bool   `tfsdk:"is_upgradable"`
-	Flavor         types.String `tfsdk:"flavor"`
 	Status         types.Object `tfsdk:"status"`
-	Image          types.Object `tfsdk:"image"`
 	Version        types.String `tfsdk:"version"`
 	IsCordon       types.Bool   `tfsdk:"is_cordon"`
 	Autoscaling    types.Object `tfsdk:"autoscaling"`
 }
 
-type NodePoolResourceModel struct {
-	NodePoolBaseModel
+type nodePoolResourceModel struct {
+	nodePoolBaseModel
 	ImageId               types.String           `tfsdk:"image_id"`
 	RequestNodeCount      types.Int32            `tfsdk:"request_node_count"`
 	MinorVersion          types.String           `tfsdk:"minor_version"`
@@ -70,15 +63,21 @@ type NodePoolResourceModel struct {
 	Timeouts              resourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
+type nodePoolDataSourceBaseModel struct {
+	nodePoolBaseModel
+	Flavor types.String `tfsdk:"flavor"`
+	Image  types.Object `tfsdk:"image"`
+}
+
 type nodePoolDataSourceModel struct {
-	NodePoolBaseModel
+	nodePoolDataSourceBaseModel
 	Timeouts datasourceTimeouts.Value `tfsdk:"timeouts"`
 }
 
 type nodePoolsDataSourceModel struct {
-	ClusterName types.String             `tfsdk:"cluster_name"`
-	NodePools   []NodePoolBaseModel      `tfsdk:"node_pools"`
-	Timeouts    datasourceTimeouts.Value `tfsdk:"timeouts"`
+	ClusterName types.String                  `tfsdk:"cluster_name"`
+	NodePools   []nodePoolDataSourceBaseModel `tfsdk:"node_pools"`
+	Timeouts    datasourceTimeouts.Value      `tfsdk:"timeouts"`
 }
 
 var nodePoolLabelAttrTypes = map[string]attr.Type{
@@ -140,7 +139,7 @@ var nodePoolAutoscalingAttrTypes = map[string]attr.Type{
 	"autoscaler_scale_down_unready_time":  types.Int32Type,
 }
 
-type NodePoolAutoscalingModel struct {
+type nodePoolAutoscalingModel struct {
 	IsAutoscalerEnable              types.Bool    `tfsdk:"is_autoscaler_enable"`
 	AutoscalerDesiredNodeCount      types.Int32   `tfsdk:"autoscaler_desired_node_count"`
 	AutoscalerMaxNodeCount          types.Int32   `tfsdk:"autoscaler_max_node_count"`

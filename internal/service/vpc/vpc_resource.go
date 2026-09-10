@@ -11,13 +11,11 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 var (
@@ -56,7 +54,7 @@ func (r *vpcResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
-	timeout, diags := plan.Timeouts.Create(ctx, common.LongCreateTimeout)
+	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -66,32 +64,22 @@ func (r *vpcResource) Create(ctx context.Context, req resource.CreateRequest, re
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	createReq := vpc.CreateVPCModel{
+	createReq := vpc.CreateVpc{
 		Name:      plan.Name.ValueString(),
 		CidrBlock: plan.CidrBlock.ValueString(),
 	}
-
-	var subnetModel vpcSubnetModel
-	if !plan.Subnet.IsNull() {
-		diags = plan.Subnet.As(ctx, &subnetModel, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		createReq.Subnet = &vpc.MainSubnet{
-			CidrBlock:        subnetModel.CidrBlock.ValueString(),
-			AvailabilityZone: vpc.AvailabilityZone(subnetModel.AvailabilityZone.ValueString()),
-		}
+	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
+		createReq.SetDescription(plan.Description.ValueString())
 	}
 
-	body := vpc.BodyCreateVpc{
+	body := vpc.CreateVpcRequest{
 		Vpc: createReq,
 	}
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*vpc.BnsVpcV1ApiCreateVpcModelResponseVPCModel, *http.Response, error) {
+		func() (*vpc.CreateVpcResponse, *http.Response, error) {
 			return r.kc.ApiClient.VPCAPI.CreateVpc(ctx).
-				XAuthToken(r.kc.XAuthToken).BodyCreateVpc(body).Execute()
+				XAuthToken(r.kc.XAuthToken).CreateVpcRequest(body).Execute()
 		},
 	)
 	if err != nil {
@@ -109,9 +97,9 @@ func (r *vpcResource) Create(ctx context.Context, req resource.CreateRequest, re
 		plan.Id.ValueString(),
 		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError},
 		&resp.Diagnostics,
-		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetVpcModelVpcModel, *http.Response, error) {
+		func(ctx context.Context) (*vpc.Vpc, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-				func() (*vpc.BnsVpcV1ApiGetVpcModelResponseVPCModel, *http.Response, error) {
+				func() (*vpc.GetVpcResponse, *http.Response, error) {
 					return r.kc.ApiClient.VPCAPI.
 						GetVpc(ctx, plan.Id.ValueString()).
 						XAuthToken(r.kc.XAuthToken).
@@ -123,7 +111,7 @@ func (r *vpcResource) Create(ctx context.Context, req resource.CreateRequest, re
 			}
 			return &respModel.Vpc, httpResp, nil
 		},
-		func(v *vpc.BnsVpcV1ApiGetVpcModelVpcModel) string {
+		func(v *vpc.Vpc) string {
 			return string(*v.ProvisioningStatus.Get())
 		},
 	)
@@ -136,7 +124,7 @@ func (r *vpcResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
-	ok = mapVpcBaseModel(ctx, &plan.vpcBaseModel, result, &resp.Diagnostics)
+	ok = mapVpcModel(ctx, &plan.vpcBaseModel, result, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -168,7 +156,7 @@ func (r *vpcResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*vpc.BnsVpcV1ApiGetVpcModelResponseVPCModel, *http.Response, error) {
+		func() (*vpc.GetVpcResponse, *http.Response, error) {
 			return r.kc.ApiClient.VPCAPI.GetVpc(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).Execute()
 		},
@@ -183,8 +171,7 @@ func (r *vpcResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 		return
 	}
 
-	vpcResult := respModel.Vpc
-	ok := mapVpcBaseModel(ctx, &state.vpcBaseModel, &vpcResult, &resp.Diagnostics)
+	ok := mapVpcModel(ctx, &state.vpcBaseModel, new(respModel.Vpc), &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -220,27 +207,36 @@ func (r *vpcResource) Update(ctx context.Context, req resource.UpdateRequest, re
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	if plan.Name != state.Name {
-		editReq := vpc.EditVPCModel{
-			Name: plan.Name.ValueString(),
+	planDescription := vpcDescriptionValue(plan.Description)
+	stateDescription := vpcDescriptionValue(state.Description)
+	descriptionChanged := planDescription != stateDescription
+	if !plan.Name.Equal(state.Name) || descriptionChanged {
+		editReq := vpc.UpdateVpc{}
+
+		if !plan.Name.Equal(state.Name) {
+			editReq.SetName(plan.Name.ValueString())
+		}
+		if descriptionChanged {
+			editReq.SetDescription(planDescription)
 		}
 
-		body := *vpc.NewBodyPutBnsVpc(editReq)
+		body := *vpc.NewUpdateVpcRequest(editReq)
 
 		respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*vpc.BnsVpcV1ApiUpdateVpcModelResponseVPCModel, *http.Response, error) {
-				return r.kc.ApiClient.VPCAPI.PutBnsVpc(ctx, plan.Id.ValueString()).
+			func() (*vpc.UpdateVpcResponse, *http.Response, error) {
+				return r.kc.ApiClient.VPCAPI.UpdateVpc(ctx, plan.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
-					BodyPutBnsVpc(body).
+					UpdateVpcRequest(body).
 					Execute()
 			},
 		)
 		if err != nil {
-			common.AddApiActionError(ctx, r, httpResp, "PutBnsVpc", err, &resp.Diagnostics)
+			common.AddApiActionError(ctx, r, httpResp, "UpdateVpc", err, &resp.Diagnostics)
 			return
 		}
 
 		state.Name = types.StringValue(respModel.Vpc.Name)
+		state.Description = types.StringValue(respModel.Vpc.Description)
 	}
 
 	diags = resp.State.Set(ctx, &state)
@@ -248,6 +244,13 @@ func (r *vpcResource) Update(ctx context.Context, req resource.UpdateRequest, re
 	if resp.Diagnostics.HasError() {
 		return
 	}
+}
+
+func vpcDescriptionValue(value types.String) string {
+	if value.IsNull() || value.IsUnknown() {
+		return ""
+	}
+	return value.ValueString()
 }
 
 func (r *vpcResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -320,101 +323,4 @@ func (r *vpcResource) Configure(_ context.Context, req resource.ConfigureRequest
 func (r *vpcResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-}
-
-func (r *vpcResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config vpcResourceModel
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	r.validateAvailabilityZoneConfig(ctx, config, resp)
-	r.validateSubnetCidrBlockConfig(ctx, config, &resp.Diagnostics)
-}
-
-func (r *vpcResource) validateAvailabilityZoneConfig(ctx context.Context, config vpcResourceModel, resp *resource.ValidateConfigResponse) {
-	if !config.Subnet.IsNull() {
-		var subnetModel vpcSubnetModel
-		diags := config.Subnet.As(ctx, &subnetModel, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		common.ValidateAvailabilityZone(
-			path.Root("availability_zone"),
-			subnetModel.AvailabilityZone,
-			common.ServiceVPC,
-			r.kc,
-			&resp.Diagnostics,
-		)
-	}
-}
-
-func (r *vpcResource) validateSubnetCidrBlockConfig(ctx context.Context, config vpcResourceModel, respDiags *diag.Diagnostics) {
-	if !config.Subnet.IsNull() {
-		var subnetModel vpcSubnetModel
-		diags := config.Subnet.As(ctx, &subnetModel, basetypes.ObjectAsOptions{})
-		respDiags.Append(diags...)
-		if respDiags.HasError() {
-			return
-		}
-
-		if !config.CidrBlock.IsUnknown() && !subnetModel.CidrBlock.IsUnknown() {
-			common.CidrContainValidator(subnetModel.CidrBlock.ValueString(), config.CidrBlock.ValueString(), "subnet", "vpc", respDiags)
-		}
-	}
-}
-
-func checkVpcStatus(
-	ctx context.Context,
-	r resource.Resource,
-	kc *common.KakaoCloudClient,
-	vpcId string,
-	respDiags *diag.Diagnostics,
-) bool {
-	interval := 1 * time.Second
-	result, ok := common.PollUntilResult(
-		ctx,
-		r,
-		interval,
-		"vpc",
-		vpcId,
-		[]string{common.VpcProvisioningStatusActive, common.VpcProvisioningStatusError, common.VpcProvisioningStatusDeleting},
-		respDiags,
-		func(ctx context.Context) (*vpc.BnsVpcV1ApiGetVpcModelVpcModel, *http.Response, error) {
-			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, kc, respDiags,
-				func() (*vpc.BnsVpcV1ApiGetVpcModelResponseVPCModel, *http.Response, error) {
-					return kc.ApiClient.VPCAPI.
-						GetVpc(ctx, vpcId).
-						XAuthToken(kc.XAuthToken).
-						Execute()
-				},
-			)
-			if err != nil {
-				return nil, httpResp, err
-			}
-			return &respModel.Vpc, httpResp, nil
-		},
-		func(v *vpc.BnsVpcV1ApiGetVpcModelVpcModel) string {
-			return string(*v.ProvisioningStatus.Get())
-		},
-	)
-	if !ok {
-		common.AddGeneralError(ctx, r, respDiags,
-			fmt.Sprintf("VPC did not reach the status '%v'.", common.VpcProvisioningStatusActive),
-		)
-		return false
-	}
-	status := *result.ProvisioningStatus.Get()
-	if status != common.VpcProvisioningStatusActive {
-		common.AddGeneralError(ctx, r, respDiags,
-			fmt.Sprintf("VPC status is '%v'.", status),
-		)
-	}
-	if respDiags.HasError() {
-		return false
-	}
-	return true
 }

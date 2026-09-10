@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 func (r *clusterResource) pollClusterUtilStatus(
@@ -17,7 +17,7 @@ func (r *clusterResource) pollClusterUtilStatus(
 	clusterName string,
 	targetStatuses []string,
 	diag *diag.Diagnostics,
-) (*kubernetesengine.KubernetesEngineV1ApiGetClusterModelClusterResponseModel, bool) {
+) (*kubernetesengine.Cluster, bool) {
 	return common.PollUntilResult(
 		ctx,
 		r,
@@ -26,10 +26,10 @@ func (r *clusterResource) pollClusterUtilStatus(
 		clusterName,
 		targetStatuses,
 		diag,
-		func(ctx context.Context) (*kubernetesengine.KubernetesEngineV1ApiGetClusterModelClusterResponseModel, *http.Response, error) {
+		func(ctx context.Context) (*kubernetesengine.Cluster, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
-				func() (*kubernetesengine.GetK8sClusterResponseModel, *http.Response, error) {
-					return r.kc.ApiClient.ClustersAPI.
+				func() (*kubernetesengine.GetClusterResponse, *http.Response, error) {
+					return r.kc.ApiClient.KubernetesEngineClusterAPI.
 						GetCluster(ctx, clusterName).
 						XAuthToken(r.kc.XAuthToken).
 						Execute()
@@ -40,7 +40,7 @@ func (r *clusterResource) pollClusterUtilStatus(
 			}
 			return &respModel.Cluster, httpResp, nil
 		},
-		func(v *kubernetesengine.KubernetesEngineV1ApiGetClusterModelClusterResponseModel) string {
+		func(v *kubernetesengine.Cluster) string {
 			return string(v.Status.Phase)
 		},
 	)
@@ -50,19 +50,19 @@ func (r *nodePoolResource) pollClusterUtilAvailableStatus(
 	ctx context.Context,
 	clusterName string,
 	diag *diag.Diagnostics,
-) (*kubernetesengine.KubernetesEngineV1ApiGetClusterModelClusterResponseModel, bool) {
+) (*kubernetesengine.Cluster, bool) {
 	return common.PollUntilResult(
 		ctx,
 		r,
 		10*time.Second,
 		"cluster",
 		clusterName,
-		[]string{common.ClusterStatusProvisioned, common.ClusterStatusFailed, common.ClusterStatusDeleting},
+		ClusterAvailableStatuses,
 		diag,
-		func(ctx context.Context) (*kubernetesengine.KubernetesEngineV1ApiGetClusterModelClusterResponseModel, *http.Response, error) {
+		func(ctx context.Context) (*kubernetesengine.Cluster, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
-				func() (*kubernetesengine.GetK8sClusterResponseModel, *http.Response, error) {
-					return r.kc.ApiClient.ClustersAPI.
+				func() (*kubernetesengine.GetClusterResponse, *http.Response, error) {
+					return r.kc.ApiClient.KubernetesEngineClusterAPI.
 						GetCluster(ctx, clusterName).
 						XAuthToken(r.kc.XAuthToken).
 						Execute()
@@ -73,7 +73,7 @@ func (r *nodePoolResource) pollClusterUtilAvailableStatus(
 			}
 			return &respModel.Cluster, httpResp, nil
 		},
-		func(v *kubernetesengine.KubernetesEngineV1ApiGetClusterModelClusterResponseModel) string {
+		func(v *kubernetesengine.Cluster) string {
 			return string(v.Status.Phase)
 		},
 	)

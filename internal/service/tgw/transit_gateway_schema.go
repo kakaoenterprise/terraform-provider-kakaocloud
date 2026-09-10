@@ -125,6 +125,10 @@ func getTransitGatewayDataSourceSchema() map[string]dschema.Attribute {
 					"id": dschema.StringAttribute{
 						Computed: true,
 					},
+					"name": dschema.StringAttribute{
+						Computed:    true,
+						Description: "Transit Gateway attachment name.",
+					},
 					"resource_type": dschema.StringAttribute{
 						Computed: true,
 					},

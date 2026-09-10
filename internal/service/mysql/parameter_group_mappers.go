@@ -9,10 +9,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
-func toMysqlParameterModelFromParameter(src mysqlsdk.ParameterResponseModel) (mysqlParameterModel, bool) {
+func toMysqlParameterModelFromParameter(src mysqlsdk.Parameter) (mysqlParameterModel, bool) {
 	return mysqlParameterModel{
 		Key:                   types.StringValue(src.Key),
 		Value:                 utils.ConvertNullableString(src.Value),
@@ -25,7 +25,7 @@ func toMysqlParameterModelFromParameter(src mysqlsdk.ParameterResponseModel) (my
 	}, true
 }
 
-func toMysqlParameterModelFromDetail(src mysqlsdk.DataDetailParametersResponseModel) (mysqlParameterModel, bool) {
+func toMysqlParameterModelFromDetail(src mysqlsdk.DataDetailParameters) (mysqlParameterModel, bool) {
 	return mysqlParameterModel{
 		Key:                   types.StringValue(src.Key),
 		Value:                 utils.ConvertNullableString(src.Value),
@@ -38,8 +38,8 @@ func toMysqlParameterModelFromDetail(src mysqlsdk.DataDetailParametersResponseMo
 	}, true
 }
 
-func customParameterGroupParametersValue(ctx context.Context, src []mysqlsdk.DataDetailParametersResponseModel, respDiags *diag.Diagnostics) (types.List, bool) {
-	value, diags := utils.ConvertListFromModel(ctx, src, mysqlParameterAttrTypes, func(item mysqlsdk.DataDetailParametersResponseModel) any {
+func customParameterGroupParametersValue(ctx context.Context, src []mysqlsdk.DataDetailParameters, respDiags *diag.Diagnostics) (types.List, bool) {
+	value, diags := utils.ConvertListFromModel(ctx, src, mysqlParameterAttrTypes, func(item mysqlsdk.DataDetailParameters) any {
 		mapped, _ := toMysqlParameterModelFromDetail(item)
 		return mapped
 	})
@@ -50,8 +50,8 @@ func customParameterGroupParametersValue(ctx context.Context, src []mysqlsdk.Dat
 	return value, true
 }
 
-func defaultParameterGroupParametersValue(ctx context.Context, src []mysqlsdk.ParameterResponseModel, respDiags *diag.Diagnostics) (types.List, bool) {
-	value, diags := utils.ConvertListFromModel(ctx, src, mysqlParameterAttrTypes, func(item mysqlsdk.ParameterResponseModel) any {
+func defaultParameterGroupParametersValue(ctx context.Context, src []mysqlsdk.Parameter, respDiags *diag.Diagnostics) (types.List, bool) {
+	value, diags := utils.ConvertListFromModel(ctx, src, mysqlParameterAttrTypes, func(item mysqlsdk.Parameter) any {
 		mapped, _ := toMysqlParameterModelFromParameter(item)
 		return mapped
 	})
@@ -62,7 +62,7 @@ func defaultParameterGroupParametersValue(ctx context.Context, src []mysqlsdk.Pa
 	return value, true
 }
 
-func toCustomParameterGroupListModel(src mysqlsdk.MysqlV1ApiListMysqlCustomParameterGroupsModelCustomParameterGroupResponseModel) (customParameterGroupListModel, bool) {
+func toCustomParameterGroupListModel(src mysqlsdk.ListMysqlCustomParameterGroupsCustomParameterGroup) (customParameterGroupListModel, bool) {
 	return customParameterGroupListModel{
 		Id:                      utils.ConvertNullableString(src.Id),
 		Name:                    utils.ConvertNullableString(src.Name),
@@ -75,7 +75,7 @@ func toCustomParameterGroupListModel(src mysqlsdk.MysqlV1ApiListMysqlCustomParam
 	}, true
 }
 
-func toDefaultParameterGroupListModel(src mysqlsdk.MysqlV1ApiListMysqlDefaultParameterGroupsModelDefaultParameterGroupResponseModel) (defaultParameterGroupListModel, bool) {
+func toDefaultParameterGroupListModel(src mysqlsdk.ListMysqlDefaultParameterGroupsDefaultParameterGroup) (defaultParameterGroupListModel, bool) {
 	return defaultParameterGroupListModel{
 		Id:                         types.StringValue(src.Id),
 		Name:                       types.StringValue(src.Name),
@@ -87,7 +87,7 @@ func toDefaultParameterGroupListModel(src mysqlsdk.MysqlV1ApiListMysqlDefaultPar
 	}, true
 }
 
-func toCustomParameterGroupSingleModel(ctx context.Context, src mysqlsdk.MysqlV1ApiGetMysqlCustomParameterGroupModelCustomParameterGroupResponseModel, respDiags *diag.Diagnostics) (customParameterGroupSingleModel, bool) {
+func toCustomParameterGroupSingleModel(ctx context.Context, src mysqlsdk.GetMysqlCustomParameterGroupCustomParameterGroup, respDiags *diag.Diagnostics) (customParameterGroupSingleModel, bool) {
 	parameters, ok := customParameterGroupParametersValue(ctx, src.Parameters, respDiags)
 	if !ok {
 		return customParameterGroupSingleModel{}, false
@@ -106,7 +106,7 @@ func toCustomParameterGroupSingleModel(ctx context.Context, src mysqlsdk.MysqlV1
 	}, true
 }
 
-func toDefaultParameterGroupSingleModel(ctx context.Context, src mysqlsdk.MysqlV1ApiGetMysqlDefaultParameterGroupModelDefaultParameterGroupResponseModel, respDiags *diag.Diagnostics) (defaultParameterGroupSingleModel, bool) {
+func toDefaultParameterGroupSingleModel(ctx context.Context, src mysqlsdk.GetMysqlDefaultParameterGroupDefaultParameterGroup, respDiags *diag.Diagnostics) (defaultParameterGroupSingleModel, bool) {
 	parameters, ok := defaultParameterGroupParametersValue(ctx, src.Parameters, respDiags)
 	if !ok {
 		return defaultParameterGroupSingleModel{}, false
@@ -124,7 +124,7 @@ func toDefaultParameterGroupSingleModel(ctx context.Context, src mysqlsdk.MysqlV
 	}, true
 }
 
-func toCustomParameterGroupEventModel(src mysqlsdk.CustomParameterGroupEventResponseModel) mysqlParameterGroupEventModel {
+func toCustomParameterGroupEventModel(src mysqlsdk.CustomParameterGroupEvent) mysqlParameterGroupEventModel {
 	return mysqlParameterGroupEventModel{
 		CreatedAt:   types.StringValue(src.CreatedAt),
 		Description: types.StringValue(src.Description),
@@ -132,7 +132,7 @@ func toCustomParameterGroupEventModel(src mysqlsdk.CustomParameterGroupEventResp
 	}
 }
 
-func toDefaultParameterGroupEventModel(src mysqlsdk.DefaultParameterGroupEventResponseModel) mysqlParameterGroupEventModel {
+func toDefaultParameterGroupEventModel(src mysqlsdk.DefaultParameterGroupEvent) mysqlParameterGroupEventModel {
 	return mysqlParameterGroupEventModel{
 		CreatedAt:   utils.ConvertNullableString(src.CreatedAt),
 		Description: utils.ConvertNullableString(src.Description),
@@ -140,7 +140,7 @@ func toDefaultParameterGroupEventModel(src mysqlsdk.DefaultParameterGroupEventRe
 	}
 }
 
-func toParameterGroupInstanceGroupModel(src mysqlsdk.DefaultParameterGroupInstanceGroupResponseModel) mysqlParameterGroupInstanceGroupModel {
+func toParameterGroupInstanceGroupModel(src mysqlsdk.DefaultParameterGroupInstanceGroup) mysqlParameterGroupInstanceGroupModel {
 	return mysqlParameterGroupInstanceGroupModel{
 		Id:                   utils.ConvertNullableString(src.Id),
 		Name:                 utils.ConvertNullableString(src.Name),

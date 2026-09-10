@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -73,25 +73,23 @@ func (r *transitGatewayResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	optionsReq := tgw.BnsTgwV1ApiCreateTransitGatewayModelTgwOptionRequestModel{
+	optionsReq := tgw.CreateTransitGatewayTgwOptionRequest{
 		IsAutoAcceptSharedAttachments:  optionsModel.IsAutoAcceptSharedAttachments.ValueBool(),
 		IsDefaultRouteTableAssociation: false,
 	}
 
-	createReq := tgw.BnsTgwV1ApiCreateTransitGatewayModelTgwRequestModel{
+	createReq := tgw.CreateTransitGateway{
 		Name:    plan.Name.ValueString(),
 		Options: optionsReq,
 	}
 
-	body := tgw.CreateTgwRequestModel{
-		Tgw: createReq,
-	}
+	body := *tgw.NewCreateTransitGatewayRequest(createReq)
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*tgw.BnsTgwV1ApiCreateTransitGatewayModelCreateTgwResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.TgwsAPI.CreateTransitGateway(ctx).
+		func() (*tgw.CreateTransitGatewayResponse, *http.Response, error) {
+			return r.kc.ApiClient.TransitGatewayAPI.CreateTransitGateway(ctx).
 				XAuthToken(r.kc.XAuthToken).
-				CreateTgwRequestModel(body).
+				CreateTransitGatewayRequest(body).
 				Execute()
 		},
 	)
@@ -102,7 +100,7 @@ func (r *transitGatewayResource) Create(ctx context.Context, req resource.Create
 
 	plan.Id = types.StringValue(respModel.Tgw.Id)
 
-	result, ok := pollTgw(ctx, r.kc, r, plan.Id.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError}, &resp.Diagnostics)
+	result, ok := pollTgw(ctx, r.kc, r, plan.Id.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -142,8 +140,8 @@ func (r *transitGatewayResource) Read(ctx context.Context, req resource.ReadRequ
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.TgwsAPI.GetTransitGateway(ctx, state.Id.ValueString()).
+		func() (*tgw.GetTransitGatewayResponse, *http.Response, error) {
+			return r.kc.ApiClient.TransitGatewayAPI.GetTransitGateway(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).Execute()
 		},
 	)
@@ -184,10 +182,6 @@ func (r *transitGatewayResource) Update(ctx context.Context, req resource.Update
 		return
 	}
 
-	mutex := common.LockForID(plan.Id.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -197,7 +191,13 @@ func (r *transitGatewayResource) Update(ctx context.Context, req resource.Update
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, ok := pollTgw(ctx, r.kc, r, plan.Id.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, plan.Id.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollTgw(ctx, r.kc, r, plan.Id.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
@@ -217,13 +217,13 @@ func (r *transitGatewayResource) Update(ctx context.Context, req resource.Update
 	}
 
 	if !plan.Name.Equal(state.Name) || needUpdateOption {
-		updateReq := tgw.NewBnsTgwV1ApiUpdateTransitGatewayModelTgwRequestModel()
+		updateReq := tgw.NewUpdateTransitGateway()
 
 		if !plan.Name.Equal(state.Name) {
 			updateReq.SetName(plan.Name.ValueString())
 		}
 		if needUpdateOption {
-			optionsReq := tgw.BnsTgwV1ApiUpdateTransitGatewayModelTgwOptionRequestModel{
+			optionsReq := tgw.UpdateTransitGatewayTgwOptionRequest{
 				IsAutoAcceptSharedAttachments:  planOption.IsAutoAcceptSharedAttachments.ValueBool(),
 				IsDefaultRouteTableAssociation: planOption.IsDefaultRouteTableAssociation.ValueBool(),
 			}
@@ -232,15 +232,13 @@ func (r *transitGatewayResource) Update(ctx context.Context, req resource.Update
 			}
 			updateReq.SetOptions(optionsReq)
 		}
-		body := tgw.UpdateTgwRequestModel{
-			Tgw: *updateReq,
-		}
+		body := *tgw.NewUpdateTransitGatewayRequest(*updateReq)
 
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*tgw.BnsTgwV1ApiUpdateTransitGatewayModelCreateTgwResponseModel, *http.Response, error) {
-				return r.kc.ApiClient.TgwsAPI.UpdateTransitGateway(ctx, plan.Id.ValueString()).
+			func() (*tgw.UpdateTransitGatewayResponse, *http.Response, error) {
+				return r.kc.ApiClient.TransitGatewayAPI.UpdateTransitGateway(ctx, plan.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
-					UpdateTgwRequestModel(body).
+					UpdateTransitGatewayRequest(body).
 					Execute()
 			},
 		)
@@ -251,11 +249,11 @@ func (r *transitGatewayResource) Update(ctx context.Context, req resource.Update
 
 		time.Sleep(3 * time.Second)
 
-		result, ok := pollTgw(ctx, r.kc, r, plan.Id.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+		result, ok := pollTgw(ctx, r.kc, r, plan.Id.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}
-		common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), []string{common.TgwStatusActive, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable}, &resp.Diagnostics)
+		common.CheckResourceAvailableStatus(ctx, r, (*string)(result.ProvisioningStatus.Get()), tgwAvailableStatuses, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -281,10 +279,6 @@ func (r *transitGatewayResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	mutex := common.LockForID(state.Id.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
 
 	resp.Diagnostics.Append(diags...)
@@ -295,14 +289,20 @@ func (r *transitGatewayResource) Delete(ctx context.Context, req resource.Delete
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, ok := pollTgw(ctx, r.kc, r, state.Id.ValueString(), []string{common.TgwStatusActive, common.TgwStatusError, common.TgwStatusInUse, common.TgwStatusInactive, common.TgwStatusAvaliable, common.TgwStatusDeleting}, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, state.Id.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollTgw(ctx, r.kc, r, state.Id.ValueString(), tgwDeleteStatuses, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.TgwsAPI.DeleteTransitGateway(ctx, state.Id.ValueString()).
+			httpResp, err := r.kc.ApiClient.TransitGatewayAPI.DeleteTransitGateway(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 			return nil, httpResp, err
@@ -319,7 +319,7 @@ func (r *transitGatewayResource) Delete(ctx context.Context, req resource.Delete
 	common.PollUntilDeletion(ctx, r, 10*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
-				_, httpResp, err := r.kc.ApiClient.TgwsAPI.
+				_, httpResp, err := r.kc.ApiClient.TransitGatewayAPI.
 					GetTransitGateway(ctx, state.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()

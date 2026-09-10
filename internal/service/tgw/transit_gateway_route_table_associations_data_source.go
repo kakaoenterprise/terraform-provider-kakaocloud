@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -62,7 +62,7 @@ func (d *transitGatewayRouteTableAssociationsDataSource) Read(ctx context.Contex
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	associationApi := d.kc.ApiClient.RouteTablesAPI.ListTgwRouteTableAssociations(ctx, config.RouteTableId.ValueString()).SortKeys("resource_id")
+	associationApi := d.kc.ApiClient.TransitGatewayRouteTableAPI.ListTgwRouteTableAssociations(ctx, config.RouteTableId.ValueString())
 
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
@@ -93,7 +93,7 @@ func (d *transitGatewayRouteTableAssociationsDataSource) Read(ctx context.Contex
 					)
 				}
 			case "provisioning_status":
-				if ps, err := ToTgwProvisioningStatus(v); err == nil {
+				if ps, err := ToTGWAssociationProvisioningStatus(v); err == nil {
 					associationApi = associationApi.ProvisioningStatus(*ps)
 				} else {
 					resp.Diagnostics.AddError(
@@ -115,7 +115,7 @@ func (d *transitGatewayRouteTableAssociationsDataSource) Read(ctx context.Contex
 	}
 
 	listResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwRouteTableAssociationsResponseModel, *http.Response, error) {
+		func() (*tgw.ListTgwRouteTableAssociationsResponse, *http.Response, error) {
 			return associationApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -124,7 +124,7 @@ func (d *transitGatewayRouteTableAssociationsDataSource) Read(ctx context.Contex
 		return
 	}
 
-	config.Associations = make([]transitGatewayRouteTableAssociationBaseModel, 0)
+	config.Associations = make([]transitGatewayRouteTableAssociationBaseModel, 0, len(listResp.Associations))
 	for _, assoc := range listResp.Associations {
 		var assocModel transitGatewayRouteTableAssociationBaseModel
 		ok := mapTransitGatewayRouteTableAssociationBaseModel(ctx, &assocModel, &assoc, config.RouteTableId.ValueString(), &resp.Diagnostics)

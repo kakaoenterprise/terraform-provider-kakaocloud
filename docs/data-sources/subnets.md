@@ -144,6 +144,7 @@ The following attributes are exported:
 - `availability_zone` (String) Availability zone the subnet belongs to
 - `cidr_block` (String) IPv4 CIDR block of the subnet
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
+- `description` (String) Subnet description.
 - `id` (String) Subnet ID
 - `is_shared` (Boolean) Indicates whether it is shared
 - `name` (String) Subnet name

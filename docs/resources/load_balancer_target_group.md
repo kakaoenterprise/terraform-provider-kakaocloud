@@ -78,7 +78,7 @@ resource "kakaocloud_load_balancer_target_group" "example_with_listener" {
 ### Nested Schema for `session_persistence`
 
 - `persistence_timeout` (Required, Number) Duration (in seconds) that a session remains associated with the same backend.
-- `type` (Required, String) Session persistence method (e.g., SOURCE_IP, APP_COOKIE).
+- `type` (Required, String) Session persistence method. (Possible values: `APP_COOKIE`, `HTTP_COOKIE`, `SOURCE_IP`)<br/> - `cookie_name` applies only when `type` is `APP_COOKIE`.
 
 - `cookie_name` (Optional, String) Name of the session cookie used when cookie-based persistence is enabled.
 - `persistence_granularity` (Optional, String) Level at which session persistence is applied (for example, per-source IP).

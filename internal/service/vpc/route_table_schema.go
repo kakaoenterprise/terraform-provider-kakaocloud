@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 func getAssociationDataSourceSchema() map[string]dschema.Attribute {
@@ -75,6 +75,9 @@ func getRouteDataSourceSchema() map[string]dschema.Attribute {
 func getRouteTableDataSourceSchema() map[string]dschema.Attribute {
 	return map[string]dschema.Attribute{
 		"name": dschema.StringAttribute{
+			Computed: true,
+		},
+		"description": dschema.StringAttribute{
 			Computed: true,
 		},
 		"associations": dschema.ListNestedAttribute{
@@ -189,9 +192,9 @@ func getRequestRouteResourceSchema() map[string]rschema.Attribute {
 			Required: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(
-					string(vpc.ROUTETABLEROUTETYPE_INSTANCE),
-					string(vpc.ROUTETABLEROUTETYPE_IGW),
-					string(vpc.ROUTETABLEROUTETYPE_TGW),
+					string(vpc.ROUTETYPE_NETWORK_INTERFACE),
+					string(vpc.ROUTETYPE_IGW),
+					string(vpc.ROUTETYPE_TGW),
 				),
 			},
 		},
@@ -213,8 +216,13 @@ func getRouteTableResourceSchema() map[string]rschema.Attribute {
 		"name": rschema.StringAttribute{
 			Required:   true,
 			Validators: common.NameValidator(200),
+		},
+		"description": rschema.StringAttribute{
+			Optional:   true,
+			Computed:   true,
+			Validators: common.DescriptionValidator(),
 			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.RequiresReplace(),
+				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"associations": rschema.ListNestedAttribute{

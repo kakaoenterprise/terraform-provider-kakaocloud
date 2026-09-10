@@ -8,16 +8,16 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 func mapTransitGatewayResourceBaseModel(
 	ctx context.Context,
 	base *transitGatewayResourceBaseModel,
-	tgwResult *tgw.BnsTgwV1ApiGetTransitGatewayModelTgwResponseModel,
+	tgwResult *tgw.Tgw,
 	respDiags *diag.Diagnostics,
 ) bool {
-	options, optionsDiags := ConvertObjectFromModel(ctx, tgwResult.Options, tgwOptionsAttrType, func(src tgw.OptionResponseModel) any {
+	options, optionsDiags := ConvertObjectFromModel(ctx, tgwResult.Options, tgwOptionsAttrType, func(src tgw.Option) any {
 		return tgwOptionsModel{
 			IsAutoAcceptSharedAttachments:  ConvertNullableBool(src.IsAutoAcceptSharedAttachments),
 			IsDefaultRouteTableAssociation: ConvertNullableBool(src.IsDefaultRouteTableAssociation),
@@ -44,17 +44,18 @@ func mapTransitGatewayResourceBaseModel(
 	return !respDiags.HasError()
 }
 
-func mapTransitGatewayBaseModel(
+func mapTransitGatewayModel(
 	ctx context.Context,
 	base *transitGatewayBaseModel,
-	tgwResult *tgw.BnsTgwV1ApiGetTransitGatewayModelTgwResponseModel,
+	tgwResult *tgw.Tgw,
 	respDiags *diag.Diagnostics,
 ) bool {
 	mapTransitGatewayResourceBaseModel(ctx, &base.transitGatewayResourceBaseModel, tgwResult, respDiags)
 
-	attachmentsList, attachmentsDiags := ConvertListFromModel(ctx, tgwResult.Attachments, tgwAttachmentAttrType, func(att tgw.BnsTgwV1ApiGetTransitGatewayModelAttachmentResponseModel) any {
+	attachmentsList, attachmentsDiags := ConvertListFromModel(ctx, tgwResult.Attachments, tgwAttachmentAttrType, func(att tgw.Attachment) any {
 		return tgwAttachmentNestedModel{
 			Id:                 ConvertNullableString(att.Id),
+			Name:               ConvertNullableString(att.Name),
 			ResourceType:       ConvertNullableString(att.ResourceType),
 			ResourceId:         ConvertNullableString(att.ResourceId),
 			ResourceName:       ConvertNullableString(att.ResourceName),
@@ -67,7 +68,7 @@ func mapTransitGatewayBaseModel(
 	respDiags.Append(attachmentsDiags...)
 	base.Attachments = attachmentsList
 
-	routeTablesList, routeTablesDiags := ConvertListFromModel(ctx, tgwResult.RouteTables, tgwRouteTableAttrType, func(rt tgw.BnsTgwV1ApiGetTransitGatewayModelRouteTableResponseModel) any {
+	routeTablesList, routeTablesDiags := ConvertListFromModel(ctx, tgwResult.RouteTables, tgwRouteTableAttrType, func(rt tgw.RouteTable) any {
 		return tgwRouteTableNestedModel{
 			Id:                             ConvertNullableString(rt.Id),
 			Name:                           ConvertNullableString(rt.Name),
@@ -83,71 +84,6 @@ func mapTransitGatewayBaseModel(
 	})
 	respDiags.Append(routeTablesDiags...)
 	base.RouteTables = routeTablesList
-
-	return !respDiags.HasError()
-}
-
-func mapTransitGatewayListModel(
-	ctx context.Context,
-	base *transitGatewayBaseModel,
-	tgwResult *tgw.BnsTgwV1ApiListTransitGatewaysModelTgwResponseModel,
-	respDiags *diag.Diagnostics,
-) bool {
-	options, optionsDiags := ConvertObjectFromModel(ctx, tgwResult.Options, tgwOptionsAttrType, func(src tgw.OptionResponseModel) any {
-		return tgwOptionsModel{
-			IsAutoAcceptSharedAttachments:  ConvertNullableBool(src.IsAutoAcceptSharedAttachments),
-			IsDefaultRouteTableAssociation: ConvertNullableBool(src.IsDefaultRouteTableAssociation),
-			AssociationDefaultRouteTableId: ConvertNullableString(src.AssociationDefaultRouteTableId),
-		}
-	})
-	respDiags.Append(optionsDiags...)
-
-	base.Id = types.StringValue(*tgwResult.Id.Get())
-	base.Name = ConvertNullableString(tgwResult.Name)
-	base.Region = ConvertNullableString(tgwResult.Region)
-	base.IsShared = ConvertNullableBool(tgwResult.IsShared)
-
-	attachmentsList, attachmentsDiags := ConvertListFromModel(ctx, tgwResult.Attachments, tgwAttachmentAttrType, func(att tgw.BnsTgwV1ApiListTransitGatewaysModelAttachmentResponseModel) any {
-		return tgwAttachmentNestedModel{
-			Id:                 ConvertNullableString(att.Id),
-			ResourceType:       ConvertNullableString(att.ResourceType),
-			ResourceId:         ConvertNullableString(att.ResourceId),
-			ResourceName:       ConvertNullableString(att.ResourceName),
-			TgwId:              ConvertNullableString(att.TgwId),
-			ProvisioningStatus: ConvertNullableString(att.ProvisioningStatus),
-			CreatedAt:          ConvertNullableTime(att.CreatedAt),
-			UpdatedAt:          ConvertNullableTime(att.UpdatedAt),
-		}
-	})
-	respDiags.Append(attachmentsDiags...)
-	base.Attachments = attachmentsList
-
-	base.Options = options
-	base.ProvisioningStatus = ConvertNullableString(tgwResult.ProvisioningStatus)
-	base.ProjectId = ConvertNullableString(tgwResult.ProjectId)
-	base.ProjectName = ConvertNullableString(tgwResult.ProjectName)
-	base.OwnerProjectId = ConvertNullableString(tgwResult.OwnerProjectId)
-	base.OwnerProjectName = ConvertNullableString(tgwResult.OwnerProjectName)
-
-	routeTablesList, routeTablesDiags := ConvertListFromModel(ctx, tgwResult.RouteTables, tgwRouteTableAttrType, func(rt tgw.BnsTgwV1ApiListTransitGatewaysModelRouteTableResponseModel) any {
-		return tgwRouteTableNestedModel{
-			Id:                             ConvertNullableString(rt.Id),
-			Name:                           ConvertNullableString(rt.Name),
-			Region:                         ConvertNullableString(rt.Region),
-			ProjectId:                      ConvertNullableString(rt.ProjectId),
-			TgwId:                          ConvertNullableString(rt.TgwId),
-			IsDefaultAssociationRouteTable: ConvertNullableBool(rt.IsDefaultAssociationRouteTable),
-			IsDefaultPropagationRouteTable: ConvertNullableBool(rt.IsDefaultPropagationRouteTable),
-			ProvisioningStatus:             ConvertNullableString(rt.ProvisioningStatus),
-			CreatedAt:                      ConvertNullableTime(rt.CreatedAt),
-			UpdatedAt:                      ConvertNullableTime(rt.UpdatedAt),
-		}
-	})
-	respDiags.Append(routeTablesDiags...)
-	base.RouteTables = routeTablesList
-
-	base.CreatedAt = ConvertNullableTime(tgwResult.CreatedAt)
-	base.UpdatedAt = ConvertNullableTime(tgwResult.UpdatedAt)
 
 	return !respDiags.HasError()
 }

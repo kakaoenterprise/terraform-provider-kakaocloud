@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -61,7 +61,7 @@ func (d *transitGatewayRoutesDataSource) Read(ctx context.Context, req datasourc
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	routeApi := d.kc.ApiClient.RouteTablesAPI.ListTgwRoutes(ctx, config.RouteTableId.ValueString()).SortKeys("resource_id")
+	routeApi := d.kc.ApiClient.TransitGatewayRouteTableAPI.ListTgwRoutes(ctx, config.RouteTableId.ValueString())
 
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
@@ -79,7 +79,7 @@ func (d *transitGatewayRoutesDataSource) Read(ctx context.Context, req datasourc
 			case "route_type":
 				routeApi = routeApi.RouteType(v)
 			case "provisioning_status":
-				if ps, err := ToTgwProvisioningStatus(v); err == nil {
+				if ps, err := ToTGWRouteProvisioningStatus(v); err == nil {
 					routeApi = routeApi.ProvisioningStatus(*ps)
 				} else {
 					resp.Diagnostics.AddError(
@@ -88,7 +88,14 @@ func (d *transitGatewayRoutesDataSource) Read(ctx context.Context, req datasourc
 					)
 				}
 			case "resource_type":
-				routeApi = routeApi.ResourceType(v)
+				if rt, err := ToResourceType(v); err == nil {
+					routeApi = routeApi.ResourceType(*rt)
+				} else {
+					resp.Diagnostics.AddError(
+						"Invalid resource_type value",
+						err.Error(),
+					)
+				}
 			case "resource_id":
 				routeApi = routeApi.ResourceId(v)
 			case "resource_name":
@@ -111,7 +118,7 @@ func (d *transitGatewayRoutesDataSource) Read(ctx context.Context, req datasourc
 	}
 
 	routesResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwRouteTableRoutesResponseModel, *http.Response, error) {
+		func() (*tgw.ListTgwRoutesResponse, *http.Response, error) {
 			return routeApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -120,10 +127,10 @@ func (d *transitGatewayRoutesDataSource) Read(ctx context.Context, req datasourc
 		return
 	}
 
-	config.TransitGatewayRoutes = make([]transitGatewayRouteBaseModel, 0)
+	config.TransitGatewayRoutes = make([]transitGatewayRouteBaseModel, 0, len(routesResp.Routes))
 	for _, item := range routesResp.Routes {
 		var routeModel transitGatewayRouteBaseModel
-		ok := mapTransitGatewayRouteListModel(ctx, &routeModel, &item, config.RouteTableId.ValueString(), &resp.Diagnostics)
+		ok := mapTransitGatewayRouteModel(ctx, &routeModel, &item, config.RouteTableId.ValueString(), &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

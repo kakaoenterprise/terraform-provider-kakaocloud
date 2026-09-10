@@ -46,6 +46,7 @@ type tgwAttachmentRouteTableNestedModel struct {
 
 type transitGatewayAttachmentBaseModel struct {
 	Id                 types.String `tfsdk:"id"`
+	Name               types.String `tfsdk:"name"`
 	ProvisioningStatus types.String `tfsdk:"provisioning_status"`
 	ProjectId          types.String `tfsdk:"project_id"`
 	ProjectName        types.String `tfsdk:"project_name"`

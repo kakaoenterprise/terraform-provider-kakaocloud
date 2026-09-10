@@ -8,16 +8,16 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 func mapLoadBalancerL7PolicyFromGetResponse(
 	ctx context.Context,
 	model *loadBalancerL7PolicyBaseModel,
-	src *loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyModelL7PolicyModel,
+	src *loadbalancer.L7Policy,
 	diags *diag.Diagnostics,
 ) bool {
-	model.Id = types.StringValue(src.Id)
+	model.Id = utils.ConvertNullableString(src.Id)
 	model.Action = utils.ConvertNullableString(src.Action)
 	model.Name = utils.ConvertNullableString(src.Name)
 	model.Description = utils.ConvertNullableString(src.Description)
@@ -30,9 +30,9 @@ func mapLoadBalancerL7PolicyFromGetResponse(
 	model.OperatingStatus = utils.ConvertNullableString(src.OperatingStatus)
 	model.ProjectId = utils.ConvertNullableString(src.ProjectId)
 
-	rules, ruleDiags := utils.ConvertListFromModel(ctx, src.Rules, loadBalancerL7PolicyRuleAttrType, func(rule loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyModelRuleModel) any {
+	rules, ruleDiags := utils.ConvertListFromModel(ctx, src.Rules, loadBalancerL7PolicyRuleAttrType, func(rule loadbalancer.Rule) any {
 		return loadBalancerL7PolicyRuleModel{
-			Id:                 types.StringValue(rule.Id),
+			Id:                 utils.ConvertNullableString(rule.Id),
 			Type:               utils.ConvertNullableString(rule.Type),
 			CompareType:        utils.ConvertNullableString(rule.CompareType),
 			Key:                utils.ConvertNullableString(rule.Key),

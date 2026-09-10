@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/bcs"
 )
 
 var (
@@ -125,8 +125,8 @@ func (d *instancesDataSource) Read(ctx context.Context, req datasource.ReadReque
 					)
 				}
 			case "instance_type":
-				if instanceType, err := ToInstanceType(v); err == nil {
-					instanceApi = instanceApi.InstanceType(*instanceType)
+				if _, err := ToInstanceType(v); err == nil {
+					instanceApi = instanceApi.InstanceType(v)
 				} else {
 					resp.Diagnostics.AddError(
 						"Invalid instance_type",
@@ -189,7 +189,7 @@ func (d *instancesDataSource) Read(ctx context.Context, req datasource.ReadReque
 	}
 
 	instanceResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*bcs.InstanceListModel, *http.Response, error) {
+		func() (*bcs.ListInstancesResponse, *http.Response, error) {
 			return instanceApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -198,9 +198,10 @@ func (d *instancesDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
+	config.Instances = make([]instanceBaseModel, 0, len(instanceResp.Instances))
 	for _, v := range instanceResp.Instances {
 		var tmpInstance instanceBaseModel
-		ok := mapInstanceListModel(ctx, &tmpInstance, &v, &resp.Diagnostics)
+		ok := mapInstanceModel(ctx, &tmpInstance, &v, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

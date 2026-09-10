@@ -57,6 +57,7 @@ The following attributes are exported:
 
 - `associations` (Attributes List) List of subnet associations connected to the route table ( see [below for nested schema](#nestedatt--associations))
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
+- `description` (String) Route table description.
 - `is_main` (Boolean) Indicates whether it is the main route table
 - `name` (String) Route table name
 - `project_id` (String) ID of the project the route table belongs to

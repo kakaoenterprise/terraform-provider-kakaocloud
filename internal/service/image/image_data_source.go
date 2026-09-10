@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/image"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/image"
 )
 
 var (
@@ -85,7 +85,7 @@ func (d *imageDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	defer cancel()
 
 	imageResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*image.BcsImageV1ApiGetImageModelResponseImageModel, *http.Response, error) {
+		func() (*image.GetImageResponse, *http.Response, error) {
 			return d.kc.ApiClient.ImageAPI.GetImage(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -96,8 +96,8 @@ func (d *imageDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 
 	result := imageResp.Image
 
-	ok := d.mapImage(ctx, &config, &result, &resp.Diagnostics)
-	if !ok || resp.Diagnostics.HasError() {
+	mapImageModel(ctx, &config.imageBaseModel, &result, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 

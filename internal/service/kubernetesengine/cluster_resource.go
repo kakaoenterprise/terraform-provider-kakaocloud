@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 var (
@@ -75,16 +75,6 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	createReq := kubernetesengine.KubernetesEngineV1ApiCreateClusterModelClusterRequestModel{
-		Name:          plan.Name.ValueString(),
-		Version:       ver.MinorVersion.ValueString(),
-		IsAllocateFip: plan.IsAllocateFip.ValueBool(),
-	}
-
-	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
-		createReq.SetDescription(plan.Description.ValueString())
-	}
-
 	var vpcInfo VpcInfoModel
 	diags = plan.VpcInfo.As(ctx, &vpcInfo, basetypes.ObjectAsOptions{})
 	resp.Diagnostics.Append(diags...)
@@ -101,12 +91,10 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 		}
 	}
 
-	reqVpcInfo := kubernetesengine.VpcInfoRequestModel{
-		Id:      vpcInfo.Id.ValueString(),
-		Subnets: subnetIds,
-	}
-
-	createReq.SetVpcInfo(reqVpcInfo)
+	reqVpcInfo := *kubernetesengine.NewVpcInfoRequest(
+		vpcInfo.Id.ValueString(),
+		subnetIds,
+	)
 
 	var targetNetwork targetNetworkModel
 	diags = plan.Network.As(ctx, &targetNetwork, basetypes.ObjectAsOptions{})
@@ -115,23 +103,31 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	n := kubernetesengine.ClusterNetworkRequestModel{}
-	n.SetCni(kubernetesengine.ClusterNetworkCNI(targetNetwork.Cni.ValueString()))
+	n := kubernetesengine.NewClusterNetworkRequest(kubernetesengine.ClusterNetworkCNI(targetNetwork.Cni.ValueString()))
 	if !targetNetwork.ServiceCidr.IsNull() && !targetNetwork.ServiceCidr.IsUnknown() {
 		n.SetServiceCidr(targetNetwork.ServiceCidr.ValueString())
 	}
 	if !targetNetwork.PodCidr.IsNull() && !targetNetwork.PodCidr.IsUnknown() {
 		n.SetPodCidr(targetNetwork.PodCidr.ValueString())
 	}
-	createReq.SetNetwork(n)
+	createReq := kubernetesengine.NewCreateCluster(
+		plan.Name.ValueString(),
+		ver.MinorVersion.ValueString(),
+		reqVpcInfo,
+		plan.IsAllocateFip.ValueBool(),
+		*n,
+	)
+	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
+		createReq.SetDescription(plan.Description.ValueString())
+	}
 
-	body := kubernetesengine.CreateK8sClusterRequestModel{Cluster: createReq}
+	body := kubernetesengine.NewCreateClusterRequest(*createReq)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
-			return r.kc.ApiClient.ClustersAPI.
+			return r.kc.ApiClient.KubernetesEngineClusterAPI.
 				CreateCluster(ctx).
-				XAuthToken(r.kc.XAuthToken).CreateK8sClusterRequestModel(body).Execute()
+				XAuthToken(r.kc.XAuthToken).CreateClusterRequest(*body).Execute()
 		},
 	)
 	if err != nil {
@@ -142,7 +138,7 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 	result, ok := r.pollClusterUtilStatus(
 		ctx,
 		plan.Name.ValueString(),
-		[]string{common.ClusterStatusProvisioned, common.ClusterStatusFailed, common.ClusterStatusDeleting},
+		ClusterAvailableStatuses,
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
@@ -186,8 +182,8 @@ func (r *clusterResource) Read(ctx context.Context, req resource.ReadRequest, re
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*kubernetesengine.GetK8sClusterResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.ClustersAPI.
+		func() (*kubernetesengine.GetClusterResponse, *http.Response, error) {
+			return r.kc.ApiClient.KubernetesEngineClusterAPI.
 				GetCluster(ctx, state.Name.ValueString()).
 				XAuthToken(r.kc.XAuthToken).Execute()
 		},
@@ -243,7 +239,7 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 	result, ok := r.pollClusterUtilStatus(
 		ctx,
 		plan.Name.ValueString(),
-		[]string{common.ClusterStatusProvisioned, common.ClusterStatusFailed, common.ClusterStatusDeleting},
+		ClusterAvailableStatuses,
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
@@ -257,15 +253,12 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	if !plan.Description.Equal(state.Description) && !plan.Description.IsNull() && !plan.Description.IsUnknown() {
-		editReq := kubernetesengine.KubernetesEngineV1ApiUpdateClusterModelClusterRequestModel{}
-		editReq.SetDescription(plan.Description.ValueString())
-
-		body := *kubernetesengine.NewUpdateK8sClusterRequestModel(editReq)
+		body := kubernetesengine.NewUpdateClusterRequest(*kubernetesengine.NewUpdateCluster(plan.Description.ValueString()))
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
-				return r.kc.ApiClient.ClustersAPI.UpdateCluster(ctx, plan.Name.ValueString()).
+				return r.kc.ApiClient.KubernetesEngineClusterAPI.UpdateCluster(ctx, plan.Name.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
-					UpdateK8sClusterRequestModel(body).
+					UpdateClusterRequest(*body).
 					Execute()
 			},
 		)
@@ -293,7 +286,7 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 	if !planVer.MinorVersion.Equal(stateVer.MinorVersion) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 			func() (interface{}, *http.Response, error) {
-				return r.kc.ApiClient.ClustersAPI.UpgradeCluster(ctx, plan.Name.ValueString()).
+				return r.kc.ApiClient.KubernetesEngineClusterAPI.UpgradeCluster(ctx, plan.Name.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
 			},
@@ -309,7 +302,7 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 	result, ok = r.pollClusterUtilStatus(
 		ctx,
 		plan.Name.ValueString(),
-		[]string{common.ClusterStatusProvisioned, common.ClusterStatusFailed, common.ClusterStatusDeleting},
+		ClusterAvailableStatuses,
 		&resp.Diagnostics,
 	)
 	if !ok || resp.Diagnostics.HasError() {
@@ -363,7 +356,7 @@ func (r *clusterResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.ClustersAPI.DeleteCluster(ctx, state.Name.ValueString()).
+			httpResp, err := r.kc.ApiClient.KubernetesEngineClusterAPI.DeleteCluster(ctx, state.Name.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 			return nil, httpResp, err
@@ -378,7 +371,7 @@ func (r *clusterResource) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
-		_, httpResp, err := r.kc.ApiClient.ClustersAPI.
+		_, httpResp, err := r.kc.ApiClient.KubernetesEngineClusterAPI.
 			GetCluster(ctx, state.Name.ValueString()).
 			XAuthToken(r.kc.XAuthToken).
 			Execute()

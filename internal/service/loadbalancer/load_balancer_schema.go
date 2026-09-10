@@ -53,7 +53,11 @@ func getLoadBalancerResourceSchema() map[string]rschema.Attribute {
 		},
 		"description": rschema.StringAttribute{
 			Optional:   true,
+			Computed:   true,
 			Validators: common.DescriptionValidator(),
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"subnet_id": rschema.StringAttribute{
 			Required:   true,
@@ -74,6 +78,10 @@ func getLoadBalancerResourceSchema() map[string]rschema.Attribute {
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
+		},
+		"access_logs": rschema.SingleNestedAttribute{
+			Optional:   true,
+			Attributes: getAccessLogsResourceSchema(),
 		},
 
 		"type": rschema.StringAttribute{
@@ -104,10 +112,6 @@ func getLoadBalancerResourceSchema() map[string]rschema.Attribute {
 		"updated_at": rschema.StringAttribute{
 			Computed: true,
 		},
-		"access_logs": rschema.SingleNestedAttribute{
-			Optional:   true,
-			Attributes: getAccessLogsResourceSchema(),
-		},
 		"beyond_load_balancer_id": rschema.StringAttribute{
 			Computed: true,
 		},
@@ -137,6 +141,9 @@ func getLoadBalancerResourceSchema() map[string]rschema.Attribute {
 		},
 		"vpc_id": rschema.StringAttribute{
 			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"vpc_name": rschema.StringAttribute{
 			Computed: true,

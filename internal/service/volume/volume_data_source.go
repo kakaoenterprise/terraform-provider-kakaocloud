@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/volume"
 )
 
 var (
@@ -67,7 +67,7 @@ func (d *volumeDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	defer cancel()
 
 	volumesResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*volume.BcsVolumeV1ApiGetVolumeModelResponseVolumeModel, *http.Response, error) {
+		func() (*volume.GetVolumeResponse, *http.Response, error) {
 			return d.kc.ApiClient.VolumeAPI.GetVolume(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -78,7 +78,7 @@ func (d *volumeDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 
 	volumeResult := volumesResp.Volume
 
-	ok := mapVolumeBaseModel(ctx, &config.volumeBaseModel, &volumeResult, &resp.Diagnostics)
+	ok := mapVolumeModel(ctx, &config.volumeBaseModel, &volumeResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

@@ -5,14 +5,15 @@ package bcs
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"terraform-provider-kakaocloud/internal/common"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/kakaoenterprise/kc-sdk-go/services/bcs"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/bcs"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 	"golang.org/x/net/context"
 )
 
@@ -41,36 +42,71 @@ func (r *instanceResource) setNetworkInterfaceId(ctx context.Context, plan *inst
 
 	usedNicIds := make(map[string]bool)
 	for _, subnet := range subnetList {
-		if !subnet.NetworkInterfaceId.IsNull() {
-			usedNicIds[subnet.NetworkInterfaceId.ValueString()] = true
+		if !subnet.NetworkInterfaceId.IsNull() && subnet.NetworkInterfaceId.ValueString() != "" {
+			nicID := subnet.NetworkInterfaceId.ValueString()
+			if usedNicIds[nicID] {
+				common.AddGeneralError(
+					ctx,
+					r,
+					respDiags,
+					fmt.Sprintf("Network interface %q is specified more than once", nicID),
+				)
+				return
+			}
+			usedNicIds[nicID] = true
 		}
 	}
 
-	addressList, addressDiags := r.convertListToInstanceAddressModel(ctx, plan.Addresses)
-	respDiags.Append(addressDiags...)
-	if respDiags.HasError() {
+	addressList, ok := common.PollUntilResult(
+		ctx,
+		r,
+		3*time.Second,
+		"network interfaces",
+		plan.Id.ValueString(),
+		[]string{"READY"},
+		respDiags,
+		func(ctx context.Context) (*vpc.ListNetworkInterfacesResponse, *http.Response, error) {
+			return common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+				func() (*vpc.ListNetworkInterfacesResponse, *http.Response, error) {
+					return r.kc.ApiClient.VPCNetworkInterfaceAPI.
+						ListNetworkInterfaces(ctx).
+						DeviceId(plan.Id.ValueString()).
+						XAuthToken(r.kc.XAuthToken).
+						Limit(1000).
+						Execute()
+				},
+			)
+		},
+		func(result *vpc.ListNetworkInterfacesResponse) string {
+			if result != nil && len(result.NetworkInterfaces) >= len(subnetList) {
+				return "READY"
+			}
+			return "WAITING_FOR_NETWORK_INTERFACES"
+		},
+	)
+	if !ok || respDiags.HasError() {
 		return
 	}
 
 	subnetMap := make(map[string][]string)
-	for _, address := range addressList {
-		nicId := address.NetworkInterfaceId.ValueString()
+	for _, nicResp := range addressList.NetworkInterfaces {
+		nicIdPtr := nicResp.Id.Get()
+		if nicIdPtr == nil {
+			continue
+		}
+
+		nicId := *nicIdPtr
 		if nicId == "" || usedNicIds[nicId] {
 			continue
 		}
-		nicResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-			func() (*vpc.BnsVpcV1ApiGetNetworkInterfaceModelResponseNetworkInterfaceModel, *http.Response, error) {
-				return r.kc.ApiClient.NetworkInterfaceAPI.GetNetworkInterface(ctx, nicId).XAuthToken(r.kc.XAuthToken).Execute()
-			},
-		)
-		if err != nil {
-			common.AddApiActionError(ctx, r, httpResp, "GetNetworkInterface", err, respDiags)
-			return
-		}
-		if nicResp.NetworkInterface.SubnetId.Get() != nil {
-			subnetId := nicResp.NetworkInterface.SubnetId.Get()
+		if nicResp.SubnetId.Get() != nil {
+			subnetId := nicResp.SubnetId.Get()
 			subnetMap[*subnetId] = append(subnetMap[*subnetId], nicId)
 		}
+	}
+
+	for subnetID := range subnetMap {
+		sort.Strings(subnetMap[subnetID])
 	}
 
 	for i, subnet := range subnetList {
@@ -107,19 +143,19 @@ func (r *instanceResource) setNetworkInterfaceId(ctx context.Context, plan *inst
 func (r *instanceResource) updateNetworkInterface(
 	ctx context.Context,
 	instanceId string,
-	plans *[]instanceSubnetModel,
-	states *[]instanceSubnetModel,
+	plans []instanceSubnetModel,
+	states []instanceSubnetModel,
 	resp *diag.Diagnostics,
 ) bool {
 	stateMap := make(map[string]instanceSubnetModel)
-	for _, s := range *states {
+	for _, s := range states {
 		if !s.NetworkInterfaceId.IsNull() && !s.NetworkInterfaceId.IsUnknown() {
 			stateMap[s.NetworkInterfaceId.ValueString()] = s
 		}
 	}
 
 	planMap := make(map[string]instanceSubnetModel)
-	for _, p := range *plans {
+	for _, p := range plans {
 		if !p.NetworkInterfaceId.IsNull() && !p.NetworkInterfaceId.IsUnknown() {
 			planMap[p.NetworkInterfaceId.ValueString()] = p
 		} else {
@@ -128,7 +164,7 @@ func (r *instanceResource) updateNetworkInterface(
 		}
 	}
 
-	for _, s := range *states {
+	for _, s := range states {
 		if _, exists := planMap[s.NetworkInterfaceId.ValueString()]; !exists {
 			ok := r.detachNetworkInterface(ctx, instanceId, s.NetworkInterfaceId.ValueString(), resp)
 			if !ok {
@@ -137,9 +173,9 @@ func (r *instanceResource) updateNetworkInterface(
 		}
 	}
 
-	for _, s := range *plans {
+	for _, s := range plans {
 		if _, exists := stateMap[s.NetworkInterfaceId.ValueString()]; !exists {
-			ok := r.attacheNetworkInterface(ctx, instanceId, s.NetworkInterfaceId.ValueString(), resp)
+			ok := r.attachNetworkInterface(ctx, instanceId, s.NetworkInterfaceId.ValueString(), resp)
 			if !ok {
 				return false
 			}
@@ -148,15 +184,15 @@ func (r *instanceResource) updateNetworkInterface(
 	return true
 }
 
-func (r *instanceResource) attacheNetworkInterface(
+func (r *instanceResource) attachNetworkInterface(
 	ctx context.Context,
 	instanceId string,
 	networkInterfaceId string,
 	resp *diag.Diagnostics,
 ) bool {
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
-		func() (*bcs.BcsInstanceV1ApiAttachNetworkInterfaceModelResponseInstanceNetworkInterfaceModel, *http.Response, error) {
-			return r.kc.ApiClient.InstanceNetworkInterfaceAPI.AttachNetworkInterface(ctx, instanceId, networkInterfaceId).
+		func() (*bcs.AttachNetworkInterfaceResponse, *http.Response, error) {
+			return r.kc.ApiClient.InstanceAPI.AttachNetworkInterface(ctx, instanceId, networkInterfaceId).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 		},
@@ -176,7 +212,7 @@ func (r *instanceResource) detachNetworkInterface(
 ) bool {
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
 		func() (interface{}, *http.Response, error) {
-			return r.kc.ApiClient.InstanceNetworkInterfaceAPI.DetachNetworkInterface(ctx, instanceId, networkInterfaceId).
+			return r.kc.ApiClient.InstanceAPI.DetachNetworkInterface(ctx, instanceId, networkInterfaceId).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 		},
@@ -224,46 +260,79 @@ func (r *instanceResource) convertListToInstanceAddressModel(
 	return result, diags
 }
 
+const (
+	networkInterfaceActionAttach = "attach"
+	networkInterfaceActionDetach = "detach"
+)
+
 func (r *instanceResource) pollInstanceUntilNetworkInterfaceOk(
 	ctx context.Context,
-	instanceId string,
-	networkInterfaceId string,
+	instanceID string,
+	networkInterfaceID string,
 	action string,
-	diag *diag.Diagnostics,
+	diags *diag.Diagnostics,
 ) bool {
+	if action != networkInterfaceActionAttach &&
+		action != networkInterfaceActionDetach {
+		diags.AddError(
+			"Invalid network interface action",
+			fmt.Sprintf("Unsupported network interface action: %q", action),
+		)
+		return false
+	}
+
 	for {
-		isOk := false
-		respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, diag,
-			func() (*bcs.ResponseInstanceModel, *http.Response, error) {
+		respModel, httpResp, err := common.ExecuteWithRetryAndAuth(
+			ctx,
+			r.kc,
+			diags,
+			func() (*bcs.GetInstanceResponse, *http.Response, error) {
 				return r.kc.ApiClient.InstanceAPI.
-					GetInstance(ctx, instanceId).
+					GetInstance(ctx, instanceID).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
 			},
 		)
 		if err != nil {
-			common.AddApiActionError(ctx, r, httpResp, "GetInstance", err, diag)
+			common.AddApiActionError(ctx, r, httpResp, "GetInstance", err, diags)
 			return false
 		}
 
+		found := false
+
 		for _, address := range respModel.Instance.Addresses {
-			if action == "attach" {
-				if address.NetworkInterfaceId.Get() != nil && *address.NetworkInterfaceId.Get() == networkInterfaceId {
-					isOk = true
-					break
-				}
-			} else if action == "detach" {
-				isOk = true
-				if address.NetworkInterfaceId.Get() != nil && *address.NetworkInterfaceId.Get() == networkInterfaceId {
-					isOk = false
-					break
-				}
+			networkInterfaceIDValue := address.NetworkInterfaceId.Get()
+			if networkInterfaceIDValue != nil &&
+				*networkInterfaceIDValue == networkInterfaceID {
+				found = true
+				break
 			}
 		}
 
-		if isOk {
-			return true
+		switch action {
+		case networkInterfaceActionAttach:
+			if found {
+				return true
+			}
+		case networkInterfaceActionDetach:
+			if !found {
+				return true
+			}
 		}
-		time.Sleep(2 * time.Second)
+
+		select {
+		case <-time.After(2 * time.Second):
+		case <-ctx.Done():
+			diags.AddError(
+				"Network interface polling canceled",
+				fmt.Sprintf(
+					"Waiting for network interface %q to %s failed: %s",
+					networkInterfaceID,
+					action,
+					ctx.Err(),
+				),
+			)
+			return false
+		}
 	}
 }

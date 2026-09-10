@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (r *nodePoolResource) validateAutoscalingModel(ctx context.Context, auto NodePoolAutoscalingModel, resp *resource.ValidateConfigResponse) {
+func (r *nodePoolResource) validateAutoscalingModel(ctx context.Context, auto nodePoolAutoscalingModel, resp *resource.ValidateConfigResponse) {
 	if auto.IsAutoscalerEnable.IsUnknown() {
 		return
 	}
@@ -113,7 +113,7 @@ func hasAtMost2Decimals(f float32) bool {
 }
 
 func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	var plan, state, config *NodePoolResourceModel
+	var plan, state, config *nodePoolResourceModel
 	planDiags := req.Plan.Get(ctx, &plan)
 	stateDiags := req.State.Get(ctx, &state)
 	configDiags := req.Config.Get(ctx, &config)
@@ -154,7 +154,7 @@ func (r *nodePoolResource) ModifyPlan(ctx context.Context, req resource.ModifyPl
 	}
 }
 
-func (r *nodePoolResource) validateBM(ctx context.Context, req NodePoolResourceModel, diags *diag.Diagnostics) {
+func (r *nodePoolResource) validateBM(ctx context.Context, req nodePoolResourceModel, diags *diag.Diagnostics) {
 
 	if !req.VolumeSize.IsNull() && !req.VolumeSize.IsUnknown() {
 		common.AddGeneralError(ctx, r, diags,

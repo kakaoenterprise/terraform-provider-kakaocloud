@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	auth "github.com/kakaoenterprise/kc-sdk-go/services/iam"
+	auth "github.com/kakaoenterprise/kc-sdk-go/v2/services/iam"
 )
 
 type TokenManager struct {

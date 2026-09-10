@@ -79,7 +79,7 @@ resource "kakaocloud_security_group" "example_ssh" {
 ### Nested Schema for `rules`
 
 - `direction` (Required, String) Traffic direction <br/> - `ingress`: inbound (receive) <br/> - `egress`: outbound ( send)
-- `protocol` (Required, String) Allowed network protocol <br/> - `TCP`: Transmission Control Protocol <br/> - `UDP`: User Datagram Protocol <br/> - `ICMP`: Internet Control Message Protocol <br/> - `IPIP`: IP-in-IP tunneling <br/> - `ALL`: All protocols
+- `protocol` (Required, String) Allowed network protocol <br/> - `TCP`: Transmission Control Protocol <br/> - `UDP`: User Datagram Protocol <br/> - `ICMP`: Internet Control Message Protocol <br/> - `ALL`: All protocols
 
 - `description` (Optional, String) Description of the security group rule
 - `port_range_max` (Optional, Number) End port of the allowed range (e.g., `22` for SSH) - Required for TCP/UDP protocols

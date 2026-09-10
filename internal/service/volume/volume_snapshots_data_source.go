@@ -13,8 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/volume"
 )
 
 var (
@@ -162,7 +161,7 @@ func (d *volumeSnapshotsDataSource) Read(ctx context.Context, req datasource.Rea
 	}
 
 	volumesSnapshotResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*volume.VolumeSnapshotListModel, *http.Response, error) {
+		func() (*volume.ListSnapshotsResponse, *http.Response, error) {
 			return volumeSnapshotApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -171,17 +170,10 @@ func (d *volumeSnapshotsDataSource) Read(ctx context.Context, req datasource.Rea
 		return
 	}
 
-	var volumesSnapshotsResult []volume.BcsVolumeV1ApiGetSnapshotModelVolumeSnapshotModel
-	err = copier.Copy(&volumesSnapshotsResult, &volumesSnapshotResp.Snapshots)
-	if err != nil {
-		common.AddGeneralError(ctx, d, &resp.Diagnostics,
-			fmt.Sprintf("Failed to convert volumesSnapshotsResult: %v", err))
-		return
-	}
-
-	for _, v := range volumesSnapshotsResult {
+	config.VolumeSnapshots = make([]volumeSnapshotBaseModel, 0, len(volumesSnapshotResp.Snapshots))
+	for _, v := range volumesSnapshotResp.Snapshots {
 		var tmpVolumeSnapshot volumeSnapshotBaseModel
-		ok := mapVolumeSnapshotBaseModel(&tmpVolumeSnapshot, &v, &resp.Diagnostics)
+		ok := mapVolumeSnapshotModel(&tmpVolumeSnapshot, &v, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

@@ -16,6 +16,7 @@ After the attachment is created, it may remain in a pending state until it is ap
 
 ```terraform
 resource "kakaocloud_transit_gateway_attachment" "example" {
+  name        = "example-tgw-attachment"
   resource_id = kakaocloud_vpc.example.id
   subnet_ids  = [
     kakaocloud_subnet.example.id
@@ -30,6 +31,7 @@ resource "kakaocloud_transit_gateway_attachment" "example" {
 - `subnet_ids` (Required, Set of String) One or more subnet IDs to include in the attachment.
 - `tgw_id` (Required, String) ID of the Transit Gateway to attach the resource to.
 
+- `name` (Optional, String) Transit Gateway attachment name.
 - `timeouts` (Optional, Attributes) Timeout configuration for create, read, update, and delete operations. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference

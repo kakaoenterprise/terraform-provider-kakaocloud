@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -87,7 +87,7 @@ func (d *transitGatewaysDataSource) Read(ctx context.Context, req datasource.Rea
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	tgwApi := d.kc.ApiClient.TgwsAPI.ListTransitGateways(ctx)
+	tgwApi := d.kc.ApiClient.TransitGatewayAPI.ListTransitGateways(ctx)
 
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
@@ -106,7 +106,7 @@ func (d *transitGatewaysDataSource) Read(ctx context.Context, req datasource.Rea
 				tgwApi = tgwApi.Name(v)
 			case "region":
 				if region, err := ToRegion(v); err == nil {
-					tgwApi = tgwApi.Region(*region)
+					tgwApi = tgwApi.Region(string(*region))
 				} else {
 					resp.Diagnostics.AddError(
 						"Invalid region value",
@@ -123,7 +123,7 @@ func (d *transitGatewaysDataSource) Read(ctx context.Context, req datasource.Rea
 					)
 				}
 			case "provisioning_status":
-				if ps, err := ToTgwProvisioningStatus(v); err == nil {
+				if ps, err := ToTGWProvisioningStatus(v); err == nil {
 					tgwApi = tgwApi.ProvisioningStatus(*ps)
 				} else {
 					resp.Diagnostics.AddError(
@@ -163,7 +163,7 @@ func (d *transitGatewaysDataSource) Read(ctx context.Context, req datasource.Rea
 	}
 
 	tgwResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwsResponseModel, *http.Response, error) {
+		func() (*tgw.ListTransitGatewaysResponse, *http.Response, error) {
 			return tgwApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -172,10 +172,10 @@ func (d *transitGatewaysDataSource) Read(ctx context.Context, req datasource.Rea
 		return
 	}
 
-	config.TransitGateways = make([]transitGatewayBaseModel, 0)
+	config.TransitGateways = make([]transitGatewayBaseModel, 0, len(tgwResp.Tgws))
 	for _, item := range tgwResp.Tgws {
 		var tgwModel transitGatewayBaseModel
-		ok := mapTransitGatewayListModel(ctx, &tgwModel, &item, &resp.Diagnostics)
+		ok := mapTransitGatewayModel(ctx, &tgwModel, &item, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

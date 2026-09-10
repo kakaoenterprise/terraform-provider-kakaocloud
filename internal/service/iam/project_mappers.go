@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/iam"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/iam"
 )
 
 func mapProjectDataSourceModel(

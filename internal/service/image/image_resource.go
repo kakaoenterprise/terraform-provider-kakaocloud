@@ -15,9 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/image"
-	"github.com/kakaoenterprise/kc-sdk-go/services/volume"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/image"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/volume"
 )
 
 var (
@@ -34,32 +33,52 @@ type imageResource struct {
 	kc *common.KakaoCloudClient
 }
 
-func (r *imageResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	var plan, state *imageResourceModel
-
-	planDiags := req.Plan.Get(ctx, &plan)
-	stateDiags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(planDiags...)
-	resp.Diagnostics.Append(stateDiags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+func (r *imageResource) ModifyPlan(
+	ctx context.Context,
+	req resource.ModifyPlanRequest,
+	resp *resource.ModifyPlanResponse,
+) {
 
 	if req.Plan.Raw.IsNull() {
 		return
 	}
 
-	if req.State.Raw.IsNull() && !req.Plan.Raw.IsNull() {
-		if plan.VolumeId.IsNull() || plan.VolumeId.IsUnknown() {
+	var plan imageResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if plan.VolumeId.IsUnknown() {
+		return
+	}
+
+	if req.State.Raw.IsNull() {
+		if plan.VolumeId.IsNull() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("volume_id"),
 				"Missing required attribute",
-				"The attribute 'volume_id' is required when creating an image. Please specify a valid volume ID.",
+				"The attribute 'volume_id' is required when creating an image.",
 			)
-			return
 		}
+		return
 	}
 
+	var state imageResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if plan.VolumeId.IsNull() &&
+		!state.VolumeId.IsNull() &&
+		!state.VolumeId.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("volume_id"),
+			"Cannot remove volume_id",
+			"The attribute 'volume_id' cannot be removed because replacing the image requires a source volume ID.",
+		)
+	}
 }
 
 func (r *imageResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -101,7 +120,7 @@ func (r *imageResource) Create(ctx context.Context, req resource.CreateRequest, 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	createReq := volume.CreateVolumeImageModel{
+	createReq := volume.CreateImage{
 		Name: plan.Name.ValueString(),
 	}
 	volumeId := plan.VolumeId.ValueString()
@@ -112,11 +131,11 @@ func (r *imageResource) Create(ctx context.Context, req resource.CreateRequest, 
 		createReq.SetDescription(plan.Description.ValueString())
 	}
 
-	body := volume.BodyCreateImage{Image: createReq}
+	body := *volume.NewCreateImageRequest(createReq)
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*volume.ResponseVolumeImageModel, *http.Response, error) {
-			return r.kc.ApiClient.VolumeAPI.CreateImage(ctx, volumeId).XAuthToken(r.kc.XAuthToken).BodyCreateImage(body).Execute()
+		func() (*volume.CreateImageResponse, *http.Response, error) {
+			return r.kc.ApiClient.VolumeImageAPI.CreateImage(ctx, volumeId).XAuthToken(r.kc.XAuthToken).CreateImageRequest(body).Execute()
 		},
 	)
 	if err != nil {
@@ -124,11 +143,20 @@ func (r *imageResource) Create(ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
-	plan.Id = types.StringValue(respModel.Image.Id)
+	imageId, ok := getCreatedImageID(respModel)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Missing image ID",
+			"CreateImage response did not include image.id. Cannot poll image status.",
+		)
+		return
+	}
+
+	plan.Id = ConvertNullableString(respModel.Image.Id)
 
 	result, ok := r.pollImageUtilsStatus(
 		ctx,
-		plan.Id.ValueString(),
+		imageId,
 		[]string{common.ImageStatusActive},
 		&resp.Diagnostics,
 	)
@@ -146,6 +174,19 @@ func (r *imageResource) Create(ctx context.Context, req resource.CreateRequest, 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+}
+
+func getCreatedImageID(respModel *volume.CreateImageResponse) (string, bool) {
+	if respModel == nil {
+		return "", false
+	}
+
+	imageId, ok := GetNullableStringValue(respModel.Image.Id)
+	if !ok || imageId == "" {
+		return "", false
+	}
+
+	return imageId, true
 }
 
 func (r *imageResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -167,7 +208,7 @@ func (r *imageResource) Read(ctx context.Context, req resource.ReadRequest, resp
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*image.BcsImageV1ApiGetImageModelResponseImageModel, *http.Response, error) {
+		func() (*image.GetImageResponse, *http.Response, error) {
 			return r.kc.ApiClient.ImageAPI.
 				GetImage(ctx, state.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
@@ -221,7 +262,7 @@ func (r *imageResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	editReq := image.EditImageModel{}
+	editReq := image.UpdateImage{}
 
 	if !plan.Name.Equal(state.Name) {
 		editReq.SetName(plan.Name.ValueString())
@@ -237,14 +278,14 @@ func (r *imageResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		return
 	}
 
-	body := *image.NewBodyUpdateImage(editReq)
+	body := *image.NewUpdateImageRequest(editReq)
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*image.BcsImageV1ApiUpdateImageModelResponseImageModel, *http.Response, error) {
+		func() (*image.UpdateImageResponse, *http.Response, error) {
 			return r.kc.ApiClient.ImageAPI.
 				UpdateImage(ctx, plan.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				BodyUpdateImage(body).
+				UpdateImageRequest(body).
 				Execute()
 		},
 	)
@@ -300,7 +341,7 @@ func (r *imageResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 
 	common.PollUntilDeletion(ctx, r, 2*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*image.BcsImageV1ApiGetImageModelResponseImageModel, *http.Response, error) {
+			func() (*image.GetImageResponse, *http.Response, error) {
 				_, httpResp, err := r.kc.ApiClient.ImageAPI.
 					GetImage(ctx, state.Id.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
@@ -338,10 +379,10 @@ func (r *imageResource) Metadata(_ context.Context, req resource.MetadataRequest
 func (r *imageResource) mapImage(
 	ctx context.Context,
 	model *imageResourceModel,
-	imageResult *image.BcsImageV1ApiGetImageModelImageModel,
+	imageResult *image.Image,
 	respDiags *diag.Diagnostics,
 ) bool {
-	mapImageBaseModel(ctx, &model.imageBaseModel, imageResult, respDiags)
+	mapImageModel(ctx, &model.imageBaseModel, imageResult, respDiags)
 
 	if respDiags.HasError() {
 		return false

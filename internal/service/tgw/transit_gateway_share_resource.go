@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -55,10 +55,6 @@ func (r *transitGatewayShareResource) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	mutex := common.LockForID(plan.TgwId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -68,14 +64,20 @@ func (r *transitGatewayShareResource) Create(ctx context.Context, req resource.C
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, ok := pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), []string{"ACTIVE", "ERROR"}, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, plan.TgwId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollTgw(ctx, r.kc, r, plan.TgwId.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
-			return r.kc.ApiClient.TgwsAPI.ShareTransitGateway(
+			return r.kc.ApiClient.TransitGatewayAPI.ShareTransitGateway(
 				ctx,
 				plan.TgwId.ValueString(),
 				plan.TargetProjectId.ValueString(),
@@ -115,8 +117,8 @@ func (r *transitGatewayShareResource) Read(ctx context.Context, req resource.Rea
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwProjectsResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.TgwsAPI.ListTgwSharedProjects(ctx, state.TgwId.ValueString()).
+		func() (*tgw.ListTgwSharedProjectsResponse, *http.Response, error) {
+			return r.kc.ApiClient.TransitGatewayAPI.ListTgwSharedProjects(ctx, state.TgwId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
 		},
@@ -166,10 +168,6 @@ func (r *transitGatewayShareResource) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	mutex := common.LockForID(state.TgwId.ValueString())
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	timeout, diags := state.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -179,14 +177,20 @@ func (r *transitGatewayShareResource) Delete(ctx context.Context, req resource.D
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, ok := pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), []string{"ACTIVE", "ERROR"}, &resp.Diagnostics)
+	unlock, ok := common.AcquireLockForID(ctx, state.TgwId.ValueString(), &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	defer unlock()
+
+	_, ok = pollTgw(ctx, r.kc, r, state.TgwId.ValueString(), tgwAvailableAndErrorStatuses, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 		func() (interface{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.TgwsAPI.UnshareTransitGateway(
+			httpResp, err := r.kc.ApiClient.TransitGatewayAPI.UnshareTransitGateway(
 				ctx, state.TgwId.ValueString(), state.TargetProjectId.ValueString(),
 			).XAuthToken(r.kc.XAuthToken).Execute()
 			return nil, httpResp, err
@@ -202,8 +206,8 @@ func (r *transitGatewayShareResource) Delete(ctx context.Context, req resource.D
 
 	common.PollUntilDeletion(ctx, r, 10*time.Second, &resp.Diagnostics, func(ctx context.Context) (bool, *http.Response, error) {
 		listResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-			func() (*tgw.GetTgwProjectsResponseModel, *http.Response, error) {
-				return r.kc.ApiClient.TgwsAPI.ListTgwSharedProjects(ctx, state.TgwId.ValueString()).
+			func() (*tgw.ListTgwSharedProjectsResponse, *http.Response, error) {
+				return r.kc.ApiClient.TransitGatewayAPI.ListTgwSharedProjects(ctx, state.TgwId.ValueString()).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
 			},

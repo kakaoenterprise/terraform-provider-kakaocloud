@@ -83,8 +83,8 @@ resource "kakaocloud_instance" "example" {
 - `is_hyper_threading` (Optional, Boolean) Whether hyper-threading is enabled
 - `key_name` (Optional, String) Key pair name applied to the instance
 - `status` (Optional, String) Instance status <br/> - Only `active`, `shelved_offloaded`, and `stopped` can be entered.
-- `timeouts` (Optional, Attributes) String, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) User data script executed during instance initialization (runs only on the first boot)<br/> - Enter up to 16KB of user data script and `cloud-init` commands<br/> - Input must be a Base64-encoded string<br/> - Script is copied under `/var/lib/cloud/instances` and executed<br/> - ⚠️ Entering incorrect or incomplete scripts may cause boot failure.<br/> ㄴ Ubuntu: `sudo cat /var/log/syslog` or `sudo journalctl -u cloud-final.service`<br/> ㄴ CentOS: `sudo cat /var/log/messages` or `sudo journalctl -u cloud-final.service`<br/> (see [below for nested schema](#nestedatt--timeouts))
-- `user_data` (Optional, String) User script to run when creating nodes in the node pool (requires base64 encoding)
+- `timeouts` (Optional, Attributes) Custom timeout settings for instance operations (see [below for nested schema](#nestedatt--timeouts))
+- `user_data` (Optional, String) User data script executed during instance initialization (runs only on the first boot).<br/> - This field is write-only.<br/> - Enter up to 16KB of user data script and `cloud-init` commands.<br/> - Input must be a Base64-encoded string.<br/> - Script is copied under `/var/lib/cloud/instances` and executed.<br/> - Incorrect or incomplete scripts may cause boot failure.<br/> - Ubuntu logs: `sudo cat /var/log/syslog` or `sudo journalctl -u cloud-final.service`.<br/> - CentOS logs: `sudo cat /var/log/messages` or `sudo journalctl -u cloud-final.service`.
 - `volumes` (Optional, Attributes List) Volumes to attach to the instance ( see [below for nested schema](#nestedatt--volumes))
 
 ## Attribute Reference

@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 var (
@@ -197,7 +197,7 @@ func (r *customParameterGroupResource) createCustomParameterGroup(
 	plan customParameterGroupResourceModel,
 	respDiags *diag.Diagnostics,
 ) (customParameterGroupResourceModel, bool) {
-	group := mysqlsdk.NewMysqlV1ApiCreateMysqlCustomParameterGroupModelCustomParameterGroupRequestModel(
+	group := mysqlsdk.NewCreateMysqlCustomParameterGroup(
 		plan.Name.ValueString(),
 		plan.SourceParameterGroupId.ValueString(),
 		mysqlsdk.ParameterGroupType(plan.SourceParameterGroupType.ValueString()),
@@ -206,13 +206,13 @@ func (r *customParameterGroupResource) createCustomParameterGroup(
 		group.SetDescription(plan.Description.ValueString())
 	}
 
-	request := mysqlsdk.NewBodyCreateMysqlCustomParameterGroup(*group)
+	request := mysqlsdk.NewCreateMysqlCustomParameterGroupRequest(*group)
 	modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.CreateMySQLCustomParameterGroupResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLCustomParameterGroupsAPI.
+		func() (*mysqlsdk.CreateMysqlCustomParameterGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLCustomParameterGroupAPI.
 				CreateMysqlCustomParameterGroup(ctx).
 				XAuthToken(r.kc.XAuthToken).
-				BodyCreateMysqlCustomParameterGroup(*request).
+				CreateMysqlCustomParameterGroupRequest(*request).
 				Execute()
 		},
 	)
@@ -254,8 +254,8 @@ func (r *customParameterGroupResource) readCustomParameterGroupState(
 	respDiags *diag.Diagnostics,
 ) (customParameterGroupResourceModel, bool, bool) {
 	modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLCustomParameterGroupResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLCustomParameterGroupsAPI.
+		func() (*mysqlsdk.GetMysqlCustomParameterGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLCustomParameterGroupAPI.
 				GetMysqlCustomParameterGroup(ctx, current.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -311,8 +311,8 @@ func (r *customParameterGroupResource) readCustomParameterGroupParameterMap(
 	respDiags *diag.Diagnostics,
 ) (map[string]mysqlParameterModel, bool) {
 	modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLCustomParameterGroupResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLCustomParameterGroupsAPI.
+		func() (*mysqlsdk.GetMysqlCustomParameterGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLCustomParameterGroupAPI.
 				GetMysqlCustomParameterGroup(ctx, id).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -334,12 +334,12 @@ func (r *customParameterGroupResource) updateCustomParameterGroup(
 	ctx context.Context,
 	plan customParameterGroupResourceModel,
 	parameters map[string]mysqlParameterModel,
-	resetOverrides []mysqlsdk.DataUpdateParameterRequestModel,
+	resetOverrides []mysqlsdk.DataUpdateParameterRequest,
 	includeDescription bool,
 	includeApplyMode bool,
 	respDiags *diag.Diagnostics,
 ) bool {
-	group := mysqlsdk.NewMysqlV1ApiUpdateMysqlCustomParameterGroupModelCustomParameterGroupRequestModel()
+	group := mysqlsdk.NewUpdateMysqlCustomParameterGroup()
 
 	if includeApplyMode && !plan.ApplyMode.IsNull() && !plan.ApplyMode.IsUnknown() && plan.ApplyMode.ValueString() != "" {
 		applyMode, err := mysqlsdk.NewApplyModeFromValue(plan.ApplyMode.ValueString())
@@ -359,13 +359,13 @@ func (r *customParameterGroupResource) updateCustomParameterGroup(
 		}
 	}
 
-	request := mysqlsdk.NewBodyUpdateMysqlCustomParameterGroup(*group)
+	request := mysqlsdk.NewUpdateMysqlCustomParameterGroupRequest(*group)
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.MySQLCustomParameterGroupsAPI.
+			httpResp, err := r.kc.ApiClient.MySQLCustomParameterGroupAPI.
 				UpdateMysqlCustomParameterGroup(ctx, plan.Id.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				BodyUpdateMysqlCustomParameterGroup(*request).
+				UpdateMysqlCustomParameterGroupRequest(*request).
 				Execute()
 			return struct{}{}, httpResp, err
 		},
@@ -391,10 +391,10 @@ func (r *customParameterGroupResource) rollbackCreatedCustomParameterGroup(ctx c
 
 func (r *customParameterGroupResource) setCustomParameterGroupUpdateParameters(
 	ctx context.Context,
-	group *mysqlsdk.MysqlV1ApiUpdateMysqlCustomParameterGroupModelCustomParameterGroupRequestModel,
+	group *mysqlsdk.UpdateMysqlCustomParameterGroup,
 	parameterOverrides types.Set,
 	parameters map[string]mysqlParameterModel,
-	resetOverrides []mysqlsdk.DataUpdateParameterRequestModel,
+	resetOverrides []mysqlsdk.DataUpdateParameterRequest,
 	respDiags *diag.Diagnostics,
 ) bool {
 	overrides, ok := r.parameterOverridesFromSet(ctx, parameterOverrides, parameters, respDiags)
@@ -413,7 +413,7 @@ func (r *customParameterGroupResource) setCustomParameterGroupUpdateParameters(
 func hasCustomParameterGroupParameterUpdates(
 	stateParameterOverrides types.Set,
 	planParameterOverrides types.Set,
-	resetOverrides []mysqlsdk.DataUpdateParameterRequestModel,
+	resetOverrides []mysqlsdk.DataUpdateParameterRequest,
 ) bool {
 	if len(resetOverrides) > 0 {
 		return true
@@ -444,7 +444,7 @@ func (r *customParameterGroupResource) hasConfiguredParameterOverrides(
 func (r *customParameterGroupResource) deleteCustomParameterGroup(ctx context.Context, id string, respDiags *diag.Diagnostics) bool {
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.MySQLCustomParameterGroupsAPI.
+			httpResp, err := r.kc.ApiClient.MySQLCustomParameterGroupAPI.
 				DeleteMysqlCustomParameterGroup(ctx, id).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -468,8 +468,8 @@ func (r *customParameterGroupResource) pollCustomParameterGroupUntilDeleted(ctx 
 
 	for {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-			func() (*mysqlsdk.GetMySQLCustomParameterGroupResponseModel, *http.Response, error) {
-				return r.kc.ApiClient.MySQLCustomParameterGroupsAPI.
+			func() (*mysqlsdk.GetMysqlCustomParameterGroupResponse, *http.Response, error) {
+				return r.kc.ApiClient.MySQLCustomParameterGroupAPI.
 					GetMysqlCustomParameterGroup(ctx, id).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
@@ -497,15 +497,15 @@ func (r *customParameterGroupResource) parameterOverridesFromSet(
 	value types.Set,
 	parameters map[string]mysqlParameterModel,
 	respDiags *diag.Diagnostics,
-) ([]mysqlsdk.DataUpdateParameterRequestModel, bool) {
+) ([]mysqlsdk.DataUpdateParameterRequest, bool) {
 	models, ok := r.parameterOverrideModelsFromSet(ctx, value, respDiags)
 	if !ok {
 		return nil, false
 	}
 
-	result := make([]mysqlsdk.DataUpdateParameterRequestModel, 0, len(models))
+	result := make([]mysqlsdk.DataUpdateParameterRequest, 0, len(models))
 	for _, item := range models {
-		param := mysqlsdk.NewDataUpdateParameterRequestModel(item.Key.ValueString())
+		param := mysqlsdk.NewDataUpdateParameterRequest(item.Key.ValueString())
 		if item.Value.IsNull() {
 			if !r.setResetParameterValue(param, parameters, respDiags) {
 				return nil, false
@@ -628,7 +628,7 @@ func (r *customParameterGroupResource) buildResetParamsForDeletedParameterOverri
 	plan customParameterGroupResourceModel,
 	parameters map[string]mysqlParameterModel,
 	respDiags *diag.Diagnostics,
-) ([]mysqlsdk.DataUpdateParameterRequestModel, bool) {
+) ([]mysqlsdk.DataUpdateParameterRequest, bool) {
 	if state.ParameterOverrides.IsNull() || state.ParameterOverrides.IsUnknown() {
 		return nil, true
 	}
@@ -651,7 +651,7 @@ func (r *customParameterGroupResource) buildResetParamsForDeletedParameterOverri
 		}
 	}
 
-	result := make([]mysqlsdk.DataUpdateParameterRequestModel, 0)
+	result := make([]mysqlsdk.DataUpdateParameterRequest, 0)
 	for _, item := range stateOverrides {
 		if item.Value.IsNull() {
 			continue
@@ -661,7 +661,7 @@ func (r *customParameterGroupResource) buildResetParamsForDeletedParameterOverri
 			continue
 		}
 
-		param := mysqlsdk.NewDataUpdateParameterRequestModel(key)
+		param := mysqlsdk.NewDataUpdateParameterRequest(key)
 		if !r.setResetParameterValue(param, parameters, respDiags) {
 			return nil, false
 		}
@@ -671,7 +671,7 @@ func (r *customParameterGroupResource) buildResetParamsForDeletedParameterOverri
 }
 
 func (r *customParameterGroupResource) setResetParameterValue(
-	param *mysqlsdk.DataUpdateParameterRequestModel,
+	param *mysqlsdk.DataUpdateParameterRequest,
 	parameters map[string]mysqlParameterModel,
 	respDiags *diag.Diagnostics,
 ) bool {

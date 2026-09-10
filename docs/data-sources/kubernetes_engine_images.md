@@ -65,7 +65,7 @@ data "kakaocloud_kubernetes_engine_images" "filtered" {
     },
     {
       name = "k8s_version"
-      value = "1.29" # Replace with your Kubernetes version
+      value = "1.32" # Replace with your Kubernetes version
     }
   ]
 } 

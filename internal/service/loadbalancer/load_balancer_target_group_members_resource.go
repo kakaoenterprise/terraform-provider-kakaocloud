@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var (
@@ -76,6 +76,15 @@ func (r *loadBalancerTargetGroupMembersResource) Create(ctx context.Context, req
 		return
 	}
 
+	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	r.batchRequest(ctx, &plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -103,7 +112,7 @@ func (r *loadBalancerTargetGroupMembersResource) Read(ctx context.Context, req r
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*loadbalancer.TargetGroupMemberListModel, *http.Response, error) {
+		func() (*loadbalancer.ListTargetsInTargetGroupResponse, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
 				ListTargetsInTargetGroup(ctx, state.TargetGroupId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
@@ -125,7 +134,7 @@ func (r *loadBalancerTargetGroupMembersResource) Read(ctx context.Context, req r
 			for _, respMember := range respModel.Members {
 				if member.Address == utils.ConvertNullableString(respMember.IpAddress) &&
 					member.ProtocolPort == utils.ConvertNullableInt32(respMember.ProtocolPort) &&
-					member.SubnetId.ValueString() == respMember.Subnet.Id &&
+					respMember.Subnet.Id.Get() != nil && member.SubnetId.ValueString() == *respMember.Subnet.Id.Get() &&
 					(member.Name.IsNull() || member.Name == utils.ConvertNullableString(respMember.Name)) &&
 					(member.Weight.IsNull() || member.Weight == utils.ConvertNullableInt32(respMember.Weight)) &&
 					(member.MonitorPort.IsNull() || member.MonitorPort == utils.ConvertNullableInt32(respMember.MonitorPort)) {
@@ -136,8 +145,14 @@ func (r *loadBalancerTargetGroupMembersResource) Read(ctx context.Context, req r
 		}
 	} else {
 		sort.Slice(respModel.Members, func(i, j int) bool {
-			ipI := net.ParseIP(*respModel.Members[i].IpAddress.Get())
-			ipJ := net.ParseIP(*respModel.Members[j].IpAddress.Get())
+			ipAddressI := respModel.Members[i].IpAddress.Get()
+			ipAddressJ := respModel.Members[j].IpAddress.Get()
+			if ipAddressI == nil || ipAddressJ == nil {
+				return false
+			}
+
+			ipI := net.ParseIP(*ipAddressI)
+			ipJ := net.ParseIP(*ipAddressJ)
 
 			if ipI == nil || ipJ == nil {
 				return false
@@ -149,7 +164,7 @@ func (r *loadBalancerTargetGroupMembersResource) Read(ctx context.Context, req r
 			member := loadBalancerTargetGroupMemberBatchModel{
 				Address:      utils.ConvertNullableString(respMember.IpAddress),
 				ProtocolPort: utils.ConvertNullableInt32(respMember.ProtocolPort),
-				SubnetId:     types.StringValue(respMember.Subnet.Id),
+				SubnetId:     utils.ConvertNullableString(respMember.Subnet.Id),
 			}
 
 			name := respMember.Name.Get()
@@ -180,6 +195,15 @@ func (r *loadBalancerTargetGroupMembersResource) Update(ctx context.Context, req
 		return
 	}
 
+	timeout, diags := plan.Timeouts.Update(ctx, common.DefaultUpdateTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	r.batchRequest(ctx, &plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -202,6 +226,15 @@ func (r *loadBalancerTargetGroupMembersResource) Delete(ctx context.Context, req
 		[]loadBalancerTargetGroupMemberBatchModel{},
 		state.Timeouts,
 	}
+
+	timeout, diags := plan.Timeouts.Delete(ctx, common.DefaultDeleteTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
 	r.batchRequest(ctx, &plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -241,7 +274,7 @@ func (r *loadBalancerTargetGroupMembersResource) ImportState(ctx context.Context
 
 func (r *loadBalancerTargetGroupMembersResource) getLoadBalancerIdByTargetGroupId(ctx context.Context, targetGroupId string, respDiags *diag.Diagnostics) (*string, bool) {
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*loadbalancer.TargetGroupResponseModel, *http.Response, error) {
+		func() (*loadbalancer.GetTargetGroupResponse, *http.Response, error) {
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.GetTargetGroup(ctx, targetGroupId).
 				XAuthToken(r.kc.XAuthToken).Execute()
 		},
@@ -260,20 +293,13 @@ func (r *loadBalancerTargetGroupMembersResource) batchRequest(ctx context.Contex
 	if !ok || resp.HasError() {
 		return
 	}
-	mutex := common.LockForID(*loadBalancerId)
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	timeout, diags := plan.Timeouts.Create(ctx, common.DefaultCreateTimeout)
-	resp.Append(diags...)
-	if resp.HasError() {
+	unlock, ok := common.AcquireLockForID(ctx, *loadBalancerId, resp)
+	if !ok {
 		return
 	}
+	defer unlock()
 
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	ok = CheckLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, resp)
+	_, ok = pollLoadBalancerStatus(ctx, *loadBalancerId, true, r, r.kc, resp)
 	if !ok || resp.HasError() {
 		return
 	}
@@ -285,7 +311,7 @@ func (r *loadBalancerTargetGroupMembersResource) batchRequest(ctx context.Contex
 			return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
 				UpdateTargets(ctx, plan.TargetGroupId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				BodyUpdateTargets(*batchReqBody).
+				UpdateTargetsRequest(*batchReqBody).
 				Execute()
 		},
 	)
@@ -301,7 +327,7 @@ func (r *loadBalancerTargetGroupMembersResource) batchRequest(ctx context.Contex
 		ctx,
 		plan.TargetGroupId.ValueString(),
 		plan.Members,
-		[]string{common.LoadBalancerProvisioningStatusActive, common.LoadBalancerProvisioningStatusError},
+		loadBalancerAvailableAndErrorStatuses,
 		resp,
 	)
 	if !ok || resp.HasError() {
@@ -326,26 +352,33 @@ func (r *loadBalancerTargetGroupMembersResource) batchRequest(ctx context.Contex
 	}
 }
 
+type targetGroupMemberKey struct {
+	address      string
+	protocolPort int32
+	subnetID     string
+}
+
 func (r *loadBalancerTargetGroupMembersResource) pollTargetGroupMembersUntilStatus(
 	ctx context.Context,
-	targetGroupId string,
+	targetGroupID string,
 	members []loadBalancerTargetGroupMemberBatchModel,
 	targetStatuses []string,
 	resp *diag.Diagnostics,
-) ([]loadbalancer.BnsLoadBalancerV1ApiListTargetsInTargetGroupModelTargetGroupMemberModel, bool) {
+) ([]loadbalancer.PoolMember, bool) {
+	const (
+		maxAttempts  = 900
+		pollInterval = 2 * time.Second
+	)
 
-	var lastErr error
-	attemptCount := 0
-	maxAttempts := 900
+	expected := make(map[targetGroupMemberKey]struct{}, len(members))
 
-	expected := make(map[string]struct{})
-	for _, m := range members {
-		key := fmt.Sprintf(
-			"%s:%d:%s",
-			m.Address,
-			m.ProtocolPort,
-			m.SubnetId.ValueString(),
-		)
+	for _, member := range members {
+		key := targetGroupMemberKey{
+			address:      member.Address.ValueString(),
+			protocolPort: member.ProtocolPort.ValueInt32(),
+			subnetID:     member.SubnetId.ValueString(),
+		}
+
 		expected[key] = struct{}{}
 	}
 
@@ -353,93 +386,194 @@ func (r *loadBalancerTargetGroupMembersResource) pollTargetGroupMembersUntilStat
 		return nil, true
 	}
 
-	for {
+	var lastErr error
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		select {
 		case <-ctx.Done():
+			detail := fmt.Sprintf(
+				"Context canceled while polling target group %q members: %v",
+				targetGroupID,
+				ctx.Err(),
+			)
+
 			if lastErr != nil {
-				resp.AddError(
-					"Polling Timeout",
-					fmt.Sprintf("Failed while polling target group members: %v", lastErr),
-				)
-			} else {
-				resp.AddError(
-					"Polling Timeout",
-					"Context cancelled while polling for target group members status",
+				detail = fmt.Sprintf(
+					"Failed while polling target group %q members: %v",
+					targetGroupID,
+					lastErr,
 				)
 			}
+
+			resp.AddError("Polling Timeout", detail)
 			return nil, false
+
 		default:
 		}
 
-		attemptCount++
-
-		respModel, _, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
-			func() (*loadbalancer.TargetGroupMemberListModel, *http.Response, error) {
+		respModel, _, err := common.ExecuteWithRetryAndAuth(
+			ctx,
+			r.kc,
+			resp,
+			func() (
+				*loadbalancer.ListTargetsInTargetGroupResponse,
+				*http.Response,
+				error,
+			) {
 				return r.kc.ApiClient.LoadBalancerTargetGroupAPI.
-					ListTargetsInTargetGroup(ctx, targetGroupId).
+					ListTargetsInTargetGroup(ctx, targetGroupID).
 					XAuthToken(r.kc.XAuthToken).
 					Limit(1000).
 					Execute()
 			},
 		)
 		if err != nil {
-			lastErr = fmt.Errorf("failed to list targets in target group: %w", err)
-			if attemptCount >= maxAttempts {
+			lastErr = fmt.Errorf(
+				"failed to list targets in target group %q: %w",
+				targetGroupID,
+				err,
+			)
+
+			if attempt == maxAttempts {
 				resp.AddError(
 					"Polling Failed",
-					fmt.Sprintf("Failed to list targets after %d attempts: %v", maxAttempts, lastErr),
+					fmt.Sprintf(
+						"Failed to list target group members after %d attempts: %v",
+						maxAttempts,
+						lastErr,
+					),
 				)
 				return nil, false
 			}
-			time.Sleep(2 * time.Second)
+
+			if !waitTargetGroupMemberPollInterval(ctx, pollInterval) {
+				resp.AddError(
+					"Polling Timeout",
+					fmt.Sprintf(
+						"Context canceled while polling target group %q members: %v",
+						targetGroupID,
+						ctx.Err(),
+					),
+				)
+				return nil, false
+			}
+
 			continue
 		}
 
-		matched := 0
+		lastErr = nil
 
-		var matchedResp []loadbalancer.BnsLoadBalancerV1ApiListTargetsInTargetGroupModelTargetGroupMemberModel
+		matched := make(
+			map[targetGroupMemberKey]loadbalancer.PoolMember,
+			len(expected),
+		)
 
 		for _, apiMember := range respModel.Members {
-			key := fmt.Sprintf(
-				"%s:%d:%s",
-				utils.ConvertNullableString(apiMember.IpAddress),
-				utils.ConvertNullableInt32(apiMember.ProtocolPort),
-				apiMember.Subnet.Id,
-			)
+			subnetID := ""
+			if apiMember.Subnet.Id.Get() != nil {
+				subnetID = *apiMember.Subnet.Id.Get()
+			}
 
-			if _, ok := expected[key]; !ok {
+			key := targetGroupMemberKey{
+				address: utils.ConvertNullableString(
+					apiMember.IpAddress,
+				).ValueString(),
+				protocolPort: utils.ConvertNullableInt32(
+					apiMember.ProtocolPort,
+				).ValueInt32(),
+				subnetID: subnetID,
+			}
+
+			if _, exists := expected[key]; !exists {
 				continue
 			}
 
-			if apiMember.ProvisioningStatus.IsSet() && apiMember.ProvisioningStatus.Get() != nil {
-				status := string(*apiMember.ProvisioningStatus.Get())
-				for _, targetStatus := range targetStatuses {
-					if status == targetStatus {
-						matched++
-						matchedResp = append(matchedResp, apiMember)
-						break
-					}
-				}
+			if !apiMember.ProvisioningStatus.IsSet() ||
+				apiMember.ProvisioningStatus.Get() == nil {
+				continue
+			}
+
+			status := string(*apiMember.ProvisioningStatus.Get())
+
+			if containsTargetGroupMemberStatus(
+				targetStatuses,
+				status,
+			) {
+
+				matched[key] = apiMember
 			}
 		}
 
-		if matched == len(expected) {
-			return matchedResp, true
+		if len(matched) == len(expected) {
+			result := make(
+				[]loadbalancer.PoolMember,
+				0,
+				len(matched),
+			)
+
+			for _, member := range matched {
+				result = append(result, member)
+			}
+
+			return result, true
 		}
 
-		if attemptCount >= maxAttempts {
+		if attempt == maxAttempts {
 			resp.AddError(
 				"Polling Timeout",
 				fmt.Sprintf(
-					"Not all target group members reached desired status within timeout (matched %d / %d)",
-					matched,
+					"Not all target group %q members reached the desired status "+
+						"within timeout (matched %d / %d)",
+					targetGroupID,
+					len(matched),
 					len(expected),
 				),
 			)
 			return nil, false
 		}
 
-		time.Sleep(2 * time.Second)
+		if !waitTargetGroupMemberPollInterval(ctx, pollInterval) {
+			resp.AddError(
+				"Polling Timeout",
+				fmt.Sprintf(
+					"Context canceled while polling target group %q members: %v",
+					targetGroupID,
+					ctx.Err(),
+				),
+			)
+			return nil, false
+		}
+	}
+
+	return nil, false
+}
+
+func containsTargetGroupMemberStatus(
+	targetStatuses []string,
+	status string,
+) bool {
+	for _, targetStatus := range targetStatuses {
+		if status == targetStatus {
+			return true
+		}
+	}
+
+	return false
+}
+
+func waitTargetGroupMemberPollInterval(
+	ctx context.Context,
+	interval time.Duration,
+) bool {
+	timer := time.NewTimer(interval)
+	defer timer.Stop()
+
+	select {
+	case <-timer.C:
+		return true
+
+	case <-ctx.Done():
+		return false
 	}
 }
 

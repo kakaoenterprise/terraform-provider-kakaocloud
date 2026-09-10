@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/network"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/network"
 )
 
 var (
@@ -83,8 +83,8 @@ func (d *securityGroupDataSource) Read(ctx context.Context, req datasource.ReadR
 	defer cancel()
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*network.BnsNetworkV1ApiGetSecurityGroupModelResponseSecurityGroupModel, *http.Response, error) {
-			return d.kc.ApiClient.SecurityGroupAPI.
+		func() (*network.GetSecurityGroupResponse, *http.Response, error) {
+			return d.kc.ApiClient.NetworkSecurityGroupAPI.
 				GetSecurityGroup(ctx, config.Id.ValueString()).
 				XAuthToken(d.kc.XAuthToken).
 				Execute()

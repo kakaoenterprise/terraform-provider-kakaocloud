@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 func (r *instanceGroupResource) applySecurityGroups(
@@ -26,15 +26,15 @@ func (r *instanceGroupResource) applySecurityGroups(
 		return false
 	}
 
-	requestGroup := mysqlsdk.NewMysqlV1ApiUpdateMysqlSecurityGroupsModelInstanceGroupRequestModel(securityGroupIds)
-	request := mysqlsdk.NewBodyUpdateMysqlSecurityGroups(*requestGroup)
+	requestGroup := mysqlsdk.NewUpdateMysqlSecurityGroups(securityGroupIds)
+	request := mysqlsdk.NewUpdateMysqlSecurityGroupsRequest(*requestGroup)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupsAPI.
+			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupAPI.
 				UpdateMysqlSecurityGroups(ctx, plan.InstanceGroupId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				BodyUpdateMysqlSecurityGroups(*request).
+				UpdateMysqlSecurityGroupsRequest(*request).
 				Execute()
 			return struct{}{}, httpResp, err
 		},
@@ -53,8 +53,8 @@ func (r *instanceGroupResource) readSecurityGroupsState(
 	respDiags *diag.Diagnostics,
 ) (instanceGroupSecurityGroupsModel, bool, bool) {
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.GetMysqlInstanceGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLInstanceGroupAPI.
 				GetMysqlInstanceGroup(ctx, instanceGroupId).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()

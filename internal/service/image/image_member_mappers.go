@@ -9,16 +9,16 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/image"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/image"
 )
 
 func mapImageMemberModel(
 	ctx context.Context,
 	base *imageMemberBaseModel,
-	membersResult []image.BcsImageV1ApiListImageSharedProjectsModelImageMemberModel,
+	membersResult []image.ListImageSharedProjectsMember,
 	respDiags *diag.Diagnostics,
 ) bool {
-	members, membersDiags := ConvertListFromModel(ctx, membersResult, imageMemberMembersAttrType, func(src image.BcsImageV1ApiListImageSharedProjectsModelImageMemberModel) any {
+	members, membersDiags := ConvertListFromModel(ctx, membersResult, imageMemberMembersAttrType, func(src image.ListImageSharedProjectsMember) any {
 		return imageMemberMemberModel{
 			Id:        types.StringValue(src.Id),
 			CreatedAt: types.StringValue(src.CreatedAt.Format(time.RFC3339)),

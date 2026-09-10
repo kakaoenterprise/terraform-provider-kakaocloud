@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 func mapHealthMonitorToCreateRequest(model *loadBalancerHealthMonitorResourceModel) *loadbalancer.CreateHealthMonitor {
@@ -45,7 +45,7 @@ func mapHealthMonitorToCreateRequest(model *loadBalancerHealthMonitorResourceMod
 	return healthMonitor
 }
 
-func mapHealthMonitorFromGetResponse(model *loadBalancerHealthMonitorBaseModel, apiModel *loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupHealthMonitorModelHealthMonitorModel) {
+func mapHealthMonitorFromGetResponse(model *loadBalancerHealthMonitorBaseModel, apiModel *loadbalancer.HealthMonitor) {
 	model.Name = types.StringValue(apiModel.Name)
 	model.Type = types.StringValue(string(apiModel.Type))
 	model.Delay = types.Int32Value(apiModel.Delay)

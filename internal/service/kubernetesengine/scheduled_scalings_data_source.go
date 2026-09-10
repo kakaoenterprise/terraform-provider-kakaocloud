@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 var (
@@ -105,8 +105,8 @@ func (d *scheduledScalingsDataSource) Read(ctx context.Context, req datasource.R
 	nodePoolName := config.NodePoolName.ValueString()
 
 	modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*kubernetesengine.GetK8sClusterNodePoolScalingScheduleResponseModel, *http.Response, error) {
-			return d.kc.ApiClient.ScalingAPI.ListNodePoolScheduledScalings(ctx, clusterName, nodePoolName).
+		func() (*kubernetesengine.ListNodePoolScheduledScalingsResponse, *http.Response, error) {
+			return d.kc.ApiClient.KubernetesEngineNodePoolAPI.ListNodePoolScheduledScalings(ctx, clusterName, nodePoolName).
 				XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -116,6 +116,7 @@ func (d *scheduledScalingsDataSource) Read(ctx context.Context, req datasource.R
 		return
 	}
 
+	config.ScheduledScaling = make([]scheduledScalingBaseModel, 0, len(modelResp.ScheduledScaling))
 	for _, v := range modelResp.ScheduledScaling {
 		var tmpScheduledScaling scheduledScalingBaseModel
 		ok := mapScheduledScalingBaseModel(ctx, clusterName, nodePoolName, &tmpScheduledScaling, &v, &resp.Diagnostics)

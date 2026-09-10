@@ -24,7 +24,7 @@ resource "kakaocloud_kubernetes_engine_cluster" "example" {
   is_allocate_fip = true
 
   version = {
-    minor_version = "1.31"
+    minor_version = "1.32" # Choose a version from 1.32 to 1.35.
   }
 
   vpc_info = {

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 var (
@@ -86,7 +86,7 @@ func (d *networkInterfacesDataSource) Read(ctx context.Context, req datasource.R
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	networkInterfaceApi := d.kc.ApiClient.NetworkInterfaceAPI.ListNetworkInterfaces(ctx)
+	networkInterfaceApi := d.kc.ApiClient.VPCNetworkInterfaceAPI.ListNetworkInterfaces(ctx)
 
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
@@ -163,7 +163,7 @@ func (d *networkInterfacesDataSource) Read(ctx context.Context, req datasource.R
 		return
 	}
 	networkInterfaceResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*vpc.NetworkInterfaceListModel, *http.Response, error) {
+		func() (*vpc.ListNetworkInterfacesResponse, *http.Response, error) {
 			return networkInterfaceApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -172,7 +172,7 @@ func (d *networkInterfacesDataSource) Read(ctx context.Context, req datasource.R
 		return
 	}
 
-	var networkInterfaceResult []vpc.BnsVpcV1ApiGetNetworkInterfaceModelNetworkInterfaceModel
+	var networkInterfaceResult []vpc.NetworkInterface
 	err = copier.Copy(&networkInterfaceResult, &networkInterfaceResp.NetworkInterfaces)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
@@ -180,6 +180,7 @@ func (d *networkInterfacesDataSource) Read(ctx context.Context, req datasource.R
 		return
 	}
 
+	config.NetworkInterfaces = make([]networkInterfaceBaseModel, 0, len(networkInterfaceResult))
 	for _, v := range networkInterfaceResult {
 		var tmpNi networkInterfaceBaseModel
 		ok := mapNetworkInterfaceBaseModel(ctx, &tmpNi, &v, &resp.Diagnostics)

@@ -20,7 +20,6 @@ This resource provides fine-grained control over connection handling, security, 
 
 # Basic Usage (kakaocloud_load_balancer_listener)
 resource "kakaocloud_load_balancer_listener" "example" {
-  name             = "example-listener"
   load_balancer_id = kakaocloud_load_balancer.example.id
   protocol         = "HTTP"
   protocol_port    = 80
@@ -35,13 +34,13 @@ resource "kakaocloud_load_balancer_listener" "example" {
 - `protocol` (Required, String) Listening protocol
 - `protocol_port` (Required, Number) Listening port number
 
-- `default_tls_container_ref` (Optional, String) Reference ID of the default TLS certificate used in the HTTPS listener
+- `default_tls_container_ref` (Optional, String) Reference ID of the default TLS certificate used in the listener. Required together with `tls_min_version` when `protocol` is `TERMINATED_HTTPS`. Omitting either argument for `TERMINATED_HTTPS`, or setting this argument for any other protocol, causes `terraform plan` to fail.
 - `insert_headers` (Optional, Attributes) Settings for HTTP headers to insert > ⚠️ **Note:** This block is only supported when `protocol` is `HTTP` or `TERMINATED_HTTPS`. > Using it with other protocols will be ignored or may cause validation errors. > Default values are: `x_forwarded_for = true`, `x_forwarded_port = false`, `x_forwarded_proto = false`. (see [below for nested schema](#nestedatt--insert_headers))
-- `sni_container_refs` (Optional, List of String) List of SNI certificate references
-- `target_group_id` (Optional, String) ID of the target group to retrieve
-- `timeout_client_data` (Optional, Number) Client data receive timeout (seconds)
+- `sni_container_refs` (Optional, List of String) List of SNI certificate references. Setting this argument when `protocol` is not `TERMINATED_HTTPS` causes `terraform plan` to fail.
+- `target_group_id` (Optional, String) ID of the target group to associate with the listener. The current association returned by the API is exported as `default_target_group_id`.
+- `timeout_client_data` (Optional, Number) Client data receive timeout (ms)
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
-- `tls_min_version` (Optional, String) Minimum TLS version allowed by the listener (supports TLS protocol equal to or above the specified version)   ※ Applies only when using the `TERMINATED_HTTPS` protocol. TLS v1.3 cannot be specified in currently released provider versions.
+- `tls_min_version` (Optional, String) Minimum TLS version the listener accepts; connections using the specified version or above are allowed. Required together with `default_tls_container_ref` when `protocol` is `TERMINATED_HTTPS`. Omitting either argument for `TERMINATED_HTTPS`, or setting this argument for any other protocol, causes `terraform plan` to fail. TLS v1.3 can be specified in provider version 0.5.0 and later.
 
 ## Attribute Reference
 
@@ -66,9 +65,9 @@ resource "kakaocloud_load_balancer_listener" "example" {
 <a id="nestedatt--insert_headers"></a>
 ### Nested Schema for `insert_headers`
 
-- `x_forwarded_for` (Optional, String) Configures the X-Forwarded-For header.
-- `x_forwarded_port` (Optional, String) Configures the X-Forwarded-Port header.
-- `x_forwarded_proto` (Optional, String) Configures the X-Forwarded-Proto header.
+- `x_forwarded_for` (Optional, String) Configures the X-Forwarded-For header. (Possible values: `"true"`, `"false"`, `"remove"`)<br/> - `"remove"` strips the header from the incoming request.
+- `x_forwarded_port` (Optional, String) Configures the X-Forwarded-Port header. (Possible values: `"true"`, `"false"`)
+- `x_forwarded_proto` (Optional, String) Configures the X-Forwarded-Proto header. (Possible values: `"true"`, `"false"`)
 
 
 <a id="nestedatt--timeouts"></a>

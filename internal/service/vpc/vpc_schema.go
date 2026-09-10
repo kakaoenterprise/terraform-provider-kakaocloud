@@ -9,7 +9,6 @@ import (
 	dschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	rschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -178,21 +177,6 @@ func getDefaultRouteTableResourceSchema() map[string]rschema.Attribute {
 	}
 }
 
-func getSubnetResourceSchema() map[string]rschema.Attribute {
-	return map[string]rschema.Attribute{
-		"cidr_block": rschema.StringAttribute{
-			Required:   true,
-			CustomType: cidrtypes.IPPrefixType{},
-			Validators: []validator.String{
-				common.NewCIDRPrefixLengthValidator(20, 26),
-			},
-		},
-		"availability_zone": rschema.StringAttribute{
-			Required: true,
-		},
-	}
-}
-
 func getVpcResourceSchema() map[string]rschema.Attribute {
 	return map[string]rschema.Attribute{
 		"id": rschema.StringAttribute{
@@ -206,7 +190,12 @@ func getVpcResourceSchema() map[string]rschema.Attribute {
 			Validators: common.NameValidator(200),
 		},
 		"description": rschema.StringAttribute{
-			Computed: true,
+			Optional:   true,
+			Computed:   true,
+			Validators: common.DescriptionValidator(),
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"region": rschema.StringAttribute{
 			Computed: true,
@@ -262,13 +251,6 @@ func getVpcResourceSchema() map[string]rschema.Attribute {
 			Computed:   true,
 			Attributes: defaultRouteTableResourceSchema,
 		},
-		"subnet": rschema.SingleNestedAttribute{
-			Optional: true,
-			PlanModifiers: []planmodifier.Object{
-				objectplanmodifier.RequiresReplace(),
-			},
-			Attributes: subnetResourceSchema,
-		},
 	}
 }
 
@@ -278,5 +260,4 @@ var vpcDataSourceSchemaAttributes = getVpcDataSourceSchema()
 
 var igwResourceSchema = getIgwResourceSchema()
 var defaultRouteTableResourceSchema = getDefaultRouteTableResourceSchema()
-var subnetResourceSchema = getSubnetResourceSchema()
 var vpcResourceSchemaAttributes = getVpcResourceSchema()

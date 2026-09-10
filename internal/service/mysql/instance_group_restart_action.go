@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 var _ action.ActionWithConfigure = &instanceGroupRestartAction{}
@@ -92,15 +92,15 @@ func (a *instanceGroupRestartAction) Invoke(ctx context.Context, req action.Invo
 }
 
 func (a *instanceGroupRestartAction) restartInstances(ctx context.Context, instanceGroupID string, instanceIDs []string, respDiags *diag.Diagnostics) bool {
-	requestGroup := mysqlsdk.NewMysqlV1ApiRestartMysqlInstancesModelInstanceGroupRequestModel(instanceIDs)
-	request := mysqlsdk.NewBodyRestartMysqlInstances(*requestGroup)
+	requestGroup := mysqlsdk.NewRestartMysqlInstances(instanceIDs)
+	request := mysqlsdk.NewRestartMysqlInstancesRequest(*requestGroup)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, a.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := a.kc.ApiClient.MySQLInstanceGroupsAPI.
+			httpResp, err := a.kc.ApiClient.MySQLInstanceAPI.
 				RestartMysqlInstances(ctx, instanceGroupID).
 				XAuthToken(a.kc.XAuthToken).
-				BodyRestartMysqlInstances(*request).
+				RestartMysqlInstancesRequest(*request).
 				Execute()
 			return struct{}{}, httpResp, err
 		},
@@ -115,8 +115,8 @@ func (a *instanceGroupRestartAction) restartInstances(ctx context.Context, insta
 
 func (a *instanceGroupRestartAction) readRestartState(ctx context.Context, instanceGroupID string, instanceIDs []string, timeouts resourceTimeouts.Value, respDiags *diag.Diagnostics) (instanceGroupRestartModel, bool, bool) {
 	groupResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, a.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupResponseModel, *http.Response, error) {
-			return a.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.GetMysqlInstanceGroupResponse, *http.Response, error) {
+			return a.kc.ApiClient.MySQLInstanceGroupAPI.
 				GetMysqlInstanceGroup(ctx, instanceGroupID).
 				XAuthToken(a.kc.XAuthToken).
 				Execute()

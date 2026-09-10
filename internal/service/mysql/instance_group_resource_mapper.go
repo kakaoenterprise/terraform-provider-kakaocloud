@@ -11,12 +11,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 func toInstanceGroupResourceModel(
 	ctx context.Context,
-	src mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelInstanceGroupResponseModel,
+	src mysqlsdk.GetMysqlInstanceGroupInstanceGroup,
 	desiredNetworkInfo types.Object,
 	source types.Object,
 	timeouts resourceTimeouts.Value,
@@ -232,7 +232,7 @@ func toInstanceGroupResourceDesiredSubnetInfoSet(
 
 func instanceGroupResourceNetworkInfoValue(
 	ctx context.Context,
-	src mysqlsdk.NullableNetworkInfoResponseModel,
+	src mysqlsdk.NullableNetworkInfo,
 	respDiags *diag.Diagnostics,
 ) (types.Object, bool) {
 	if !src.IsSet() || src.Get() == nil {

@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/kakaoenterprise/kc-sdk-go/services/kubernetesengine"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/kubernetesengine"
 )
 
 var (
@@ -102,8 +102,8 @@ func (d *clusterNodeDataSource) Read(ctx context.Context, req datasource.ReadReq
 		nodePoolName := config.NodePoolName.ValueString()
 
 		modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-			func() (*kubernetesengine.GetK8sClusterNodePoolNodesResponseModel, *http.Response, error) {
-				return d.kc.ApiClient.NodePoolsAPI.
+			func() (*kubernetesengine.ListNodePoolNodesResponse, *http.Response, error) {
+				return d.kc.ApiClient.KubernetesEngineNodePoolAPI.
 					ListNodePoolNodes(ctx, clusterName, nodePoolName).
 					XAuthToken(d.kc.XAuthToken).
 					Execute()
@@ -126,8 +126,8 @@ func (d *clusterNodeDataSource) Read(ctx context.Context, req datasource.ReadReq
 		config.NodePoolName = types.StringValue(nodePoolName)
 	} else {
 		modelResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-			func() (*kubernetesengine.GetK8sClusterNodesResponseModel, *http.Response, error) {
-				return d.kc.ApiClient.ClustersAPI.
+			func() (*kubernetesengine.ListClusterNodesResponse, *http.Response, error) {
+				return d.kc.ApiClient.KubernetesEngineClusterAPI.
 					ListClusterNodes(ctx, clusterName).
 					XAuthToken(d.kc.XAuthToken).
 					Execute()

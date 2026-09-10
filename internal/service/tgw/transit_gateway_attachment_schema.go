@@ -21,6 +21,14 @@ var transitGatewayAttachmentResourceSchemaAttributes = map[string]rschema.Attrib
 			stringplanmodifier.UseStateForUnknown(),
 		},
 	},
+	"name": rschema.StringAttribute{
+		Optional:   true,
+		Computed:   true,
+		Validators: common.NameValidator(255),
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
+	},
 	"tgw_id": rschema.StringAttribute{
 		Required:   true,
 		Validators: common.UuidValidator(),
@@ -168,6 +176,9 @@ var transitGatewayAttachmentResourceSchemaAttributes = map[string]rschema.Attrib
 }
 
 var transitGatewayAttachmentDataSourceSchemaAttributes = map[string]dschema.Attribute{
+	"name": dschema.StringAttribute{
+		Computed: true,
+	},
 	"provisioning_status": dschema.StringAttribute{
 		Computed: true,
 	},

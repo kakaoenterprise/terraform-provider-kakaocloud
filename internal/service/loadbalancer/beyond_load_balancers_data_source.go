@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 
 	"terraform-provider-kakaocloud/internal/common"
 
@@ -89,7 +89,7 @@ func (d *beyondLoadBalancersDataSource) Read(ctx context.Context, req datasource
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	blbApi := d.kc.ApiClient.BeyondLoadBalancerAPI.ListHaGroups(ctx)
+	blbApi := d.kc.ApiClient.LoadBalancerHighAvailabilityGroupAPI.ListHaGroups(ctx)
 
 	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
@@ -179,7 +179,7 @@ func (d *beyondLoadBalancersDataSource) Read(ctx context.Context, req datasource
 		return
 	}
 	blbResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*loadbalancer.BeyondLoadBalancerListModel, *http.Response, error) {
+		func() (*loadbalancer.ListHaGroupsResponse, *http.Response, error) {
 			return blbApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -188,7 +188,7 @@ func (d *beyondLoadBalancersDataSource) Read(ctx context.Context, req datasource
 		return
 	}
 
-	var blbsResult []loadbalancer.BnsLoadBalancerV1ApiGetHaGroupModelBeyondLoadBalancerModel
+	var blbsResult []loadbalancer.BeyondLoadBalancer
 	err = copier.Copy(&blbsResult, &blbResp.BeyondLoadBalancers)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
@@ -196,9 +196,10 @@ func (d *beyondLoadBalancersDataSource) Read(ctx context.Context, req datasource
 		return
 	}
 
+	config.BeyondLoadBalancers = make([]beyondLoadBalancerBaseModel, 0, len(blbsResult))
 	for _, v := range blbsResult {
 		var tmpBlb beyondLoadBalancerBaseModel
-		ok := mapBeyondLoadBalancerBaseModel(ctx, &tmpBlb, &v, &resp.Diagnostics)
+		ok := mapBeyondLoadBalancerModel(ctx, &tmpBlb, &v, &resp.Diagnostics)
 		if !ok || resp.Diagnostics.HasError() {
 			return
 		}

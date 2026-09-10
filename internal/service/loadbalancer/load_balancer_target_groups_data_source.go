@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/jinzhu/copier"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var (
@@ -83,14 +83,14 @@ func (d *loadBalancerTargetGroupsDataSource) Schema(ctx context.Context, _ datas
 }
 
 func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data loadBalancerTargetGroupListDataSourceModel
-	diags := req.Config.Get(ctx, &data)
+	var config loadBalancerTargetGroupListDataSourceModel
+	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	timeout, diags := data.Timeouts.Read(ctx, common.DefaultReadTimeout)
+	timeout, diags := config.Timeouts.Read(ctx, common.DefaultReadTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -101,7 +101,7 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 
 	targetGroupApi := d.kc.ApiClient.LoadBalancerTargetGroupAPI.ListTargetGroups(ctx)
 
-	for _, f := range data.Filter {
+	for _, f := range config.Filter {
 		if f.Name.IsNull() || f.Name.IsUnknown() {
 			continue
 		}
@@ -116,7 +116,7 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 			case "name":
 				targetGroupApi = targetGroupApi.Name(v)
 			case "protocol":
-				if protocol, err := ToTargetGroupProtocol(v); err == nil {
+				if protocol, err := ToLoadBalancerPoolProtocol(v); err == nil {
 					targetGroupApi = targetGroupApi.Protocol(*protocol)
 				} else {
 					resp.Diagnostics.AddError(
@@ -131,7 +131,7 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 					resp.Diagnostics.AddError("Invalid availability_zone", err.Error())
 				}
 			case "load_balancer_algorithm":
-				if algorithm, err := ToTargetGroupAlgorithm(v); err == nil {
+				if algorithm, err := ToLoadBalancerPoolAlgorithm(v); err == nil {
 					targetGroupApi = targetGroupApi.LoadBalancerAlgorithm(*algorithm)
 				} else {
 					resp.Diagnostics.AddError("Invalid load_balancer_algorithm", err.Error())
@@ -157,9 +157,23 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 			case "health_monitor_id":
 				targetGroupApi = targetGroupApi.HealthMonitorId(v)
 			case "created_at":
-				targetGroupApi = targetGroupApi.CreatedAt(v)
+				if err := common.ValidateRFC3339(v); err == nil {
+					targetGroupApi = targetGroupApi.CreatedAt(v)
+				} else {
+					resp.Diagnostics.AddError(
+						"Invalid created_at value",
+						err.Error(),
+					)
+				}
 			case "updated_at":
-				targetGroupApi = targetGroupApi.UpdatedAt(v)
+				if err := common.ValidateRFC3339(v); err == nil {
+					targetGroupApi = targetGroupApi.UpdatedAt(v)
+				} else {
+					resp.Diagnostics.AddError(
+						"Invalid updated_at value",
+						err.Error(),
+					)
+				}
 			default:
 				resp.Diagnostics.AddError(
 					"Invalid filter name",
@@ -174,7 +188,7 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 	}
 
 	respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*loadbalancer.TargetGroupListModel, *http.Response, error) {
+		func() (*loadbalancer.ListTargetGroupsResponse, *http.Response, error) {
 			return targetGroupApi.Limit(1000).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -184,7 +198,7 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 		return
 	}
 
-	var targetGroupResult []loadbalancer.BnsLoadBalancerV1ApiGetTargetGroupModelTargetGroupModel
+	var targetGroupResult []loadbalancer.LoadBalancerPool
 	err = copier.Copy(&targetGroupResult, &respModel.TargetGroups)
 	if err != nil {
 		common.AddGeneralError(ctx, d, &resp.Diagnostics,
@@ -192,6 +206,7 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 		return
 	}
 
+	config.TargetGroups = make([]loadBalancerTargetGroupBaseModel, 0, len(targetGroupResult))
 	for _, v := range targetGroupResult {
 		var tmpTargetGroup loadBalancerTargetGroupBaseModel
 		ok := mapLoadBalancerTargetGroupFromGetResponse(ctx, &tmpTargetGroup, &v, &resp.Diagnostics)
@@ -199,9 +214,9 @@ func (d *loadBalancerTargetGroupsDataSource) Read(ctx context.Context, req datas
 			return
 		}
 
-		data.TargetGroups = append(data.TargetGroups, tmpTargetGroup)
+		config.TargetGroups = append(config.TargetGroups, tmpTargetGroup)
 	}
 
-	diags = resp.State.Set(ctx, &data)
+	diags = resp.State.Set(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 }

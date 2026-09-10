@@ -10,7 +10,7 @@ import (
 	"terraform-provider-kakaocloud/internal/common"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 func (r *loadBalancerL7PolicyRuleResource) validateL7PolicyRuleConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {

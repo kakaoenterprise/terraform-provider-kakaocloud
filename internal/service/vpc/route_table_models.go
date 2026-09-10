@@ -15,6 +15,7 @@ import (
 type routeTableBaseModel struct {
 	Id                    types.String `tfsdk:"id"`
 	Name                  types.String `tfsdk:"name"`
+	Description           types.String `tfsdk:"description"`
 	Associations          types.List   `tfsdk:"associations"`
 	Routes                types.List   `tfsdk:"routes"`
 	VpcId                 types.String `tfsdk:"vpc_id"`

@@ -36,6 +36,7 @@ resource "kakaocloud_subnet" "example" {
 - `name` (Required, String) Subnet name
 - `vpc_id` (Required, String) ID of the VPC the subnet belongs to
 
+- `description` (Optional, String) Subnet description.
 - `route_table_id` (Optional, String) ID of the route table connected to the subnet - The name of the associated route table is available as `route_table_name` in the output.
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 

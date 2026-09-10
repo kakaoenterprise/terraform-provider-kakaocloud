@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 func (r *instanceGroupResource) applyParameterGroup(
@@ -19,18 +19,18 @@ func (r *instanceGroupResource) applyParameterGroup(
 	plan instanceGroupParameterGroupModel,
 	respDiags *diag.Diagnostics,
 ) bool {
-	requestGroup := mysqlsdk.NewMysqlV1ApiApplyMysqlParameterGroupModelParameterGroupRequestModel(
+	requestGroup := mysqlsdk.NewApplyMysqlParameterGroup(
 		plan.ParameterGroupId.ValueString(),
 		mysqlsdk.ParameterGroupType(plan.ParameterGroupType.ValueString()),
 	)
-	request := mysqlsdk.NewBodyApplyMysqlParameterGroup(*requestGroup)
+	request := mysqlsdk.NewApplyMysqlParameterGroupRequest(*requestGroup)
 
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupsAPI.
+			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupAPI.
 				ApplyMysqlParameterGroup(ctx, plan.InstanceGroupId.ValueString()).
 				XAuthToken(r.kc.XAuthToken).
-				BodyApplyMysqlParameterGroup(*request).
+				ApplyMysqlParameterGroupRequest(*request).
 				Execute()
 			return struct{}{}, httpResp, err
 		},
@@ -50,7 +50,7 @@ func (r *instanceGroupResource) retryParameterGroupSync(
 ) bool {
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupsParameterGroupsAPI.
+			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupAPI.
 				RetryMysqlParameterGroupSync(ctx, instanceGroupID).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -71,8 +71,8 @@ func (r *instanceGroupResource) readParameterGroupState(
 	respDiags *diag.Diagnostics,
 ) (instanceGroupParameterGroupModel, bool, bool) {
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.GetMysqlInstanceGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLInstanceGroupAPI.
 				GetMysqlInstanceGroup(ctx, instanceGroupId).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()

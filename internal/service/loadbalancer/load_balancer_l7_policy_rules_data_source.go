@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 var (
@@ -85,8 +85,8 @@ func (d *loadBalancerL7PolicyRulesDataSource) Read(ctx context.Context, req data
 	defer cancel()
 
 	l7policyResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*loadbalancer.BnsLoadBalancerV1ApiGetL7PolicyModelResponseL7PolicyModel, *http.Response, error) {
-			return d.kc.ApiClient.LoadBalancerL7PoliciesAPI.GetL7Policy(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
+		func() (*loadbalancer.GetL7PolicyResponse, *http.Response, error) {
+			return d.kc.ApiClient.LoadBalancerL7PolicyAPI.GetL7Policy(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
 

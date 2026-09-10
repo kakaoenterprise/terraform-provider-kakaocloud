@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 var (
@@ -166,11 +166,11 @@ func (r *instanceGroupResource) Create(ctx context.Context, req resource.CreateR
 	}
 
 	createResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
-		func() (*mysqlsdk.CreateMySQLInstanceGroupResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.CreateMysqlInstanceGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLInstanceGroupAPI.
 				CreateMysqlInstanceGroup(ctx).
 				XAuthToken(r.kc.XAuthToken).
-				BodyCreateMysqlInstanceGroup(createReq).
+				CreateMysqlInstanceGroupRequest(createReq).
 				Execute()
 		},
 	)
@@ -329,7 +329,7 @@ func (r *instanceGroupResource) Delete(ctx context.Context, req resource.DeleteR
 func (r *instanceGroupResource) deleteInstanceGroup(ctx context.Context, id string, respDiags *diag.Diagnostics) bool {
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, r.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupsAPI.
+			httpResp, err := r.kc.ApiClient.MySQLInstanceGroupAPI.
 				DeleteMysqlInstanceGroup(ctx, id).
 				KeepAutoBackup(true).
 				XAuthToken(r.kc.XAuthToken).
@@ -367,8 +367,8 @@ func (r *instanceGroupResource) readInstanceGroupState(
 	respDiags *diag.Diagnostics,
 ) (instanceGroupResourceModel, bool, bool) {
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.GetMysqlInstanceGroupResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLInstanceGroupAPI.
 				GetMysqlInstanceGroup(ctx, id).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -1171,39 +1171,39 @@ func (r *instanceGroupResource) buildCreateRequest(
 	plan instanceGroupResourceModel,
 	config instanceGroupResourceModel,
 	respDiags *diag.Diagnostics,
-) (mysqlsdk.BodyCreateMysqlInstanceGroup, bool) {
+) (mysqlsdk.CreateMysqlInstanceGroupRequest, bool) {
 	var networkInfo instanceGroupResourceDesiredNetworkInfoModel
 	respDiags.Append(plan.DesiredNetworkInfo.As(ctx, &networkInfo, basetypes.ObjectAsOptions{})...)
 	if respDiags.HasError() {
-		return mysqlsdk.BodyCreateMysqlInstanceGroup{}, false
+		return mysqlsdk.CreateMysqlInstanceGroupRequest{}, false
 	}
 
 	var specContent instanceGroupSpecContentResourceModel
 	respDiags.Append(plan.SpecContent.As(ctx, &specContent, basetypes.ObjectAsOptions{})...)
 	if respDiags.HasError() {
-		return mysqlsdk.BodyCreateMysqlInstanceGroup{}, false
+		return mysqlsdk.CreateMysqlInstanceGroupRequest{}, false
 	}
 	var configSpecContent instanceGroupSpecContentResourceModel
 	respDiags.Append(config.SpecContent.As(ctx, &configSpecContent, basetypes.ObjectAsOptions{})...)
 	if respDiags.HasError() {
-		return mysqlsdk.BodyCreateMysqlInstanceGroup{}, false
+		return mysqlsdk.CreateMysqlInstanceGroupRequest{}, false
 	}
 
 	var backupSchedule backupScheduleModel
 	respDiags.Append(plan.BackupSchedule.As(ctx, &backupSchedule, basetypes.ObjectAsOptions{})...)
 	if respDiags.HasError() {
-		return mysqlsdk.BodyCreateMysqlInstanceGroup{}, false
+		return mysqlsdk.CreateMysqlInstanceGroupRequest{}, false
 	}
 
 	var parameterGroup parameterGroupModel
 	respDiags.Append(plan.ParameterGroup.As(ctx, &parameterGroup, basetypes.ObjectAsOptions{})...)
 	if respDiags.HasError() {
-		return mysqlsdk.BodyCreateMysqlInstanceGroup{}, false
+		return mysqlsdk.CreateMysqlInstanceGroupRequest{}, false
 	}
 
 	configExtraInfo, hasConfigExtraInfo := extraInfoConfigModel(ctx, config.ExtraInfo, respDiags)
 	if respDiags.HasError() {
-		return mysqlsdk.BodyCreateMysqlInstanceGroup{}, false
+		return mysqlsdk.CreateMysqlInstanceGroupRequest{}, false
 	}
 
 	var source instanceGroupRestoreSourceResourceModel
@@ -1211,41 +1211,41 @@ func (r *instanceGroupResource) buildCreateRequest(
 	if hasSource {
 		respDiags.Append(plan.Source.As(ctx, &source, basetypes.ObjectAsOptions{})...)
 		if respDiags.HasError() {
-			return mysqlsdk.BodyCreateMysqlInstanceGroup{}, false
+			return mysqlsdk.CreateMysqlInstanceGroupRequest{}, false
 		}
 	}
 
 	var securityGroupIds []string
 	respDiags.Append(networkInfo.SecurityGroupIds.ElementsAs(ctx, &securityGroupIds, false)...)
 	if respDiags.HasError() {
-		return mysqlsdk.BodyCreateMysqlInstanceGroup{}, false
+		return mysqlsdk.CreateMysqlInstanceGroupRequest{}, false
 	}
 
 	var primarySubnet instanceGroupResourceDesiredSubnetInfoModel
 	respDiags.Append(networkInfo.PrimarySubnetInfo.As(ctx, &primarySubnet, basetypes.ObjectAsOptions{})...)
 	if respDiags.HasError() {
-		return mysqlsdk.BodyCreateMysqlInstanceGroup{}, false
+		return mysqlsdk.CreateMysqlInstanceGroupRequest{}, false
 	}
 
 	standbySubnets, ok := optionalSubnetInfoModels(ctx, networkInfo.StandbySubnetInfo, respDiags)
 	if !ok {
-		return mysqlsdk.BodyCreateMysqlInstanceGroup{}, false
+		return mysqlsdk.CreateMysqlInstanceGroupRequest{}, false
 	}
 
-	primarySubnetReq := *mysqlsdk.NewMysqlV1ApiCreateMysqlInstanceGroupModelSubnetInfoRequestModel(
+	primarySubnetReq := *mysqlsdk.NewSubnetInfoRequest(
 		primarySubnet.Replicas.ValueInt32(),
 		primarySubnet.SubnetId.ValueString(),
 	)
 
-	standbySubnetReqs := make([]mysqlsdk.MysqlV1ApiCreateMysqlInstanceGroupModelSubnetInfoRequestModel, 0, len(standbySubnets))
+	standbySubnetReqs := make([]mysqlsdk.SubnetInfoRequest, 0, len(standbySubnets))
 	for _, subnet := range standbySubnets {
-		standbySubnetReqs = append(standbySubnetReqs, *mysqlsdk.NewMysqlV1ApiCreateMysqlInstanceGroupModelSubnetInfoRequestModel(
+		standbySubnetReqs = append(standbySubnetReqs, *mysqlsdk.NewSubnetInfoRequest(
 			subnet.Replicas.ValueInt32(),
 			subnet.SubnetId.ValueString(),
 		))
 	}
 
-	networkReq := mysqlsdk.NewNetworkInfoRequestModel(
+	networkReq := mysqlsdk.NewNetworkInfoRequest(
 		securityGroupIds,
 		primarySubnetReq,
 	)
@@ -1253,20 +1253,20 @@ func (r *instanceGroupResource) buildCreateRequest(
 		networkReq.SetStandbySubnetInfo(standbySubnetReqs)
 	}
 
-	specReq := mysqlsdk.SpecContentRequestModel{
-		DatabaseUserName:     specContent.DatabaseUserName.ValueString(),
-		DatabaseUserPassword: configSpecContent.DatabaseUserPassword.ValueString(),
-		EngineVersion:        specContent.EngineVersion.ValueString(),
-		FlavorId:             specContent.FlavorId.ValueString(),
-		LogDiskSize:          specContent.LogDiskSize.ValueInt32(),
-		DataDiskSize:         specContent.DataDiskSize.ValueInt32(),
-	}
-	specReq.SetPrimaryPort(specContent.PrimaryPort.ValueInt32())
+	specReq := *mysqlsdk.NewSpecContentRequest(
+		specContent.DatabaseUserName.ValueString(),
+		configSpecContent.DatabaseUserPassword.ValueString(),
+		specContent.PrimaryPort.ValueInt32(),
+		specContent.EngineVersion.ValueString(),
+		specContent.FlavorId.ValueString(),
+		specContent.LogDiskSize.ValueInt32(),
+		specContent.DataDiskSize.ValueInt32(),
+	)
 	if !specContent.StandbyPort.IsNull() && !specContent.StandbyPort.IsUnknown() {
 		specReq.SetStandbyPort(specContent.StandbyPort.ValueInt32())
 	}
 
-	backupReq := mysqlsdk.NewMysqlV1ApiCreateMysqlInstanceGroupModelBackupScheduleRequestModel(
+	backupReq := mysqlsdk.NewBackupScheduleRequest(
 		backupSchedule.Enabled.ValueBool(),
 	)
 	if !backupSchedule.Type.IsNull() && !backupSchedule.Type.IsUnknown() && backupSchedule.Type.ValueString() != "" {
@@ -1279,12 +1279,12 @@ func (r *instanceGroupResource) buildCreateRequest(
 		backupReq.SetExpiryDuration(backupSchedule.ExpiryDuration.ValueInt32())
 	}
 
-	parameterReq := *mysqlsdk.NewMysqlV1ApiCreateMysqlInstanceGroupModelParameterGroupRequestModel(
+	parameterReq := *mysqlsdk.NewParameterGroupRequest(
 		mysqlsdk.ParameterGroupType(parameterGroup.Type.ValueString()),
 		parameterGroup.Id.ValueString(),
 	)
 
-	instanceGroupReq := mysqlsdk.NewMysqlV1ApiCreateMysqlInstanceGroupModelInstanceGroupRequestModel(
+	instanceGroupReq := mysqlsdk.NewCreateMysqlInstanceGroup(
 		plan.Name.ValueString(),
 		*networkReq,
 		specReq,
@@ -1292,7 +1292,7 @@ func (r *instanceGroupResource) buildCreateRequest(
 		parameterReq,
 	)
 	if !hasSource && hasConfigExtraInfo && !configExtraInfo.UseCaseSensitiveTableNames.IsNull() && !configExtraInfo.UseCaseSensitiveTableNames.IsUnknown() {
-		extraReq := mysqlsdk.NewExtraInfoRequestModel()
+		extraReq := mysqlsdk.NewExtraInfoRequest()
 		extraReq.SetUseCaseSensitiveTableNames(configExtraInfo.UseCaseSensitiveTableNames.ValueBool())
 		instanceGroupReq.SetExtraInfo(*extraReq)
 	}
@@ -1300,7 +1300,7 @@ func (r *instanceGroupResource) buildCreateRequest(
 		instanceGroupReq.SetDescription(plan.Description.ValueString())
 	}
 	if hasSource {
-		sourceReq := mysqlsdk.NewRestoreSourceRequestModelWithDefaults()
+		sourceReq := mysqlsdk.NewRestoreSourceRequestWithDefaults()
 		sourceReq.SetType(mysqlsdk.RestoreSourceType(source.Type.ValueString()))
 		sourceReq.SetId(source.Id.ValueString())
 		if !source.Time.IsNull() && !source.Time.IsUnknown() && source.Time.ValueString() != "" {
@@ -1311,7 +1311,7 @@ func (r *instanceGroupResource) buildCreateRequest(
 					"Invalid restore time",
 					"time must be in RFC3339 format. The provider normalizes it to a 3-digit milliseconds timestamp before sending the request.",
 				)
-				return mysqlsdk.BodyCreateMysqlInstanceGroup{}, false
+				return mysqlsdk.CreateMysqlInstanceGroupRequest{}, false
 			}
 			sourceReq.SetTime(time.Date(
 				restoreTime.Year(),
@@ -1327,7 +1327,7 @@ func (r *instanceGroupResource) buildCreateRequest(
 		instanceGroupReq.SetSource(*sourceReq)
 	}
 
-	return *mysqlsdk.NewBodyCreateMysqlInstanceGroup(*instanceGroupReq), true
+	return *mysqlsdk.NewCreateMysqlInstanceGroupRequest(*instanceGroupReq), true
 }
 
 func (r *instanceGroupResource) pollInstanceGroupUntilStatus(
@@ -1335,9 +1335,9 @@ func (r *instanceGroupResource) pollInstanceGroupUntilStatus(
 	id string,
 	targetStatuses []string,
 	respDiags *diag.Diagnostics,
-) (*mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelInstanceGroupResponseModel, bool) {
+) (*mysqlsdk.GetMysqlInstanceGroupInstanceGroup, bool) {
 
-	return r.pollInstanceGroupUntilReady(ctx, id, respDiags, func(resp mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelInstanceGroupResponseModel) bool {
+	return r.pollInstanceGroupUntilReady(ctx, id, respDiags, func(resp mysqlsdk.GetMysqlInstanceGroupInstanceGroup) bool {
 		status := string(resp.Status)
 		for _, targetStatus := range targetStatuses {
 			if status == targetStatus {
@@ -1380,9 +1380,9 @@ func (r *instanceGroupResource) pollInstanceGroupUntilTopologyReady(
 	id string,
 	expectedStandbyCount int,
 	respDiags *diag.Diagnostics,
-) (*mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelInstanceGroupResponseModel, bool) {
+) (*mysqlsdk.GetMysqlInstanceGroupInstanceGroup, bool) {
 
-	return r.pollInstanceGroupUntilReady(ctx, id, respDiags, func(resp mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelInstanceGroupResponseModel) bool {
+	return r.pollInstanceGroupUntilReady(ctx, id, respDiags, func(resp mysqlsdk.GetMysqlInstanceGroupInstanceGroup) bool {
 		if expectedStandbyCount > 0 && r.failIfStandbyInstancesInTerminalStatus(ctx, id, respDiags) {
 			return false
 		}
@@ -1393,7 +1393,7 @@ func (r *instanceGroupResource) pollInstanceGroupUntilTopologyReady(
 	})
 }
 
-func instanceGroupTopologyReady(resp mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelInstanceGroupResponseModel, expectedStandbyCount int) bool {
+func instanceGroupTopologyReady(resp mysqlsdk.GetMysqlInstanceGroupInstanceGroup, expectedStandbyCount int) bool {
 	instances, ok := resp.GetInstancesOk()
 	if !ok || instances == nil {
 		return false
@@ -1429,8 +1429,8 @@ func (r *instanceGroupResource) pollInstanceGroupUntilReady(
 	ctx context.Context,
 	id string,
 	respDiags *diag.Diagnostics,
-	ready func(mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelInstanceGroupResponseModel) bool,
-) (*mysqlsdk.MysqlV1ApiGetMysqlInstanceGroupModelInstanceGroupResponseModel, bool) {
+	ready func(mysqlsdk.GetMysqlInstanceGroupInstanceGroup) bool,
+) (*mysqlsdk.GetMysqlInstanceGroupInstanceGroup, bool) {
 	ticker := time.NewTicker(mysqlPollInterval)
 	defer ticker.Stop()
 
@@ -1438,8 +1438,8 @@ func (r *instanceGroupResource) pollInstanceGroupUntilReady(
 
 	for {
 		resp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-			func() (*mysqlsdk.GetMySQLInstanceGroupResponseModel, *http.Response, error) {
-				return r.kc.ApiClient.MySQLInstanceGroupsAPI.
+			func() (*mysqlsdk.GetMysqlInstanceGroupResponse, *http.Response, error) {
+				return r.kc.ApiClient.MySQLInstanceGroupAPI.
 					GetMysqlInstanceGroup(ctx, id).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()
@@ -1478,8 +1478,8 @@ func (r *instanceGroupResource) failIfAllInstancesInError(
 	respDiags *diag.Diagnostics,
 ) bool {
 	instancesResp, _, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupInstancesResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.ListMysqlInstancesResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLInstanceAPI.
 				ListMysqlInstances(ctx, id).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -1507,8 +1507,8 @@ func (r *instanceGroupResource) failIfStandbyInstancesInTerminalStatus(
 	respDiags *diag.Diagnostics,
 ) bool {
 	instancesResp, _, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupInstancesResponseModel, *http.Response, error) {
-			return r.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.ListMysqlInstancesResponse, *http.Response, error) {
+			return r.kc.ApiClient.MySQLInstanceAPI.
 				ListMysqlInstances(ctx, id).
 				XAuthToken(r.kc.XAuthToken).
 				Execute()
@@ -1532,8 +1532,8 @@ func (r *instanceGroupResource) failIfStandbyInstancesInTerminalStatus(
 	return true
 }
 
-func terminalMySQLStandbyInstances(instances []mysqlsdk.InstanceResponseModel) []mysqlsdk.InstanceResponseModel {
-	failed := make([]mysqlsdk.InstanceResponseModel, 0)
+func terminalMySQLStandbyInstances(instances []mysqlsdk.Instance) []mysqlsdk.Instance {
+	failed := make([]mysqlsdk.Instance, 0)
 	for _, instance := range instances {
 		if instance.Role != mysqlsdk.INSTANCEROLE_STANDBY {
 			continue
@@ -1556,7 +1556,7 @@ func isTerminalMySQLInstanceStatus(status mysqlsdk.InstanceStatus) bool {
 	}
 }
 
-func allMySQLInstancesInError(instances []mysqlsdk.InstanceResponseModel) bool {
+func allMySQLInstancesInError(instances []mysqlsdk.Instance) bool {
 	if len(instances) == 0 {
 		return false
 	}
@@ -1571,7 +1571,7 @@ func allMySQLInstancesInError(instances []mysqlsdk.InstanceResponseModel) bool {
 	return true
 }
 
-func formatMySQLInstanceStatuses(instances []mysqlsdk.InstanceResponseModel) []string {
+func formatMySQLInstanceStatuses(instances []mysqlsdk.Instance) []string {
 	statuses := make([]string, 0, len(instances))
 	for _, instance := range instances {
 		statuses = append(statuses, fmt.Sprintf("%s=%s", instance.Id, instance.Status))
@@ -1593,8 +1593,8 @@ func (r *instanceGroupResource) pollInstanceGroupUntilDeleted(
 
 	for {
 		_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
-			func() (*mysqlsdk.GetMySQLInstanceGroupResponseModel, *http.Response, error) {
-				return r.kc.ApiClient.MySQLInstanceGroupsAPI.
+			func() (*mysqlsdk.GetMysqlInstanceGroupResponse, *http.Response, error) {
+				return r.kc.ApiClient.MySQLInstanceGroupAPI.
 					GetMysqlInstanceGroup(ctx, id).
 					XAuthToken(r.kc.XAuthToken).
 					Execute()

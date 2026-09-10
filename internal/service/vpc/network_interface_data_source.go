@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/vpc"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 )
 
 var (
@@ -67,8 +67,8 @@ func (d *networkInterfaceDataSource) Read(ctx context.Context, req datasource.Re
 	defer cancel()
 
 	networkInterfaceResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*vpc.BnsVpcV1ApiGetNetworkInterfaceModelResponseNetworkInterfaceModel, *http.Response, error) {
-			return d.kc.ApiClient.NetworkInterfaceAPI.GetNetworkInterface(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
+		func() (*vpc.GetNetworkInterfaceResponse, *http.Response, error) {
+			return d.kc.ApiClient.VPCNetworkInterfaceAPI.GetNetworkInterface(ctx, config.Id.ValueString()).XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
 	if err != nil {

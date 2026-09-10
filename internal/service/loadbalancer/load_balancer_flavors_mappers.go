@@ -9,13 +9,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/kakaoenterprise/kc-sdk-go/services/loadbalancer"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/loadbalancer"
 )
 
 func mapLoadBalancerFlavor(
 	ctx context.Context,
 	base *loadBalancerFlavorBaseModel,
-	lbf *loadbalancer.FlavorModel,
+	lbf *loadbalancer.Flavor,
 	diags *diag.Diagnostics,
 ) bool {
 

@@ -12,13 +12,13 @@ import (
 )
 
 type loadBalancerTargetGroupBaseModel struct {
-	Id                    types.String `tfsdk:"id"`
-	Name                  types.String `tfsdk:"name"`
-	Description           types.String `tfsdk:"description"`
-	Protocol              types.String `tfsdk:"protocol"`
-	LoadBalancerAlgorithm types.String `tfsdk:"load_balancer_algorithm"`
-	LoadBalancerId        types.String `tfsdk:"load_balancer_id"`
-	AlpnProtocols         types.List   `tfsdk:"alpn_protocols"`
+	Id                        types.String `tfsdk:"id"`
+	Name                      types.String `tfsdk:"name"`
+	Description               types.String `tfsdk:"description"`
+	Protocol                  types.String `tfsdk:"protocol"`
+	LoadBalancerAlgorithm     types.String `tfsdk:"load_balancer_algorithm"`
+	LoadBalancerId            types.String `tfsdk:"load_balancer_id"`
+	LoadBalancerAlpnProtocols types.List   `tfsdk:"alpn_protocols"`
 
 	ProvisioningStatus types.String `tfsdk:"provisioning_status"`
 	OperatingStatus    types.String `tfsdk:"operating_status"`
@@ -76,7 +76,7 @@ type loadBalancerTargetGroupHealthMonitorModel struct {
 	ProjectId          types.String `tfsdk:"project_id"`
 }
 
-type loadBalancerTargetGroupSessionPersistenceModel struct {
+type loadBalancerTargetGroupSessionPersistence struct {
 	Type                   types.String `tfsdk:"type"`
 	CookieName             types.String `tfsdk:"cookie_name"`
 	PersistenceTimeout     types.Int64  `tfsdk:"persistence_timeout"`

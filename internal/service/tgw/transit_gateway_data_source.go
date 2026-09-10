@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/datasource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/kakaoenterprise/kc-sdk-go/services/tgw"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/tgw"
 )
 
 var (
@@ -67,8 +67,8 @@ func (d *transitGatewayDataSource) Read(ctx context.Context, req datasource.Read
 	defer cancel()
 
 	tgwResp, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, d.kc, &resp.Diagnostics,
-		func() (*tgw.GetTgwResponseModel, *http.Response, error) {
-			return d.kc.ApiClient.TgwsAPI.GetTransitGateway(ctx, config.Id.ValueString()).
+		func() (*tgw.GetTransitGatewayResponse, *http.Response, error) {
+			return d.kc.ApiClient.TransitGatewayAPI.GetTransitGateway(ctx, config.Id.ValueString()).
 				XAuthToken(d.kc.XAuthToken).Execute()
 		},
 	)
@@ -79,7 +79,7 @@ func (d *transitGatewayDataSource) Read(ctx context.Context, req datasource.Read
 
 	tgwResult := tgwResp.Tgw
 
-	ok := mapTransitGatewayBaseModel(ctx, &config.transitGatewayBaseModel, &tgwResult, &resp.Diagnostics)
+	ok := mapTransitGatewayModel(ctx, &config.transitGatewayBaseModel, &tgwResult, &resp.Diagnostics)
 	if !ok || resp.Diagnostics.HasError() {
 		return
 	}

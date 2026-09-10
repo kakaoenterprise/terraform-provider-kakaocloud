@@ -15,7 +15,7 @@ import (
 	actionschema "github.com/hashicorp/terraform-plugin-framework/action/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/services/mysql"
+	mysqlsdk "github.com/kakaoenterprise/kc-sdk-go/v2/services/mysql"
 )
 
 var _ action.ActionWithConfigure = &instanceGroupParameterGroupRetryAction{}
@@ -78,7 +78,7 @@ func (a *instanceGroupParameterGroupRetryAction) Invoke(ctx context.Context, req
 func (a *instanceGroupParameterGroupRetryAction) retryParameterGroupSync(ctx context.Context, instanceGroupID string, respDiags *diag.Diagnostics) bool {
 	_, httpResp, err := common.ExecuteWithRetryAndAuth[struct{}](ctx, a.kc, respDiags,
 		func() (struct{}, *http.Response, error) {
-			httpResp, err := a.kc.ApiClient.MySQLInstanceGroupsParameterGroupsAPI.
+			httpResp, err := a.kc.ApiClient.MySQLInstanceGroupAPI.
 				RetryMysqlParameterGroupSync(ctx, instanceGroupID).
 				XAuthToken(a.kc.XAuthToken).
 				Execute()
@@ -95,8 +95,8 @@ func (a *instanceGroupParameterGroupRetryAction) retryParameterGroupSync(ctx con
 
 func (a *instanceGroupParameterGroupRetryAction) readParameterGroupRetryState(ctx context.Context, instanceGroupID string, timeouts resourceTimeouts.Value, respDiags *diag.Diagnostics) (instanceGroupParameterGroupRetryModel, bool, bool) {
 	result, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, a.kc, respDiags,
-		func() (*mysqlsdk.GetMySQLInstanceGroupResponseModel, *http.Response, error) {
-			return a.kc.ApiClient.MySQLInstanceGroupsAPI.
+		func() (*mysqlsdk.GetMysqlInstanceGroupResponse, *http.Response, error) {
+			return a.kc.ApiClient.MySQLInstanceGroupAPI.
 				GetMysqlInstanceGroup(ctx, instanceGroupID).
 				XAuthToken(a.kc.XAuthToken).
 				Execute()

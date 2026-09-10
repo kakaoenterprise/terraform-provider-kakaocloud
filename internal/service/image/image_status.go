@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/kakaoenterprise/kc-sdk-go/services/image"
+	"github.com/kakaoenterprise/kc-sdk-go/v2/services/image"
 )
 
 func (r *imageResource) pollImageUtilsStatus(
@@ -17,7 +17,7 @@ func (r *imageResource) pollImageUtilsStatus(
 	imageId string,
 	targetStatuses []string,
 	resp *diag.Diagnostics,
-) (*image.BcsImageV1ApiGetImageModelImageModel, bool) {
+) (*image.Image, bool) {
 	return common.PollUntilResult(
 		ctx,
 		r,
@@ -26,9 +26,9 @@ func (r *imageResource) pollImageUtilsStatus(
 		imageId,
 		targetStatuses,
 		resp,
-		func(ctx context.Context) (*image.BcsImageV1ApiGetImageModelImageModel, *http.Response, error) {
+		func(ctx context.Context) (*image.Image, *http.Response, error) {
 			respModel, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, resp,
-				func() (*image.BcsImageV1ApiGetImageModelResponseImageModel, *http.Response, error) {
+				func() (*image.GetImageResponse, *http.Response, error) {
 					return r.kc.ApiClient.ImageAPI.
 						GetImage(ctx, imageId).
 						XAuthToken(r.kc.XAuthToken).
@@ -40,6 +40,6 @@ func (r *imageResource) pollImageUtilsStatus(
 			}
 			return &respModel.Image, httpResp, nil
 		},
-		func(v *image.BcsImageV1ApiGetImageModelImageModel) string { return *v.Status.Get() },
+		func(v *image.Image) string { return *v.Status.Get() },
 	)
 }

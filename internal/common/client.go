@@ -8,7 +8,7 @@ import (
 	"terraform-provider-kakaocloud/internal/auth"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	kakaocloud "github.com/kakaoenterprise/kc-sdk-go/common"
+	kakaocloud "github.com/kakaoenterprise/kc-sdk-go/v2/common"
 	"golang.org/x/net/context"
 )
 

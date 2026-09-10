@@ -128,7 +128,7 @@ const (
 	TgwStatusError          = "ERROR"
 	TgwStatusInUse          = "IN_USE"
 	TgwStatusInactive       = "INACTIVE"
-	TgwStatusAvaliable      = "AVAILABLE"
+	TgwStatusAvailable      = "AVAILABLE"
 	TgwStatusPendingApprove = "PENDING_APPROVE"
 	TgwStatusDeleting       = "PENDING_DELETE"
 )

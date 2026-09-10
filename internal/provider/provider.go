@@ -163,6 +163,8 @@ func (p *kakaocloudProvider) DataSources(_ context.Context) []func() datasource.
 
 		vpc.NewVpcDataSource,
 		vpc.NewVpcsDataSource,
+		vpc.NewInternetGatewayDataSource,
+		vpc.NewInternetGatewaysDataSource,
 		vpc.NewSubnetDataSource,
 		vpc.NewSubnetsDataSource,
 		vpc.NewSubnetShareDataSource,
@@ -246,6 +248,8 @@ func (p *kakaocloudProvider) Resources(_ context.Context) []func() resource.Reso
 		image.NewImageMemberResource,
 
 		vpc.NewVpcResource,
+		vpc.NewInternetGatewayResource,
+		vpc.NewInternetGatewayAttachmentResource,
 		vpc.NewSubnetResource,
 		vpc.NewSubnetShareResource,
 		vpc.NewRouteTableResource,
@@ -275,7 +279,6 @@ func (p *kakaocloudProvider) Resources(_ context.Context) []func() resource.Reso
 		tgw.NewTransitGatewayAttachmentResource,
 		tgw.NewTransitGatewayRouteTableResource,
 		tgw.NewTransitGatewayShareResource,
-		tgw.NewTransitGatewayAttachmentApprovalResource,
 		tgw.NewTransitGatewayDefaultRouteTableResource,
 		tgw.NewTransitGatewayRouteTableAssociationResource,
 	}
@@ -288,6 +291,8 @@ func (p *kakaocloudProvider) Actions(_ context.Context) []func() action.Action {
 		mysql.NewInstanceGroupScaleInAction,
 		mysql.NewInstanceExportLogsAction,
 		mysql.NewInstanceGroupParameterGroupRetryAction,
+		tgw.NewTransitGatewayAttachmentApproveAction,
+		tgw.NewTransitGatewayAttachmentRejectAction,
 	}
 }
 
@@ -297,7 +302,7 @@ func ResolveAPIVersion(
 	userAgent string,
 ) (string, error) {
 
-	defaultVersion := "1.3.0"
+	defaultVersion := "1.4.3"
 
 	return defaultVersion, nil
 }
