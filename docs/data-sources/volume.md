@@ -51,7 +51,7 @@ The following attributes are exported:
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `description` (String) Description of the volume
 - `encryption_key_id` (String) ID of the key used for volume encryption
-- `image_metadata` (Attributes) Metadata of the associated instance if this is a root volume ( see [below for nested schema](#nestedatt--image_metadata))
+- `image_metadata` (Attributes) Metadata of the associated instance if this is a root volume (see [below for nested schema](#nestedatt--image_metadata))
 - `instance_id` (String) Unique ID of the instance
 - `instance_name` (String) Name of the instance attached to the volume
 - `is_bootable` (Boolean) Whether the volume is bootable

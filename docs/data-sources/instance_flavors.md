@@ -122,14 +122,14 @@ output "filtered_flavors" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `instance_flavors` (Attributes List) List of instance flavor details returned by the data source ( see [below for nested schema](#nestedatt--instance_flavors))
+- `instance_flavors` (Attributes List) List of instance flavor details returned by the data source (see [below for nested schema](#nestedatt--instance_flavors))
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`

@@ -29,6 +29,7 @@ resource "kakaocloud_internet_gateway" "example" {}
 ## Attribute Reference
 
 - `attachment` (Attributes) Attachment information for the VPC connection. (see [below for nested schema](#nestedatt--attachment))
+- `attachment_status` (String) Connection status of the Internet Gateway attachment. Possible values: `ATTACHED`, `ATTACHING`, `DETACHING`, `DETACHED`.
 - `created_at` (String) Time when the resource was created.<br/> - ISO_8601 format<br/> - UTC standard
 - `domain_id` (String) Domain ID that owns the Internet Gateway.
 - `id` (String) Internet Gateway ID.

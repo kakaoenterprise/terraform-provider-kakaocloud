@@ -125,14 +125,14 @@ output "filtered_l7_policies" {
 - `listener_id` (Required, String) ID of the listener
 - `load_balancer_id` (Required, String) ID of the load balancer
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `l7_policies` (Attributes List) List of L7 policies associated with the specified load balancer and listener ( see [below for nested schema](#nestedatt--l7_policies))
+- `l7_policies` (Attributes List) List of L7 policies associated with the specified load balancer and listener (see [below for nested schema](#nestedatt--l7_policies))
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`

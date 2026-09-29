@@ -61,7 +61,7 @@ output "upgradable_k8s_versions" {
 The following attributes are exported:
 
 - `current` (Attributes) Current cluster version (see [below for nested schema](#nestedatt--current))
-- `upgradable` (Attributes List) List of Kubernetes versions that can be upgraded from the current version ( see [below for nested schema](#nestedatt--upgradable))
+- `upgradable` (Attributes List) List of Kubernetes versions that can be upgraded from the current version (see [below for nested schema](#nestedatt--upgradable))
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`

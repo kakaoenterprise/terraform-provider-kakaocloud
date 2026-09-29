@@ -135,14 +135,37 @@ func (r *internetGatewayAttachmentResource) Read(ctx context.Context, req resour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	igwResp, httpResp, err := r.get(ctx, state.InternetGatewayId.ValueString(), &resp.Diagnostics)
-	if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if err != nil {
-		common.AddApiActionError(ctx, r, httpResp, "GetInternetGateway", err, &resp.Diagnostics)
-		return
+	const maxAttachmentRetries = 2
+
+	var igwResp *vpc.GetInternetGatewayResponse
+	for attempt := 0; attempt <= maxAttachmentRetries; attempt++ {
+		if attempt > 0 {
+			select {
+			case <-time.After(3 * time.Second):
+			case <-ctx.Done():
+				resp.Diagnostics.AddError(
+					"Error Retrying Internet Gateway Attachment Read",
+					fmt.Sprintf("Context cancelled before retrying GetInternetGateway: %s", ctx.Err()),
+				)
+				return
+			}
+		}
+
+		var httpResp *http.Response
+		var err error
+		igwResp, httpResp, err = r.get(ctx, state.InternetGatewayId.ValueString(), &resp.Diagnostics)
+		if httpResp != nil && httpResp.StatusCode == http.StatusNotFound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		if err != nil {
+			common.AddApiActionError(ctx, r, httpResp, "GetInternetGateway", err, &resp.Diagnostics)
+			return
+		}
+
+		if igwResp.Igw.Attachment.Get() != nil {
+			break
+		}
 	}
 
 	attachment := igwResp.Igw.Attachment.Get()

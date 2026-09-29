@@ -136,14 +136,14 @@ output "filtered_images" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `images` (Attributes List) List of images that match the applied filters. ( see [below for nested schema](#nestedatt--images))
+- `images` (Attributes List) List of images that match the applied filters. (see [below for nested schema](#nestedatt--images))
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
@@ -173,7 +173,7 @@ The following attributes are exported:
 - `min_disk` (Number) Minimum disk size required to use this image (GB)
 - `min_ram` (Number) Minimum memory required to use this image (MB)
 - `name` (String) Name of the image
-- `os_info` (Attributes) Operating system information of the image ( see [below for nested schema](#nestedatt--images--os_info))
+- `os_info` (Attributes) Operating system information of the image (see [below for nested schema](#nestedatt--images--os_info))
 - `owner` (String) Owner of the image (project ID that owns the image)
 - `project_id` (String) Unique ID of the project
 - `size` (Number) Size of the image (in bytes)

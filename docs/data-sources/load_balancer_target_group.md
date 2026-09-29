@@ -58,8 +58,8 @@ The following attributes are exported:
 - `availability_zone` (String) Availability zone
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `description` (String) Description of the target group
-- `health_monitor` (Attributes) Associated health monitor information ( see [below for nested schema](#nestedatt--health_monitor))
-- `listeners` (Attributes List) List of associated listener information ( see [below for nested schema](#nestedatt--listeners))
+- `health_monitor` (Attributes) Associated health monitor information (see [below for nested schema](#nestedatt--health_monitor))
+- `listeners` (Attributes List) List of associated listener information (see [below for nested schema](#nestedatt--listeners))
 - `load_balancer_algorithm` (String) Load balancing algorithm
 - `load_balancer_id` (String) Associated load balancer ID
 - `load_balancer_name` (String) Associated load balancer name

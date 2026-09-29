@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-kakaocloud/internal/common"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -103,7 +105,18 @@ func (r *subnetShareResource) Create(ctx context.Context, req resource.CreateReq
 		}
 	}
 
-	plan.Projects, diags = types.ListValueFrom(ctx, types.StringType, plan.ProjectIds.Elements())
+	subnetShareResp, ok := r.pollUntilProjectsApplied(
+		ctx,
+		plan.Id.ValueString(),
+		projectIds,
+		nil,
+		&resp.Diagnostics,
+	)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	plan.Projects, diags = subnetSharedProjectsList(subnetShareResp)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -221,6 +234,7 @@ func (r *subnetShareResource) Update(ctx context.Context, req resource.UpdateReq
 
 	planSet := make(map[string]struct{})
 	stateSet := make(map[string]struct{})
+	removedProjectIds := make([]string, 0)
 	for _, id := range planProjectIds {
 		planSet[id] = struct{}{}
 	}
@@ -245,6 +259,7 @@ func (r *subnetShareResource) Update(ctx context.Context, req resource.UpdateReq
 
 	for id := range stateSet {
 		if _, exists := planSet[id]; !exists {
+			removedProjectIds = append(removedProjectIds, id)
 			_, httpResp, err := common.ExecuteWithRetryAndAuth(ctx, r.kc, &resp.Diagnostics,
 				func() (interface{}, *http.Response, error) {
 					httpResp, err := r.kc.ApiClient.VPCSubnetAPI.UnshareSubnet(ctx, plan.Id.ValueString(), id).
@@ -259,7 +274,18 @@ func (r *subnetShareResource) Update(ctx context.Context, req resource.UpdateReq
 		}
 	}
 
-	plan.Projects, diags = types.ListValueFrom(ctx, types.StringType, plan.ProjectIds.Elements())
+	subnetShareResp, ok := r.pollUntilProjectsApplied(
+		ctx,
+		plan.Id.ValueString(),
+		planProjectIds,
+		removedProjectIds,
+		&resp.Diagnostics,
+	)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
+	plan.Projects, diags = subnetSharedProjectsList(subnetShareResp)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -270,6 +296,75 @@ func (r *subnetShareResource) Update(ctx context.Context, req resource.UpdateReq
 	if resp.Diagnostics.HasError() {
 		return
 	}
+}
+
+func (r *subnetShareResource) pollUntilProjectsApplied(
+	ctx context.Context,
+	subnetID string,
+	expectedProjectIDs []string,
+	removedProjectIDs []string,
+	respDiags *diag.Diagnostics,
+) (*vpc.ListSubnetSharedProjectsResponse, bool) {
+	expected := make(map[string]struct{}, len(expectedProjectIDs))
+	for _, projectID := range expectedProjectIDs {
+		expected[projectID] = struct{}{}
+	}
+
+	removed := make(map[string]struct{}, len(removedProjectIDs))
+	for _, projectID := range removedProjectIDs {
+		removed[projectID] = struct{}{}
+	}
+
+	return common.PollUntilResult(
+		ctx,
+		r,
+		3*time.Second,
+		"subnet shared projects",
+		subnetID,
+		[]string{"APPLIED"},
+		respDiags,
+		func(ctx context.Context) (*vpc.ListSubnetSharedProjectsResponse, *http.Response, error) {
+			return common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+				func() (*vpc.ListSubnetSharedProjectsResponse, *http.Response, error) {
+					return r.kc.ApiClient.VPCSubnetAPI.
+						ListSubnetSharedProjects(ctx, subnetID).
+						XAuthToken(r.kc.XAuthToken).
+						Execute()
+				},
+			)
+		},
+		func(result *vpc.ListSubnetSharedProjectsResponse) string {
+			if result == nil {
+				return "APPLYING"
+			}
+
+			actual := make(map[string]struct{}, len(result.Projects))
+			for _, project := range result.Projects {
+				actual[project.Id] = struct{}{}
+			}
+
+			for projectID := range expected {
+				if _, exists := actual[projectID]; !exists {
+					return "APPLYING"
+				}
+			}
+			for projectID := range removed {
+				if _, exists := actual[projectID]; exists {
+					return "APPLYING"
+				}
+			}
+
+			return "APPLIED"
+		},
+	)
+}
+
+func subnetSharedProjectsList(result *vpc.ListSubnetSharedProjectsResponse) (types.List, diag.Diagnostics) {
+	projectIDs := make([]attr.Value, 0, len(result.Projects))
+	for _, project := range result.Projects {
+		projectIDs = append(projectIDs, types.StringValue(project.Id))
+	}
+	return types.ListValue(types.StringType, projectIDs)
 }
 
 func (r *subnetShareResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

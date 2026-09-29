@@ -37,10 +37,10 @@ resource "kakaocloud_network_interface" "example" {
 ## Argument Reference
 
 - `name` (Required, String) Name of the network interface
-- `security_groups` (Required, Attributes Set) List of attached security groups ( see [below for nested schema](#nestedatt--security_groups))
+- `security_groups` (Required, Attributes Set) List of attached security groups (see [below for nested schema](#nestedatt--security_groups))
 - `subnet_id` (Required, String) ID of the connected subnet
 
-- `allowed_address_pairs` (Optional, Attributes Set) List of allowed IP addresses for packet transmission ( see [below for nested schema](#nestedatt--allowed_address_pairs))
+- `allowed_address_pairs` (Optional, Attributes Set) List of allowed IP addresses for packet transmission (see [below for nested schema](#nestedatt--allowed_address_pairs))
 - `description` (Optional, String) Description of the network interface
 - `private_ip` (Optional, String) Primary private IP address (IPv4 format)
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))

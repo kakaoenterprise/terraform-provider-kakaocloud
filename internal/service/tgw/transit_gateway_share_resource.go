@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -89,6 +90,16 @@ func (r *transitGatewayShareResource) Create(ctx context.Context, req resource.C
 		return
 	}
 
+	_, ok = r.pollUntilSharedProject(
+		ctx,
+		plan.TgwId.ValueString(),
+		plan.TargetProjectId.ValueString(),
+		&resp.Diagnostics,
+	)
+	if !ok || resp.Diagnostics.HasError() {
+		return
+	}
+
 	plan.Id = types.StringValue(fmt.Sprintf("%s/%s", plan.TgwId.ValueString(), plan.TargetProjectId.ValueString()))
 
 	diags = resp.State.Set(ctx, plan)
@@ -96,6 +107,46 @@ func (r *transitGatewayShareResource) Create(ctx context.Context, req resource.C
 	if resp.Diagnostics.HasError() {
 		return
 	}
+}
+
+func (r *transitGatewayShareResource) pollUntilSharedProject(
+	ctx context.Context,
+	tgwID string,
+	targetProjectID string,
+	respDiags *diag.Diagnostics,
+) (*tgw.ListTgwSharedProjectsResponse, bool) {
+	return common.PollUntilResult(
+		ctx,
+		r,
+		3*time.Second,
+		"transit gateway shared project",
+		targetProjectID,
+		[]string{"APPLIED"},
+		respDiags,
+		func(ctx context.Context) (*tgw.ListTgwSharedProjectsResponse, *http.Response, error) {
+			return common.ExecuteWithRetryAndAuth(ctx, r.kc, respDiags,
+				func() (*tgw.ListTgwSharedProjectsResponse, *http.Response, error) {
+					return r.kc.ApiClient.TransitGatewayAPI.
+						ListTgwSharedProjects(ctx, tgwID).
+						XAuthToken(r.kc.XAuthToken).
+						Execute()
+				},
+			)
+		},
+		func(result *tgw.ListTgwSharedProjectsResponse) string {
+			if result == nil {
+				return "APPLYING"
+			}
+
+			for _, project := range result.Projects {
+				if project.Id == targetProjectID {
+					return "APPLIED"
+				}
+			}
+
+			return "APPLYING"
+		},
+	)
 }
 
 func (r *transitGatewayShareResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {

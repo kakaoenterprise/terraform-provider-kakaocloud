@@ -44,9 +44,9 @@ The following attributes are exported:
 
 - `cidr_block` (String) IPv4 CIDR block of the VPC
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
-- `default_route_table` (Attributes) Object containing default route table information ( see [below for nested schema](#nestedatt--default_route_table))
+- `default_route_table` (Attributes) Object containing default route table information (see [below for nested schema](#nestedatt--default_route_table))
 - `description` (String) Description of the VPC
-- `igw` (Attributes) Object containing information of the attached internet gateway ( see [below for nested schema](#nestedatt--igw))
+- `igw` (Attributes) Object containing information of the attached internet gateway (see [below for nested schema](#nestedatt--igw))
 - `is_default` (Boolean) Indicates whether it is the default VPC
 - `is_enable_dns_support` (Boolean) Indicates whether DNS support is enabled
 - `name` (String) VPC name

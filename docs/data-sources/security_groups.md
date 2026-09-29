@@ -93,14 +93,14 @@ output "filtered_security_groups" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `security_groups` (Attributes List) List of retrieved security groups. ( see [below for nested schema](#nestedatt--security_groups))
+- `security_groups` (Attributes List) List of retrieved security groups. (see [below for nested schema](#nestedatt--security_groups))
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
@@ -126,7 +126,7 @@ The following attributes are exported:
 - `name` (String) Name of the security group
 - `project_id` (String) ID of the project the security group belongs to
 - `project_name` (String) Name of the project the security group belongs to
-- `rules` (Attributes Set) List of inbound and outbound security group rules. ( see [below for nested schema](#nestedatt--security_groups--rules))
+- `rules` (Attributes Set) List of inbound and outbound security group rules. (see [below for nested schema](#nestedatt--security_groups--rules))
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 
 <a id="nestedatt--security_groups--rules"></a>

@@ -74,6 +74,14 @@ func getRouteDataSourceSchema() map[string]dschema.Attribute {
 
 func getRouteTableDataSourceSchema() map[string]dschema.Attribute {
 	return map[string]dschema.Attribute{
+		"ingress_routing": dschema.SingleNestedAttribute{
+			Computed: true,
+			Attributes: map[string]dschema.Attribute{
+				"id":                  dschema.StringAttribute{Computed: true},
+				"internet_gateway_id": dschema.StringAttribute{Computed: true},
+				"provisioning_status": dschema.StringAttribute{Computed: true},
+			},
+		},
 		"name": dschema.StringAttribute{
 			Computed: true,
 		},
@@ -207,6 +215,14 @@ func getRequestRouteResourceSchema() map[string]rschema.Attribute {
 
 func getRouteTableResourceSchema() map[string]rschema.Attribute {
 	return map[string]rschema.Attribute{
+		"ingress_routing": rschema.SingleNestedAttribute{
+			Computed: true,
+			Attributes: map[string]rschema.Attribute{
+				"id":                  rschema.StringAttribute{Computed: true},
+				"internet_gateway_id": rschema.StringAttribute{Computed: true},
+				"provisioning_status": rschema.StringAttribute{Computed: true},
+			},
+		},
 		"id": rschema.StringAttribute{
 			Computed: true,
 			PlanModifiers: []planmodifier.String{

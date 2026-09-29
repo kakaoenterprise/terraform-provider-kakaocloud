@@ -78,20 +78,20 @@ resource "kakaocloud_instance" "example" {
 
 - `availability_zone` (Optional, String) Name of the availability zone where the instance was created
 - `description` (Optional, String) Description of the instance
-- `initial_security_groups` (Optional, Attributes Set) List of initial security groups for the instance ( see [below for nested schema](#nestedatt--initial_security_groups)) <br/> - This field is write-only and cannot be updated after instance creation. <br/> - To modify security groups after creation, use the `kakaocloud_network_interface` resource.
+- `initial_security_groups` (Optional, Attributes Set) List of initial security groups for the instance <br/> - This field is write-only and cannot be updated after instance creation. <br/> - To modify security groups after creation, use the `kakaocloud_network_interface` resource. (see [below for nested schema](#nestedatt--initial_security_groups))
 - `is_bonding` (Optional, Boolean) Whether to enable network interface bonding <br/> - Required only when creating Bare Metal (`bm`) instances
 - `is_hyper_threading` (Optional, Boolean) Whether hyper-threading is enabled
 - `key_name` (Optional, String) Key pair name applied to the instance
 - `status` (Optional, String) Instance status <br/> - Only `active`, `shelved_offloaded`, and `stopped` can be entered.
 - `timeouts` (Optional, Attributes) Custom timeout settings for instance operations (see [below for nested schema](#nestedatt--timeouts))
 - `user_data` (Optional, String) User data script executed during instance initialization (runs only on the first boot).<br/> - This field is write-only.<br/> - Enter up to 16KB of user data script and `cloud-init` commands.<br/> - Input must be a Base64-encoded string.<br/> - Script is copied under `/var/lib/cloud/instances` and executed.<br/> - Incorrect or incomplete scripts may cause boot failure.<br/> - Ubuntu logs: `sudo cat /var/log/syslog` or `sudo journalctl -u cloud-final.service`.<br/> - CentOS logs: `sudo cat /var/log/messages` or `sudo journalctl -u cloud-final.service`.
-- `volumes` (Optional, Attributes List) Volumes to attach to the instance ( see [below for nested schema](#nestedatt--volumes))
+- `volumes` (Optional, Attributes List) Volumes to attach to the instance (see [below for nested schema](#nestedatt--volumes))
 
 ## Attribute Reference
 
-- `addresses` (Attributes List) Network addresses associated with the instance ( see [below for nested schema](#nestedatt--addresses))
+- `addresses` (Attributes List) Network addresses associated with the instance (see [below for nested schema](#nestedatt--addresses))
 - `attached_volume_count` (Number) Number of block storage volumes attached to the instance
-- `attached_volumes` (Attributes List) List of attached volumes ( see [below for nested schema](#nestedatt--attached_volumes))
+- `attached_volumes` (Attributes List) List of attached volumes (see [below for nested schema](#nestedatt--attached_volumes))
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `flavor` (Attributes) Instance type (see [below for nested schema](#nestedatt--flavor))
 - `hostname` (String) Host name of the instance
@@ -103,7 +103,7 @@ resource "kakaocloud_instance" "example" {
 - `power_state` (String) Power state code
 - `project_id` (String) Project ID the instance belongs to
 - `security_group_count` (Number) Number of security groups attached to the instance
-- `security_groups` (Attributes Set) List of security groups attached to the instance ( see [below for nested schema](#nestedatt--security_groups))
+- `security_groups` (Attributes Set) List of security groups attached to the instance (see [below for nested schema](#nestedatt--security_groups))
 - `task_state` (String) Current task state
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format <br/> - Based on UTC
 - `user_id` (String) ID of the user who created the instance

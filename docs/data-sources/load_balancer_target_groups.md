@@ -122,7 +122,7 @@ output "filtered_target_groups" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
@@ -151,9 +151,9 @@ The following attributes are exported:
 - `availability_zone` (String) Availability zone
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `description` (String) Description of the target group
-- `health_monitor` (Attributes) Associated health monitor information ( see [below for nested schema](#nestedatt--target_groups--health_monitor))
+- `health_monitor` (Attributes) Associated health monitor information (see [below for nested schema](#nestedatt--target_groups--health_monitor))
 - `id` (String) Target group ID
-- `listeners` (Attributes List) List of associated listener information ( see [below for nested schema](#nestedatt--target_groups--listeners))
+- `listeners` (Attributes List) List of associated listener information (see [below for nested schema](#nestedatt--target_groups--listeners))
 - `load_balancer_algorithm` (String) Load balancing algorithm
 - `load_balancer_id` (String) Associated load balancer ID
 - `load_balancer_name` (String) Associated load balancer name
@@ -165,7 +165,7 @@ The following attributes are exported:
 - `project_id` (String) Project ID
 - `protocol` (String) Traffic receiving protocol
 - `provisioning_status` (String) Provisioning status
-- `session_persistence` (Attributes) Session settings ( see [below for nested schema](#nestedatt--target_groups--session_persistence))
+- `session_persistence` (Attributes) Session settings (see [below for nested schema](#nestedatt--target_groups--session_persistence))
 - `subnet_id` (String) Subnet ID
 - `subnet_name` (String) Subnet name
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC

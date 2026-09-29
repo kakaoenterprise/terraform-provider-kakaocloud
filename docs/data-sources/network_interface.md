@@ -60,7 +60,7 @@ output "network_interface_details" {
 
 The following attributes are exported:
 
-- `allowed_address_pairs` (Attributes Set) List of allowed IP addresses for packet transmission ( see [below for nested schema](#nestedatt--allowed_address_pairs))
+- `allowed_address_pairs` (Attributes Set) List of allowed IP addresses for packet transmission (see [below for nested schema](#nestedatt--allowed_address_pairs))
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `device_id` (String) ID of the resource attached to the network interface
 - `device_owner` (String) Owner type of the resource attached to the interface (e.g., instance, router, etc.)
@@ -72,7 +72,7 @@ The following attributes are exported:
 - `project_name` (String) Name of the project
 - `public_ip` (String) Associated public IP
 - `secondary_ips` (List of String) List of secondary IPs attached to the network interface
-- `security_groups` (Attributes Set) List of attached security groups ( see [below for nested schema](#nestedatt--security_groups))
+- `security_groups` (Attributes Set) List of attached security groups (see [below for nested schema](#nestedatt--security_groups))
 - `status` (String) Current status of the network interface
 - `subnet_id` (String) ID of the connected subnet
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard

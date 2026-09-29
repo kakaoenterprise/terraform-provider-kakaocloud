@@ -54,7 +54,7 @@ output "load_balancer_flavors" {
 
 The following attributes are exported:
 
-- `flavors` (Attributes List) List of available load balancer flavors ( see [below for nested schema](#nestedatt--flavors))
+- `flavors` (Attributes List) List of available load balancer flavors (see [below for nested schema](#nestedatt--flavors))
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`

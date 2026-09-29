@@ -47,7 +47,7 @@ output "all_volume_types" {
 
 The following attributes are exported:
 
-- `volume_types` (Attributes List) List of available volume types. ( see [below for nested schema](#nestedatt--volume_types))
+- `volume_types` (Attributes List) List of available volume types. (see [below for nested schema](#nestedatt--volume_types))
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`

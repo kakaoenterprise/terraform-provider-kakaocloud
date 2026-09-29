@@ -152,14 +152,14 @@ output "vpc_subnet_target_group_members" {
 
 - `target_group_id` (Required, String) The ID of the target group to list members for
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `members` (Attributes List) List of load balancer target group members returned by this data source. ( see [below for nested schema](#nestedatt--members))
+- `members` (Attributes List) List of load balancer target group members returned by this data source. (see [below for nested schema](#nestedatt--members))
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
@@ -191,7 +191,7 @@ The following attributes are exported:
 - `project_id` (String) Project ID
 - `protocol_port` (Number) Listening port number
 - `provisioning_status` (String) Provisioning status
-- `security_groups` (Attributes List) List of security groups ( see [below for nested schema](#nestedatt--members--security_groups))
+- `security_groups` (Attributes List) List of security groups (see [below for nested schema](#nestedatt--members--security_groups))
 - `subnet` (Attributes) Subnet information (see [below for nested schema](#nestedatt--members--subnet))
 - `subnet_id` (String) Subnet ID where the target instance is located.
 - `target_group_id` (String) Target group ID

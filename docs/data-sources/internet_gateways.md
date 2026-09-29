@@ -97,6 +97,7 @@ The following attributes are exported:
 ### Nested Schema for `igws`
 
 - `attachment` (Attributes) Attachment information for the VPC connection. (see [below for nested schema](#nestedatt--igws--attachment))
+- `attachment_status` (String) Connection status of the Internet Gateway attachment. Possible values: `ATTACHED`, `ATTACHING`, `DETACHING`, `DETACHED`.
 - `created_at` (String) Time when the resource was created.<br/> - ISO_8601 format<br/> - UTC standard
 - `description` (String) Internet Gateway description.
 - `domain_id` (String) Domain ID that owns the Internet Gateway.

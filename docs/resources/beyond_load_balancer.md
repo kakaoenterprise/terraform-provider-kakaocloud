@@ -48,7 +48,7 @@ resource "kakaocloud_beyond_load_balancer" "example" {
 
 ## Argument Reference
 
-- `attached_load_balancers` (Required, Attributes Set) Request List of load balancers belonging to the HA group ( see [below for nested schema](#nestedatt--attached_load_balancers))
+- `attached_load_balancers` (Required, Attributes Set) Request List of load balancers belonging to the HA group (see [below for nested schema](#nestedatt--attached_load_balancers))
 - `name` (Required, String) High availability group name
 - `scheme` (Required, String) Access type
 - `type_id` (Required, String) ID returned by kakaocloud_load_balancer_flavors
@@ -63,7 +63,7 @@ resource "kakaocloud_beyond_load_balancer" "example" {
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `dns_name` (String) Associated DNS name (e.g., public address of the load balancer)
 - `id` (String) High availability group ID
-- `load_balancers` (Attributes List) List of load balancers included in the high availability group ( see [below for nested schema](#nestedatt--load_balancers))
+- `load_balancers` (Attributes List) List of load balancers included in the high availability group (see [below for nested schema](#nestedatt--load_balancers))
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID
 - `provider_name` (String) Provider name

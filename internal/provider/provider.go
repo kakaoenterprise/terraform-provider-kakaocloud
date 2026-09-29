@@ -253,6 +253,7 @@ func (p *kakaocloudProvider) Resources(_ context.Context) []func() resource.Reso
 		vpc.NewSubnetResource,
 		vpc.NewSubnetShareResource,
 		vpc.NewRouteTableResource,
+		vpc.NewRouteTableIngressRoutingResource,
 		vpc.NewNetworkInterfaceResource,
 
 		network.NewPublicIpResource,
@@ -302,7 +303,7 @@ func ResolveAPIVersion(
 	userAgent string,
 ) (string, error) {
 
-	defaultVersion := "1.4.3"
+	defaultVersion := "2.2.0"
 
 	return defaultVersion, nil
 }

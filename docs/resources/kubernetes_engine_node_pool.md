@@ -109,16 +109,16 @@ resource "kakaocloud_kubernetes_engine_node_pool" "example_sg" {
 - `image_id` (Required, String) Unique ID of the image
 - `name` (Required, String) Target node pool name
 - `ssh_key_name` (Required, String) SSH key name
-- `vpc_info` (Required, Attributes) VPC information for creating the node pool ( see [below for nested schema](#nestedatt--vpc_info))
+- `vpc_info` (Required, Attributes) VPC information for creating the node pool (see [below for nested schema](#nestedatt--vpc_info))
 
-- `autoscaling` (Optional, Attributes) Resource-based autoscaling configuration of the node pool ( see [below for nested schema](#nestedatt--autoscaling))
+- `autoscaling` (Optional, Attributes) Resource-based autoscaling configuration of the node pool (see [below for nested schema](#nestedatt--autoscaling))
 - `description` (Optional, String) Description of the node pool
 - `is_hyper_threading` (Optional, Boolean) Whether hyper-threading is enabled <br/> - `true`: Enable hyper-threading, recognizing 2 vCPUs per physical core <br/> - `false`: Disable hyper-threading, recognizing vCPUs equal to the number of physical cores
-- `labels` (Optional, Attributes Set) List of labels to apply to the node pool (key/value pairs) ( see [below for nested schema](#nestedatt--labels))
+- `labels` (Optional, Attributes Set) List of labels to apply to the node pool (key/value pairs) (see [below for nested schema](#nestedatt--labels))
 - `minor_version` (Optional, String) Kubernetes version of the node pool
 - `request_node_count` (Optional, Number) Number of nodes in the node pool
 - `request_security_groups` (Optional, Set of String) List of security group IDs to connect
-- `taints` (Optional, Attributes Set) List of taints to apply to the node pool ( see [below for nested schema](#nestedatt--taints))
+- `taints` (Optional, Attributes Set) List of taints to apply to the node pool (see [below for nested schema](#nestedatt--taints))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 - `user_data` (Optional, String) User script to run when creating nodes in the node pool (requires base64 encoding)
 - `volume_size` (Optional, Number) Root volume size of the node pool (unit: GiB) <br/> - Required when creating VM or GPU node pools
@@ -141,7 +141,7 @@ resource "kakaocloud_kubernetes_engine_node_pool" "example_sg" {
 ### Nested Schema for `vpc_info`
 
 - `id` (Required, String) Unique ID of the VPC
-- `subnets` (Required, Attributes Set) List of subnet IDs to connect ( see [below for nested schema](#nestedatt--vpc_info--subnets))
+- `subnets` (Required, Attributes Set) List of subnet IDs to connect (see [below for nested schema](#nestedatt--vpc_info--subnets))
 
 <a id="nestedatt--vpc_info--subnets"></a>
 ### Nested Schema for `vpc_info.subnets`

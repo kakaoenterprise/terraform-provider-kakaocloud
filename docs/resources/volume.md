@@ -55,7 +55,7 @@ resource "kakaocloud_volume" "example_restore" {
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `encryption_key_id` (String) ID of the key used for volume encryption
 - `id` (String) Unique ID of the volume
-- `image_metadata` (Attributes) Metadata of the associated instance if this is a root volume ( see [below for nested schema](#nestedatt--image_metadata))
+- `image_metadata` (Attributes) Metadata of the associated instance if this is a root volume (see [below for nested schema](#nestedatt--image_metadata))
 - `instance_id` (String) Unique ID of the instance
 - `instance_name` (String) Name of the instance attached to the volume
 - `is_bootable` (Boolean) Whether the volume is bootable

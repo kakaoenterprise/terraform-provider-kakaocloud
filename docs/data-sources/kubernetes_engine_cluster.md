@@ -53,7 +53,7 @@ output "cluster_example" {
 The following attributes are exported:
 
 - `api_version` (String) API version
-- `control_plane_endpoint` (Attributes) Control plane endpoint information ( see [below for nested schema](#nestedatt--control_plane_endpoint))
+- `control_plane_endpoint` (Attributes) Control plane endpoint information (see [below for nested schema](#nestedatt--control_plane_endpoint))
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
 - `creator_info` (Attributes) Creator information (see [below for nested schema](#nestedatt--creator_info))
 - `description` (String) Description of the cluster
@@ -64,7 +64,7 @@ The following attributes are exported:
 - `network` (Attributes) Cluster network information (see [below for nested schema](#nestedatt--network))
 - `status` (Attributes) Cluster status (see [below for nested schema](#nestedatt--status))
 - `version` (Attributes) Kubernetes version of the cluster (see [below for nested schema](#nestedatt--version))
-- `vpc_info` (Attributes) VPC information where the cluster belongs ( see [below for nested schema](#nestedatt--vpc_info))
+- `vpc_info` (Attributes) VPC information where the cluster belongs (see [below for nested schema](#nestedatt--vpc_info))
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`

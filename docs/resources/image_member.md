@@ -36,7 +36,7 @@ resource "kakaocloud_image_member" "example" {
 
 ## Attribute Reference
 
-- `members` (Attributes List) List of projects with which the image is shared. ( see [below for nested schema](#nestedatt--members))
+- `members` (Attributes List) List of projects with which the image is shared. (see [below for nested schema](#nestedatt--members))
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`

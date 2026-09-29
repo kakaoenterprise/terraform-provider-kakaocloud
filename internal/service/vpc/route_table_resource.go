@@ -271,7 +271,7 @@ func (r *routeTableResource) Update(ctx context.Context, req resource.UpdateRequ
 		descriptionChanged = planDescription != stateDescription
 	}
 
-	var updatedRouteTable *vpc.UpdatedRouteTable
+	var updatedRouteTable *vpc.RouteTableResult
 	if nameChanged || descriptionChanged {
 		editReq := vpc.UpdateRouteTable{}
 

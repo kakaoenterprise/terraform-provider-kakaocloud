@@ -99,6 +99,12 @@ func (d *routeTablesDataSource) Read(ctx context.Context, req datasource.ReadReq
 		if !f.Value.IsNull() && !f.Value.IsUnknown() {
 			v := f.Value.ValueString()
 			switch filterName {
+			case "ingress_routing":
+				if v != "true" && v != "false" {
+					resp.Diagnostics.AddError("Invalid ingress_routing value", "Expected true or false.")
+				} else {
+					routeTableApi = routeTableApi.IngressRouting(v == "true")
+				}
 			case "id":
 				routeTableApi = routeTableApi.Id(v)
 			case "name":

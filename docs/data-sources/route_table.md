@@ -3,16 +3,16 @@
 page_title: "kakaocloud_route_table Data Source - kakaocloud"
 subcategory: "VPC"
 description: |-
-  The kakaocloud_route_table data source retrieves detailed information about a specific Route Table in KakaoCloud.It provides attributes such as the associated VPC, route entries, subnet associations, provisioning status, and whether the Route Table is the main table in the VPC.
+  The kakaocloud_route_table data source retrieves detailed information about a specific Route Table in KakaoCloud. It provides attributes such as the associated VPC, route entries, subnet associations, ingress routing connection, provisioning status, and whether the Route Table is the main table in the VPC.
   Use this data source when you need to:
-  Reference an existing Route Table in your Terraform configuration.Query routing details dynamically instead of hardcoding route information.
+  Reference an existing Route Table in your Terraform configuration. Query routing details dynamically instead of hardcoding route information.
 ---
 
 # kakaocloud_route_table (Data Source)
 
 The `kakaocloud_route_table` data source retrieves detailed information about a specific Route Table in KakaoCloud.  
-It provides attributes such as the associated VPC, route entries, subnet associations, provisioning status, and whether
-the Route Table is the main table in the VPC.
+It provides attributes such as the associated VPC, route entries, subnet associations, ingress routing connection,
+provisioning status, and whether the Route Table is the main table in the VPC.
 
 Use this data source when you need to:
 
@@ -34,11 +34,12 @@ data "kakaocloud_route_table" "example" {
 output "route_table_details" {
   description = "Details of the specified route table"
   value = {
-    id      = data.kakaocloud_route_table.example.id
-    name    = data.kakaocloud_route_table.example.name
-    vpc_id  = data.kakaocloud_route_table.example.vpc_id
-    is_main = data.kakaocloud_route_table.example.is_main
-    routes  = data.kakaocloud_route_table.example.routes
+    id              = data.kakaocloud_route_table.example.id
+    name            = data.kakaocloud_route_table.example.name
+    vpc_id          = data.kakaocloud_route_table.example.vpc_id
+    is_main         = data.kakaocloud_route_table.example.is_main
+    ingress_routing = data.kakaocloud_route_table.example.ingress_routing
+    routes          = data.kakaocloud_route_table.example.routes
   }
 }
 ```
@@ -55,15 +56,16 @@ output "route_table_details" {
 
 The following attributes are exported:
 
-- `associations` (Attributes List) List of subnet associations connected to the route table ( see [below for nested schema](#nestedatt--associations))
+- `associations` (Attributes List) List of subnet associations connected to the route table (see [below for nested schema](#nestedatt--associations))
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `description` (String) Route table description.
+- `ingress_routing` (Attributes) Ingress routing connection associated with the route table. Returns `null` when ingress routing is not configured. (see [below for nested schema](#nestedatt--ingress_routing))
 - `is_main` (Boolean) Indicates whether it is the main route table
 - `name` (String) Route table name
 - `project_id` (String) ID of the project the route table belongs to
 - `project_name` (String) Name of the project the route table belongs to
 - `provisioning_status` (String) Provisioning status
-- `routes` (Attributes List) List of routes registered in the route table ( see [below for nested schema](#nestedatt--routes))
+- `routes` (Attributes List) List of routes registered in the route table (see [below for nested schema](#nestedatt--routes))
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 - `vpc_id` (String) ID of the VPC the route table belongs to
 - `vpc_name` (String) Name of the VPC the route table belongs to
@@ -72,7 +74,7 @@ The following attributes are exported:
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 
 <a id="nestedatt--associations"></a>
@@ -86,6 +88,14 @@ The following attributes are exported:
 - `subnet_name` (String) Name of the connected subnet
 - `vpc_id` (String) ID of the connected VPC
 - `vpc_name` (String) Name of the connected VPC
+
+
+<a id="nestedatt--ingress_routing"></a>
+### Nested Schema for `ingress_routing`
+
+- `id` (String) Ingress routing connection ID.
+- `internet_gateway_id` (String) ID of the Internet Gateway connected to the route table for ingress routing.
+- `provisioning_status` (String) Provisioning status of the ingress routing connection.
 
 
 <a id="nestedatt--routes"></a>

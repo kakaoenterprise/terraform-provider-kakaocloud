@@ -11,6 +11,10 @@ The `kakaocloud_internet_gateway_attachment` resource creates and manages an att
 
 Use this resource to connect an existing Internet Gateway to a VPC. The attachment controls the VPC's internet connectivity and exposes its provisioning status.
 
+-> **Note:** Before deleting the attachment, delete any ingress routing connected to the Internet Gateway. When the attachment and ingress routing are managed in the same Terraform state, referencing the Internet Gateway and VPC IDs alone does not ensure that Terraform waits for the attachment to be created. Configure the related [`kakaocloud_route_table_ingress_routing`](route_table_ingress_routing.md) resource with `depends_on` referencing the attachment. This ensures that Terraform creates the attachment before the ingress routing and deletes the ingress routing before the attachment.
+
+-> **Note:** If the attachment and ingress routing are managed in separate Terraform states, `depends_on` cannot enforce their order. Create the attachment before the ingress routing, and delete the ingress routing before the attachment.
+
 ## Example Usage
 
 ```terraform

@@ -95,14 +95,14 @@ output "filtered_k8s_images" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `images` (Attributes List) List of images that match the applied filters. ( see [below for nested schema](#nestedatt--images))
+- `images` (Attributes List) List of images that match the applied filters. (see [below for nested schema](#nestedatt--images))
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`

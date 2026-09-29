@@ -60,7 +60,7 @@ The following attributes are exported:
 - `private_ip` (String) Private IP address of the associated network interface (IPv4 format)
 - `project_id` (String) ID of the project this public IP belongs to
 - `public_ip` (String) Public IP address
-- `related_resource` (Attributes) Information of the resource associated with the public IP ( see [below for nested schema](#nestedatt--related_resource))
+- `related_resource` (Attributes) Information of the resource associated with the public IP (see [below for nested schema](#nestedatt--related_resource))
 - `status` (String) Current status of the public IP
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 

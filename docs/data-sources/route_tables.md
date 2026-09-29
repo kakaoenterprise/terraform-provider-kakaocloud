@@ -3,14 +3,15 @@
 page_title: "kakaocloud_route_tables Data Source - kakaocloud"
 subcategory: "VPC"
 description: |-
-  The kakaocloud_route_tables data source retrieves a list of Route Tables in KakaoCloud.It supports filtering by attributes such as name or ID, and provides details about associated VPCs, subnets, route entries, provisioning status, and whether each Route Table is the main table in its VPC.
+  The kakaocloud_route_tables data source retrieves a list of Route Tables in KakaoCloud. It supports filtering by attributes such as name and ID, as well as whether ingress routing is configured, and provides details about associated VPCs, subnets, route entries, ingress routing connections, provisioning status, and whether each Route Table is the main table in its VPC.
   Use this data source when you need to:
-  Query and reference multiple Route Tables dynamically in your Terraform configuration.Retrieve routing information for multiple VPCs or subnets without hardcoding.
+  Query and reference multiple Route Tables dynamically in your Terraform configuration. Retrieve routing information for multiple VPCs or subnets without hardcoding.
   Available filters
   | Filter               | Type              | Description |
   |--------------------------|-------------------|-------------|
+  | ingress_routing          | string            | Whether ingress routing is configured. Available values: `true`, `false` |
   | id                       | string            | ID of the routing table |
-  | name                     | string            | Name of the associated VPC |
+  | name                     | string            | Name of the route table |
   | provisioning_status      | string           | Provisioning status of the routing table <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
   | vpc_id                   | string            | ID of the associated VPC |
   | vpc_name                 | string            | Name of the associated VPC |
@@ -26,8 +27,9 @@ description: |-
 # kakaocloud_route_tables (Data Source)
 
 The `kakaocloud_route_tables` data source retrieves a list of Route Tables in KakaoCloud.  
-It supports filtering by attributes such as name or ID, and provides details about associated VPCs, subnets, route
-entries, provisioning status, and whether each Route Table is the main table in its VPC.
+It supports filtering by attributes such as name and ID, as well as whether ingress routing is configured, and provides
+details about associated VPCs, subnets, route entries, ingress routing connections, provisioning status, and whether
+each Route Table is the main table in its VPC.
 
 Use this data source when you need to:
 
@@ -38,8 +40,9 @@ Use this data source when you need to:
 
 | Filter                  | Type   | Description                                                                                                                                                                                                                            |
 |-------------------------|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ingress_routing         | string | Whether ingress routing is configured. Available values: `true`, `false`                                                                                                                                                               |
 | id                      | string | ID of the routing table                                                                                                                                                                                                                |
-| name                    | string | Name of the associated VPC                                                                                                                                                                                                             |
+| name                    | string | Name of the route table                                                                                                                                                                                                                |
 | provisioning_status     | string | Provisioning status of the routing table <br>- `ACTIVE`: Active <br>- `DELETED`: Deleted <br>- `ERROR`: Error <br>- `PENDING_CREATE`: Pending creation <br>- `PENDING_UPDATE`: Pending update <br>- `PENDING_DELETE`: Pending deletion |
 | vpc_id                  | string | ID of the associated VPC                                                                                                                                                                                                               |
 | vpc_name                | string | Name of the associated VPC                                                                                                                                                                                                             |
@@ -65,6 +68,10 @@ data "kakaocloud_route_tables" "all" {
 # List route tables with filters
 data "kakaocloud_route_tables" "filtered" {
   filter = [
+    {
+      name  = "ingress_routing"
+      value = "true" # true or false
+    },
     {
       name  = "id"
       value = "<your-route-table-id>"
@@ -120,9 +127,10 @@ data "kakaocloud_route_tables" "filtered" {
 output "all_route_tables" {
   description = "List of all route tables"
   value = {
-    count = length(data.kakaocloud_route_tables.all.route_tables)
-    ids   = data.kakaocloud_route_tables.all.route_tables[*].id
-    names = data.kakaocloud_route_tables.all.route_tables[*].name
+    count            = length(data.kakaocloud_route_tables.all.route_tables)
+    ids              = data.kakaocloud_route_tables.all.route_tables[*].id
+    names            = data.kakaocloud_route_tables.all.route_tables[*].name
+    ingress_routings = data.kakaocloud_route_tables.all.route_tables[*].ingress_routing
   }
 }
 
@@ -130,9 +138,10 @@ output "all_route_tables" {
 output "filtered_route_tables" {
   description = "List of filtered route tables"
   value = {
-    count = length(data.kakaocloud_route_tables.filtered.route_tables)
-    ids   = data.kakaocloud_route_tables.filtered.route_tables[*].id
-    names = data.kakaocloud_route_tables.filtered.route_tables[*].name
+    count            = length(data.kakaocloud_route_tables.filtered.route_tables)
+    ids              = data.kakaocloud_route_tables.filtered.route_tables[*].id
+    names            = data.kakaocloud_route_tables.filtered.route_tables[*].name
+    ingress_routings = data.kakaocloud_route_tables.filtered.route_tables[*].ingress_routing
   }
 }
 ```
@@ -141,7 +150,7 @@ output "filtered_route_tables" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
@@ -161,22 +170,23 @@ The following attributes are exported:
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 
 <a id="nestedatt--route_tables"></a>
 ### Nested Schema for `route_tables`
 
-- `associations` (Attributes List) List of subnet associations connected to the route table ( see [below for nested schema](#nestedatt--route_tables--associations))
+- `associations` (Attributes List) List of subnet associations connected to the route table (see [below for nested schema](#nestedatt--route_tables--associations))
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `description` (String) Route table description.
 - `id` (String) Route Table ID
+- `ingress_routing` (Attributes) Ingress routing connection associated with the route table. Returns `null` when ingress routing is not configured. (see [below for nested schema](#nestedatt--route_tables--ingress_routing))
 - `is_main` (Boolean) Indicates whether it is the main route table
 - `name` (String) Route table name
 - `project_id` (String) ID of the project the route table belongs to
 - `project_name` (String) Name of the project the route table belongs to
 - `provisioning_status` (String) Provisioning status
-- `routes` (Attributes List) List of routes registered in the route table ( see [below for nested schema](#nestedatt--route_tables--routes))
+- `routes` (Attributes List) List of routes registered in the route table (see [below for nested schema](#nestedatt--route_tables--routes))
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 - `vpc_id` (String) ID of the VPC the route table belongs to
 - `vpc_name` (String) Name of the VPC the route table belongs to
@@ -193,6 +203,14 @@ The following attributes are exported:
 - `subnet_name` (String) Name of the connected subnet
 - `vpc_id` (String) ID of the connected VPC
 - `vpc_name` (String) Name of the connected VPC
+
+
+<a id="nestedatt--route_tables--ingress_routing"></a>
+### Nested Schema for `route_tables.ingress_routing`
+
+- `id` (String) Ingress routing connection ID.
+- `internet_gateway_id` (String) ID of the Internet Gateway connected to the route table for ingress routing.
+- `provisioning_status` (String) Provisioning status of the ingress routing connection.
 
 
 <a id="nestedatt--route_tables--routes"></a>

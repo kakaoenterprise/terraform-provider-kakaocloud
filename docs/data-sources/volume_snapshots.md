@@ -125,14 +125,14 @@ output "filtered_volume_snapshots" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `volume_snapshots` (Attributes List) List of snapshot information. ( see [below for nested schema](#nestedatt--volume_snapshots))
+- `volume_snapshots` (Attributes List) List of snapshot information. (see [below for nested schema](#nestedatt--volume_snapshots))
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`

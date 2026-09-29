@@ -56,7 +56,7 @@ resource "kakaocloud_load_balancer_health_monitor" "example" {
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID the resource belongs to
 - `provisioning_status` (String) Provisioning status
-- `target_groups` (Attributes List) List of associated target groups ( see [below for nested schema](#nestedatt--target_groups))
+- `target_groups` (Attributes List) List of associated target groups (see [below for nested schema](#nestedatt--target_groups))
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 
 <a id="nestedatt--timeouts"></a>

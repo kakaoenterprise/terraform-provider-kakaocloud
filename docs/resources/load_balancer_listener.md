@@ -50,7 +50,7 @@ resource "kakaocloud_load_balancer_listener" "example" {
 - `description` (String) Description of the listener
 - `id` (String) Listener ID
 - `is_enabled` (Boolean) Whether the listener is enabled
-- `l7_policies` (Attributes List) List of associated L7 policies ( see [below for nested schema](#nestedatt--l7_policies))
+- `l7_policies` (Attributes List) List of associated L7 policies (see [below for nested schema](#nestedatt--l7_policies))
 - `load_balancer_type` (String) Load balancer type
 - `name` (String) Listener name
 - `operating_status` (String) Operating status

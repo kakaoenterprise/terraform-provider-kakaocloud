@@ -128,14 +128,14 @@ output "filtered_instances" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `instances` (Attributes List) List of instance objects that match the specified filters. ( see [below for nested schema](#nestedatt--instances))
+- `instances` (Attributes List) List of instance objects that match the specified filters. (see [below for nested schema](#nestedatt--instances))
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
@@ -154,9 +154,9 @@ The following attributes are exported:
 <a id="nestedatt--instances"></a>
 ### Nested Schema for `instances`
 
-- `addresses` (Attributes List) Network addresses associated with the instance ( see [below for nested schema](#nestedatt--instances--addresses))
+- `addresses` (Attributes List) Network addresses associated with the instance (see [below for nested schema](#nestedatt--instances--addresses))
 - `attached_volume_count` (Number) Number of block storage volumes attached to the instance
-- `attached_volumes` (Attributes List) List of attached volumes ( see [below for nested schema](#nestedatt--instances--attached_volumes))
+- `attached_volumes` (Attributes List) List of attached volumes (see [below for nested schema](#nestedatt--instances--attached_volumes))
 - `availability_zone` (String) Name of the availability zone where the instance was created
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `description` (String) Description of the instance
@@ -173,7 +173,7 @@ The following attributes are exported:
 - `power_state` (String) Power state code
 - `project_id` (String) Project ID the instance belongs to
 - `security_group_count` (Number) Number of security groups attached to the instance
-- `security_groups` (Attributes Set) List of security groups attached to the instance ( see [below for nested schema](#nestedatt--instances--security_groups))
+- `security_groups` (Attributes Set) List of security groups attached to the instance (see [below for nested schema](#nestedatt--instances--security_groups))
 - `status` (String) Instance status <br/> - Only `active`, `shelved_offloaded`, and `stopped` can be entered.
 - `task_state` (String) Current task state
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format <br/> - Based on UTC

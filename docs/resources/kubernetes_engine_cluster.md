@@ -52,8 +52,8 @@ resource "kakaocloud_kubernetes_engine_cluster" "example" {
 - `is_allocate_fip` (Required, Boolean) Whether to allocate a public IP <br/> - `true`: Allocate a public IP <br/> - `false`: Do not allocate a public IP
 - `name` (Required, String) Cluster name
 - `network` (Required, Attributes) Cluster network information (see [below for nested schema](#nestedatt--network))
-- `version` (Required, Attributes) Kubernetes version of the cluster ( see [below for nested schema](#nestedatt--version))
-- `vpc_info` (Required, Attributes) VPC information where the cluster belongs ( see [below for nested schema](#nestedatt--vpc_info))
+- `version` (Required, Attributes) Kubernetes version of the cluster (see [below for nested schema](#nestedatt--version))
+- `vpc_info` (Required, Attributes) VPC information where the cluster belongs (see [below for nested schema](#nestedatt--vpc_info))
 
 - `description` (Optional, String) Description of the cluster
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
@@ -61,7 +61,7 @@ resource "kakaocloud_kubernetes_engine_cluster" "example" {
 ## Attribute Reference
 
 - `api_version` (String) API version
-- `control_plane_endpoint` (Attributes) Control plane endpoint information ( see [below for nested schema](#nestedatt--control_plane_endpoint))
+- `control_plane_endpoint` (Attributes) Control plane endpoint information (see [below for nested schema](#nestedatt--control_plane_endpoint))
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
 - `creator_info` (Attributes) Creator information (see [below for nested schema](#nestedatt--creator_info))
 - `failure_message` (String) Failure message if the cluster status changes to `Failed`
@@ -92,7 +92,7 @@ resource "kakaocloud_kubernetes_engine_cluster" "example" {
 ### Nested Schema for `vpc_info`
 
 - `id` (Required, String) Unique ID of the VPC
-- `subnets` (Required, Attributes Set) List of subnet information ( see [below for nested schema](#nestedatt--vpc_info--subnets))
+- `subnets` (Required, Attributes Set) List of subnet information (see [below for nested schema](#nestedatt--vpc_info--subnets))
 
 <a id="nestedatt--vpc_info--subnets"></a>
 ### Nested Schema for `vpc_info.subnets`

@@ -55,9 +55,9 @@ The following attributes are exported:
 - `default_target_group_id` (String) Default target group ID
 - `default_target_group_name` (String) Default target group name
 - `description` (String) Description of the listener
-- `insert_headers` (Attributes) Settings for HTTP headers to insert ( see [below for nested schema](#nestedatt--insert_headers))
+- `insert_headers` (Attributes) Settings for HTTP headers to insert (see [below for nested schema](#nestedatt--insert_headers))
 - `is_enabled` (Boolean) Whether the listener is enabled
-- `l7_policies` (Attributes List) List of associated L7 policies ( see [below for nested schema](#nestedatt--l7_policies))
+- `l7_policies` (Attributes List) List of associated L7 policies (see [below for nested schema](#nestedatt--l7_policies))
 - `load_balancer_id` (String) Associated load balancer ID
 - `load_balancer_type` (String) Load balancer type
 - `name` (String) Listener name

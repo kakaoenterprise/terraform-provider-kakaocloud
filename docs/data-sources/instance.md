@@ -63,9 +63,9 @@ output "instance_example" {
 
 The following attributes are exported:
 
-- `addresses` (Attributes List) Network addresses associated with the instance ( see [below for nested schema](#nestedatt--addresses))
+- `addresses` (Attributes List) Network addresses associated with the instance (see [below for nested schema](#nestedatt--addresses))
 - `attached_volume_count` (Number) Number of block storage volumes attached to the instance
-- `attached_volumes` (Attributes List) List of attached volumes ( see [below for nested schema](#nestedatt--attached_volumes))
+- `attached_volumes` (Attributes List) List of attached volumes (see [below for nested schema](#nestedatt--attached_volumes))
 - `availability_zone` (String) Name of the availability zone where the instance was created
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format <br/> - Based on UTC
 - `description` (String) Description of the instance
@@ -81,7 +81,7 @@ The following attributes are exported:
 - `power_state` (String) Power state code
 - `project_id` (String) Project ID the instance belongs to
 - `security_group_count` (Number) Number of security groups attached to the instance
-- `security_groups` (Attributes Set) List of security groups attached to the instance ( see [below for nested schema](#nestedatt--security_groups))
+- `security_groups` (Attributes Set) List of security groups attached to the instance (see [below for nested schema](#nestedatt--security_groups))
 - `status` (String) Instance status <br/> - Only `active`, `shelved_offloaded`, and `stopped` can be entered.
 - `task_state` (String) Current task state
 - `updated_at` (String) Time when the resource was last modified <br/> - ISO_8601 format <br/> - Based on UTC

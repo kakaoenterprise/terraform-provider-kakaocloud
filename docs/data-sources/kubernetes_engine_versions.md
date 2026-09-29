@@ -52,7 +52,7 @@ output "all_k8s_versions" {
 
 The following attributes are exported:
 
-- `versions` (Attributes List) List of supported Kubernetes versions. ( see [below for nested schema](#nestedatt--versions))
+- `versions` (Attributes List) List of supported Kubernetes versions. (see [below for nested schema](#nestedatt--versions))
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`

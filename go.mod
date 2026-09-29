@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/terraform-plugin-go v0.31.0 // indirect
 	github.com/hashicorp/terraform-plugin-log v0.10.0
 	github.com/jinzhu/copier v0.4.0
-	github.com/kakaoenterprise/kc-sdk-go/v2 v2.0.0
+	github.com/kakaoenterprise/kc-sdk-go/v2 v2.2.0
 	github.com/stretchr/testify v1.11.1 // indirect
 	golang.org/x/net v0.53.0
 	gopkg.in/yaml.v3 v3.0.1

@@ -55,7 +55,7 @@ resource "kakaocloud_load_balancer_target_group_member" "example" {
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID that owns the resource
 - `provisioning_status` (String) Provisioning status
-- `security_groups` (Attributes List) List of security groups ( see [below for nested schema](#nestedatt--security_groups))
+- `security_groups` (Attributes List) List of security groups (see [below for nested schema](#nestedatt--security_groups))
 - `subnet` (Attributes) Subnet information (see [below for nested schema](#nestedatt--subnet))
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC
 - `vpc_id` (String) Unique VPC ID

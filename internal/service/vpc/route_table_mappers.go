@@ -6,6 +6,7 @@ import (
 	. "terraform-provider-kakaocloud/internal/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/kakaoenterprise/kc-sdk-go/v2/services/vpc"
 	"golang.org/x/net/context"
 )
@@ -43,6 +44,16 @@ func mapRouteTableModel(
 		}
 	})
 	diags.Append(routeDiags...)
+
+	ingressRouting, ingressDiags := ConvertObjectFromModel(ctx, result.IngressRouting, routeTableIngressRoutingAttrType, func(item vpc.IngressRouting) any {
+		return routeTableIngressRoutingModel{
+			Id:                 types.StringValue(item.Id),
+			InternetGatewayId:  ConvertNullableString(item.IgwId),
+			ProvisioningStatus: ConvertNullableString(item.ProvisioningStatus),
+		}
+	})
+	diags.Append(ingressDiags...)
+	base.IngressRouting = ingressRouting
 
 	base.Id = ConvertNullableString(result.Id)
 	base.Name = ConvertNullableString(result.Name)

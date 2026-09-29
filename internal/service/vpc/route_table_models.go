@@ -25,8 +25,21 @@ type routeTableBaseModel struct {
 	ProjectId             types.String `tfsdk:"project_id"`
 	ProjectName           types.String `tfsdk:"project_name"`
 	IsMain                types.Bool   `tfsdk:"is_main"`
+	IngressRouting        types.Object `tfsdk:"ingress_routing"`
 	CreatedAt             types.String `tfsdk:"created_at"`
 	UpdatedAt             types.String `tfsdk:"updated_at"`
+}
+
+type routeTableIngressRoutingModel struct {
+	Id                 types.String `tfsdk:"id"`
+	InternetGatewayId  types.String `tfsdk:"internet_gateway_id"`
+	ProvisioningStatus types.String `tfsdk:"provisioning_status"`
+}
+
+var routeTableIngressRoutingAttrType = map[string]attr.Type{
+	"id":                  types.StringType,
+	"internet_gateway_id": types.StringType,
+	"provisioning_status": types.StringType,
 }
 
 type routeTableAssociationModel struct {

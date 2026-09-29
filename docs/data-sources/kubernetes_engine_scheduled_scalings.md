@@ -51,13 +51,13 @@ output "all_scheduled_scalings" {
 - `cluster_name` (Required, String) Target cluster name
 - `node_pool_name` (Required, String) Target node pool name
 
-- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).) ( see [below for nested schema](#nestedatt--timeouts))
+- `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `scheduled_scaling` (Attributes List) List of scheduled autoscaling rules configured for the specified node pool. ( see [below for nested schema](#nestedatt--scheduled_scaling))
+- `scheduled_scaling` (Attributes List) List of scheduled autoscaling rules configured for the specified node pool. (see [below for nested schema](#nestedatt--scheduled_scaling))
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -81,7 +81,7 @@ The following attributes are exported:
 <a id="nestedatt--scheduled_scaling--status"></a>
 ### Nested Schema for `scheduled_scaling.status`
 
-- `histories` (Attributes List) List of past executions ( see [below for nested schema](#nestedatt--scheduled_scaling--status--histories))
+- `histories` (Attributes List) List of past executions (see [below for nested schema](#nestedatt--scheduled_scaling--status--histories))
 
 <a id="nestedatt--scheduled_scaling--status--histories"></a>
 ### Nested Schema for `scheduled_scaling.status.histories`

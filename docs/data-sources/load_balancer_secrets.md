@@ -87,14 +87,14 @@ output "filtered_load_balancer_secrets" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `secrets` (Attributes List) List of SSL/TLS secrets that match the specified filters ( see [below for nested schema](#nestedatt--secrets))
+- `secrets` (Attributes List) List of SSL/TLS secrets that match the specified filters (see [below for nested schema](#nestedatt--secrets))
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
@@ -113,7 +113,7 @@ The following attributes are exported:
 <a id="nestedatt--secrets"></a>
 ### Nested Schema for `secrets`
 
-- `content_types` (Attributes) List of certificate content types ( see [below for nested schema](#nestedatt--secrets--content_types))
+- `content_types` (Attributes) List of certificate content types (see [below for nested schema](#nestedatt--secrets--content_types))
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
 - `creator_id` (String) Certificate creator ID
 - `expiration` (String) Certificate expiration time

@@ -138,14 +138,14 @@ output "beyond_load_balancers" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `beyond_load_balancers` (Attributes List) List of Beyond Load Balancer HA Groups. ( see [below for nested schema](#nestedatt--beyond_load_balancers))
+- `beyond_load_balancers` (Attributes List) List of Beyond Load Balancer HA Groups. (see [below for nested schema](#nestedatt--beyond_load_balancers))
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
@@ -169,7 +169,7 @@ The following attributes are exported:
 - `description` (String) Description of the high availability group
 - `dns_name` (String) Associated DNS name (e.g., public address of the load balancer)
 - `id` (String) beyond load balancer ID
-- `load_balancers` (Attributes List) List of load balancers included in the high availability group ( see [below for nested schema](#nestedatt--beyond_load_balancers--load_balancers))
+- `load_balancers` (Attributes List) List of load balancers included in the high availability group (see [below for nested schema](#nestedatt--beyond_load_balancers--load_balancers))
 - `name` (String) High availability group name
 - `operating_status` (String) Operating status
 - `project_id` (String) Project ID

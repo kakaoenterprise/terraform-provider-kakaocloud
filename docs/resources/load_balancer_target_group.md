@@ -51,16 +51,16 @@ resource "kakaocloud_load_balancer_target_group" "example_with_listener" {
 - `alpn_protocols` (Optional, List of String) ALPN (Application-Layer Protocol Negotiation) protocol list
 - `description` (Optional, String) Description of the target group
 - `listener_id` (Optional, String) ID of the listener associated with this target group. <br/> - **Note:** Do not include this field when importing an existing resource. This value cannot be retrieved, and setting it after import will cause **forced replacement**.
-- `session_persistence` (Optional, Attributes) Session settings ( see [below for nested schema](#nestedatt--session_persistence))
+- `session_persistence` (Optional, Attributes) Session settings (see [below for nested schema](#nestedatt--session_persistence))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
 - `availability_zone` (String) Availability zone
 - `created_at` (String) Time when the resource was created <br/> - ISO_8601 format  <br/> - Based on UTC
-- `health_monitor` (Attributes) Associated health monitor information ( see [below for nested schema](#nestedatt--health_monitor))
+- `health_monitor` (Attributes) Associated health monitor information (see [below for nested schema](#nestedatt--health_monitor))
 - `id` (String) Target group ID
-- `listeners` (Attributes List) List of associated listener information ( see [below for nested schema](#nestedatt--listeners))
+- `listeners` (Attributes List) List of associated listener information (see [below for nested schema](#nestedatt--listeners))
 - `load_balancer_name` (String) Associated load balancer name
 - `load_balancer_provisioning_status` (String) Load balancer provisioning status
 - `load_balancer_type` (String) Load balancer type

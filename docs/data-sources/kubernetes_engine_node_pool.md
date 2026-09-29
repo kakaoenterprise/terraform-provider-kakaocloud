@@ -52,7 +52,7 @@ output "node_pool_info" {
 
 The following attributes are exported:
 
-- `autoscaling` (Attributes) Resource-based autoscaling configuration of the node pool ( see [below for nested schema](#nestedatt--autoscaling))
+- `autoscaling` (Attributes) Resource-based autoscaling configuration of the node pool (see [below for nested schema](#nestedatt--autoscaling))
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
 - `description` (String) Description of the node pool
 - `failure_message` (String) Failure message if a node in the node pool changes to `Failed`
@@ -74,7 +74,7 @@ The following attributes are exported:
 - `user_data` (String) User script set for the node pool (base64 encoded)
 - `version` (String) Kubernetes version of the node pool
 - `volume_size` (Number) Root volume size of the node pool (GiB)
-- `vpc_info` (Attributes) VPC information where the node pool belongs ( see [below for nested schema](#nestedatt--vpc_info))
+- `vpc_info` (Attributes) VPC information where the node pool belongs (see [below for nested schema](#nestedatt--vpc_info))
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`

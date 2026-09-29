@@ -61,7 +61,7 @@ output "cluster_nodes" {
 
 The following attributes are exported:
 
-- `nodes` (Attributes List) List of node objects returned from the cluster. ( see [below for nested schema](#nestedatt--nodes))
+- `nodes` (Attributes List) List of node objects returned from the cluster. (see [below for nested schema](#nestedatt--nodes))
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -87,7 +87,7 @@ The following attributes are exported:
 - `updated_at` (String) Last modified time of the resource <br/> - ISO_8601 format  <br/> - UTC
 - `version` (String) Kubernetes version of the node
 - `volume_size` (Number) Root volume size of the node (GiB)
-- `vpc_info` (Attributes) VPC information where the node belongs ( see [below for nested schema](#nestedatt--nodes--vpc_info))
+- `vpc_info` (Attributes) VPC information where the node belongs (see [below for nested schema](#nestedatt--nodes--vpc_info))
 
 <a id="nestedatt--nodes--image"></a>
 ### Nested Schema for `nodes.image`

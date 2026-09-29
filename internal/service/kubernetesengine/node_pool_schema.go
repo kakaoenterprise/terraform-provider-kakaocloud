@@ -275,7 +275,7 @@ func getNodePoolResourceSchema() map[string]rschema.Attribute {
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int32{
-				int32validator.Between(30, 5120),
+				int32validator.Between(30, 16384),
 			},
 			PlanModifiers: []planmodifier.Int32{
 				int32planmodifier.UseStateForUnknown(),

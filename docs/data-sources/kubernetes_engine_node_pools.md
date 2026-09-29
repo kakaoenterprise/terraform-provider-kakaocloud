@@ -56,7 +56,7 @@ output "all_node_pools" {
 
 The following attributes are exported:
 
-- `node_pools` (Attributes List) List of node pools in the cluster ( see [below for nested schema](#nestedatt--node_pools))
+- `node_pools` (Attributes List) List of node pools in the cluster (see [below for nested schema](#nestedatt--node_pools))
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -67,7 +67,7 @@ The following attributes are exported:
 <a id="nestedatt--node_pools"></a>
 ### Nested Schema for `node_pools`
 
-- `autoscaling` (Attributes) Resource-based autoscaling configuration of the node pool ( see [below for nested schema](#nestedatt--node_pools--autoscaling))
+- `autoscaling` (Attributes) Resource-based autoscaling configuration of the node pool (see [below for nested schema](#nestedatt--node_pools--autoscaling))
 - `cluster_name` (String) Name of the cluster the node pool belongs to
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
 - `description` (String) Description of the node pool
@@ -81,17 +81,17 @@ The following attributes are exported:
 - `is_gpu` (Boolean) Whether the node pool is GPU type
 - `is_hyper_threading` (Boolean) Whether hyper-threading is enabled
 - `is_upgradable` (Boolean) Whether upgrade is available
-- `labels` (Attributes Set) List of labels applied to the node pool ( see [below for nested schema](#nestedatt--node_pools--labels))
+- `labels` (Attributes Set) List of labels applied to the node pool (see [below for nested schema](#nestedatt--node_pools--labels))
 - `name` (String) Node pool name
 - `node_count` (Number) Number of nodes in the node pool
 - `security_groups` (Set of String) List of connected security groups
 - `ssh_key_name` (String) SSH key name
 - `status` (Attributes) Node pool status (see [below for nested schema](#nestedatt--node_pools--status))
-- `taints` (Attributes Set) List of taints applied to the node pool ( see [below for nested schema](#nestedatt--node_pools--taints))
+- `taints` (Attributes Set) List of taints applied to the node pool (see [below for nested schema](#nestedatt--node_pools--taints))
 - `user_data` (String) User script set for the node pool (base64 encoded)
 - `version` (String) Kubernetes version of the node pool
 - `volume_size` (Number) Root volume size of the node pool (GiB)
-- `vpc_info` (Attributes) VPC information where the node pool belongs ( see [below for nested schema](#nestedatt--node_pools--vpc_info))
+- `vpc_info` (Attributes) VPC information where the node pool belongs (see [below for nested schema](#nestedatt--node_pools--vpc_info))
 
 <a id="nestedatt--node_pools--autoscaling"></a>
 ### Nested Schema for `node_pools.autoscaling`
@@ -147,7 +147,7 @@ The following attributes are exported:
 ### Nested Schema for `node_pools.vpc_info`
 
 - `id` (String) Unique ID of the VPC
-- `subnets` (Attributes Set) List of subnet IDs ( see [below for nested schema](#nestedatt--node_pools--vpc_info--subnets))
+- `subnets` (Attributes Set) List of subnet IDs (see [below for nested schema](#nestedatt--node_pools--vpc_info--subnets))
 
 <a id="nestedatt--node_pools--vpc_info--subnets"></a>
 ### Nested Schema for `node_pools.vpc_info.subnets`

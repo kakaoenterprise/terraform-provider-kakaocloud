@@ -52,7 +52,7 @@ resource "kakaocloud_public_ip" "example_lb" {
 ## Argument Reference
 
 - `description` (Optional, String) Description of the public IP
-- `related_resource` (Optional, Attributes) Information of the resource associated with the public IP ( see [below for nested schema](#nestedatt--related_resource))
+- `related_resource` (Optional, Attributes) Information of the resource associated with the public IP (see [below for nested schema](#nestedatt--related_resource))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference

@@ -48,13 +48,13 @@ output "api_server_endpoint" {
 The following attributes are exported:
 
 - `api_version` (String) API version of the kubeconfig file.
-- `clusters` (Attributes List) Cluster definitions included in the kubeconfig. ( see [nested schema](#nestedatt--clusters))
-- `contexts` (Attributes List) Context configurations included in the kubeconfig. ( see [nested schema](#nestedatt--contexts))
+- `clusters` (Attributes List) Cluster definitions included in the kubeconfig. (see [nested schema](#nestedatt--clusters))
+- `contexts` (Attributes List) Context configurations included in the kubeconfig. (see [nested schema](#nestedatt--contexts))
 - `current_context` (String) The name of the context that is currently active.
 - `kind` (String) Type of Kubernetes object represented (typically `"Config"`).
 - `kubeconfig_yaml` (String) Full kubeconfig output in YAML format.
 - `preferences` (Map of String) User preference settings (commonly empty).
-- `users` (Attributes List) User authentication configurations. (see [nested schema](#nestedatt--users)) ( see [below for nested schema](#nestedatt--users))
+- `users` (Attributes List) User authentication configurations. (see [nested schema](#nestedatt--users))
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -65,7 +65,7 @@ The following attributes are exported:
 <a id="nestedatt--clusters"></a>
 ### Nested Schema for `clusters`
 
-- `cluster` (Attributes) Cluster information. (see [nested schema](#nestedatt--clusters--cluster)) ( see [below for nested schema](#nestedatt--clusters--cluster))
+- `cluster` (Attributes) Cluster information. (see [nested schema](#nestedatt--clusters--cluster))
 - `name` (String) Name of the cluster entry.
 
 <a id="nestedatt--clusters--cluster"></a>
@@ -79,7 +79,7 @@ The following attributes are exported:
 <a id="nestedatt--contexts"></a>
 ### Nested Schema for `contexts`
 
-- `context` (Attributes) Context information. (see [nested schema](#nestedatt--contexts--context)) ( see [below for nested schema](#nestedatt--contexts--context))
+- `context` (Attributes) Context information. (see [nested schema](#nestedatt--contexts--context))
 - `name` (String) Name of the context entry.
 
 <a id="nestedatt--contexts--context"></a>
@@ -94,12 +94,12 @@ The following attributes are exported:
 ### Nested Schema for `users`
 
 - `name` (String) Name of the user entry.
-- `user` (Attributes) User authentication information. (see [nested schema](#nestedatt--users--user)) ( see [below for nested schema](#nestedatt--users--user))
+- `user` (Attributes) User authentication information. (see [nested schema](#nestedatt--users--user))
 
 <a id="nestedatt--users--user"></a>
 ### Nested Schema for `users.user`
 
-- `exec` (Attributes) Exec-based authentication settings. (see [nested schema](#nestedatt--users--user--exec)) ( see [below for nested schema](#nestedatt--users--user--exec))
+- `exec` (Attributes) Exec-based authentication settings. (see [nested schema](#nestedatt--users--user--exec))
 
 <a id="nestedatt--users--user--exec"></a>
 ### Nested Schema for `users.user.exec`
@@ -107,7 +107,7 @@ The following attributes are exported:
 - `api_version` (String) API version for the exec authentication plugin.
 - `args` (List of String) Arguments passed to the exec authentication command.
 - `command` (String) Command executed for external authentication.
-- `env` (Attributes List) Environment variables passed to the exec command. ( see [nested schema](#nestedatt--users--user--exec--env)) ( see [below for nested schema](#nestedatt--users--user--exec--env))
+- `env` (Attributes List) Environment variables passed to the exec command. (see [nested schema](#nestedatt--users--user--exec--env))
 - `provide_cluster_info` (Boolean) Indicates whether cluster information should be provided to the exec plugin.
 
 <a id="nestedatt--users--user--exec--env"></a>

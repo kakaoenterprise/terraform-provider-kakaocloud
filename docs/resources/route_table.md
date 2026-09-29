@@ -3,7 +3,7 @@
 page_title: "kakaocloud_route_table Resource - kakaocloud"
 subcategory: "VPC"
 description: |-
-  The kakaocloud_route_table resource allows you to create and manage route tables in KakaoCloud.You can define custom routes, associate them with subnets, and configure main route tables within a VPC.This resource also provides detailed information on existing routes, associations, and provisioning status, ensuring flexible and reliable network routing management.
+  The kakaocloud_route_table resource allows you to create and manage route tables in KakaoCloud. You can define custom routes, associate them with subnets, and configure main route tables within a VPC. This resource also provides detailed information on existing routes, associations, and provisioning status, ensuring flexible and reliable network routing management.
 ---
 
 # kakaocloud_route_table (Resource)
@@ -59,18 +59,19 @@ resource "kakaocloud_route_table" "example_with_route" {
 
 - `description` (Optional, String) Route table description.
 - `is_main` (Optional, Boolean) Indicates whether it is the main route table
-- `request_routes` (Optional, Attributes List) List of routes registered in the route table ( see [below for nested schema](#nestedatt--request_routes))
+- `request_routes` (Optional, Attributes List) List of routes registered in the route table (see [below for nested schema](#nestedatt--request_routes))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
 
-- `associations` (Attributes List) List of subnet associations connected to the route table ( see [below for nested schema](#nestedatt--associations))
+- `associations` (Attributes List) List of subnet associations connected to the route table (see [below for nested schema](#nestedatt--associations))
 - `created_at` (String) Time when the resource was created<br/> - ISO_8601 format<br/> - UTC standard
 - `id` (String) Route table ID
+- `ingress_routing` (Attributes) Ingress routing connection associated with the route table. Returns `null` when ingress routing is not configured. (see [below for nested schema](#nestedatt--ingress_routing))
 - `project_id` (String) ID of the project the route table belongs to
 - `project_name` (String) Name of the project the route table belongs to
 - `provisioning_status` (String) Provisioning status
-- `routes` (Attributes List) List of routes registered in the route table ( see [below for nested schema](#nestedatt--routes))
+- `routes` (Attributes List) List of routes registered in the route table (see [below for nested schema](#nestedatt--routes))
 - `updated_at` (String) Time when the resource was last updated<br/> - ISO_8601 format<br/> - UTC standard
 - `vpc_name` (String) Name of the VPC the route table belongs to
 - `vpc_provisioning_status` (String) Status of the VPC
@@ -87,10 +88,10 @@ resource "kakaocloud_route_table" "example_with_route" {
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
-- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
-- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
-- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" ( minutes), "h" (hours).
+- `create` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `delete` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (Optional, String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 
 <a id="nestedatt--associations"></a>
@@ -104,6 +105,14 @@ resource "kakaocloud_route_table" "example_with_route" {
 - `subnet_name` (String) Name of the connected subnet
 - `vpc_id` (String) ID of the connected VPC
 - `vpc_name` (String) Name of the connected VPC
+
+
+<a id="nestedatt--ingress_routing"></a>
+### Nested Schema for `ingress_routing`
+
+- `id` (String) Ingress routing connection ID.
+- `internet_gateway_id` (String) ID of the Internet Gateway connected to the route table for ingress routing.
+- `provisioning_status` (String) Provisioning status of the ingress routing connection.
 
 
 <a id="nestedatt--routes"></a>

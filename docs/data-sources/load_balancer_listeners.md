@@ -139,14 +139,14 @@ output "tls_listeners" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `listeners` (Attributes List) List of listeners that match the specified filters ( see [below for nested schema](#nestedatt--listeners))
+- `listeners` (Attributes List) List of listeners that match the specified filters (see [below for nested schema](#nestedatt--listeners))
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
@@ -170,9 +170,9 @@ The following attributes are exported:
 - `default_target_group_name` (String) Default target group name
 - `description` (String) Description of the listener
 - `id` (String) Listener ID
-- `insert_headers` (Attributes) Settings for HTTP headers to insert ( see [below for nested schema](#nestedatt--listeners--insert_headers))
+- `insert_headers` (Attributes) Settings for HTTP headers to insert (see [below for nested schema](#nestedatt--listeners--insert_headers))
 - `is_enabled` (Boolean) Whether the listener is enabled
-- `l7_policies` (Attributes List) List of associated L7 policies ( see [below for nested schema](#nestedatt--listeners--l7_policies))
+- `l7_policies` (Attributes List) List of associated L7 policies (see [below for nested schema](#nestedatt--listeners--l7_policies))
 - `load_balancer_id` (String) Associated load balancer ID
 - `load_balancer_type` (String) Load balancer type
 - `name` (String) Listener name
@@ -181,7 +181,7 @@ The following attributes are exported:
 - `protocol` (String) Listening protocol
 - `protocol_port` (Number) Listening port number
 - `provisioning_status` (String) Provisioning status
-- `secrets` (Attributes List) List of associated certificates ( see [below for nested schema](#nestedatt--listeners--secrets))
+- `secrets` (Attributes List) List of associated certificates (see [below for nested schema](#nestedatt--listeners--secrets))
 - `timeout_client_data` (Number) Client data receive timeout (ms)
 - `tls_certificate_id` (String) Associated TLS certificate ID
 - `tls_ciphers` (String) TLS cipher suite list (applies only to `TERMINATED_HTTPS` protocol)

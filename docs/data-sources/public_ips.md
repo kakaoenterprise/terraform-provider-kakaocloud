@@ -99,14 +99,14 @@ output "filtered_public_ips" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (See [below for nested schema](#nestedatt--timeouts).)
 
 ## Attribute Reference
 
 The following attributes are exported:
 
-- `public_ips` (Attributes List) List of public IP resources retrieved by the data source. ( see [below for nested schema](#nestedatt--public_ips))
+- `public_ips` (Attributes List) List of public IP resources retrieved by the data source. (see [below for nested schema](#nestedatt--public_ips))
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
@@ -131,7 +131,7 @@ The following attributes are exported:
 - `private_ip` (String) Private IP address of the associated network interface (IPv4 format)
 - `project_id` (String) ID of the project this public IP belongs to
 - `public_ip` (String) Public IP address
-- `related_resource` (Attributes) Information of the resource associated with the public IP ( see [below for nested schema](#nestedatt--public_ips--related_resource))
+- `related_resource` (Attributes) Information of the resource associated with the public IP (see [below for nested schema](#nestedatt--public_ips--related_resource))
 - `status` (String) Current status of the public IP
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format <br/> - Based on UTC
 

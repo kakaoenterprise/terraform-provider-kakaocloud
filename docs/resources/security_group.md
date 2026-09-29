@@ -63,7 +63,7 @@ resource "kakaocloud_security_group" "example_ssh" {
 - `name` (Required, String) Name of the security group
 
 - `description` (Optional, String) Description of the security group
-- `rules` (Optional, Attributes Set) Inbound and outbound rules configured in the security group ( see [below for nested schema](#nestedatt--rules))
+- `rules` (Optional, Attributes Set) Inbound and outbound rules configured in the security group (see [below for nested schema](#nestedatt--rules))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference

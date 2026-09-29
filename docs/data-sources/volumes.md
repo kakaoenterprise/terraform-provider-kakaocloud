@@ -159,7 +159,7 @@ output "filtered_volumes" {
 
 ## Argument Reference
 
-- `filter` (Optional, Attributes List) Filters to narrow down the returned results. ( see [below for nested schema](#nestedatt--filter))
+- `filter` (Optional, Attributes List) Filters to narrow down the returned results. (see [below for nested schema](#nestedatt--filter))
 - `timeouts` (Optional, Attributes) Custom timeout settings. (see [below for nested schema](#nestedatt--timeouts))
 
 ## Attribute Reference
@@ -191,7 +191,7 @@ The following attributes are exported:
 - `description` (String) Description of the volume
 - `encryption_key_id` (String) ID of the key used for volume encryption
 - `id` (String) Volume ID
-- `image_metadata` (Attributes) Metadata of the associated instance if this is a root volume ( see [below for nested schema](#nestedatt--volumes--image_metadata))
+- `image_metadata` (Attributes) Metadata of the associated instance if this is a root volume (see [below for nested schema](#nestedatt--volumes--image_metadata))
 - `instance_id` (String) Unique ID of the instance
 - `instance_name` (String) Name of the instance attached to the volume
 - `is_bootable` (Boolean) Whether the volume is bootable

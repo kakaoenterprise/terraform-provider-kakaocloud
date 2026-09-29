@@ -66,7 +66,7 @@ The following attributes are exported:
 - `project_id` (String) Project ID the resource belongs to
 - `provisioning_status` (String) Provisioning status
 - `target_group_id` (String) Target group ID to associate with the health monitor
-- `target_groups` (Attributes List) List of associated target groups ( see [below for nested schema](#nestedatt--target_groups))
+- `target_groups` (Attributes List) List of associated target groups (see [below for nested schema](#nestedatt--target_groups))
 - `timeout` (Number) Response timeout (seconds)
 - `type` (String) Health monitor type
 - `updated_at` (String) Time when the resource was last updated <br/> - ISO_8601 format  <br/> - Based on UTC

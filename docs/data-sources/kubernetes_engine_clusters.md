@@ -54,7 +54,7 @@ output "all_k8s_clusters" {
 
 The following attributes are exported:
 
-- `clusters` (Attributes List) List of Kubernetes Engine clusters that match the query. ( See [below for nested schema](#nestedatt--clusters) for field details.) ( see [below for nested schema](#nestedatt--clusters))
+- `clusters` (Attributes List) List of Kubernetes Engine clusters that match the query. (see [below for nested schema](#nestedatt--clusters) for field details.)
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -66,7 +66,7 @@ The following attributes are exported:
 ### Nested Schema for `clusters`
 
 - `api_version` (String) API version
-- `control_plane_endpoint` (Attributes) Control plane endpoint information ( see [below for nested schema](#nestedatt--clusters--control_plane_endpoint))
+- `control_plane_endpoint` (Attributes) Control plane endpoint information (see [below for nested schema](#nestedatt--clusters--control_plane_endpoint))
 - `created_at` (String) Resource creation time <br/> - ISO_8601 format  <br/> - UTC
 - `creator_info` (Attributes) Creator information (see [below for nested schema](#nestedatt--clusters--creator_info))
 - `description` (String) Description of the cluster
@@ -77,8 +77,8 @@ The following attributes are exported:
 - `name` (String) Kubernetes Cluster Name
 - `network` (Attributes) Cluster network information (see [below for nested schema](#nestedatt--clusters--network))
 - `status` (Attributes) Cluster status (see [below for nested schema](#nestedatt--clusters--status))
-- `version` (Attributes) Kubernetes version of the cluster ( see [below for nested schema](#nestedatt--clusters--version))
-- `vpc_info` (Attributes) VPC information where the cluster belongs ( see [below for nested schema](#nestedatt--clusters--vpc_info))
+- `version` (Attributes) Kubernetes version of the cluster (see [below for nested schema](#nestedatt--clusters--version))
+- `vpc_info` (Attributes) VPC information where the cluster belongs (see [below for nested schema](#nestedatt--clusters--vpc_info))
 
 <a id="nestedatt--clusters--control_plane_endpoint"></a>
 ### Nested Schema for `clusters.control_plane_endpoint`
@@ -122,7 +122,7 @@ The following attributes are exported:
 ### Nested Schema for `clusters.vpc_info`
 
 - `id` (String) Unique ID of the VPC
-- `subnets` (Attributes Set) List of subnet information ( see [below for nested schema](#nestedatt--clusters--vpc_info--subnets))
+- `subnets` (Attributes Set) List of subnet information (see [below for nested schema](#nestedatt--clusters--vpc_info--subnets))
 
 <a id="nestedatt--clusters--vpc_info--subnets"></a>
 ### Nested Schema for `clusters.vpc_info.subnets`
